@@ -299,6 +299,17 @@ def git_commit_and_push(message: str) -> bool:
     import subprocess
 
     try:
+        # CI 環境では git config を設定
+        if os.environ.get("CI"):
+            subprocess.run(
+                ["git", "config", "user.name", "github-actions[bot]"],
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.email", "github-actions[bot]@users.noreply.github.com"],
+                check=True,
+            )
+
         # 変更があるか確認
         result = subprocess.run(
             ["git", "status", "--porcelain"],
