@@ -24,7 +24,6 @@ import time
 from datetime import datetime
 from pathlib import Path
 
-import boto3
 from claude_agent_sdk import AgentDefinition, ClaudeAgentOptions, query
 
 from claude_agent_sdk.types import (
@@ -347,9 +346,8 @@ async def run_skill(prompt: str, days: int) -> list[str]:
     Returns:
         生成されたレポートファイルのパスリスト
     """
-    # AWS Bedrock クライアント設定
+    # AWS リージョン設定
     region = os.environ.get("AWS_REGION", "us-east-1")
-    session = boto3.Session(region_name=region)
 
     # スキルファイルを読み込む
     skill_path = Path(".claude/skills/azure-news-summary/SKILL.md")
@@ -376,30 +374,39 @@ Important:
 - Use the report template from .claude/skills/azure-news-summary/report_template.md
 """
 
-    # サブエージェント定義
-    report_generator = AgentDefinition(
-        name="report-generator",
-        description="Generate a detailed report for a single Azure update",
-        prompt="""You are a report generator for Azure updates.
+    # Bedrock 統合用の環境変数
+    bedrock_env = {
+        "CLAUDE_CODE_USE_BEDROCK": "1",
+        "AWS_REGION": region,
+    }
 
-Given an update item, you will:
-1. Fetch the update details page via WebFetch
-2. Search Microsoft Learn documentation for related information
-3. Gather pricing information if applicable
-4. Create a comprehensive report following the template
-5. Generate an architecture diagram using Mermaid
-
-Follow the skill instructions carefully.""",
-        tools=COMMON_TOOLS + MCP_TOOLS,
+    # レポート生成用サブエージェントのプロンプト
+    report_subagent_prompt = (
+        "You are an Azure news report generator. "
+        "When given an update item and output file path:\n"
+        "1. Invoke the Skill tool with skill='azure-news-summary'\n"
+        "2. Follow the skill's workflow to create the report\n"
+        "3. Save to the specified output path"
     )
+
+    # プロジェクトディレクトリ
+    project_dir = Path.cwd()
 
     # オーケストレーターオプション
     options = ClaudeAgentOptions(
         model=PRIMARY_MODEL,
-        tools=COMMON_TOOLS + MCP_TOOLS + ["Task"],
-        subagents=[report_generator],
-        max_turns=100,
-        session=session,
+        fallback_model=FALLBACK_MODEL,
+        env=bedrock_env,
+        cwd=str(project_dir),
+        setting_sources=["project"],
+        allowed_tools=COMMON_TOOLS + ["Task"] + MCP_TOOLS,
+        agents={
+            "report-generator": AgentDefinition(
+                description="Generate a report from an update item.",
+                prompt=report_subagent_prompt,
+                tools=COMMON_TOOLS + MCP_TOOLS,
+            ),
+        },
     )
 
     new_reports = []
@@ -407,7 +414,7 @@ Follow the skill instructions carefully.""",
     try:
         logger.log_verbose(f"Starting skill execution with model: {PRIMARY_MODEL}")
 
-        async for message in query(full_prompt, options):
+        async for message in query(prompt=full_prompt, options=options):
             if isinstance(message, AssistantMessage):
                 for block in message.content:
                     if isinstance(block, TextBlock):
@@ -430,7 +437,7 @@ Follow the skill instructions carefully.""",
         if PRIMARY_MODEL in str(e):
             logger.log_warn(f"Retrying with fallback model: {FALLBACK_MODEL}")
             options.model = FALLBACK_MODEL
-            async for message in query(full_prompt, options):
+            async for message in query(prompt=full_prompt, options=options):
                 if isinstance(message, AssistantMessage):
                     for block in message.content:
                         if isinstance(block, ToolUseBlock):
@@ -458,7 +465,15 @@ async def generate_infographics(report_paths: list[str]) -> list[str]:
 
     # AWS Bedrock クライアント設定
     region = os.environ.get("AWS_REGION", "us-east-1")
-    session = boto3.Session(region_name=region)
+
+    # Bedrock 統合用の環境変数
+    bedrock_env = {
+        "CLAUDE_CODE_USE_BEDROCK": "1",
+        "AWS_REGION": region,
+    }
+
+    # プロジェクトディレクトリ
+    project_dir = Path.cwd()
 
     # インフォグラフィックスキルを読み込む
     skill_path = Path(".claude/skills/creating-infographic/SKILL.md")
@@ -469,6 +484,15 @@ async def generate_infographics(report_paths: list[str]) -> list[str]:
     skill_content = skill_path.read_text(encoding="utf-8")
 
     new_infographics = []
+
+    # インフォグラフィック生成用サブエージェントのプロンプト
+    infographic_subagent_prompt = (
+        "You are an infographic generator. "
+        "When given a report file path:\n"
+        "1. Read the report file\n"
+        "2. Generate an HTML infographic using the Azure News theme\n"
+        "3. Save to infographic/{YYYYMMDD}-{slug}.html"
+    )
 
     # バッチサイズ (コンテキスト肥大化を防ぐ)
     batch_size = 5
@@ -498,13 +522,22 @@ For each report:
 
         options = ClaudeAgentOptions(
             model=PRIMARY_MODEL,
-            tools=COMMON_TOOLS,
-            max_turns=50,
-            session=session,
+            fallback_model=FALLBACK_MODEL,
+            env=bedrock_env,
+            cwd=str(project_dir),
+            setting_sources=["project"],
+            allowed_tools=COMMON_TOOLS + ["Task"],
+            agents={
+                "infographic-generator": AgentDefinition(
+                    description="Generate an infographic from a report.",
+                    prompt=infographic_subagent_prompt,
+                    tools=["Skill", "Read", "Write", "Edit", "Glob", "Bash"],
+                ),
+            },
         )
 
         try:
-            async for message in query(prompt, options):
+            async for message in query(prompt=prompt, options=options):
                 if isinstance(message, AssistantMessage):
                     for block in message.content:
                         if isinstance(block, ToolUseBlock):
@@ -521,7 +554,7 @@ For each report:
                 logger.log_warn(f"Retrying with fallback model: {FALLBACK_MODEL}")
                 options.model = FALLBACK_MODEL
                 try:
-                    async for message in query(prompt, options):
+                    async for message in query(prompt=prompt, options=options):
                         if isinstance(message, AssistantMessage):
                             for block in message.content:
                                 if isinstance(block, ToolUseBlock):
