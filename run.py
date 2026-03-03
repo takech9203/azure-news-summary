@@ -199,86 +199,258 @@ def get_latest_reports(output_dir: Path, limit: int = 5) -> list[str]:
 
 def update_reports_index(reports_dir: Path) -> None:
     """
-    reports ディレクトリの INDEX.md を更新する。
+    reports ディレクトリの index.md と README.md を更新する。
     """
     if not reports_dir.exists():
         return
 
-    # 全レポートファイルを収集
-    all_reports = []
-    for year_dir in sorted(reports_dir.iterdir(), reverse=True):
-        if not year_dir.is_dir() or not year_dir.name.isdigit():
-            continue
-        for md_file in sorted(year_dir.glob("*.md"), reverse=True):
-            if md_file.name == "INDEX.md":
-                continue
-            # ファイル名からタイトルを抽出
-            title = md_file.stem.replace("-", " ").title()
-            all_reports.append({
-                "year": year_dir.name,
-                "name": md_file.name,
+    # 年ごとにレポートを収集
+    reports_by_year: dict[str, list[dict]] = {}
+
+    year_dirs = [
+        d for d in reports_dir.iterdir()
+        if d.is_dir() and d.name.isdigit() and len(d.name) == 4
+    ]
+
+    for year_dir in year_dirs:
+        year = year_dir.name
+        reports_by_year[year] = []
+
+        for md_file in year_dir.glob("*.md"):
+            # 最初の H1 見出しからタイトルを抽出
+            title = md_file.stem  # フォールバック: ファイル名
+            try:
+                with open(md_file, encoding="utf-8") as f:
+                    for line in f:
+                        if line.startswith("# "):
+                            title = line[2:].strip()
+                            break
+            except Exception:
+                pass
+
+            # ファイル名から日付を抽出 (YYYY-MM-DD-*.md)
+            date_match = md_file.name[:10] if len(md_file.name) >= 10 else ""
+
+            reports_by_year[year].append({
+                "filename": md_file.name,
                 "title": title,
-                "path": f"{year_dir.name}/{md_file.name}",
+                "date": date_match,
+                "path": f"{year}/{md_file.name}",
             })
 
-    # INDEX.md を生成
+        # 日付でソート (新しい順)
+        reports_by_year[year].sort(key=lambda x: x["date"], reverse=True)
+
+    # インデックスコンテンツを生成
     lines = [
-        "# Azure News Summary Reports",
+        "# Azure ニュースレポート一覧",
         "",
-        f"Total: {len(all_reports)} reports",
+        "このページは、Microsoft Azure の最新ニュースとアップデートに関するレポートの一覧です。",
         "",
     ]
 
-    # 年ごとにグループ化
-    current_year = None
-    for report in all_reports:
-        if report["year"] != current_year:
-            current_year = report["year"]
-            lines.append(f"## {current_year}")
-            lines.append("")
-        lines.append(f"- [{report['name']}]({report['path']})")
+    # 年でソート (新しい順)
+    for year in sorted(reports_by_year.keys(), reverse=True):
+        reports = reports_by_year[year]
+        if not reports:
+            continue
 
-    lines.append("")
+        lines.append("")
+        lines.append(f"## {year} 年")
+        lines.append("")
 
-    index_path = reports_dir / "INDEX.md"
-    index_path.write_text("\n".join(lines), encoding="utf-8")
-    logger.log_verbose(f"Updated {index_path}")
+        for report in reports:
+            lines.append(f"- [{report['date']} - {report['title']}]({report['path']})")
+
+    content = "\n".join(lines) + "\n"
+
+    # index.md と README.md の両方に書き込み
+    for filename in ["index.md", "README.md"]:
+        filepath = reports_dir / filename
+        existing_content = ""
+        if filepath.exists():
+            try:
+                with open(filepath, encoding="utf-8") as f:
+                    existing_content = f.read()
+            except Exception:
+                pass
+
+        if existing_content != content:
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write(content)
+            logger.log_verbose(f"Updated {filepath}")
 
 
 def update_infographic_index(infographic_dir: Path) -> None:
     """
-    infographic ディレクトリの INDEX.md を更新する。
+    infographic ディレクトリの index.html を更新する。
     """
+    import re
+
     if not infographic_dir.exists():
         return
 
-    # 全インフォグラフィックファイルを収集
-    all_infographics = []
-    for html_file in sorted(infographic_dir.glob("*.html"), reverse=True):
+    # 全 HTML ファイルを収集 (index.html は除外)
+    html_files = []
+    for html_file in infographic_dir.glob("*.html"):
         if html_file.name == "index.html":
             continue
-        title = html_file.stem.replace("-", " ").title()
-        all_infographics.append({
-            "name": html_file.name,
+
+        # HTML からタイトルを抽出
+        title = html_file.stem
+        try:
+            with open(html_file, encoding="utf-8") as f:
+                content = f.read()
+                match = re.search(r"<title>([^<]+)</title>", content)
+                if match:
+                    title = match.group(1)
+        except Exception:
+            pass
+
+        # ファイル名から日付を抽出 (YYYYMMDD-*.html)
+        date_raw = ""
+        date_match = re.match(r"^(\d{8})-", html_file.name)
+        if date_match:
+            date_raw = date_match.group(1)
+
+        html_files.append({
+            "filename": html_file.name,
             "title": title,
+            "date_raw": date_raw,
+            "date_formatted": f"{date_raw[:4]}-{date_raw[4:6]}-{date_raw[6:8]}" if date_raw else "",
         })
 
-    # INDEX.md を生成
-    lines = [
-        "# Azure News Infographics",
-        "",
-        f"Total: {len(all_infographics)} infographics",
-        "",
-    ]
+    # 日付でソート (新しい順)
+    html_files.sort(key=lambda x: x["date_raw"], reverse=True)
 
-    for infographic in all_infographics:
-        lines.append(f"- [{infographic['name']}]({infographic['name']})")
+    # index.html を生成
+    cards_html = ""
+    for i, item in enumerate(html_files):
+        # Azure カラーでサイクル
+        border_color = "#0078D4"  # Azure Blue
+        if i % 3 == 1:
+            border_color = "#107C10"  # Success Green
+        elif i % 3 == 2:
+            border_color = "#FFB900"  # Warning Yellow
 
-    lines.append("")
+        cards_html += f'''        <div class="card" style="border-left-color: {border_color};">
+          <a href="{item['filename']}">
+            <div class="card-date">{item['date_formatted']}</div>
+            <div class="card-title">{item['title']}</div>
+            <div class="card-file">{item['filename']}</div>
+          </a>
+        </div>
+'''
 
-    index_path = infographic_dir / "INDEX.md"
-    index_path.write_text("\n".join(lines), encoding="utf-8")
-    logger.log_verbose(f"Updated {index_path}")
+    if not cards_html:
+        cards_html = '''        <div class="empty-state" style="grid-column: 1 / -1;">
+          <p>📝 まだインフォグラフィックがありません</p>
+          <p>Azure ニュースレポートからインフォグラフィックを生成すると、ここに表示されます。</p>
+        </div>
+'''
+
+    index_content = f'''<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Azure News Infographic Gallery</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+    body {{
+      background: linear-gradient(135deg, #e6f2ff, #cce5ff);
+      font-family: 'Noto Sans JP', sans-serif;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 32px 24px;
+    }}
+    .container {{ max-width: 1200px; margin: 0 auto; }}
+    h1 {{ font-size: 32px; margin-bottom: 8px; color: #0078D4; }}
+    .subtitle {{ color: #666; margin-bottom: 32px; }}
+    .grid {{
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }}
+    @media (max-width: 900px) {{ .grid {{ grid-template-columns: repeat(2, 1fr); }} }}
+    @media (max-width: 600px) {{ .grid {{ grid-template-columns: 1fr; }} }}
+    .card {{
+      background: rgba(255,255,255,0.95);
+      border-radius: 12px;
+      border-left: 4px solid #0078D4;
+      transition: transform 0.2s;
+      box-shadow: 0 2px 8px rgba(0, 120, 212, 0.1);
+    }}
+    .card:hover {{ transform: translateY(-4px); box-shadow: 0 4px 16px rgba(0, 120, 212, 0.2); }}
+    .card a {{
+      display: block;
+      padding: 20px;
+      text-decoration: none;
+      color: inherit;
+    }}
+    .card-date {{
+      font-size: 12px;
+      color: #0078D4;
+      margin-bottom: 4px;
+    }}
+    .card-title {{
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }}
+    .card-file {{
+      font-size: 11px;
+      color: #888;
+      font-family: monospace;
+    }}
+    footer {{
+      margin-top: 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      border-top: 2px dashed #0078D4;
+      padding-top: 20px;
+    }}
+    .empty-state {{
+      text-align: center;
+      padding: 60px 20px;
+      color: #666;
+    }}
+    .empty-state p {{ margin-bottom: 16px; }}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 Azure News Infographic Gallery</h1>
+    <p class="subtitle">Azure ニュースレポートのインフォグラフィック一覧</p>
+    <div class="grid">
+{cards_html}    </div>
+    <footer>
+      <p>Generated by Azure News Summary | {datetime.now().strftime("%Y-%m-%d %H:%M")}</p>
+    </footer>
+  </div>
+</body>
+</html>
+'''
+
+    index_path = infographic_dir / "index.html"
+    existing_content = ""
+    if index_path.exists():
+        try:
+            with open(index_path, encoding="utf-8") as f:
+                existing_content = f.read()
+        except Exception:
+            pass
+
+    # タイムスタンプ行を除外して比較 (不要な更新を避けるため)
+    def strip_timestamp(content: str) -> str:
+        return re.sub(r"Generated by Azure News Summary \| \d{4}-\d{2}-\d{2} \d{2}:\d{2}", "", content)
+
+    if strip_timestamp(existing_content) != strip_timestamp(index_content):
+        with open(index_path, "w", encoding="utf-8") as f:
+            f.write(index_content)
+        logger.log_verbose(f"Updated {index_path}")
 
 
 # =============================================================================
