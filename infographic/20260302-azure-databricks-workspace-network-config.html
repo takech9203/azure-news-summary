@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Databricks: ワークスペースネットワーク構成の更新機能が GA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --networking-color: #00A651;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-700) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: 10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-badges {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-networking {
+            background: var(--networking-color);
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta {
+            font-size: 15px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta span {
+            margin-right: 20px;
+        }
+
+        /* Section Styles */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 24px;
+        }
+
+        /* Overview / Highlight */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .before li::before {
+            content: '\2717';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '\2713';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .diagram-caption {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            text-align: center;
+            margin-top: 12px;
+            font-style: italic;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Tech Specs Table */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .tech-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-dark-blue);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .tech-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .tech-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .tech-table code {
+            background: var(--ms-surface-tertiary);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            color: var(--ms-blue-800);
+        }
+
+        /* Steps */
+        .steps {
+            margin: 20px 0;
+        }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .step-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Use Case Cards */
+        .usecase-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 10px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border-top: 4px solid var(--networking-color);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--ms-text-primary);
+            margin-bottom: 8px;
+        }
+
+        .usecase-scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 10px;
+            line-height: 1.7;
+        }
+
+        .usecase-effect {
+            font-size: 14px;
+            color: var(--ms-green);
+            font-weight: 500;
+            line-height: 1.7;
+            padding-left: 16px;
+            border-left: 3px solid var(--ms-green);
+        }
+
+        /* Limitations */
+        .limitation-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitation-list li {
+            padding: 10px 16px;
+            margin: 8px 0;
+            background: #FFF8E1;
+            border-left: 4px solid var(--ms-orange);
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Related Services */
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .related-card {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--ms-border);
+            align-items: flex-start;
+        }
+
+        .related-card .related-icon {
+            font-size: 20px;
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .related-card h5 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .related-card p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Verification Table */
+        .verify-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .verify-table th {
+            background: #E8F5E9;
+            color: var(--ms-green);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--ms-green);
+        }
+
+        .verify-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Benefits Grid */
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .benefit-section h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--azure-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .benefit-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .benefit-section li {
+            padding: 6px 0 6px 20px;
+            font-size: 14px;
+            line-height: 1.6;
+            position: relative;
+            color: var(--ms-text-secondary);
+        }
+
+        .benefit-section li::before {
+            content: '\2713';
+            position: absolute;
+            left: 0;
+            color: var(--azure-blue);
+            font-weight: bold;
+        }
+
+        /* Region Info */
+        .region-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            margin: 16px 0;
+        }
+
+        .region-info .region-icon {
+            font-size: 24px;
+        }
+
+        .region-info p {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        /* Recommended Actions */
+        .action-list {
+            list-style: none;
+            padding: 0;
+            counter-reset: action-counter;
+        }
+
+        .action-list li {
+            padding: 14px 16px 14px 52px;
+            margin: 10px 0;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            position: relative;
+            counter-increment: action-counter;
+        }
+
+        .action-list li::before {
+            content: counter(action-counter);
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 24px;
+            height: 24px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 16px;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer li {
+            margin: 8px 0;
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .tag {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-800);
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 22px;
+            }
+
+            .section {
+                padding: 24px 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .related-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-card {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="title-badges">
+                <span class="service-badge">Azure Databricks</span>
+                <span class="badge badge-ga">Launched (GA)</span>
+                <span class="badge badge-networking">Networking</span>
+            </div>
+            <h1>ワークスペースネットワーク構成の更新機能が GA</h1>
+            <div class="title-meta">
+                <span>リリース日: 2026-03-02</span>
+                <span>サービス: Azure Databricks</span>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128203;</span> 概要</h2>
+            <div class="highlight-box">
+                Azure Databricks ワークスペースのネットワーク構成を、既存のワークスペースを再作成することなく変更できる機能が一般提供 (GA) となった。マネージド VNet から VNet インジェクションへのインプレース移行により、PoC から本番環境への移行や段階的なセキュリティ強化が大幅に容易になった。
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">~15分</div>
+                    <div class="stat-label">更新完了時間</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3種類</div>
+                    <div class="stat-label">サポートされる移行パターン</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">ARM</div>
+                    <div class="stat-label">テンプレートベース (2026-01-01)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">全リージョン</div>
+                    <div class="stat-label">Azure Databricks 提供リージョン</div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 18px; font-weight: 600; margin: 24px 0 16px;">Before / After 比較</h3>
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>ネットワーク変更にはワークスペースの再作成が必要</li>
+                        <li>ノートブック、ジョブ、権限設定の移行作業が発生</li>
+                        <li>初期構築時にネットワーク設計を確定する必要あり</li>
+                        <li>段階的なセキュリティ強化が困難</li>
+                        <li>VNet 間移行やサブネット変更も不可能</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>既存ワークスペースを維持しながらネットワーク構成を変更可能</li>
+                        <li>マネージド VNet から VNet インジェクションへのインプレース移行</li>
+                        <li>VNet インジェクション済みワークスペースの別 VNet への移行</li>
+                        <li>既存 VNet のサブネット差し替えが可能</li>
+                        <li>段階的なセキュリティ強化アプローチが採用可能</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128393;</span> アーキテクチャ図</h2>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 16px;">マネージド VNet 構成から VNet インジェクション構成への移行フローを示す。インプレース更新により、ワークスペースを再作成することなく、顧客所有の VNet に移行し、NSG、NAT Gateway、ExpressRoute、VNet ピアリングなどのネットワーク機能を利用できるようになる。</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart LR
+    subgraph Before["更新前: マネージド VNet 構成"]
+        direction TB
+        CP1["Azure Databricks\nControl Plane"]
+        subgraph ManagedVNet["Databricks マネージド VNet"]
+            MC1["クラスタノード\n(Host Subnet)"]
+            MC2["クラスタノード\n(Container Subnet)"]
+        end
+        CP1 -->|"管理通信"| ManagedVNet
+    end
+
+    subgraph Migration["GA: インプレース\nネットワーク更新"]
+        direction TB
+        UPDATE["ARM テンプレート\nによる構成変更\n(apiVersion:\n2026-01-01)"]
+    end
+
+    subgraph After["更新後: VNet インジェクション構成"]
+        direction TB
+        CP2["Azure Databricks\nControl Plane"]
+        subgraph CustomerVNet["顧客所有 VNet"]
+            NSG["NSG"]
+            PrivSub["Private Subnet\n(Container)"]
+            PubSub["Public Subnet\n(Host)"]
+            NAT["NAT Gateway"]
+        end
+        subgraph OnPrem["オンプレミス / 他VNet"]
+            ER["ExpressRoute /\nVPN Gateway"]
+            PeerVNet["ピアリング VNet"]
+        end
+        CP2 -->|"管理通信"| CustomerVNet
+        CustomerVNet --> NAT
+        CustomerVNet --> ER
+        CustomerVNet --> PeerVNet
+        NSG --> PrivSub
+        NSG --> PubSub
+    end
+
+    Before --> Migration --> After
+                </pre>
+            </div>
+            <p class="diagram-caption">マネージド VNet から VNet インジェクションへのインプレース移行フロー</p>
+        </div>
+
+        <!-- Key Features Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#9889;</span> 主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128300;</div>
+                <div class="feature-content">
+                    <h4>マネージド VNet から VNet インジェクションへの移行</h4>
+                    <p>既存ワークスペースのネットワーク構成を ARM テンプレート経由で更新。NSG の作成、新規 VNet の作成、ワークスペーステンプレートの編集の 3 ステップで完了。apiVersion <code>2026-01-01</code> を使用した ARM テンプレートのデプロイが必要。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128259;</div>
+                <div class="feature-content">
+                    <h4>VNet インジェクション済みワークスペースの VNet 移行</h4>
+                    <p>既に VNet インジェクション済みのワークスペースを別の VNet に移行可能。マネージド VNet からの移行と同じ手順で実行できる。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128256;</div>
+                <div class="feature-content">
+                    <h4>サブネットの差し替え</h4>
+                    <p>既存 VNet インジェクションワークスペースの Private Subnet / Public Subnet を新しいサブネットに変更可能。IP アドレス空間の拡張やサブネット再構成に対応。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128295;</span> 技術仕様</h2>
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ARM API バージョン</td>
+                        <td><code>2026-01-01</code></td>
+                    </tr>
+                    <tr>
+                        <td>対象ネットワーク構成</td>
+                        <td>マネージド VNet、VNet インジェクション</td>
+                    </tr>
+                    <tr>
+                        <td>VNet CIDR 範囲</td>
+                        <td><code>/16</code> - <code>/24</code></td>
+                    </tr>
+                    <tr>
+                        <td>サブネット CIDR 範囲</td>
+                        <td><code>/26</code> 以上を推奨 (最小 <code>/28</code>)</td>
+                    </tr>
+                    <tr>
+                        <td>必要なサブネット数</td>
+                        <td>2 (Private Subnet / Public Subnet)</td>
+                    </tr>
+                    <tr>
+                        <td>更新完了までの時間</td>
+                        <td>約 15 分以内</td>
+                    </tr>
+                    <tr>
+                        <td>Terraform サポート</td>
+                        <td>非対応</td>
+                    </tr>
+                    <tr>
+                        <td>必要な Azure ロール</td>
+                        <td>Network Contributor、または <code>Microsoft.Network/virtualNetworks/subnets/join/action</code> と <code>Microsoft.Network/virtualNetworks/subnets/write</code> のカスタムロール</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Setup Steps Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128736;</span> 設定手順</h2>
+
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--ms-text-secondary);">前提条件</h3>
+            <ul class="limitation-list" style="margin-bottom: 24px;">
+                <li>ワークスペースが Azure Load Balancer を使用していないこと</li>
+                <li>実行中のすべてのクラスタとジョブを停止すること</li>
+                <li>Network Contributor ロールまたは同等のカスタムロール権限を持つこと</li>
+                <li>移行先 VNet がワークスペースと同一リージョン・同一サブスクリプションにあること</li>
+            </ul>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>NSG の作成</h4>
+                        <p>Azure Portal で「Deploy a custom template」から ARM テンプレートをデプロイし、Databricks 用の NSG を作成する。</p>
+                        <div class="code-block" style="margin-top: 12px;">
+                            <div class="code-header">
+                                <span class="code-lang">JSON</span>
+                                <span style="color: #888;">NSG ARM Template</span>
+                            </div>
+                            <pre><code class="language-json">{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "NSGName": {
+      "type": "string",
+      "defaultValue": "databricks-nsg-01"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2020-05-01",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "[parameters('NSGName')]",
+      "location": "[parameters('location')]"
+    }
+  ]
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>VNet の作成</h4>
+                        <p>Azure Quickstart テンプレート <code>databricks-vnet-for-vnet-injection-with-nat-gateway</code> を使用して、NAT Gateway 付きの新規 VNet を作成する。デプロイ時にステップ 1 で作成した NSG の ID を指定する。</p>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>ワークスペースの更新</h4>
+                        <p>Azure Portal でワークスペースの「Export template」からテンプレートを取得し、<code>apiVersion</code> を <code>2026-01-01</code> に変更。不要なパラメータを削除し、VNet インジェクション用パラメータを追加してデプロイ。</p>
+                        <div class="code-block" style="margin-top: 12px;">
+                            <div class="code-header">
+                                <span class="code-lang">JSON</span>
+                                <span style="color: #888;">追加するパラメータ (resources.properties.parameters)</span>
+                            </div>
+                            <pre><code class="language-json">{
+  "customPrivateSubnetName": {
+    "value": "&lt;private-subnet-name&gt;"
+  },
+  "customPublicSubnetName": {
+    "value": "&lt;public-subnet-name&gt;"
+  },
+  "customVirtualNetworkId": {
+    "value": "/subscriptions/&lt;subscription-id&gt;/resourceGroups/&lt;resource-group&gt;/providers/Microsoft.Network/virtualNetworks/&lt;vnet-name&gt;"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 16px; font-weight: 600; margin: 24px 0 12px; color: var(--ms-text-secondary);">更新後の検証</h3>
+            <table class="verify-table">
+                <thead>
+                    <tr>
+                        <th>テスト項目</th>
+                        <th>手順</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>新規クラスタの動作確認</td>
+                        <td>新しいクラスタを作成しジョブを実行</td>
+                    </tr>
+                    <tr>
+                        <td>既存クラスタの動作確認</td>
+                        <td>更新前に作成されたクラスタでジョブを実行</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-top: 8px;">更新完了まで約 15 分。ワークスペースのステータスが「Active」に戻ってから検証を実施すること。</p>
+        </div>
+
+        <!-- Benefits Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#127919;</span> メリット</h2>
+            <div class="benefits-grid">
+                <div class="benefit-section">
+                    <h4>&#128188; ビジネス面</h4>
+                    <ul>
+                        <li>ワークスペース再作成に伴うダウンタイムと移行コストを大幅に削減</li>
+                        <li>セキュリティ要件の変化に応じた段階的なネットワーク強化が可能</li>
+                        <li>コンプライアンス要件への柔軟な対応 (オンプレミス接続、Private Link 等)</li>
+                        <li>既存の分析ワークロードやジョブ設定を維持したまま移行可能</li>
+                    </ul>
+                </div>
+                <div class="benefit-section">
+                    <h4>&#128187; 技術面</h4>
+                    <ul>
+                        <li>UDR、ファイアウォール規則、ExpressRoute 接続などの高度なネットワーク制御が利用可能</li>
+                        <li>NSG によるきめ細かいトラフィック制御の実装が可能</li>
+                        <li>IP アドレス範囲の柔軟な設定により企業ネットワークとの競合を回避</li>
+                        <li>NAT Gateway による安定したエグレス IP アドレスの確保</li>
+                        <li>Private Link によるバックエンド接続のセキュア化</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Limitations Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#9888;</span> 制限事項・注意点</h2>
+            <ul class="limitation-list">
+                <li>Terraform による操作は非対応 (ARM テンプレートのみ)</li>
+                <li>Azure Load Balancer を使用しているワークスペースは直接更新不可 (アカウントチームへの連絡が必要)</li>
+                <li>更新中はすべてのクラスタとジョブを停止する必要がある (ダウンタイムが発生)</li>
+                <li>バックエンド Private Link 接続が設定済みの場合、VNet 移行後に手動で再設定が必要</li>
+                <li>サブネット CIDR 範囲はデプロイ後に変更不可 (サブネット自体の差し替えで対応)</li>
+                <li>2026 年 3 月 31 日以降、新規 VNet ではデフォルトのアウトバウンドアクセスが廃止されるため、NAT Gateway 等の明示的なアウトバウンド接続方法が必須</li>
+            </ul>
+        </div>
+
+        <!-- Use Cases Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128161;</span> ユースケース</h2>
+
+            <div class="usecase-card">
+                <h4>ユースケース 1: マネージド VNet ワークスペースのセキュリティ強化</h4>
+                <p class="usecase-scenario"><strong>シナリオ:</strong> PoC フェーズでマネージド VNet を使用して Azure Databricks ワークスペースを構築したが、本番環境への移行に伴い、企業のセキュリティポリシーに準拠した VNet インジェクション構成が必要になった。</p>
+                <div class="usecase-effect"><strong>効果:</strong> ノートブック、ジョブ、権限設定などを維持したまま、VNet インジェクションへ移行可能。ワークスペース再作成の工数 (数日 - 数週間) を削減し、移行リスクを最小化。</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>ユースケース 2: VNet のアドレス空間拡張</h4>
+                <p class="usecase-scenario"><strong>シナリオ:</strong> VNet インジェクション済みのワークスペースで、クラスタ台数の増加により IP アドレスが不足してきた。より大きな CIDR 範囲を持つサブネットに移行したい。</p>
+                <div class="usecase-effect"><strong>効果:</strong> 新しいサブネットを作成し、既存ワークスペースのサブネット構成を更新することで、ワークスペースを維持したまま IP アドレス空間を拡張可能。</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>ユースケース 3: オンプレミスネットワークとの接続確立</h4>
+                <p class="usecase-scenario"><strong>シナリオ:</strong> ExpressRoute や VPN Gateway を経由してオンプレミスのデータソースに接続する必要が生じた。マネージド VNet ではオンプレミス接続のカスタムルーティングが設定できない。</p>
+                <div class="usecase-effect"><strong>効果:</strong> VNet インジェクションへの移行により、UDR を使用したオンプレミスへのカスタムルーティングや、ExpressRoute/VPN Gateway 経由の接続が可能になる。</div>
+            </div>
+        </div>
+
+        <!-- Region Info Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#127758;</span> 利用可能リージョン</h2>
+            <div class="region-info">
+                <span class="region-icon">&#127759;</span>
+                <p>Azure Databricks が利用可能なすべてのリージョンで提供される。</p>
+            </div>
+        </div>
+
+        <!-- Recommended Actions Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128640;</span> 推奨アクション</h2>
+            <ol class="action-list">
+                <li>マネージド VNet で運用中のワークスペースがある場合、VNet インジェクションへの移行を計画する</li>
+                <li>2026 年 3 月 31 日以降の新規 VNet におけるアウトバウンドアクセス廃止に備え、NAT Gateway の導入を検討する</li>
+                <li>Terraform 非対応のため、ARM テンプレートベースの IaC パイプラインを準備する</li>
+                <li>移行前にバックエンド Private Link 接続の有無を確認し、必要に応じて再構成計画を立てる</li>
+            </ol>
+        </div>
+
+        <!-- Related Services Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128279;</span> 関連サービス</h2>
+            <div class="related-grid">
+                <div class="related-card">
+                    <div class="related-icon">&#128425;</div>
+                    <div>
+                        <h5>Azure Virtual Network (VNet)</h5>
+                        <p>Databricks ワークスペースのデプロイ先となる仮想ネットワーク基盤</p>
+                    </div>
+                </div>
+                <div class="related-card">
+                    <div class="related-icon">&#128285;</div>
+                    <div>
+                        <h5>Azure NAT Gateway</h5>
+                        <p>VNet インジェクション環境における安定したエグレス IP アドレスの提供に推奨</p>
+                    </div>
+                </div>
+                <div class="related-card">
+                    <div class="related-icon">&#128274;</div>
+                    <div>
+                        <h5>Azure Private Link</h5>
+                        <p>Databricks ワークスペースへのプライベート接続およびバックエンド Private Link の構成に使用</p>
+                    </div>
+                </div>
+                <div class="related-card">
+                    <div class="related-icon">&#128737;</div>
+                    <div>
+                        <h5>Network Security Group (NSG)</h5>
+                        <p>VNet インジェクション環境でのトラフィック制御に必須</p>
+                    </div>
+                </div>
+                <div class="related-card">
+                    <div class="related-icon">&#128268;</div>
+                    <div>
+                        <h5>Azure ExpressRoute / VPN Gateway</h5>
+                        <p>VNet インジェクション環境からオンプレミスネットワークへの接続に使用</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul>
+                <li><a href="https://azure.microsoft.com/updates?id=558060" target="_blank" rel="noopener noreferrer">公式アップデート情報 - Azure Databricks: ワークスペースネットワーク構成の更新</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/databricks/security/network/classic/update-workspaces" target="_blank" rel="noopener noreferrer">Microsoft Learn - ワークスペースネットワーク構成の更新</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/databricks/security/network/classic/vnet-inject" target="_blank" rel="noopener noreferrer">Microsoft Learn - VNet インジェクション</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/databricks/security/network/" target="_blank" rel="noopener noreferrer">Microsoft Learn - Azure Databricks ネットワーキング概要</a></li>
+            </ul>
+            <div class="tags">
+                <span class="tag">#AzureDatabricks</span>
+                <span class="tag">#VNetInjection</span>
+                <span class="tag">#NetworkConfiguration</span>
+                <span class="tag">#GA</span>
+                <span class="tag">#Security</span>
+                <span class="tag">#Networking</span>
+                <span class="tag">#AI</span>
+                <span class="tag">#MachineLearning</span>
+                <span class="tag">#Analytics</span>
+            </div>
+            <div class="footer-note">
+                Generated on 2026-03-03 | Source: Azure Updates RSS, Microsoft Learn
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
