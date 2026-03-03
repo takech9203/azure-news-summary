@@ -171,12 +171,14 @@ log_info ""
 log_info "=== Step 3: Bedrock Access Policy ==="
 
 # Bedrock アクセスポリシー
+# Claude Agent SDK は cross-region inference profile を使用するため、
+# foundation-model と inference-profile の両方へのアクセスを許可
 BEDROCK_POLICY=$(cat <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "BedrockInvokeModel",
+      "Sid": "BedrockInvokeFoundationModel",
       "Effect": "Allow",
       "Action": [
         "bedrock:InvokeModel",
@@ -184,6 +186,18 @@ BEDROCK_POLICY=$(cat <<EOF
       ],
       "Resource": [
         "arn:aws:bedrock:*::foundation-model/anthropic.claude-*"
+      ]
+    },
+    {
+      "Sid": "BedrockInvokeInferenceProfile",
+      "Effect": "Allow",
+      "Action": [
+        "bedrock:InvokeModel",
+        "bedrock:InvokeModelWithResponseStream"
+      ],
+      "Resource": [
+        "arn:aws:bedrock:*:${AWS_ACCOUNT_ID}:inference-profile/*",
+        "arn:aws:bedrock:*:*:inference-profile/*"
       ]
     }
   ]
