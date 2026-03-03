@@ -111,7 +111,3 @@ GitHub Actions により毎日 05:00 JST に自動実行されます。
 ## ライセンス
 
 MIT License
-
-## 関連プロジェクト
-
-- [Google Cloud News Summary](https://github.com/YOUR_ORG/google-cloud-news-summary) - 同様の機能を Google Cloud 向けに提供
