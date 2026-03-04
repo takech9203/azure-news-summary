@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Blob Storage: User-Bound User Delegation SAS - Infographic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --category-color: #00BCF2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* ============================================
+           TITLE AREA
+           ============================================ */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-700) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -40%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: 20%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .badge-storage {
+            background: #00BCF2;
+        }
+
+        .badge-security {
+            background: var(--ms-red);
+        }
+
+        .title-area h1 {
+            font-size: 34px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+            line-height: 1.3;
+        }
+
+        .title-area .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 24px;
+            margin-top: 20px;
+            position: relative;
+            z-index: 1;
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .title-meta span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* ============================================
+           SECTION STYLES
+           ============================================ */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 26px;
+        }
+
+        /* ============================================
+           OVERVIEW / HIGHLIGHT
+           ============================================ */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px 24px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        .key-points {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .key-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 16px;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+        }
+
+        .key-point .point-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .key-point p {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           BEFORE / AFTER
+           ============================================ */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .before li::before {
+            content: '\2717';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '\2713';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* ============================================
+           STATS GRID
+           ============================================ */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 24px 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* ============================================
+           MERMAID
+           ============================================ */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .diagram-caption {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            text-align: center;
+            margin-top: 12px;
+            line-height: 1.6;
+        }
+
+        /* ============================================
+           FEATURE CARDS
+           ============================================ */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--azure-dark-blue);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .feature-content ul {
+            margin-top: 8px;
+            padding-left: 18px;
+        }
+
+        .feature-content li {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+            margin-bottom: 4px;
+        }
+
+        /* ============================================
+           USE CASE CARDS
+           ============================================ */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            position: relative;
+        }
+
+        .usecase-card .usecase-number {
+            position: absolute;
+            top: -12px;
+            left: 24px;
+            background: var(--azure-blue);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--azure-dark-blue);
+            margin-bottom: 8px;
+            margin-top: 4px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .usecase-card .effect .effect-icon {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* ============================================
+           TECH SPECS TABLE
+           ============================================ */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-dark-blue);
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .specs-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+            vertical-align: top;
+        }
+
+        .specs-table tr:hover {
+            background: var(--ms-surface-secondary);
+        }
+
+        .specs-table td:first-child {
+            font-weight: 500;
+            color: var(--azure-dark-blue);
+            white-space: nowrap;
+            width: 240px;
+        }
+
+        .specs-table code {
+            background: var(--ms-surface-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+        }
+
+        /* ============================================
+           RBAC GRID
+           ============================================ */
+        .rbac-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 12px 0;
+        }
+
+        .rbac-item {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--azure-dark-blue);
+            text-align: center;
+        }
+
+        /* ============================================
+           LIMITATIONS
+           ============================================ */
+        .limitation-item {
+            display: flex;
+            gap: 12px;
+            padding: 12px 16px;
+            margin: 8px 0;
+            background: #FFF8E1;
+            border-left: 4px solid var(--ms-yellow);
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            line-height: 1.6;
+            align-items: flex-start;
+        }
+
+        .limitation-item .warn-icon {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* ============================================
+           BENEFITS GRID
+           ============================================ */
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .benefits-grid h3 {
+            font-size: 16px;
+            color: var(--azure-dark-blue);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        /* ============================================
+           RELATED SERVICES
+           ============================================ */
+        .related-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .related-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 16px;
+            transition: box-shadow 0.2s;
+        }
+
+        .related-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .related-card h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--azure-blue);
+            margin-bottom: 6px;
+        }
+
+        .related-card p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           PRICING
+           ============================================ */
+        .pricing-note {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            line-height: 1.6;
+        }
+
+        /* ============================================
+           CODE BLOCKS
+           ============================================ */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+            border-radius: 8px;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+            display: block;
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-meta {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 24px;
+            }
+
+            .section {
+                padding: 24px 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .key-points {
+                grid-template-columns: 1fr;
+            }
+
+            .related-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .rbac-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .specs-table td:first-child {
+                white-space: normal;
+                width: auto;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .title-meta {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .rbac-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- ==========================================
+             TITLE AREA
+             ========================================== -->
+        <div class="title-area">
+            <div class="title-badges">
+                <span class="service-badge">Azure Blob Storage</span>
+                <span class="badge badge-preview">In Preview</span>
+                <span class="badge badge-storage">Storage</span>
+                <span class="badge badge-security">Security</span>
+            </div>
+            <h1>User-Bound User Delegation SAS</h1>
+            <p class="subtitle">SAS トークンの使用を特定の Entra ID ユーザーに制限し、トークン漏洩時のリスクを大幅に低減</p>
+            <div class="title-meta">
+                <span>Release: 2026-02-26</span>
+                <span>Service: Azure Blob Storage</span>
+                <span>API: sv=2025-07-05+</span>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             OVERVIEW SECTION
+             ========================================== -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F4CB;</span> Overview</h2>
+
+            <div class="highlight-box">
+                Azure Storage に新たに導入された「ユーザーバウンド ユーザー委任 SAS」は、従来のユーザー委任 SAS のセキュリティをさらに強化する機能である。SAS トークン作成時にエンドユーザーの Entra ID オブジェクト ID (<code>sduoid</code>) を指定し、使用時には Entra ID の Bearer トークンによる本人確認を必須とすることで、指定されたユーザー以外は SAS トークンを使用できない。
+            </div>
+
+            <div class="key-points">
+                <div class="key-point">
+                    <span class="point-icon">&#x1F512;</span>
+                    <p>SAS トークンの使用を特定の Entra ID ユーザーに限定し、トークン漏洩リスクを低減</p>
+                </div>
+                <div class="key-point">
+                    <span class="point-icon">&#x1F464;</span>
+                    <p>Bearer トークンによる本人確認で、不正利用を確実に防止</p>
+                </div>
+                <div class="key-point">
+                    <span class="point-icon">&#x1F310;</span>
+                    <p>クロステナント対応により、外部パートナーへの安全なデータ共有が可能</p>
+                </div>
+                <div class="key-point">
+                    <span class="point-icon">&#x1F6E1;</span>
+                    <p>ゼロトラストアーキテクチャとの親和性が高く、多層的なセキュリティを実現</p>
+                </div>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>SAS トークンを取得した任意のクライアントがリソースにアクセス可能</li>
+                        <li>トークン漏洩時、有効期限内は誰でもアクセスできた</li>
+                        <li>マルチユーザー環境で使用者を特定ユーザーに限定する手段がなかった</li>
+                        <li>使用者制御にはユーザー委任キーの無効化（最大 7 日待ち）しか手段がなかった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>SAS トークンの使用を特定の Entra ID ユーザーに限定可能</li>
+                        <li>Bearer トークンによる本人確認が必須となり不正利用を防止</li>
+                        <li>クロステナントシナリオにも対応し、異なるテナントのユーザーへの SAS 発行が可能</li>
+                        <li>SAS の柔軟性と Entra ID のユーザーバウンドアクセスを両立</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             STATISTICS
+             ========================================== -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F4CA;</span> Key Numbers</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">新規 SAS パラメータ (sduoid, skdutid)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">7 日</div>
+                    <div class="stat-label">ユーザー委任キー最大有効期間</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">6</div>
+                    <div class="stat-label">対応 RBAC ロール</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0 円</div>
+                    <div class="stat-label">追加料金なし</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             ARCHITECTURE DIAGRAM
+             ========================================== -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F3D7;</span> Architecture</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+sequenceDiagram
+    participant User as エンドユーザー
+    participant App as アプリケーション&lt;br/&gt;(SAS 発行者)
+    participant EntraID as Microsoft Entra ID
+    participant Storage as Azure Blob Storage
+
+    Note over App,EntraID: 1. SAS トークン生成フロー
+    App->>EntraID: OAuth 2.0 トークン要求&lt;br/&gt;(アプリケーション資格情報)
+    EntraID-->>App: アクセストークン返却
+    App->>Storage: Get User Delegation Key&lt;br/&gt;(Bearer トークン + DelegatedUserTid)
+    Storage-->>App: ユーザー委任キー返却
+    App->>App: SAS トークン生成&lt;br/&gt;(sduoid = ユーザーの OID,&lt;br/&gt;skdutid = ユーザーのテナント ID)
+    App-->>User: ユーザーバウンド SAS トークン配布
+
+    Note over User,Storage: 2. SAS トークン使用フロー
+    User->>EntraID: ユーザー認証&lt;br/&gt;(Entra ID ログイン)
+    EntraID-->>User: Bearer トークン返却&lt;br/&gt;(oid, tid クレーム含む)
+    User->>Storage: Blob アクセス要求&lt;br/&gt;(SAS トークン + Bearer トークン)
+    Storage->>Storage: 検証: Bearer トークンの oid == sduoid&lt;br/&gt;検証: Bearer トークンの tid == skdutid
+    Storage-->>User: アクセス許可 / 拒否
+
+    Note over User,Storage: 3. 不正利用の防止
+    participant Attacker as 攻撃者
+    Attacker->>Storage: Blob アクセス要求&lt;br/&gt;(漏洩した SAS トークン、Bearer トークンなし)
+    Storage-->>Attacker: アクセス拒否 (403 Forbidden)
+                </pre>
+            </div>
+            <p class="diagram-caption">ユーザーバウンド ユーザー委任 SAS の認証フロー。アプリケーションが Entra ID を通じてユーザー委任キーを取得し、特定ユーザーにバウンドされた SAS トークンを生成する。エンドユーザーは SAS トークンに加えて Entra ID の Bearer トークンを提示する必要があり、Azure Storage は oid クレームと sduoid パラメータを照合して本人確認を行う。攻撃者が SAS トークンを入手しても、対応する Entra ID 認証情報がなければアクセスは拒否される。</p>
+        </div>
+
+        <!-- ==========================================
+             KEY FEATURES
+             ========================================== -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x2699;</span> Key Features</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F512;</div>
+                <div class="feature-content">
+                    <h4>ユーザーバウンド SAS トークン (sduoid)</h4>
+                    <p>SAS トークン作成時に <code>signedDelegatedUserObjectId</code> (<code>sduoid</code>) フィールドでエンドユーザーの Entra ID オブジェクト ID を指定する。</p>
+                    <ul>
+                        <li>使用時にユーザーは Entra ID の Bearer トークンを提示する必要がある</li>
+                        <li>Azure Storage は Bearer トークンの <code>oid</code> クレームと SAS の <code>sduoid</code> 値を照合</li>
+                        <li>一致しない場合はアクセスを拒否し、トークン漏洩時の不正利用を防止</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F310;</div>
+                <div class="feature-content">
+                    <h4>クロステナント対応 (skdutid)</h4>
+                    <p><code>signedKeyDelegatedUserTenantId</code> (<code>skdutid</code>) フィールドにより、異なるテナントのユーザーへの SAS 発行が可能。</p>
+                    <ul>
+                        <li>Bearer トークンの <code>tid</code> クレームと <code>skdutid</code> 値が照合される</li>
+                        <li>デフォルトで無効、<code>allowCrossTenantDelegationSas</code> プロパティで有効化</li>
+                        <li>パートナー企業やゲストユーザーへの安全なデータ共有を実現</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F511;</div>
+                <div class="feature-content">
+                    <h4>ユーザー委任キーの拡張</h4>
+                    <p><code>Get User Delegation Key</code> API に <code>DelegatedUserTid</code> パラメータが追加された。</p>
+                    <ul>
+                        <li>クロステナントシナリオで委任対象ユーザーのテナント ID を指定可能</li>
+                        <li>レスポンスに <code>SignedDelegatedUserTid</code> フィールドが追加</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             TECHNICAL SPECS
+             ========================================== -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F4D0;</span> Technical Specifications</h2>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>API バージョン</td>
+                        <td><code>sv=2025-07-05</code> 以降</td>
+                    </tr>
+                    <tr>
+                        <td>SAS パラメータ (ユーザー OID)</td>
+                        <td><code>sduoid</code> (signedDelegatedUserObjectId)</td>
+                    </tr>
+                    <tr>
+                        <td>SAS パラメータ (テナント ID)</td>
+                        <td><code>skdutid</code> (signedKeyDelegatedUserTenantId)</td>
+                    </tr>
+                    <tr>
+                        <td>ユーザー委任キー有効期間</td>
+                        <td>最大 7 日間</td>
+                    </tr>
+                    <tr>
+                        <td>対象サービス</td>
+                        <td>Azure Blob Storage</td>
+                    </tr>
+                    <tr>
+                        <td>認証方式</td>
+                        <td>SAS トークン + Entra ID Bearer トークン (併用)</td>
+                    </tr>
+                    <tr>
+                        <td>クロステナント対応</td>
+                        <td><code>allowCrossTenantDelegationSas</code> プロパティで制御</td>
+                    </tr>
+                    <tr>
+                        <td>SAS トークン種別</td>
+                        <td>アドホック SAS のみ (ストアドアクセスポリシー非対応)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="font-size: 16px; color: var(--azure-dark-blue); margin: 20px 0 12px;">必要な RBAC ロール</h3>
+            <div class="rbac-grid">
+                <div class="rbac-item">Storage Blob Delegator</div>
+                <div class="rbac-item">Storage Blob Data Contributor</div>
+                <div class="rbac-item">Storage Blob Data Owner</div>
+                <div class="rbac-item">Storage Blob Data Reader</div>
+                <div class="rbac-item">Contributor</div>
+                <div class="rbac-item">Storage Account Contributor</div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             CODE SAMPLES
+             ========================================== -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F4BB;</span> Implementation</h2>
+
+            <h3 style="font-size: 16px; color: var(--azure-dark-blue); margin-bottom: 12px;">1. ユーザー委任キーの取得</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTTP</span>
+                </div>
+                <pre><code class="language-http">POST https://{account}.blob.core.windows.net/?restype=service&amp;comp=userdelegationkey
+Authorization: Bearer {OAuth token}
+x-ms-version: 2025-07-05
+
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;KeyInfo&gt;
+    &lt;Start&gt;2026-02-26T00:00:00Z&lt;/Start&gt;
+    &lt;Expiry&gt;2026-02-27T00:00:00Z&lt;/Expiry&gt;
+    &lt;DelegatedUserTid&gt;{end-user-tenant-id}&lt;/DelegatedUserTid&gt;
+&lt;/KeyInfo&gt;</code></pre>
+            </div>
+            <p style="font-size: 13px; color: var(--ms-text-secondary); margin: 8px 0 24px;"><code>DelegatedUserTid</code> はクロステナントシナリオでのみ必要。</p>
+
+            <h3 style="font-size: 16px; color: var(--azure-dark-blue); margin-bottom: 12px;">2. ユーザーバウンド SAS トークンの使用</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">HTTP</span>
+                </div>
+                <pre><code class="language-http">GET https://{account}.blob.core.windows.net/{container}/{blob}?{sas-token}
+Authorization: Bearer {end-user-entra-token}</code></pre>
+            </div>
+            <p style="font-size: 13px; color: var(--ms-text-secondary); margin: 8px 0 0;">Azure Storage は Bearer トークン内の <code>oid</code> クレームが SAS の <code>sduoid</code> と一致するか検証する。SAS トークンパラメータとして <code>sduoid</code>、<code>skdutid</code>（クロステナントの場合）、<code>sv=2025-07-05</code> 以降を指定する。</p>
+        </div>
+
+        <!-- ==========================================
+             USE CASES
+             ========================================== -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F4A1;</span> Use Cases</h2>
+
+            <div class="usecase-card">
+                <div class="usecase-number">1</div>
+                <h4>マルチユーザークラスタ環境でのデータアクセス</h4>
+                <p class="scenario">Hadoop や Spark クラスタにおいて、各ユーザーに個別のユーザーバウンド SAS を発行することで、共有クラスタ上でもユーザー単位のアクセス制御を実現する。</p>
+                <div class="effect">
+                    <span class="effect-icon">&#x2705;</span>
+                    <span>共有環境でも個々のユーザーの Blob アクセスを厳密に分離でき、データの機密性を確保。</span>
+                </div>
+            </div>
+
+            <div class="usecase-card">
+                <div class="usecase-number">2</div>
+                <h4>外部パートナーへの一時的なデータ共有</h4>
+                <p class="scenario">パートナー企業の特定ユーザーに対してクロステナント対応のユーザーバウンド SAS を発行し、安全にデータを共有する。万が一 SAS トークンが漏洩しても、指定されたユーザー以外はアクセスできない。</p>
+                <div class="effect">
+                    <span class="effect-icon">&#x2705;</span>
+                    <span>トークン漏洩時の被害範囲を限定し、クロステナントでの安全なコラボレーションを実現。</span>
+                </div>
+            </div>
+
+            <div class="usecase-card">
+                <div class="usecase-number">3</div>
+                <h4>規制産業でのデータアクセス管理</h4>
+                <p class="scenario">金融・医療などの規制産業において、データアクセスを個人レベルで追跡・監査する必要がある場合に、ユーザーバウンド SAS によりアクセスの非否認性を確保する。</p>
+                <div class="effect">
+                    <span class="effect-icon">&#x2705;</span>
+                    <span>コンプライアンス要件を満たす個人レベルのアクセス追跡・監査が可能。</span>
+                </div>
+            </div>
+
+            <div class="usecase-card">
+                <div class="usecase-number">4</div>
+                <h4>SaaS アプリケーションでのテナント分離</h4>
+                <p class="scenario">SaaS プロバイダーがエンドユーザーに Blob Storage への直接アクセスを提供する際に、ユーザーバウンド SAS により各ユーザーのアクセスを厳密に分離する。</p>
+                <div class="effect">
+                    <span class="effect-icon">&#x2705;</span>
+                    <span>マルチテナント環境でもユーザー単位のアクセス分離を実現し、データ漏洩リスクを最小化。</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             BENEFITS
+             ========================================== -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x2B50;</span> Benefits</h2>
+
+            <div class="benefits-grid">
+                <div>
+                    <h3 style="border-bottom-color: var(--ms-green);">Business</h3>
+                    <div class="feature-card" style="border-left-color: var(--ms-green);">
+                        <div class="feature-content">
+                            <h4 style="font-size: 14px;">コンプライアンス強化</h4>
+                            <p>SAS トークンの使用を特定ユーザーに限定し、データアクセスの監査性とトレーサビリティが向上</p>
+                        </div>
+                    </div>
+                    <div class="feature-card" style="border-left-color: var(--ms-green);">
+                        <div class="feature-content">
+                            <h4 style="font-size: 14px;">リスク低減</h4>
+                            <p>SAS トークン漏洩時の被害範囲を限定し、セキュリティインシデントの影響を最小化</p>
+                        </div>
+                    </div>
+                    <div class="feature-card" style="border-left-color: var(--ms-green);">
+                        <div class="feature-content">
+                            <h4 style="font-size: 14px;">マルチテナント対応</h4>
+                            <p>クロステナントシナリオに対応し、パートナー企業やゲストユーザーへの安全なデータ共有が可能</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="border-bottom-color: var(--ms-blue-500);">Technical</h3>
+                    <div class="feature-card" style="border-left-color: var(--ms-blue-500);">
+                        <div class="feature-content">
+                            <h4 style="font-size: 14px;">ゼロトラストアーキテクチャとの親和性</h4>
+                            <p>SAS の柔軟性と Entra ID のアイデンティティベース認証を組み合わせたアクセス制御を実現</p>
+                        </div>
+                    </div>
+                    <div class="feature-card" style="border-left-color: var(--ms-blue-500);">
+                        <div class="feature-content">
+                            <h4 style="font-size: 14px;">既存 SAS ワークフローとの互換性</h4>
+                            <p>既存のユーザー委任 SAS ワークフローにパラメータ追加で対応可能。大規模な設計変更は不要</p>
+                        </div>
+                    </div>
+                    <div class="feature-card" style="border-left-color: var(--ms-blue-500);">
+                        <div class="feature-content">
+                            <h4 style="font-size: 14px;">きめ細かいアクセス制御</h4>
+                            <p>IP 制限、有効期限、権限スコープに加え、ユーザーアイデンティティによる多層的セキュリティを実現</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             LIMITATIONS
+             ========================================== -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x26A0;</span> Limitations / Caveats</h2>
+
+            <div class="limitation-item">
+                <span class="warn-icon">&#x26A0;&#xFE0F;</span>
+                <span><strong>パブリックプレビュー段階</strong> - 本番環境での使用は推奨されない。GA 時に仕様変更が発生する可能性がある。</span>
+            </div>
+            <div class="limitation-item">
+                <span class="warn-icon">&#x26A0;&#xFE0F;</span>
+                <span><strong>追加の認証オーバーヘッド</strong> - SAS トークンに加えて Entra ID の Bearer トークンも必要となるため、クライアント側の実装が複雑になる。</span>
+            </div>
+            <div class="limitation-item">
+                <span class="warn-icon">&#x26A0;&#xFE0F;</span>
+                <span><strong>API バージョン要件</strong> - <code>sv=2025-07-05</code> 以降が必要。古い SDK やツールでは利用できない場合がある。</span>
+            </div>
+            <div class="limitation-item">
+                <span class="warn-icon">&#x26A0;&#xFE0F;</span>
+                <span><strong>クロステナントのデフォルト無効</strong> - ストレージアカウントレベルでの <code>allowCrossTenantDelegationSas</code> の明示的な設定変更が必要。</span>
+            </div>
+            <div class="limitation-item">
+                <span class="warn-icon">&#x26A0;&#xFE0F;</span>
+                <span><strong>ストアドアクセスポリシー非対応</strong> - アドホック SAS としてのみ使用可能。</span>
+            </div>
+            <div class="limitation-item">
+                <span class="warn-icon">&#x26A0;&#xFE0F;</span>
+                <span><strong>ユーザー委任キーの有効期間制限</strong> - 最大 7 日間。長期間のアクセス委任には定期的なキー更新が必要。</span>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             PRICING
+             ========================================== -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F4B0;</span> Pricing</h2>
+
+            <div class="highlight-box" style="border-left-color: var(--ms-green);">
+                ユーザーバウンド ユーザー委任 SAS 自体に<strong>追加料金は発生しない</strong>。従来の Azure Blob Storage の料金体系がそのまま適用される。
+            </div>
+
+            <div style="margin-top: 16px;">
+                <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                    <div class="feature-content">
+                        <h4 style="font-size: 14px;">Get User Delegation Key 操作</h4>
+                        <p>Premium Block Blob / Standard GPv2 では「その他の操作」、Standard GPv1 では「読み取り操作」として課金</p>
+                    </div>
+                </div>
+                <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                    <div class="feature-content">
+                        <h4 style="font-size: 14px;">SAS を使用したデータアクセス</h4>
+                        <p>通常の Blob Storage のトランザクション料金（読み取り、書き込み等）が適用</p>
+                    </div>
+                </div>
+                <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                    <div class="feature-content">
+                        <h4 style="font-size: 14px;">データ転送</h4>
+                        <p>通常のデータ転送料金が適用</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             RELATED SERVICES
+             ========================================== -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F517;</span> Related Services</h2>
+
+            <div class="related-grid">
+                <div class="related-card">
+                    <h4>Microsoft Entra ID</h4>
+                    <p>ユーザー認証と Bearer トークンの発行に使用される</p>
+                </div>
+                <div class="related-card">
+                    <h4>Azure RBAC</h4>
+                    <p>ユーザー委任キーの要求に必要な権限管理に使用される</p>
+                </div>
+                <div class="related-card">
+                    <h4>Azure Data Lake Storage</h4>
+                    <p>HNS 有効化環境での POSIX ACL との統合</p>
+                </div>
+                <div class="related-card">
+                    <h4>Apache Hadoop ABFS ドライバー</h4>
+                    <p>マルチユーザークラスタ環境での SAS 統合ユースケース</p>
+                </div>
+                <div class="related-card">
+                    <h4>Azure Blob Storage ユーザー委任 SAS</h4>
+                    <p>本機能の基盤となる既存の SAS 種別</p>
+                </div>
+                <div class="related-card">
+                    <h4>Apache Ranger</h4>
+                    <p>Data Lake Storage ワークロードでのアクセス制御統合</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+             FOOTER
+             ========================================== -->
+        <div class="footer">
+            <h3>References</h3>
+            <div class="footer-links">
+                <a href="https://azure.microsoft.com/updates?id=557694" target="_blank">&#x1F517; Azure Updates: Restrict usage of user delegation SAS to an Entra ID identity</a>
+                <a href="https://learn.microsoft.com/en-us/rest/api/storageservices/create-user-delegation-sas" target="_blank">&#x1F517; Create User Delegation SAS (REST API)</a>
+                <a href="https://learn.microsoft.com/en-us/rest/api/storageservices/get-user-delegation-key" target="_blank">&#x1F517; Get User Delegation Key (REST API)</a>
+                <a href="https://learn.microsoft.com/en-us/azure/storage/common/storage-sas-overview" target="_blank">&#x1F517; Shared Access Signatures (SAS) Overview</a>
+                <a href="https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-user-delegation-sas-create-dotnet" target="_blank">&#x1F517; Create User Delegation SAS with .NET</a>
+                <a href="https://azure.microsoft.com/pricing/details/storage/blobs/" target="_blank">&#x1F517; Azure Blob Storage Pricing</a>
+            </div>
+            <div class="footer-meta">
+                Generated: 2026-03-04 | Source: reports/2026/2026-02-26-blob-storage-user-bound-delegation-sas.md
+            </div>
+        </div>
+
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

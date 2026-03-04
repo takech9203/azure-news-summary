@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Monitor Pipeline: Secure Ingestion & Pod Placement</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--azure-blue);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .implementation {
+            font-size: 13px;
+            color: var(--ms-text-primary);
+        }
+
+        .usecase-card .implementation ul {
+            margin-top: 4px;
+            padding-left: 20px;
+        }
+
+        .usecase-card .implementation li {
+            padding: 2px 0;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Region Tags */
+        .region-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .region-tag {
+            background: var(--ms-blue-200);
+            color: var(--ms-blue-900);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Pricing */
+        .pricing-note {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            border-left: 4px solid var(--ms-green);
+        }
+
+        .pricing-note .price-highlight {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ms-green);
+        }
+
+        .pricing-note p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-top: 8px;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Merits */
+        .merits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .merit-section h4 {
+            font-size: 15px;
+            color: var(--ms-blue-900);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .merit-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .merit-section li {
+            font-size: 13px;
+            padding: 4px 0;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .merits-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Monitor</span>
+            <h1>Azure Monitor Pipeline:<br>Secure Ingestion & Pod Placement</h1>
+            <p class="hero-subtitle">TLS/mTLS によるセキュアインジェストと Kubernetes ポッド配置制御</p>
+            <div class="hero-meta">
+                <span class="badge badge-preview">Public Preview</span>
+                <span class="badge badge-date">2026-02-26</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Monitor pipeline に対して、外部エンドポイントからのセキュアインジェスト（TLS/mTLS 対応）と、Kubernetes クラスター上でのポッド配置制御という 2 つの主要機能がパブリックプレビューとして発表された。BYOC（Bring Your Own Certificates）機能により、企業が独自の証明書を使用して TLS/mTLS 通信を構成でき、セキュリティとコンプライアンス要件への対応が強化された。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>TLS/mTLS による外部エンドポイントからのセキュアなデータ取り込みを実現</li>
+                    <li>BYOC により企業独自の PKI 証明書を使用した通信構成が可能に</li>
+                    <li>ポッド配置制御により Kubernetes ノードへのスケジューリングを細かく制御</li>
+                    <li>OpenTelemetry エコシステムを基盤とした Arc 対応 K8s クラスター上の統合監視</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>TLS/mTLS を企業独自の PKI 証明書で構成する手段が限定的</li>
+                        <li>Pod がデフォルトのスケジューリングに依存し、配置制御が困難</li>
+                        <li>マルチテナント環境でのパフォーマンス分離やコンプライアンス適用が困難</li>
+                        <li>同一ノードに複数インスタンスが配置されポート枯渇やリソース競合のリスク</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>BYOC により企業独自の証明書・PKI での TLS/mTLS 通信構成が可能</li>
+                        <li>constraints / distribution 設定による柔軟なスケジューリング制御</li>
+                        <li>maxInstancesPerHost でノードあたりのインスタンス数を厳密制限</li>
+                        <li>自動証明書管理とゼロダウンタイムローテーションも引き続き利用可能</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph External["外部クライアント"]
+        Syslog["Syslog クライアント<br/>(ネットワーク機器等)"]
+        OTLP["OTLP クライアント<br/>(アプリケーション)"]
+    end
+
+    subgraph K8s["Arc 対応 Kubernetes クラスター"]
+        subgraph Gateway["Gateway Layer"]
+            Traefik["Traefik Gateway<br/>(LoadBalancer)"]
+        end
+
+        subgraph TLS["TLS/mTLS Layer"]
+            TLSConfig["TLS 構成<br/>- mutualTls (mTLS)<br/>- serverOnly (TLS)<br/>- disabled"]
+            BYOC["BYOC 証明書<br/>- サーバー証明書<br/>- クライアント CA<br/>- Kubernetes Secret"]
+            AutoCert["自動証明書管理<br/>- cert-manager<br/>- ゼロダウンタイム<br/>ローテーション"]
+        end
+
+        subgraph Pipeline["Azure Monitor Pipeline"]
+            Receiver["Receiver<br/>(Syslog/OTLP)"]
+            Transform["変換・フィルタ"]
+            Cache["ローカルキャッシュ<br/>(断続的接続対応)"]
+        end
+
+        subgraph PodPlacement["Pod 配置制御"]
+            Constraints["constraints<br/>- ノードラベル<br/>- AZ 指定<br/>- インスタンスタイプ"]
+            Distribution["distribution<br/>- maxInstancesPerHost"]
+        end
+    end
+
+    subgraph Azure["Azure Cloud"]
+        LAW["Log Analytics<br/>Workspace"]
+        Monitor["Azure Monitor"]
+    end
+
+    Syslog -->|"TCP:514"| Traefik
+    OTLP -->|"gRPC:4317"| Traefik
+    Traefik -->|"mTLS"| Receiver
+    TLSConfig --- Receiver
+    BYOC --- TLSConfig
+    AutoCert --- TLSConfig
+    Receiver --> Transform
+    Transform --> Cache
+    Cache -->|"クラウドへ送信"| LAW
+    LAW --> Monitor
+    PodPlacement -.->|"スケジューリング制御"| Pipeline
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">TLS モード<br>(mutualTls / serverOnly / disabled)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">48h</div>
+                    <div class="stat-label">自動管理時の<br>サーバー証明書有効期限</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">ダウンタイム<br>(証明書ローテーション)</div>
+                </div>
+            </div>
+
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F512;</div>
+                    <div class="feature-content">
+                        <h4>Secure Ingestion (TLS/mTLS)</h4>
+                        <p>外部エンドポイントからの TCP ベースレシーバーに対する TLS / mutual TLS (mTLS) サポート。3 つの TLS モード (mutualTls / serverOnly / disabled) から選択可能。mTLS ではサーバーとクライアント双方の証明書認証を実施。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4DC;</div>
+                    <div class="feature-content">
+                        <h4>Bring Your Own Certificates (BYOC)</h4>
+                        <p>企業独自の証明書と秘密鍵をパイプラインの TLS エンドポイントに使用可能。Azure Key Vault との統合 (Secret Store Extension 経由) や外部 PKI (LetsEncrypt 等) との連携もサポート。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F504;</div>
+                    <div class="feature-content">
+                        <h4>Automated Certificate Management</h4>
+                        <p>cert-manager 拡張機能による自動化された証明書ライフサイクル管理。サーバー証明書は 48 時間の有効期限で、24 時間前に自動更新。ゼロダウンタイムでの証明書ローテーション。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F3AF;</div>
+                    <div class="feature-content">
+                        <h4>Pod Placement Control</h4>
+                        <p>executionPlacement プロパティにより Kubernetes ノードへのスケジューリングを制御。constraints でノードラベル / AZ / インスタンスタイプに基づく配置制約を設定。distribution の maxInstancesPerHost でノードあたりのインスタンス数を制限。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F310;</div>
+                    <div class="feature-content">
+                        <h4>Gateway Integration (Traefik)</h4>
+                        <p>Traefik Gateway を使用した外部クライアントへのパイプラインエンドポイント公開。Gateway とパイプライン間の mTLS 通信。cert-manager による Gateway クライアント証明書の自動発行・更新。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">Technical Specs</h2>
+            <table class="specs-table">
+                <tbody>
+                    <tr><th>Resource Type</th><td>Microsoft.Monitor/pipelineGroups</td></tr>
+                    <tr><th>API Version</th><td>2025-03-01-preview</td></tr>
+                    <tr><th>Deploy Target</th><td>Arc-enabled Kubernetes Cluster</td></tr>
+                    <tr><th>Base Technology</th><td>OpenTelemetry</td></tr>
+                    <tr><th>Supported Protocols</th><td>Syslog (TCP:514), OTLP (gRPC:4317)</td></tr>
+                    <tr><th>TLS Modes</th><td>mutualTls, serverOnly, disabled</td></tr>
+                    <tr><th>Certificate Management</th><td>Auto (cert-manager) or BYOC</td></tr>
+                    <tr><th>Server Cert Lifetime</th><td>48 hours (auto-managed)</td></tr>
+                    <tr><th>Constraint Operators</th><td>In, NotIn, Exists, DoesNotExist</td></tr>
+                    <tr><th>maxInstancesPerHost</th><td>1 (strict isolation)</td></tr>
+                    <tr><th>Required Extension</th><td>cert-manager (microsoft.certmanagement)</td></tr>
+                </tbody>
+            </table>
+
+            <h3 style="font-size: 16px; margin: 24px 0 12px; color: var(--ms-blue-900);">cert-manager Extension Installation</h3>
+            <pre><code class="language-bash">export RESOURCE_GROUP="&lt;resource-group-name&gt;"
+export CLUSTER_NAME="&lt;arc-enabled-cluster-name&gt;"
+export LOCATION="&lt;arc-enabled-cluster-location&gt;"
+
+az k8s-extension create \
+  --resource-group ${RESOURCE_GROUP} \
+  --cluster-name ${CLUSTER_NAME} \
+  --cluster-type connectedClusters \
+  --name "azure-cert-management" \
+  --extension-type "microsoft.certmanagement" \
+  --release-train stable</code></pre>
+
+            <h3 style="font-size: 16px; margin: 24px 0 12px; color: var(--ms-blue-900);">BYOC TLS Configuration (ARM Template)</h3>
+            <pre><code class="language-json">{
+  "type": "Microsoft.Monitor/pipelineGroups",
+  "apiVersion": "2025-03-01-preview",
+  "name": "byoc-pipeline",
+  "location": "eastus2",
+  "properties": {
+    "receivers": [
+      {
+        "name": "syslog",
+        "type": "Syslog",
+        "tlsConfiguration": "byoc-mtls",
+        "syslog": { "endpoint": "0.0.0.0:514" }
+      }
+    ],
+    "tlsConfigurations": [
+      {
+        "name": "byoc-mtls",
+        "mode": "mutualTls",
+        "tlsCertificate": {
+          "certificate": {
+            "type": "kubernetesSecret",
+            "location": "collector-server-tls",
+            "subLocation": "tls.crt"
+          },
+          "privateKey": {
+            "type": "kubernetesSecret",
+            "location": "collector-server-tls",
+            "subLocation": "tls.key"
+          }
+        },
+        "clientCa": {
+          "type": "kubernetesSecret",
+          "location": "byoc-client-root-ca-secret",
+          "subLocation": "ca.crt"
+        }
+      }
+    ]
+  }
+}</code></pre>
+
+            <h3 style="font-size: 16px; margin: 24px 0 12px; color: var(--ms-blue-900);">Pod Placement Configuration</h3>
+            <pre><code class="language-json">{
+  "properties": {
+    "executionPlacement": {
+      "constraints": [
+        {
+          "capability": "team",
+          "operator": "In",
+          "values": ["observability-team"]
+        },
+        {
+          "capability": "topology.kubernetes.io/zone",
+          "operator": "In",
+          "values": ["us-east-1a", "us-east-1b"]
+        }
+      ],
+      "distribution": {
+        "maxInstancesPerHost": 1
+      }
+    }
+  }
+}</code></pre>
+        </section>
+
+        <!-- Merits -->
+        <section class="section">
+            <h2 class="section-title">Benefits</h2>
+            <div class="merits-grid">
+                <div class="merit-section">
+                    <h4>Business</h4>
+                    <ul>
+                        <li>BYOC により企業 PKI ポリシーを維持したまま Azure Monitor pipeline を利用可能</li>
+                        <li>ポッド配置 constraints で特定 AZ でのデータ処理を強制、データ主権要件に対応</li>
+                        <li>既存の証明書管理インフラとの統合でセキュリティポリシーに準拠</li>
+                        <li>自動証明書管理で運用チームの作業負荷を削減</li>
+                    </ul>
+                </div>
+                <div class="merit-section">
+                    <h4>Technical</h4>
+                    <ul>
+                        <li>TLS/mTLS によるエンドツーエンドの通信暗号化とクライアント認証</li>
+                        <li>自動管理 (cert-manager) と BYOC の 2 つのオプションから選択可能</li>
+                        <li>ゼロダウンタイムでの証明書ローテーション</li>
+                        <li>maxInstancesPerHost: 1 によるノード単位の厳密リソース分離</li>
+                        <li>Azure Key Vault 統合による証明書の安全な保管と自動同期</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: Regulated Industry - Secure Log Collection</h4>
+                    <p class="scenario">金融機関がオンプレミスのネットワーク機器から Syslog データを Azure Monitor に取り込む際、社内の PKI 証明書を使用した mTLS 通信を要求されるケース。</p>
+                    <div class="implementation">
+                        <strong>Implementation:</strong>
+                        <ul>
+                            <li>社内 PKI 発行のサーバー証明書とクライアント CA を Kubernetes Secret として作成</li>
+                            <li>BYOC mTLS 構成でパイプラインの Syslog レシーバーを設定</li>
+                            <li>Traefik Gateway 経由で外部ネットワーク機器からの接続を受付</li>
+                            <li>ポッド配置で金融データ処理専用ノードへの配置を強制</li>
+                        </ul>
+                    </div>
+                    <p class="effect">-- 規制要件を満たしたセキュアな通信経路でログデータを収集し、監査要件にも対応可能。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: Multi-Tenant K8s Cluster Isolation</h4>
+                    <p class="scenario">複数のチームが共有する Kubernetes クラスター上で、各チームの監視パイプラインを適切に分離して運用するケース。</p>
+                    <div class="implementation">
+                        <strong>Implementation:</strong>
+                        <ul>
+                            <li>constraints でチーム専用ノード (team=observability-team) への配置を指定</li>
+                            <li>maxInstancesPerHost: 1 でノードあたり 1 インスタンスに制限</li>
+                            <li>チームごとに異なる TLS 証明書を使用</li>
+                        </ul>
+                    </div>
+                    <p class="effect">-- ノイジーネイバー問題を回避し、チーム間のパフォーマンス / セキュリティ分離を実現。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC3: High-Availability Telemetry Collection</h4>
+                    <p class="scenario">大規模な IoT/OT 環境で、高スループットのテレメトリデータを複数の AZ に分散して処理するケース。</p>
+                    <div class="implementation">
+                        <strong>Implementation:</strong>
+                        <ul>
+                            <li>ポッド配置で特定の AZ (us-east-1a, us-east-1b) に制約</li>
+                            <li>高リソースノード (Standard_D16s_v3 等) をターゲットに設定</li>
+                            <li>maxInstancesPerHost: 1 でノード間の負荷分散を確保</li>
+                            <li>ローカルキャッシュを活用した断続的接続環境への対応</li>
+                        </ul>
+                    </div>
+                    <p class="effect">-- ゾーン冗長性を確保しつつ、高スループットのテレメトリデータを効率的に処理。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section class="section">
+            <h2 class="section-title">Pricing</h2>
+            <div class="pricing-note">
+                <div class="price-highlight">No Additional Cost</div>
+                <p>セキュアインジェストおよびポッド配置機能自体に追加料金は発生しない。Azure Monitor の料金体系に従い課金。最初の 5 GB/月 (Analytics tier) は無料。</p>
+            </div>
+            <table class="specs-table">
+                <tbody>
+                    <tr><th>Data Ingestion</th><td>Log Analytics Workspace へのデータ取り込み量 (GB) に応じた課金</td></tr>
+                    <tr><th>Data Retention</th><td>Analytics Logs: 31/90 日の保持を含む (最大 12 年延長可)</td></tr>
+                    <tr><th>Log Processing</th><td>50% 未満のフィルタリングは無料、50% 超は課金あり</td></tr>
+                    <tr><th>Query</th><td>Basic/Auxiliary Logs はスキャンデータ量に応じた課金。Analytics Logs のクエリは無料</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Region Availability -->
+        <section class="section">
+            <h2 class="section-title">Region Availability</h2>
+            <div class="region-tags">
+                <span class="region-tag">Canada Central</span>
+                <span class="region-tag">East US</span>
+                <span class="region-tag">East US 2</span>
+                <span class="region-tag">Italy North</span>
+                <span class="region-tag">West US 2</span>
+                <span class="region-tag">West Europe</span>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">Limitations / Caveats</h2>
+            <ul class="limitations-list">
+                <li>Public Preview -- SLA 対象外。本番環境への導入は GA 後を推奨</li>
+                <li>サポートされる K8s ディストリビューションが限定的 (Canonical, Cluster API Provider for Azure, K3, RKE, VMware TKG)</li>
+                <li>BYOC 証明書のローテーションは企業側で管理する必要がある</li>
+                <li>maxInstancesPerHost は現在 1 のみサポート</li>
+                <li>ポッド配置は ARM/Bicep テンプレートのみ対応 (Azure Portal 非対応)</li>
+                <li>cert-manager 拡張機能のインストールが必須 (既存 cert-manager は事前にアンインストールが必要)</li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source URLs</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=552808" target="_blank">Azure Updates - Secure ingestion and pod placement for Azure Monitor pipeline</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/data-collection/pipeline-overview" target="_blank">Microsoft Learn - Azure Monitor pipeline overview</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/data-collection/pipeline-configure" target="_blank">Microsoft Learn - Configure Azure Monitor pipeline</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/data-collection/pipeline-tls" target="_blank">Microsoft Learn - Azure Monitor pipeline TLS configuration</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/data-collection/pipeline-tls-custom" target="_blank">Microsoft Learn - TLS configuration (Customer managed / BYOC)</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/data-collection/pipeline-pod-placement" target="_blank">Microsoft Learn - Azure Monitor pipeline pod placement</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank">Azure Monitor Pricing</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-03-04 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

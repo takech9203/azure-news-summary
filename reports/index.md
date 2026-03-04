@@ -12,3 +12,5 @@
 - [2026-02-27 - Azure Kubernetes Service (AKS): マネージド NGINX Ingress (Application Routing アドオン) の廃止予告](2026/2026-02-27-aks-nginx-ingress-retirement.md)
 - [2026-02-27 - Azure Confidential Computing: DCesv6/DCedsv6/ECesv6/ECedsv6 Confidential VM の一般提供開始](2026/2026-02-27-confidential-vms-v6-intel-tdx.md)
 - [2026-02-27 - Azure Red Hat OpenShift: Malaysia West、New Zealand North、Mexico Central リージョンで一般提供開始](2026/2026-02-27-aro-malaysia-newzealand-mexico.md)
+- [2026-02-26 - Azure Monitor Pipeline: セキュアインジェストとポッド配置機能](2026/2026-02-26-azure-monitor-pipeline-secure-ingestion.md)
+- [2026-02-26 - Azure Blob Storage: ユーザーバウンド ユーザー委任 SAS (User-Bound User Delegation SAS)](2026/2026-02-26-blob-storage-user-bound-delegation-sas.md)
