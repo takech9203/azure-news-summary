@@ -5,6 +5,11 @@
 
 ## 2026 年
 
+- [2026-03-11 - Azure Database for PostgreSQL: Grafana ダッシュボードによるネイティブ監視機能の一般提供開始](2026/2026-03-11-postgresql-grafana-dashboards.md)
+- [2026-03-11 - Azure SRE Agent: 一般提供開始 (GA) と新機能の追加](2026/2026-03-11-azure-sre-agent-ga.md)
+- [2026-03-11 - Azure Database for PostgreSQL: Premium SSD v2 ディスクでのカスタマーマネージド暗号化キー (CMK) サポート](2026/2026-03-11-postgresql-cmk-premium-ssd-v2.md)
+- [2026-03-11 - Azure SQL Database: Query Profiler in MSSQL Extension for Visual Studio Code](2026/2026-03-11-sql-database-query-profiler-vscode.md)
+- [2026-03-11 - Azure Database for PostgreSQL: Elastic Clusters の Terraform / Bicep / Ansible サポートが一般提供開始](2026/2026-03-11-postgresql-elastic-clusters-iac.md)
 - [2026-03-04 - Azure Policy: ポリシー適用の高速化とログイン/ログアウト ワークアラウンドの廃止](2026/2026-03-04-azure-policy-faster-enforcement-retirement.md)
 - [2026-03-03 - Azure Firewall: Draft & Deploy 機能](2026/2026-03-03-azure-firewall-draft-and-deploy.md)
 - [2026-03-02 - Azure Databricks: Lakebase Postgres 一般提供開始 (GA)](2026/2026-03-02-azure-databricks-lakebase.md)
