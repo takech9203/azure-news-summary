@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-03-12 - Azure Monitor: Log Analytics サマリールールで手動 "Retry bin" が一般提供開始](2026/2026-03-12-log-analytics-summary-rules-retry-bin.md)
+- [2026-03-12 - Azure Storage Mover: AWS S3 から Azure Blob へのプライベートデータ転送 (パブリックプレビュー)](2026/2026-03-12-storage-mover-aws-s3-private-transfer.md)
 - [2026-03-11 - Azure Database for PostgreSQL: Grafana ダッシュボードによるネイティブ監視機能の一般提供開始](2026/2026-03-11-postgresql-grafana-dashboards.md)
 - [2026-03-11 - Azure SRE Agent: 一般提供開始 (GA) と新機能の追加](2026/2026-03-11-azure-sre-agent-ga.md)
 - [2026-03-11 - Azure Database for PostgreSQL: Premium SSD v2 ディスクでのカスタマーマネージド暗号化キー (CMK) サポート](2026/2026-03-11-postgresql-cmk-premium-ssd-v2.md)
