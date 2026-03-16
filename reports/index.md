@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-03-16 - Azure Kubernetes Service (AKS): Flatcar Container Linux (プレビュー) のリタイア](2026/2026-03-16-aks-flatcar-container-linux-retirement.md)
 - [2026-03-12 - Azure Monitor: Log Analytics サマリールールで手動 "Retry bin" が一般提供開始](2026/2026-03-12-log-analytics-summary-rules-retry-bin.md)
 - [2026-03-12 - Azure Storage Mover: AWS S3 から Azure Blob へのプライベートデータ転送 (パブリックプレビュー)](2026/2026-03-12-storage-mover-aws-s3-private-transfer.md)
 - [2026-03-11 - Azure Database for PostgreSQL: Grafana ダッシュボードによるネイティブ監視機能の一般提供開始](2026/2026-03-11-postgresql-grafana-dashboards.md)
