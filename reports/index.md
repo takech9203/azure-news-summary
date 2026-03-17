@@ -5,7 +5,12 @@
 
 ## 2026 年
 
+- [2026-03-17 - Foundry Agent Service: 一般提供開始 (GA)](2026/2026-03-17-foundry-agent-service-ga.md)
+- [2026-03-17 - Azure Web Application Firewall: Default Rule Set (DRS) 2.2 の一般提供とルールセットサポートポリシーの更新](2026/2026-03-17-waf-drs-2-2-ruleset-policy.md)
+- [2026-03-17 - Azure VMware Solution: AV36P および AV52 ノードのリタイア](2026/2026-03-17-vmware-solution-av36p-av52-retirement.md)
+- [2026-03-16 - Azure Blob Storage: SFTP における Microsoft Entra ID ベースのアクセス (パブリックプレビュー)](2026/2026-03-16-blob-storage-sftp-entra-id.md)
 - [2026-03-16 - Azure Kubernetes Service (AKS): Flatcar Container Linux (プレビュー) のリタイア](2026/2026-03-16-aks-flatcar-container-linux-retirement.md)
+- [2026-03-16 - Azure Batch: 複数のリタイアメント通知 (Windows Server 2016 / Low-Priority VM / NVv3・NVv4 シリーズ)](2026/2026-03-16-batch-retirements-2026.md)
 - [2026-03-12 - Azure Monitor: Log Analytics サマリールールで手動 "Retry bin" が一般提供開始](2026/2026-03-12-log-analytics-summary-rules-retry-bin.md)
 - [2026-03-12 - Azure Storage Mover: AWS S3 から Azure Blob へのプライベートデータ転送 (パブリックプレビュー)](2026/2026-03-12-storage-mover-aws-s3-private-transfer.md)
 - [2026-03-11 - Azure Database for PostgreSQL: Grafana ダッシュボードによるネイティブ監視機能の一般提供開始](2026/2026-03-11-postgresql-grafana-dashboards.md)
