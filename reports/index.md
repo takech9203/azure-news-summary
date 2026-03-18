@@ -5,6 +5,9 @@
 
 ## 2026 年
 
+- [2026-03-18 - Azure SQL Database: Data API builder with built-in GitHub Copilot in MSSQL Extension](2026/2026-03-18-sql-database-data-api-builder-copilot.md)
+- [2026-03-18 - Azure Databricks: Lakeflow Connect Free Tier の一般提供開始](2026/2026-03-18-databricks-lakeflow-connect-free-tier.md)
+- [2026-03-18 - Azure SQL Database: Transparent Data Encryption (TDE) のバージョンレスキーサポート](2026/2026-03-18-sql-database-tde-versionless-keys.md)
 - [2026-03-17 - Foundry Agent Service: 一般提供開始 (GA)](2026/2026-03-17-foundry-agent-service-ga.md)
 - [2026-03-17 - Azure Web Application Firewall: Default Rule Set (DRS) 2.2 の一般提供とルールセットサポートポリシーの更新](2026/2026-03-17-waf-drs-2-2-ruleset-policy.md)
 - [2026-03-17 - Azure VMware Solution: AV36P および AV52 ノードのリタイア](2026/2026-03-17-vmware-solution-av36p-av52-retirement.md)
