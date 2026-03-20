@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-03-20 - Azure Sphere: Azure Sphere サービスのリタイア](2026/2026-03-20-azure-sphere-retirement.md)
 - [2026-03-19 - Azure Databricks: OneLake Catalog Federation のパブリックプレビュー開始](2026/2026-03-19-databricks-onelake-catalog-federation.md)
 - [2026-03-19 - Azure Virtual Machines: HC / HBv2 / NP シリーズ HPC VM のリタイア](2026/2026-03-19-hpc-vm-series-retirement.md)
 - [2026-03-18 - Azure SQL Database: Data API builder with built-in GitHub Copilot in MSSQL Extension](2026/2026-03-18-sql-database-data-api-builder-copilot.md)
@@ -14,6 +15,7 @@
 - [2026-03-18 - Emissions Impact Dashboard for Azure: リタイアのお知らせ](2026/2026-03-18-emissions-dashboard-retirement.md)
 - [2026-03-18 - SQL Server Management Studio 22: GitHub Copilot GA と Database DevOps (SQL Projects)](2026/2026-03-18-ssms-22-copilot-sql-projects.md)
 - [2026-03-18 - Azure Red Hat OpenShift: Managed Identity and Workload Identity](2026/2026-03-18-aro-managed-workload-identity.md)
+- [2026-03-18 - Azure SQL Database: SQL MCP Server](2026/2026-03-18-sql-mcp-server.md)
 - [2026-03-17 - Foundry Agent Service: 一般提供開始 (GA)](2026/2026-03-17-foundry-agent-service-ga.md)
 - [2026-03-17 - Azure Web Application Firewall: Default Rule Set (DRS) 2.2 の一般提供とルールセットサポートポリシーの更新](2026/2026-03-17-waf-drs-2-2-ruleset-policy.md)
 - [2026-03-17 - Azure VMware Solution: AV36P および AV52 ノードのリタイア](2026/2026-03-17-vmware-solution-av36p-av52-retirement.md)
