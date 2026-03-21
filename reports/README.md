@@ -5,7 +5,9 @@
 
 ## 2026 年
 
+- [2026-03-20 - Azure SQL Database: Elastic query - Shard_Map_Manager モードのリタイア](2026/2026-03-20-sql-elastic-query-shard-map-retirement.md)
 - [2026-03-20 - Azure Sphere: Azure Sphere サービスのリタイア](2026/2026-03-20-azure-sphere-retirement.md)
+- [2026-03-20 - Azure SQL: 2026 年 3 月中旬アップデート](2026/2026-03-20-sql-mid-march-updates.md)
 - [2026-03-19 - Azure Databricks: OneLake Catalog Federation のパブリックプレビュー開始](2026/2026-03-19-databricks-onelake-catalog-federation.md)
 - [2026-03-19 - Azure Virtual Machines: HC / HBv2 / NP シリーズ HPC VM のリタイア](2026/2026-03-19-hpc-vm-series-retirement.md)
 - [2026-03-18 - Azure SQL Database: Data API builder with built-in GitHub Copilot in MSSQL Extension](2026/2026-03-18-sql-database-data-api-builder-copilot.md)
