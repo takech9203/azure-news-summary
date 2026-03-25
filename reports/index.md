@@ -5,11 +5,17 @@
 
 ## 2026 年
 
+- [2026-03-25 - Azure Database for MySQL: Fabric Mirroring 統合のパブリックプレビュー開始](2026/2026-03-25-mysql-fabric-mirroring.md)
+- [2026-03-25 - Azure Database for PostgreSQL: pg_cron のカスタムタイムゾーンサポート (cron.timezone)](2026/2026-03-25-postgresql-pg-cron-timezone.md)
+- [2026-03-25 - Azure SQL Managed Instance: Change Event Streaming (CES) パブリックプレビュー](2026/2026-03-25-sql-managed-instance-change-event-streaming.md)
+- [2026-03-25 - Azure Database for PostgreSQL: マイグレーションサービスの大幅強化 - EDB / Google AlloyDB 対応と pgoutput プラグイン採用](2026/2026-03-25-postgresql-migration-service-updates.md)
 - [2026-03-24 - Azure Kubernetes Service (AKS): コンテナーネットワークログの一般提供開始](2026/2026-03-24-aks-container-network-logs.md)
 - [2026-03-24 - Azure Monitor: Prometheus コミュニティ推奨アラートが Azure Arc 対応 Kubernetes で一般提供開始](2026/2026-03-24-azure-monitor-prometheus-alerts-arc-k8s.md)
 - [2026-03-24 - Azure Kubernetes Fleet Manager: クロスクラスターネットワーキング (パブリックプレビュー)](2026/2026-03-24-fleet-manager-cross-cluster-networking.md)
 - [2026-03-24 - Azure Monitor: OpenTelemetry Collector による OTLP データのネイティブ取り込み](2026/2026-03-24-azure-monitor-otlp-opentelemetry-collector.md)
 - [2026-03-24 - Azure Container Storage: v2.1.0 で Elastic SAN 統合とオンデマンドインストールが一般提供開始](2026/2026-03-24-container-storage-elastic-san-v2-1.md)
+- [2026-03-24 - Azure Kubernetes Service (AKS): コンテナーネットワークメトリクスフィルタリングの一般提供開始](2026/2026-03-24-aks-container-network-metrics-filtering.md)
+- [2026-03-24 - Azure Kubernetes Service (AKS): コンテナーネットワーキングトラブルシューティング用 AI エージェント](2026/2026-03-24-aks-ai-agent-networking-troubleshooting.md)
 - [2026-03-24 - Azure Kubernetes Service (AKS): Application Routing with Meshless Istio (パブリックプレビュー)](2026/2026-03-24-aks-meshless-istio-routing.md)
 - [2026-03-24 - Azure Kubernetes Service (AKS): マネージド GPU メトリクスの Azure Monitor 対応](2026/2026-03-24-aks-gpu-metrics-azure-monitor.md)
 - [2026-03-24 - Azure Kubernetes Service (AKS): Microsoft Azure Kubernetes Application Network](2026/2026-03-24-aks-application-network.md)
