@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-03-30 - Azure Cosmos DB for PostgreSQL: 2029 年 3 月 31 日での廃止と Azure Database for PostgreSQL Elastic Cluster への移行](2026/2026-03-30-cosmosdb-postgresql-retirement.md)
+- [2026-03-30 - Azure Disk Storage: Premium SSD v2 が South India リージョンで一般提供開始](2026/2026-03-30-premium-ssd-v2-south-india.md)
 - [2026-03-26 - Azure SQL Database: 2026 年 3 月下旬のアップデート](2026/2026-03-26-sql-late-march-updates.md)
 - [2026-03-25 - Azure Kubernetes Service (AKS): Blue-Green エージェントプールアップグレード](2026/2026-03-25-aks-blue-green-agent-pool-upgrade.md)
 - [2026-03-25 - Azure Database for PostgreSQL: マイグレーションサービスの大幅強化 - EDB / Google AlloyDB 対応と pgoutput プラグイン採用](2026/2026-03-25-postgresql-migration-service-updates.md)
