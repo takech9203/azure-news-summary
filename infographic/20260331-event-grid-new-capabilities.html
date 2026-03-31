@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Event Grid: スマートかつセキュアなイベント駆動アーキテクチャのための新機能 - Azure News Infographic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--azure-dark-blue) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            right: 80px;
+            width: 160px;
+            height: 160px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 50%;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+        }
+
+        .date-badge {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .header-summary {
+            font-size: 16px;
+            opacity: 0.9;
+            line-height: 1.7;
+            max-width: 800px;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--ms-blue-200);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 24px;
+        }
+
+        /* Highlight box */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+            font-size: 15px;
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 24px 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card.green {
+            background: linear-gradient(135deg, var(--ms-green), #0B5C0B);
+        }
+
+        .stat-card.purple {
+            background: linear-gradient(135deg, var(--ms-purple), #6B4FA0);
+        }
+
+        .stat-card.yellow {
+            background: linear-gradient(135deg, #E6A700, #B38600);
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 900;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .before li::before {
+            content: '\2717  ';
+            margin-right: 8px;
+            color: var(--ms-red);
+            font-weight: 700;
+        }
+
+        .after li::before {
+            content: '\2713  ';
+            margin-right: 8px;
+            color: var(--ms-green);
+            font-weight: 700;
+        }
+
+        /* Feature card */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-card.warning {
+            border-left-color: var(--ms-orange);
+        }
+
+        .feature-card.danger {
+            border-left-color: var(--ms-red);
+        }
+
+        .feature-card.success {
+            border-left-color: var(--ms-green);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-card.warning .feature-icon {
+            background: #FFF4E5;
+        }
+
+        .feature-card.danger .feature-icon {
+            background: #FFEBEE;
+        }
+
+        .feature-card.success .feature-icon {
+            background: #E8F5E9;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Code blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Table */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .spec-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .spec-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .spec-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Usecase */
+        .usecase-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 10px;
+            padding: 20px;
+            transition: box-shadow 0.2s;
+        }
+
+        .usecase-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .usecase-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .usecase-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .usecase-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Merit/Demerit lists */
+        .merit-list, .demerit-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .merit-list li, .demerit-list li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .merit-list li::before {
+            content: '\2713  ';
+            color: var(--ms-green);
+            font-weight: 700;
+            margin-right: 8px;
+        }
+
+        .demerit-list li::before {
+            content: '\26A0  ';
+            color: var(--ms-orange);
+            font-weight: 700;
+            margin-right: 8px;
+        }
+
+        .merit-demerit-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .merit-demerit-card {
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .merit-demerit-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .merit-demerit-card.merit {
+            background: #E8F5E9;
+            border: 1px solid var(--ms-green);
+        }
+
+        .merit-demerit-card.merit h4 {
+            color: var(--ms-green);
+        }
+
+        .merit-demerit-card.demerit {
+            background: #FFF4E5;
+            border: 1px solid var(--ms-orange);
+        }
+
+        .merit-demerit-card.demerit h4 {
+            color: var(--ms-orange);
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px 20px;
+            margin-top: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .header { padding: 32px 24px; }
+            .header h1 { font-size: 22px; }
+            .before-after { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .usecase-grid { grid-template-columns: 1fr; }
+            .merit-demerit-grid { grid-template-columns: 1fr; }
+            .section { padding: 20px; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <div class="header-meta">
+                <span class="service-badge">Azure Event Grid</span>
+                <span class="badge badge-ga">GA</span>
+                <span class="badge badge-preview">Preview</span>
+                <span class="date-badge">2026-03-31</span>
+            </div>
+            <h1>Azure Event Grid: スマートかつセキュアなイベント駆動アーキテクチャのための新機能</h1>
+            <p class="header-summary">
+                MQTT メッセージオーダリング (GA) とクロステナント Webhook 配信 (パブリックプレビュー) により、大規模分散システムの管理を強化し、相互運用性とセキュリティが大幅に向上します。
+            </p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F4CA;</span> 主要数値</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">MQTT v5</div>
+                    <div class="stat-label">メッセージオーダリング対応</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-value">QoS 1</div>
+                    <div class="stat-label">順序保証付き配信</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="stat-value">512 KiB</div>
+                    <div class="stat-label">最大パケットサイズ</div>
+                </div>
+                <div class="stat-card yellow">
+                    <div class="stat-value">2 Tier</div>
+                    <div class="stat-label">Basic / Standard 対応</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview / Before-After -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F504;</span> 概要: Before / After 比較</div>
+
+            <p style="font-size: 15px; margin-bottom: 16px; color: var(--ms-text-secondary);">
+                Azure Event Grid に対して、大規模分散システムの管理を強化し、相互運用性とセキュリティの向上を目的とした複数の新機能が発表されました。GA となった MQTT メッセージオーダリングと、パブリックプレビューのクロステナント Webhook 配信が主要機能です。
+            </p>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>MQTT ブローカーで QoS 1 使用時もトピック単位・クライアント単位の順序保証なし</li>
+                        <li>テレメトリ・時系列データ処理でアプリケーション側での順序制御が必要</li>
+                        <li>イベント配信が同一テナント内に限定、マルチテナント Webhook にはカスタム実装が必要</li>
+                        <li>異なるテナント間のイベント連携にセキュアかつ簡便な配信手段が不足</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>MQTT v5 で各トピック・各クライアント単位の QoS 1 順序保証付き配信が GA</li>
+                        <li>シーケンス整合性が重要なワークフローでアプリケーション側の順序制御が不要</li>
+                        <li>マネージド ID とフェデレーテッド認証情報によるクロステナント Webhook 配信が可能</li>
+                        <li>Basic / Standard ティアの両方でクロステナント配信をサポート</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram (Mermaid) -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F3D7;&#xFE0F;</span> アーキテクチャ図</div>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 12px;">
+                MQTT メッセージオーダリングによる IoT デバイスからの順序保証付きデータ収集と、クロステナント Webhook 配信によるテナント間イベント連携の全体像を示します。
+            </p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph TenantA["テナント A"]
+        subgraph EGNamespace["Event Grid 名前空間"]
+            MQTTBroker["MQTT ブローカー\n(v3.1.1 / v5)"]
+            Topic["Event Grid トピック"]
+            Sub["イベントサブスクリプション\n(クロステナント配信有効)"]
+        end
+        UAI["ユーザー割り当て\nマネージド ID"]
+        MultiApp["マルチテナント\nMicrosoft Entra アプリ\n(フェデレーテッド認証情報)"]
+    end
+
+    subgraph IoTDevices["IoT デバイス群"]
+        Device1["デバイス 1\nMQTT v5 クライアント"]
+        Device2["デバイス 2\nMQTT v5 クライアント"]
+        Device3["デバイス 3\nMQTT v5 クライアント"]
+    end
+
+    subgraph TenantB["テナント B"]
+        Webhook["Webhook エンドポイント"]
+        EH["Event Hubs"]
+        Storage["Storage Queue"]
+    end
+
+    subgraph OrderFlow["メッセージオーダリング"]
+        direction LR
+        Msg1["メッセージ 1"] --> Msg2["メッセージ 2"] --> Msg3["メッセージ 3"]
+    end
+
+    Device1 -->|"QoS 1\nTLS 1.2/1.3"| MQTTBroker
+    Device2 -->|"QoS 1\nTLS 1.2/1.3"| MQTTBroker
+    Device3 -->|"QoS 1\nTLS 1.2/1.3"| MQTTBroker
+    MQTTBroker -->|"順序保証付き配信"| OrderFlow
+    Topic --> Sub
+    UAI --> MultiApp
+    Sub -->|"マネージド ID +\nフェデレーテッド認証"| MultiApp
+    MultiApp -->|"クロステナント配信"| Webhook
+    MultiApp -->|"クロステナント配信"| EH
+    MultiApp -->|"クロステナント配信"| Storage
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x2728;</span> 主要機能</div>
+
+            <div class="feature-card success">
+                <div class="feature-icon">&#x1F4E8;</div>
+                <div class="feature-content">
+                    <h4>MQTT メッセージオーダリング (GA)</h4>
+                    <p>MQTT v5 でのメッセージオーダリングにより、各トピック・各クライアント単位で QoS 1 メッセージの順序保証付き配信が一般提供として利用可能になりました。テレメトリ、コマンド実行、時系列データなどのシーケンス整合性が重要なワークフローに最適です。</p>
+                </div>
+            </div>
+
+            <div class="feature-card warning">
+                <div class="feature-icon">&#x1F310;</div>
+                <div class="feature-content">
+                    <h4>クロステナント Webhook 配信 (パブリックプレビュー)</h4>
+                    <p>マネージド ID とフェデレーテッド認証情報を使用したテナント間イベント配信が可能になりました。Basic ティアおよび Standard ティア (名前空間) の両方でサポートされています。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F512;</div>
+                <div class="feature-content">
+                    <h4>TLS 1.2/1.3 必須のセキュア通信</h4>
+                    <p>MQTT ブローカーへの接続には TLS 1.2 または 1.3 が必須です。TCP 8883 (直接接続) および TCP 443 (WebSocket) の両ポートに対応しています。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F504;</div>
+                <div class="feature-content">
+                    <h4>MQTT クロスバージョン通信</h4>
+                    <p>MQTT v3.1.1 と v5 間のクロスバージョン通信がサポートされており、既存デバイスとの互換性を維持しながら新機能を活用できます。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4BB;</div>
+                <div class="feature-content">
+                    <h4>マネージド ID ベースのクロステナント認証</h4>
+                    <p>ユーザー割り当てマネージド ID とマルチテナント Microsoft Entra アプリのフェデレーテッド認証情報を組み合わせることで、認証情報のハードコーディングが不要になります。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F4CB;</span> 技術仕様</div>
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>MQTT プロトコルバージョン</strong></td>
+                        <td>MQTT v3.1.1、MQTT v5 (WebSocket 対応含む)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>メッセージオーダリング対応 QoS</strong></td>
+                        <td>QoS 1 (at-least-once delivery)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>オーダリングの範囲</strong></td>
+                        <td>各トピック・各クライアント単位</td>
+                    </tr>
+                    <tr>
+                        <td><strong>TLS 要件</strong></td>
+                        <td>TLS 1.2 または TLS 1.3 必須</td>
+                    </tr>
+                    <tr>
+                        <td><strong>MQTT ポート</strong></td>
+                        <td>TCP 8883 (直接接続)、TCP 443 (WebSocket)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>最大パケットサイズ</strong></td>
+                        <td>512 KiB</td>
+                    </tr>
+                    <tr>
+                        <td><strong>クロステナント配信対応ティア</strong></td>
+                        <td>Basic ティア、Standard ティア (名前空間)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>クロステナント認証方式</strong></td>
+                        <td>ユーザー割り当てマネージド ID + フェデレーテッド認証情報</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Merits / Demerits -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x2696;&#xFE0F;</span> メリット / 制約事項</div>
+            <div class="merit-demerit-grid">
+                <div class="merit-demerit-card merit">
+                    <h4>メリット</h4>
+                    <p style="font-size: 13px; font-weight: 700; color: var(--ms-green); margin-bottom: 8px;">ビジネス面</p>
+                    <ul class="merit-list">
+                        <li>マルチテナント環境における組織間イベント連携が容易に</li>
+                        <li>IoT ソリューションにおけるメッセージの信頼性が向上</li>
+                        <li>カスタム実装の保守負担が不要に</li>
+                    </ul>
+                    <p style="font-size: 13px; font-weight: 700; color: var(--ms-green); margin: 12px 0 8px;">技術面</p>
+                    <ul class="merit-list">
+                        <li>アプリケーション層での順序制御ロジック不要</li>
+                        <li>マネージド ID ベースのクロステナント認証で認証情報のハードコーディング不要</li>
+                        <li>MQTT v3.1.1 と v5 間のクロスバージョン通信サポート</li>
+                    </ul>
+                </div>
+                <div class="merit-demerit-card demerit">
+                    <h4>制約事項</h4>
+                    <ul class="demerit-list">
+                        <li>メッセージオーダリングは MQTT v5 のみ対応</li>
+                        <li>順序保証は同一トピック・同一クライアント単位に限定</li>
+                        <li>クロステナント Webhook 配信はプレビュー段階 (SLA 対象外)</li>
+                        <li>QoS 2 は未サポート</li>
+                        <li>最大パケットサイズは 512 KiB に制限</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F4A1;</span> ユースケース</div>
+            <div class="usecase-grid">
+                <div class="usecase-card">
+                    <div class="usecase-icon">&#x1F3ED;</div>
+                    <h4>IoT テレメトリの順序保証付き収集</h4>
+                    <p>製造業の生産ラインにおけるセンサーデータを発生順序を保証しながら収集。MQTT v5 のメッセージオーダリングにより、データの時系列整合性を維持できます。</p>
+                </div>
+                <div class="usecase-card">
+                    <div class="usecase-icon">&#x2601;&#xFE0F;</div>
+                    <h4>マルチテナント SaaS プラットフォーム</h4>
+                    <p>SaaS プロバイダーが顧客テナントの Azure 環境にあるエンドポイントへイベントを配信。クロステナント Webhook 配信で、カスタム実装なしに実現可能です。</p>
+                </div>
+                <div class="usecase-card">
+                    <div class="usecase-icon">&#x1F579;&#xFE0F;</div>
+                    <h4>コマンド・コントロールシステム</h4>
+                    <p>IoT デバイスへのコマンド送信における実行順序保証。QoS 1 のメッセージオーダリングにより、コマンドが正しい順序で処理されます。</p>
+                </div>
+                <div class="usecase-card">
+                    <div class="usecase-icon">&#x1F3E2;</div>
+                    <h4>グループ会社間のイベント連携</h4>
+                    <p>異なる Azure テナント間での業務イベントリアルタイム連携。マネージド ID とフェデレーテッド認証により、セキュアなテナント間通信を実現します。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Azure Event Grid: スマートかつセキュアなイベント駆動アーキテクチャのための新機能</strong></p>
+            <div class="footer-links">
+                <a href="https://azure.microsoft.com/updates?id=492542" target="_blank">Azure Updates (MQTT)</a>
+                <a href="https://azure.microsoft.com/updates?id=559695" target="_blank">Azure Updates (Cross-Tenant)</a>
+                <a href="https://learn.microsoft.com/azure/event-grid/whats-new" target="_blank">Event Grid What's New</a>
+                <a href="https://learn.microsoft.com/azure/event-grid/mqtt-support" target="_blank">MQTT Support Docs</a>
+            </div>
+            <p style="margin-top: 12px; font-size: 12px; color: var(--ms-text-disabled);">Generated on 2026-03-31 | Azure News Summary</p>
+        </div>
+
+    </div>
+</body>
+</html>

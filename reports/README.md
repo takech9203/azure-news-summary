@@ -5,8 +5,17 @@
 
 ## 2026 年
 
+- [2026-03-31 - Azure DevOps: 2026 年 3 月アップデート](2026/2026-03-31-devops-march-2026-updates.md)
+- [2026-03-31 - Azure Disk Storage: Premium SSD v2 が US Gov Arizona リージョンで一般提供開始](2026/2026-03-31-premium-ssd-v2-us-gov-arizona.md)
+- [2026-03-31 - Azure Storage: ユーザー委任 SAS の Azure Tables, Azure Files, Azure Queues への拡張](2026/2026-03-31-storage-user-delegation-sas.md)
+- [2026-03-31 - VPN Gateway: 手動登録 Azure VPN クライアントのリタイア (Azure Government / 21Vianet)](2026/2026-03-31-vpn-client-manual-registration-retirement.md)
+- [2026-03-31 - Azure Regions: デンマーク初のクラウドリージョン Denmark East が一般提供開始](2026/2026-03-31-azure-denmark-east-region.md)
+- [2026-03-31 - Azure Event Grid: スマートかつセキュアなイベント駆動アーキテクチャのための新機能](2026/2026-03-31-event-grid-new-capabilities.md)
+- [2026-03-30 - Azure Red Hat OpenShift: Indonesia Central リージョンで一般提供開始](2026/2026-03-30-aro-indonesia-central.md)
 - [2026-03-30 - Azure Cosmos DB for PostgreSQL: 2029 年 3 月 31 日での廃止と Azure Database for PostgreSQL Elastic Cluster への移行](2026/2026-03-30-cosmosdb-postgresql-retirement.md)
 - [2026-03-30 - Azure Disk Storage: Premium SSD v2 が South India リージョンで一般提供開始](2026/2026-03-30-premium-ssd-v2-south-india.md)
+- [2026-03-30 - Azure Virtual Machines: Ephemeral OS Disk with Full Caching がパブリックプレビュー開始](2026/2026-03-30-ephemeral-os-disk-full-caching.md)
+- [2026-03-30 - Azure Monitor: Prometheus リモートライト用サイドカーの廃止](2026/2026-03-30-prometheus-sidecar-remote-write-retirement.md)
 - [2026-03-26 - Azure SQL Database: 2026 年 3 月下旬のアップデート](2026/2026-03-26-sql-late-march-updates.md)
 - [2026-03-25 - Azure Kubernetes Service (AKS): Blue-Green エージェントプールアップグレード](2026/2026-03-25-aks-blue-green-agent-pool-upgrade.md)
 - [2026-03-25 - Azure Database for PostgreSQL: マイグレーションサービスの大幅強化 - EDB / Google AlloyDB 対応と pgoutput プラグイン採用](2026/2026-03-25-postgresql-migration-service-updates.md)
