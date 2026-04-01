@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Machine Learning 外部データインポート廃止 - Azure News Infographic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--ms-purple) 0%, var(--azure-dark-blue) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -60px;
+            right: 80px;
+            width: 160px;
+            height: 160px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 50%;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: var(--ms-purple);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .category-accent {
+            background: var(--ms-yellow);
+            color: #323130;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-retirement {
+            background: var(--ms-red);
+        }
+
+        .date-badge {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .header-summary {
+            font-size: 16px;
+            opacity: 0.9;
+            line-height: 1.7;
+            max-width: 800px;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--ms-blue-200);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 24px;
+        }
+
+        /* Highlight box */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+            font-size: 15px;
+        }
+
+        /* Alert box */
+        .alert-box-red {
+            background: #FFEBEE;
+            border-left: 4px solid var(--ms-red);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .alert-box-red strong {
+            color: var(--ms-red);
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 24px 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card.red {
+            background: linear-gradient(135deg, var(--ms-red), #B7472A);
+        }
+
+        .stat-card.green {
+            background: linear-gradient(135deg, var(--ms-green), #0B5C0B);
+        }
+
+        .stat-card.yellow {
+            background: linear-gradient(135deg, var(--ms-yellow), #CC9400);
+        }
+
+        .stat-card.purple {
+            background: linear-gradient(135deg, var(--ms-purple), #6B4FA0);
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 900;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .before li::before {
+            content: '\274C';
+            margin-right: 8px;
+        }
+
+        .after li::before {
+            content: '\2705';
+            margin-right: 8px;
+        }
+
+        /* Feature card */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-card.warning {
+            border-left-color: var(--ms-orange);
+        }
+
+        .feature-card.danger {
+            border-left-color: var(--ms-red);
+        }
+
+        .feature-card.success {
+            border-left-color: var(--ms-green);
+        }
+
+        .feature-card.accent {
+            border-left-color: var(--ms-yellow);
+        }
+
+        .feature-card.purple {
+            border-left-color: var(--ms-purple);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-card.warning .feature-icon {
+            background: #FFF4E5;
+        }
+
+        .feature-card.danger .feature-icon {
+            background: #FFEBEE;
+        }
+
+        .feature-card.success .feature-icon {
+            background: #E8F5E9;
+        }
+
+        .feature-card.accent .feature-icon {
+            background: #FFF8E1;
+        }
+
+        .feature-card.purple .feature-icon {
+            background: #F3E8FF;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Code blocks */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Table */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .spec-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .spec-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .spec-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .spec-table .advantage {
+            color: var(--ms-green);
+            font-weight: 700;
+        }
+
+        .spec-table .disadvantage {
+            color: var(--ms-red);
+            font-weight: 700;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: linear-gradient(to bottom, var(--azure-blue), var(--ms-red));
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 28px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 4px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--azure-blue);
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--azure-blue);
+        }
+
+        .timeline-item.danger::before {
+            background: var(--ms-red);
+            box-shadow: 0 0 0 2px var(--ms-red);
+        }
+
+        .timeline-item.current::before {
+            background: var(--ms-green);
+            box-shadow: 0 0 0 2px var(--ms-green);
+        }
+
+        .timeline-item.warning::before {
+            background: var(--ms-yellow);
+            box-shadow: 0 0 0 2px var(--ms-yellow);
+        }
+
+        .timeline-date {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 2px;
+        }
+
+        .timeline-item.danger .timeline-date {
+            color: var(--ms-red);
+        }
+
+        .timeline-item.current .timeline-date {
+            color: var(--ms-green);
+        }
+
+        .timeline-item.warning .timeline-date {
+            color: var(--ms-yellow);
+        }
+
+        .timeline-label {
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .timeline-desc {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Steps */
+        .steps {
+            counter-reset: step;
+        }
+
+        .step-item {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 16px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            counter-increment: step;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--azure-blue);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .step-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Usecase */
+        .usecase-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 10px;
+            padding: 20px;
+            transition: box-shadow 0.2s;
+        }
+
+        .usecase-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .usecase-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .usecase-card .flow {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .usecase-card .flow-step {
+            background: var(--ms-blue-100);
+            border: 1px solid var(--ms-blue-300);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--azure-blue);
+        }
+
+        .usecase-card .flow-arrow {
+            color: var(--ms-text-disabled);
+            font-weight: 700;
+        }
+
+        /* Migration options */
+        .migration-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .migration-card {
+            border: 2px solid var(--ms-green);
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+        }
+
+        .migration-card.recommended {
+            border-color: var(--azure-blue);
+            background: var(--ms-blue-100);
+        }
+
+        .migration-card.recommended::after {
+            content: '\63A8\5968';
+            position: absolute;
+            top: -10px;
+            right: 12px;
+            background: var(--azure-blue);
+            color: white;
+            font-size: 11px;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .migration-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .migration-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .migration-card ul {
+            margin-top: 8px;
+            padding-left: 18px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .migration-card li {
+            margin-bottom: 4px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 24px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px 20px;
+            margin-top: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .header { padding: 32px 24px; }
+            .header h1 { font-size: 22px; }
+            .before-after { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .migration-options { grid-template-columns: 1fr; }
+            .section { padding: 20px; }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Header -->
+        <div class="header">
+            <div class="header-meta">
+                <span class="service-badge">Azure Machine Learning</span>
+                <span class="category-accent">AI / ML</span>
+                <span class="badge badge-retirement">Retirement</span>
+                <span class="date-badge">2026-03-31</span>
+            </div>
+            <h1>外部データインポートおよびデータ接続機能の廃止 (2026 年 9 月 30 日)</h1>
+            <p class="header-summary">
+                Azure Machine Learning の外部データインポート機能 (Preview) および外部データ接続機能 (Preview) が 2026 年 9 月 30 日に廃止されます。Amazon S3、Snowflake、Azure SQL Database からのデータインポートが対象です。代替として Azure ML データストアと Azure Data Factory の組み合わせが推奨されます。
+            </p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F4CA;</span> 主要数値</div>
+            <div class="stats-grid">
+                <div class="stat-card red">
+                    <div class="stat-value">2026/9/30</div>
+                    <div class="stat-label">機能廃止日</div>
+                </div>
+                <div class="stat-card yellow">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">廃止対象の外部ソース</div>
+                </div>
+                <div class="stat-card green">
+                    <div class="stat-value">GA</div>
+                    <div class="stat-label">代替 (Datastore) のステータス</div>
+                </div>
+                <div class="stat-card purple">
+                    <div class="stat-value">4+</div>
+                    <div class="stat-label">対応 Azure ストレージ種別</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview / Before-After -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F504;</span> 概要: Before / After 比較</div>
+
+            <p style="font-size: 15px; margin-bottom: 16px; color: var(--ms-text-secondary);">
+                外部データインポート機能は、外部データソースからデータを取得し Azure ML 内にキャッシュする仕組みでした。バックエンドでは ADF パイプラインを使用してデータを Parquet 形式で転送していました。プレビュー段階のまま廃止となるため、GA 済みのデータストアへの移行が必要です。
+            </p>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before: 外部データインポート (Preview)</h4>
+                    <ul>
+                        <li>Preview 機能に依存したパイプライン</li>
+                        <li>S3/Snowflake/SQL DB への直接接続</li>
+                        <li>Workspace Connections による認証</li>
+                        <li>Parquet への自動変換</li>
+                        <li>組み込みスケジュール (Recurrence/Cron)</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After: Datastore + ADF (GA)</h4>
+                    <ul>
+                        <li>GA 済みの安定したデータアクセス基盤</li>
+                        <li>Blob/ADLS Gen2/Files/OneLake 対応</li>
+                        <li>Entra ID / SAS / Key / SP 認証</li>
+                        <li>ソース形式維持 or ADF で変換</li>
+                        <li>ADF トリガー (スケジュール/イベント)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="alert-box-red">
+                <strong>重要:</strong> 2026 年 9 月 30 日以降、外部データインポートおよび外部データ接続機能は利用できなくなります。廃止日までに代替構成への移行を完了してください。
+            </div>
+        </div>
+
+        <!-- Architecture Diagram (Mermaid) -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F3D7;&#xFE0F;</span> アーキテクチャ図: 廃止機能と代替手段</div>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 12px;">
+                従来は Data Connections と Data Import 機能を通じて外部ソースから直接データを取り込んでいましたが、廃止後は Azure Data Factory や Microsoft Fabric で外部データを Azure ストレージに取り込み、データストア経由でアクセスする構成が推奨されます。
+            </p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Retired["廃止対象: 外部データインポート & データ接続 (Preview)"]
+        S3["Amazon S3"]
+        SF["Snowflake"]
+        SQL["Azure SQL Database"]
+        DC["Data Connections\n(外部データ接続)"]
+        DI["Data Import\n(外部データインポート)"]
+        S3 --> DC
+        SF --> DC
+        SQL --> DC
+        DC --> DI
+        DI -->|"ADF パイプライン\n(バックエンド)"| Cache["データキャッシュ\n(Parquet 形式)"]
+    end
+
+    subgraph Alternative["推奨代替手段"]
+        subgraph ETL["データ取り込み層"]
+            ADF2["Azure Data Factory"]
+            Fabric["Microsoft Fabric"]
+            Custom["カスタム ETL\nスクリプト"]
+        end
+        subgraph Storage["Azure ストレージ層"]
+            Blob["Azure Blob Storage"]
+            ADLS["Azure Data Lake\nStorage Gen2"]
+            OneLake["OneLake\n(Microsoft Fabric)"]
+        end
+        subgraph AML["Azure Machine Learning"]
+            DS["データストア\n(Datastore)"]
+            DA["データアセット\n(Data Asset)"]
+            Job["トレーニングジョブ"]
+        end
+        ADF2 --> Blob
+        ADF2 --> ADLS
+        Fabric --> OneLake
+        Custom --> Blob
+        Blob --> DS
+        ADLS --> DS
+        OneLake --> DS
+        DS --> DA
+        DA --> Job
+    end
+
+    Retired -->|"2026年9月30日\n廃止"| Alternative
+
+    style Retired fill:#ffe6e6,stroke:#cc3333
+    style Alternative fill:#e6ffe6,stroke:#339933
+    style ETL fill:#fff3cd,stroke:#cc9900
+    style Storage fill:#e6f0ff,stroke:#3366cc
+    style AML fill:#f0e6ff,stroke:#6633cc
+                </pre>
+            </div>
+        </div>
+
+        <!-- Comparison Table -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F4CB;</span> 廃止機能と代替手段の比較</div>
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>廃止機能 (Data Import)</th>
+                        <th>代替 (Datastore + ADF)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ステータス</strong></td>
+                        <td class="disadvantage">Preview (廃止予定)</td>
+                        <td class="advantage">GA (安定版)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Amazon S3 対応</strong></td>
+                        <td>直接インポート</td>
+                        <td>ADF 経由で転送後 Datastore 接続</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Snowflake 対応</strong></td>
+                        <td>直接インポート</td>
+                        <td>ADF 経由で転送後 Datastore 接続</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Azure SQL DB 対応</strong></td>
+                        <td>直接インポート</td>
+                        <td>ADF 経由で転送後 Datastore 接続</td>
+                    </tr>
+                    <tr>
+                        <td><strong>データ形式</strong></td>
+                        <td>Parquet (自動変換)</td>
+                        <td>ソース形式維持 or ADF で変換</td>
+                    </tr>
+                    <tr>
+                        <td><strong>認証</strong></td>
+                        <td>Workspace Connections</td>
+                        <td class="advantage">Entra ID / SAS / Key / SP</td>
+                    </tr>
+                    <tr>
+                        <td><strong>スケジュール実行</strong></td>
+                        <td>組み込み (Recurrence/Cron)</td>
+                        <td class="advantage">ADF トリガー (スケジュール/イベント)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Retired Features -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F6AB;</span> 廃止対象の機能</div>
+
+            <div class="feature-card danger">
+                <div class="feature-icon">&#x1F4E5;</div>
+                <div class="feature-content">
+                    <h4>外部データインポート (Import Data from External Sources - Preview)</h4>
+                    <p>Amazon S3 からの uri_folder 形式インポート、Snowflake / Azure SQL DB からの mltable 形式インポート、スケジュールベースの定期データインポート、ADF パイプラインを利用したバックエンドデータ転送が廃止対象です。</p>
+                </div>
+            </div>
+
+            <div class="feature-card danger">
+                <div class="feature-icon">&#x1F517;</div>
+                <div class="feature-content">
+                    <h4>外部データ接続 (External Data Connections - Preview)</h4>
+                    <p>Amazon S3、Snowflake、Azure SQL Database への外部接続設定が廃止対象です。これらの接続設定を利用しているワークフローは代替手段への移行が必要です。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x23F3;</span> 廃止タイムライン</div>
+            <div class="timeline">
+                <div class="timeline-item current">
+                    <div class="timeline-date">2026 年 3 月 31 日</div>
+                    <div class="timeline-label">廃止アナウンス (現在)</div>
+                    <div class="timeline-desc">移行計画の策定を開始してください</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">2026 年 4 月 ~ 9 月</div>
+                    <div class="timeline-label">移行期間</div>
+                    <div class="timeline-desc">ADF パイプライン構築、データストア設定、テスト検証を実施</div>
+                </div>
+                <div class="timeline-item danger">
+                    <div class="timeline-date">2026 年 9 月 30 日</div>
+                    <div class="timeline-label">外部データインポート / データ接続の廃止</div>
+                    <div class="timeline-desc">この日以降、対象機能は利用できなくなります</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recommended Alternatives -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F3AF;</span> 推奨される代替手段</div>
+            <div class="migration-options">
+                <div class="migration-card recommended">
+                    <h4>&#x1F4BE; Datastore</h4>
+                    <p>Azure ML データストア</p>
+                    <ul>
+                        <li>GA 済みで安定運用</li>
+                        <li>Blob / ADLS Gen2 / Files / OneLake</li>
+                        <li>Entra ID 認証対応</li>
+                        <li>Python SDK / CLI で管理</li>
+                    </ul>
+                </div>
+                <div class="migration-card">
+                    <h4>&#x1F527; Azure Data Factory</h4>
+                    <p>外部データ転送の自動化</p>
+                    <ul>
+                        <li>S3 / Snowflake / SQL DB コネクタ</li>
+                        <li>スケジュール/イベントトリガー</li>
+                        <li>Azure ストレージへ自動転送</li>
+                        <li>データ変換パイプライン</li>
+                    </ul>
+                </div>
+                <div class="migration-card">
+                    <h4>&#x1F310; Microsoft Fabric</h4>
+                    <p>モダンデータプラットフォーム</p>
+                    <ul>
+                        <li>OneLake 中心のレイクハウス</li>
+                        <li>Azure ML との統合</li>
+                        <li>OneLake データストア接続</li>
+                        <li>エンドツーエンドの分析基盤</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Migration Steps -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F680;</span> 移行手順</div>
+
+            <div class="steps">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>現在の外部データインポート設定の確認</h4>
+                        <p>Azure ML Studio の「Data」セクションで「Data Import」タブを確認し、使用中のデータ接続とインポートスケジュールを洗い出します。</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Azure ストレージの準備</h4>
+                        <p>データの格納先となる Azure Blob Storage または Azure Data Lake Storage Gen2 を準備し、適切な RBAC を設定します。</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>Azure Data Factory によるデータ転送パイプラインの構築</h4>
+                        <p>外部ソース (S3, Snowflake, Azure SQL DB) から Azure ストレージへのコピーパイプラインを作成し、既存スケジュールに対応するトリガーを設定します。</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>データストアの作成</h4>
+                        <p>Azure ML のデータストアを作成し、Azure ストレージへの接続を構成します。Python SDK または Azure CLI で設定可能です。</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h4>データアセットの作成とジョブの更新</h4>
+                        <p>新しいデータストアを参照するデータアセットを作成し、トレーニングジョブの入力設定を更新します。</p>
+                    </div>
+                </div>
+                <div class="step-item">
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <h4>テストと検証</h4>
+                        <p>新しいデータパイプラインとデータストア経由のアクセスが正常に動作することを確認し、2026 年 9 月 30 日までに切り替えを完了します。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Samples -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F4BB;</span> 移行コードサンプル</div>
+
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 12px;">
+                Python SDK を使用したデータストア作成の例です。
+            </p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Python</span>
+                    <span style="color: #888;">Azure ML SDK v2</span>
+                </div>
+                <pre><code class="language-python">from azure.ai.ml.entities import AzureBlobDatastore
+from azure.ai.ml import MLClient
+from azure.identity import DefaultAzureCredential
+
+ml_client = MLClient.from_config(credential=DefaultAzureCredential())
+store = AzureBlobDatastore(
+    name="my_datastore",
+    account_name="mystorageaccount",
+    container_name="mycontainer"
+)
+ml_client.create_or_update(store)</code></pre>
+            </div>
+
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 12px; margin-top: 16px;">
+                Azure CLI を使用したデータストア作成の例です。
+            </p>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Bash</span>
+                    <span style="color: #888;">Azure CLI ml 拡張機能 v2</span>
+                </div>
+                <pre><code class="language-bash">az ml datastore create --file my_blob_datastore.yml</code></pre>
+            </div>
+
+            <div class="highlight-box">
+                <strong>前提条件:</strong> Azure CLI ml 拡張機能 v2 (バージョン 2.37.0 以降) または Python SDK azure-ai-ml v2 (バージョン 1.31.0 以降) が必要です。
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F4A1;</span> ユースケース: 移行パターン</div>
+            <div class="usecase-grid">
+                <div class="usecase-card">
+                    <h4>Amazon S3 データの活用</h4>
+                    <p>S3 バケットのデータを Azure ML のトレーニングジョブで使用しているケース</p>
+                    <div class="flow">
+                        <span class="flow-step">Amazon S3</span>
+                        <span class="flow-arrow">&#x2192;</span>
+                        <span class="flow-step">ADF</span>
+                        <span class="flow-arrow">&#x2192;</span>
+                        <span class="flow-step">Azure Blob Storage</span>
+                        <span class="flow-arrow">&#x2192;</span>
+                        <span class="flow-step">Datastore</span>
+                    </div>
+                </div>
+                <div class="usecase-card">
+                    <h4>Snowflake データの活用</h4>
+                    <p>Snowflake のクエリ結果を ML モデルのトレーニングデータとして利用しているケース</p>
+                    <div class="flow">
+                        <span class="flow-step">Snowflake</span>
+                        <span class="flow-arrow">&#x2192;</span>
+                        <span class="flow-step">ADF コネクタ</span>
+                        <span class="flow-arrow">&#x2192;</span>
+                        <span class="flow-step">Azure Storage</span>
+                        <span class="flow-arrow">&#x2192;</span>
+                        <span class="flow-step">mltable</span>
+                    </div>
+                </div>
+                <div class="usecase-card">
+                    <h4>Azure SQL DB の定期インポート</h4>
+                    <p>Azure SQL Database のデータを定期的にインポートしてモデル再トレーニングを行っているケース</p>
+                    <div class="flow">
+                        <span class="flow-step">Azure SQL DB</span>
+                        <span class="flow-arrow">&#x2192;</span>
+                        <span class="flow-step">ADF トリガー</span>
+                        <span class="flow-arrow">&#x2192;</span>
+                        <span class="flow-step">Azure Storage</span>
+                        <span class="flow-arrow">&#x2192;</span>
+                        <span class="flow-step">Datastore</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x26A0;&#xFE0F;</span> 制約事項・注意点</div>
+
+            <div class="feature-card warning">
+                <div class="feature-icon">&#x1F504;</div>
+                <div class="feature-content">
+                    <h4>中間転送ステップが必要</h4>
+                    <p>外部データインポートが提供していた「直接接続」の利便性が失われ、ADF 経由の中間データ転送ステップが必要になります。</p>
+                </div>
+            </div>
+
+            <div class="feature-card warning">
+                <div class="feature-icon">&#x1F4B0;</div>
+                <div class="feature-content">
+                    <h4>ADF 追加リソースが必要</h4>
+                    <p>Azure Data Factory の追加リソースが必要となり、構成の複雑さが増す可能性があります。</p>
+                </div>
+            </div>
+
+            <div class="feature-card warning">
+                <div class="feature-icon">&#x23F0;</div>
+                <div class="feature-content">
+                    <h4>スケジュールの再構築</h4>
+                    <p>既存のインポートスケジュールを ADF トリガーとして再構築する作業が発生します。</p>
+                </div>
+            </div>
+
+            <div class="feature-card warning">
+                <div class="feature-icon">&#x1F4C4;</div>
+                <div class="feature-content">
+                    <h4>Parquet 変換の明示設定</h4>
+                    <p>外部データインポートが自動的に行っていた Parquet 変換を、ADF パイプライン内で明示的に設定する必要があります。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Datastore Types -->
+        <div class="section">
+            <div class="section-title"><span class="icon">&#x1F4BE;</span> サポートされるデータストアの種類</div>
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>データストア種別</th>
+                        <th>認証方式</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Azure Blob Storage</strong></td>
+                        <td>ID ベース / アカウントキー / SAS</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Azure Data Lake Storage Gen2</strong></td>
+                        <td>ID ベース / サービスプリンシパル</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Azure Files</strong></td>
+                        <td>アカウントキー / SAS</td>
+                    </tr>
+                    <tr>
+                        <td><strong>OneLake (Microsoft Fabric)</strong></td>
+                        <td>ID ベース / サービスプリンシパル</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Azure Machine Learning - 外部データインポートおよびデータ接続機能の廃止</strong></p>
+            <div class="footer-links">
+                <a href="https://azure.microsoft.com/updates?id=557406" target="_blank">公式アップデート情報</a>
+                <a href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-import-data-assets" target="_blank">データインポート (Preview)</a>
+                <a href="https://learn.microsoft.com/en-us/azure/machine-learning/concept-data" target="_blank">データ概念</a>
+                <a href="https://learn.microsoft.com/en-us/azure/machine-learning/how-to-datastore" target="_blank">データストアの使用方法</a>
+            </div>
+            <p style="margin-top: 12px; font-size: 12px; color: var(--ms-text-disabled);">Generated on 2026-03-31 | Azure News Summary</p>
+        </div>
+
+    </div>
+</body>
+</html>

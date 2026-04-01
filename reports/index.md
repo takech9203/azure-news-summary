@@ -5,12 +5,15 @@
 
 ## 2026 年
 
+- [2026-04-01 - Azure Data Box: セキュア消去証明書の自動生成と Azure Files Provisioned v2 対応](2026/2026-04-01-data-box-secure-erasure-files-v2.md)
+- [2026-04-01 - Azure AI Language: 一部機能のリタイア発表](2026/2026-04-01-ai-language-features-retirement.md)
 - [2026-03-31 - Azure DevOps: 2026 年 3 月アップデート](2026/2026-03-31-devops-march-2026-updates.md)
 - [2026-03-31 - Azure Disk Storage: Premium SSD v2 が US Gov Arizona リージョンで一般提供開始](2026/2026-03-31-premium-ssd-v2-us-gov-arizona.md)
 - [2026-03-31 - Azure Storage: ユーザー委任 SAS の Azure Tables, Azure Files, Azure Queues への拡張](2026/2026-03-31-storage-user-delegation-sas.md)
 - [2026-03-31 - VPN Gateway: 手動登録 Azure VPN クライアントのリタイア (Azure Government / 21Vianet)](2026/2026-03-31-vpn-client-manual-registration-retirement.md)
 - [2026-03-31 - Azure Regions: デンマーク初のクラウドリージョン Denmark East が一般提供開始](2026/2026-03-31-azure-denmark-east-region.md)
 - [2026-03-31 - Azure Event Grid: スマートかつセキュアなイベント駆動アーキテクチャのための新機能](2026/2026-03-31-event-grid-new-capabilities.md)
+- [2026-03-31 - Azure Machine Learning: 外部データインポートおよびデータ接続機能の廃止 (2026 年 9 月 30 日)](2026/2026-03-31-ml-external-data-import-retirement.md)
 - [2026-03-30 - Azure Red Hat OpenShift: Indonesia Central リージョンで一般提供開始](2026/2026-03-30-aro-indonesia-central.md)
 - [2026-03-30 - Azure Cosmos DB for PostgreSQL: 2029 年 3 月 31 日での廃止と Azure Database for PostgreSQL Elastic Cluster への移行](2026/2026-03-30-cosmosdb-postgresql-retirement.md)
 - [2026-03-30 - Azure Disk Storage: Premium SSD v2 が South India リージョンで一般提供開始](2026/2026-03-30-premium-ssd-v2-south-india.md)
