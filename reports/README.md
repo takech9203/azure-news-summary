@@ -5,7 +5,11 @@
 
 ## 2026 年
 
+- [2026-04-02 - Azure App Service / Azure Functions: Windows 上の Python サポート廃止予告](2026/2026-04-02-app-service-functions-python-windows-retirement.md)
+- [2026-04-02 - Azure Blob Storage: AzureDnsZone エンドポイント (プレビュー) の廃止予告](2026/2026-04-02-blob-storage-azuredns-endpoints-retirement.md)
 - [2026-04-01 - Azure Data Box: セキュア消去証明書の自動生成と Azure Files Provisioned v2 対応](2026/2026-04-01-data-box-secure-erasure-files-v2.md)
+- [2026-04-01 - Azure App Configuration: Azure Front Door 統合によるクライアントサイド構成配信 (パブリックプレビュー)](2026/2026-04-01-app-configuration-front-door-integration.md)
+- [2026-04-01 - Azure Service Fabric: Windows Server 2019/2022 サポート終了 - Windows Server 2025 へのアップグレードが必要](2026/2026-04-01-service-fabric-windows-server-retirement.md)
 - [2026-04-01 - Azure AI Language: 一部機能のリタイア発表](2026/2026-04-01-ai-language-features-retirement.md)
 - [2026-03-31 - Azure DevOps: 2026 年 3 月アップデート](2026/2026-03-31-devops-march-2026-updates.md)
 - [2026-03-31 - Azure Disk Storage: Premium SSD v2 が US Gov Arizona リージョンで一般提供開始](2026/2026-03-31-premium-ssd-v2-us-gov-arizona.md)

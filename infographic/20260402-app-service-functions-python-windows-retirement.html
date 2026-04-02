@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure App Service / Azure Functions: Windows 上の Python サポート廃止予告</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface-secondary);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--azure-dark-blue) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: 20%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .status-badge {
+            background: var(--ms-red);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .category-badge {
+            background: #0078D4;
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .title-area h1 {
+            font-size: 1.9rem;
+            font-weight: 900;
+            line-height: 1.4;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta span {
+            margin-right: 20px;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border-radius: 10px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--ms-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 1.4rem;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 1rem;
+            line-height: 2;
+            color: var(--ms-text-primary);
+            margin-bottom: 20px;
+        }
+
+        .overview-text strong {
+            color: var(--azure-dark-blue);
+        }
+
+        /* Before/After Comparison */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-card {
+            border-radius: 10px;
+            padding: 24px;
+            border: 2px solid;
+        }
+
+        .comparison-card.before {
+            background: #FEF2F2;
+            border-color: var(--ms-red);
+        }
+
+        .comparison-card.after {
+            background: #F0FFF4;
+            border-color: var(--ms-green);
+        }
+
+        .comparison-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .comparison-card.before h3 {
+            color: var(--ms-red);
+        }
+
+        .comparison-card.after h3 {
+            color: var(--ms-green);
+        }
+
+        .comparison-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .comparison-card ul li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 0.95rem;
+        }
+
+        .comparison-card.before ul li::before {
+            content: '\2716';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .comparison-card.after ul li::before {
+            content: '\2714';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid Diagram */
+        .mermaid-container {
+            background: var(--ms-surface);
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat-card {
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--azure-blue);
+            margin-bottom: 4px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+            margin-top: 16px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--ms-blue-300);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 28px;
+        }
+
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -26px;
+            top: 8px;
+            width: 14px;
+            height: 14px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+            border: 3px solid var(--ms-blue-200);
+        }
+
+        .timeline-item.critical::before {
+            background: var(--ms-red);
+            border-color: #FECACA;
+        }
+
+        .timeline-date {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 4px;
+        }
+
+        .timeline-item.critical .timeline-date {
+            color: var(--ms-red);
+        }
+
+        .timeline-content {
+            font-size: 0.95rem;
+            color: var(--ms-text-primary);
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .feature-card {
+            background: var(--ms-surface-secondary);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 0 8px 8px 0;
+            padding: 20px 24px;
+        }
+
+        .feature-card h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 0.92rem;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Tech Spec Table */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 0.92rem;
+        }
+
+        .tech-table th,
+        .tech-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .tech-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-dark-blue);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .tech-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid #333;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        .code-section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-top: 24px;
+            margin-bottom: 8px;
+        }
+
+        /* Use Case Cards */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase-card h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-weight: 500;
+            color: var(--ms-text-primary);
+            margin-bottom: 10px;
+        }
+
+        .usecase-card ul {
+            padding-left: 20px;
+            color: var(--ms-text-secondary);
+            font-size: 0.92rem;
+        }
+
+        .usecase-card ul li {
+            margin-bottom: 4px;
+        }
+
+        .usecase-card .effect {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: #F0FFF4;
+            border-left: 3px solid var(--ms-green);
+            border-radius: 0 6px 6px 0;
+            color: var(--ms-green);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Warning/Note Boxes */
+        .warning-box {
+            background: #FFF8E1;
+            border-left: 4px solid var(--ms-orange);
+            border-radius: 0 8px 8px 0;
+            padding: 16px 20px;
+            margin: 16px 0;
+            font-size: 0.92rem;
+        }
+
+        .warning-box h4 {
+            color: var(--ms-orange);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .warning-box ul {
+            padding-left: 20px;
+            color: var(--ms-text-secondary);
+        }
+
+        .warning-box ul li {
+            margin-bottom: 4px;
+        }
+
+        /* Related Services */
+        .related-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .related-tag {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 10px;
+            padding: 24px 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .footer h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 0.92rem;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+            color: var(--ms-blue-800);
+        }
+
+        .footer-note {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 0.82rem;
+            color: var(--ms-text-disabled);
+            text-align: center;
+        }
+
+        /* Summary Box */
+        .summary-box {
+            background: linear-gradient(135deg, var(--ms-blue-100) 0%, var(--ms-blue-200) 100%);
+            border-radius: 10px;
+            padding: 24px;
+            margin-top: 16px;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        .summary-box h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 12px;
+        }
+
+        .summary-box ol {
+            padding-left: 20px;
+            color: var(--ms-text-primary);
+            font-size: 0.92rem;
+        }
+
+        .summary-box ol li {
+            margin-bottom: 6px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 1.4rem;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="badge-row">
+                <span class="service-badge">Azure App Service</span>
+                <span class="service-badge">Azure Functions</span>
+                <span class="status-badge">Retirement (廃止予告)</span>
+                <span class="category-badge">Compute</span>
+            </div>
+            <h1>Windows 上の Python サポート廃止予告</h1>
+            <div class="title-meta">
+                <span>リリース日: 2026-04-02</span>
+                <span>廃止日: 2027-03-31</span>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Microsoft は、<strong>Azure App Service on Windows</strong> および <strong>Azure Functions on Windows</strong> における Python サポートを <strong>2027 年 3 月 31 日</strong> をもって廃止することを発表した。この日以降、Windows 上でホストされている Python アプリケーションは実行されなくなる。
+            </p>
+            <p class="overview-text">
+                現在、Azure App Service における Python アプリケーションの実行は Linux が唯一の公式サポート対象 OS となっている。廃止後もアプリケーションの構成およびコンテンツはそのまま保持されるが、アプリ自体は停止する。影響を受けるユーザーは、2027 年 3 月 31 日までに Linux ベースの App Service または Functions への移行を完了する必要がある。
+            </p>
+
+            <!-- Before/After Comparison -->
+            <div class="comparison-grid">
+                <div class="comparison-card before">
+                    <h3>廃止による影響 (Before)</h3>
+                    <ul>
+                        <li>Windows 上の Python アプリケーションが実行停止</li>
+                        <li>アプリケーションの構成とコンテンツは保持されるが、サービスは停止</li>
+                        <li>新規デプロイも Windows 上の Python では受け付けられなくなる</li>
+                    </ul>
+                </div>
+                <div class="comparison-card after">
+                    <h3>移行後の改善 (After)</h3>
+                    <ul>
+                        <li>最新の Python バージョン (Python 3.14 含む) がサポート</li>
+                        <li>Gunicorn、Oryx ビルドシステムなど Linux 向け最適化ランタイム環境</li>
+                        <li>Flask、Django、FastAPI が公式サポート</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title">アーキテクチャ図</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Before["現在の構成 (Windows)"]
+        A1["ユーザーリクエスト"] --> B1["Azure App Service\n(Windows)"]
+        B1 --> C1["Python アプリ\n(Windows ランタイム)"]
+        A2["イベント\n(Timer/Queue/HTTP)"] --> B2["Azure Functions\n(Windows)"]
+        B2 --> C2["Python Function\n(Windows ランタイム)"]
+    end
+
+    subgraph After["移行後の構成 (Linux)"]
+        D1["ユーザーリクエスト"] --> E1["Azure App Service\n(Linux)"]
+        E1 --> F1["Python アプリ\n(Linux コンテナー)\nGunicorn + Oryx"]
+        D2["イベント\n(Timer/Queue/HTTP)"] --> E2["Azure Functions\n(Linux)"]
+        E2 --> F2["Python Function\n(Linux ランタイム)"]
+    end
+
+    Before -.->|"2027年3月31日までに移行"| After
+                </pre>
+            </div>
+            <p style="margin-top: 12px; font-size: 0.9rem; color: var(--ms-text-secondary);">
+                この図は、Windows 上の Python アプリケーションから Linux ベースの環境への移行パスを示している。App Service と Functions の両方について、Linux への移行が必要となる。
+            </p>
+        </div>
+
+        <!-- Timeline Section -->
+        <div class="section">
+            <h2 class="section-title">廃止スケジュール</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-date">2026 年 4 月 2 日</div>
+                    <div class="timeline-content">廃止予告の公式アナウンス</div>
+                </div>
+                <div class="timeline-item critical">
+                    <div class="timeline-date">2027 年 3 月 31 日 - サポート完全終了</div>
+                    <div class="timeline-content">
+                        Windows 上の Python サポートが完全に終了。Python アプリケーション (App Service on Windows) が実行停止。Python Function (Azure Functions on Windows) が実行停止。アプリケーションの構成とコンテンツは保持されるが、実行はされない。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">2027/03/31</div>
+                    <div class="stat-label">サポート終了日</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">Linux</div>
+                    <div class="stat-label">移行先 OS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">Gunicorn</div>
+                    <div class="stat-label">デフォルト Web サーバー</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">Oryx</div>
+                    <div class="stat-label">ビルドシステム</div>
+                </div>
+            </div>
+
+            <table class="tech-table" style="margin-top: 24px;">
+                <tbody>
+                    <tr>
+                        <th>廃止対象</th>
+                        <td>App Service on Windows Python, Functions on Windows Python</td>
+                    </tr>
+                    <tr>
+                        <th>サポート終了日</th>
+                        <td>2027 年 3 月 31 日</td>
+                    </tr>
+                    <tr>
+                        <th>廃止後の動作</th>
+                        <td>アプリ構成・コンテンツは保持されるが、アプリは実行停止</td>
+                    </tr>
+                    <tr>
+                        <th>移行先 OS</th>
+                        <td>Linux</td>
+                    </tr>
+                    <tr>
+                        <th>デフォルト Web サーバー</th>
+                        <td>Gunicorn (App Service)</td>
+                    </tr>
+                    <tr>
+                        <th>ビルドシステム</th>
+                        <td>Oryx (自動依存関係解決)</td>
+                    </tr>
+                    <tr>
+                        <th>サポートフレームワーク</th>
+                        <td>Flask, Django, FastAPI (App Service on Linux)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Migration Options -->
+        <div class="section">
+            <h2 class="section-title">移行先の選択肢</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <h4>1. Azure App Service on Linux</h4>
+                    <p>Linux コンテナー上で Python アプリを実行する公式サポート環境。Gunicorn WSGI HTTP Server がデフォルトの Web サーバーとして提供される。Oryx ビルドシステムによる自動依存関係インストール。Flask、Django、FastAPI を公式サポート。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>2. Azure Functions on Linux</h4>
+                    <p>Python v2 プログラミングモデル (デコレーターベース) を推奨。Flex Consumption プラン、Premium プラン、Dedicated プランが利用可能。Python 3.13 以降では依存関係の分離やランタイムバージョン管理が改善。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>3. カスタムコンテナー</h4>
+                    <p>特殊な OS レベルのパッケージや Python ビルドが必要な場合。カスタム Docker イメージを作成して App Service 上で実行可能。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Samples -->
+        <div class="section">
+            <h2 class="section-title">対応方法</h2>
+
+            <h3 class="code-section-title">App Service 移行手順</h3>
+            <pre><code class="language-bash"># 現在のアプリの OS とランタイムを確認
+az webapp show --resource-group &lt;ResourceGroup&gt; --name &lt;AppName&gt; --query "[siteConfig.windowsFxVersion, kind]"
+
+# Linux App Service プランを作成
+az appservice plan create --name &lt;PlanName&gt; --resource-group &lt;ResourceGroup&gt; --is-linux --sku B1
+
+# Linux 上に Python Web アプリを作成
+az webapp create --resource-group &lt;ResourceGroup&gt; --plan &lt;PlanName&gt; --name &lt;NewAppName&gt; --runtime "PYTHON|3.12"
+
+# 既存アプリの設定を取得
+az webapp config appsettings list --resource-group &lt;ResourceGroup&gt; --name &lt;OldAppName&gt; --output json &gt; appsettings.json
+
+# 新しいアプリに設定を適用
+az webapp config appsettings set --resource-group &lt;ResourceGroup&gt; --name &lt;NewAppName&gt; --settings @appsettings.json
+
+# デプロイ
+az webapp up --resource-group &lt;ResourceGroup&gt; --name &lt;NewAppName&gt; --runtime "PYTHON|3.12"</code></pre>
+
+            <h3 class="code-section-title">Functions 移行手順</h3>
+            <pre><code class="language-bash"># Linux 上に Function App を作成
+az functionapp create \
+  --resource-group &lt;ResourceGroup&gt; \
+  --consumption-plan-location &lt;Region&gt; \
+  --runtime python \
+  --runtime-version 3.12 \
+  --functions-version 4 \
+  --name &lt;NewFunctionAppName&gt; \
+  --storage-account &lt;StorageAccount&gt; \
+  --os-type Linux</code></pre>
+
+            <h3 class="code-section-title">Azure Portal での手順</h3>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <h4>Portal 操作手順</h4>
+                    <p>1. Azure Portal で新しい App Service リソースを作成し、OS として <strong>Linux</strong> を選択<br>
+                    2. ランタイムスタックで <strong>Python</strong> および希望するバージョンを選択<br>
+                    3. 既存アプリの環境変数とアプリケーション設定を新しいリソースにコピー<br>
+                    4. デプロイセンターで継続的デプロイを設定</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Migration Notes -->
+        <div class="section">
+            <h2 class="section-title">移行時の注意点</h2>
+
+            <div class="warning-box">
+                <h4>技術面</h4>
+                <ul>
+                    <li>Windows と Linux でファイルパスの区切り文字が異なる (バックスラッシュ vs スラッシュ)</li>
+                    <li>Windows 固有の OS コマンドやパスに依存しているコードの修正が必要</li>
+                    <li>Linux では依存関係ファイル (requirements.txt, pyproject.toml, setup.py) がプロジェクトルートに配置されている必要がある</li>
+                    <li>Linux App Service ではアプリケーションは Docker コンテナー内で実行される</li>
+                    <li>デプロイ時のビルド自動化により、requirements.txt から依存関係が自動インストールされる</li>
+                </ul>
+            </div>
+
+            <div class="warning-box">
+                <h4>運用面</h4>
+                <ul>
+                    <li>カスタムドメインや SSL 証明書の再設定が必要になる場合がある</li>
+                    <li>アプリケーション設定 (環境変数) の移行漏れに注意する</li>
+                    <li>デプロイスロットの構成も再設定が必要</li>
+                    <li>Linux App Service では SSH によるコンテナーへの直接接続が可能</li>
+                </ul>
+            </div>
+
+            <div class="warning-box" style="background: #FFF0F0; border-left-color: var(--ms-red);">
+                <h4 style="color: var(--ms-red);">制約事項</h4>
+                <ul>
+                    <li>Linux App Service の Python はカスタム Windows コンテナーイメージをサポートしない</li>
+                    <li>ビルド自動化が有効な場合、Python アプリケーションのコンテンツは <code>/tmp/&lt;uid&gt;</code> にデプロイされ、<code>/home/site/wwwroot</code> には配置されない</li>
+                    <li>PRE_BUILD_COMMAND および POST_BUILD_COMMAND ではプロジェクトルートからの相対パスを使用する必要がある</li>
+                    <li>Linux Consumption プランは 2028 年 9 月 30 日以降に廃止予定であり、Flex Consumption プランへの移行が推奨される</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title">ユースケース</h2>
+
+            <div class="usecase-card">
+                <h4>ユースケース 1: Django Web アプリケーションの移行</h4>
+                <p class="scenario">Windows App Service 上で Django アプリケーションを運用しており、Linux への移行が必要</p>
+                <ul>
+                    <li>requirements.txt をプロジェクトルートに配置する</li>
+                    <li>wsgi.py が適切に構成されていることを確認する (Gunicorn が自動検出する)</li>
+                    <li>静的ファイルの配信には WhiteNoise パッケージの使用を推奨</li>
+                    <li>データベース接続文字列などの環境変数を新しい Linux App Service に移行する</li>
+                </ul>
+                <div class="effect">Linux 上で最新の Python バージョンと最適化されたランタイム環境を利用可能</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>ユースケース 2: Azure Functions Python アプリの移行</h4>
+                <p class="scenario">Windows 上の Azure Functions で Python 関数を実行しており、Linux への移行が必要</p>
+                <ul>
+                    <li>Python v2 プログラミングモデル (デコレーターベース) への移行を検討する</li>
+                    <li>Linux ベースの Function App を新規作成し、コードをデプロイする</li>
+                    <li>環境変数とアプリケーション設定を移行する</li>
+                    <li>Flex Consumption プランの採用を検討する (Linux Consumption プランは将来廃止予定のため)</li>
+                </ul>
+                <div class="effect">Python 3.13 以降の依存関係分離やランタイムバージョン管理などの最新機能が利用可能</div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="section">
+            <h2 class="section-title">まとめ</h2>
+            <p class="overview-text">
+                Azure App Service on Windows および Azure Functions on Windows における Python サポートは、<strong>2027 年 3 月 31 日</strong> をもって廃止される。廃止後、Windows 上の Python アプリケーションは実行停止となるが、構成とコンテンツは保持される。
+            </p>
+            <div class="summary-box">
+                <h4>推奨される次のアクション</h4>
+                <ol>
+                    <li>現在 Windows 上で実行されている Python アプリケーションおよび Functions を特定する</li>
+                    <li>Linux ベースの App Service または Functions への移行計画を策定する</li>
+                    <li>アプリケーションコードの Windows 依存部分 (ファイルパス、OS コマンドなど) を修正する</li>
+                    <li>環境変数、カスタムドメイン、SSL 証明書などの構成を移行する</li>
+                    <li><strong>2027 年 3 月 31 日までに移行を完了させる</strong></li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="related-tags">
+                <span class="related-tag">Azure App Service on Linux</span>
+                <span class="related-tag">Azure Functions on Linux</span>
+                <span class="related-tag">Azure Container Apps</span>
+                <span class="related-tag">Flex Consumption プラン</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=558027" target="_blank">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/azure/app-service/configure-language-python" target="_blank">Azure App Service で Linux Python アプリを構成する - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-functions/functions-reference-python" target="_blank">Azure Functions Python 開発者リファレンス - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/azure/app-service/quickstart-python" target="_blank">Azure App Service Python クイックスタート - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-functions/functions-deployment-technologies" target="_blank">Azure Functions デプロイオプション - Microsoft Learn</a></li>
+            </ul>
+            <div class="footer-note">
+                Generated on 2026-04-02 | Azure News Summary
+            </div>
+        </div>
+
+    </div>
+
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
