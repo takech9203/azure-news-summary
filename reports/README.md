@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-04-06 - Azure Network Watcher: ルール影響分析 (Rule Impact Analysis)](2026/2026-04-06-network-watcher-rule-impact-analysis.md)
+- [2026-04-06 - Azure Service Bus: Network Security Perimeter の一般提供開始](2026/2026-04-06-service-bus-network-security-perimeter.md)
 - [2026-04-02 - Azure App Service / Azure Functions: Windows 上の Python サポート廃止予告](2026/2026-04-02-app-service-functions-python-windows-retirement.md)
 - [2026-04-02 - Azure Blob Storage: AzureDnsZone エンドポイント (プレビュー) の廃止予告](2026/2026-04-02-blob-storage-azuredns-endpoints-retirement.md)
 - [2026-04-01 - Azure Data Box: セキュア消去証明書の自動生成と Azure Files Provisioned v2 対応](2026/2026-04-01-data-box-secure-erasure-files-v2.md)

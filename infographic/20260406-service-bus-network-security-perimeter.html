@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Service Bus: Network Security Perimeter の一般提供開始</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface-secondary);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--azure-dark-blue) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: 20%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .category-badge {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .title-area h1 {
+            font-size: 1.9rem;
+            font-weight: 900;
+            line-height: 1.4;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta span {
+            margin-right: 20px;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border-radius: 10px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--ms-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 1.4rem;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 1rem;
+            line-height: 2;
+            color: var(--ms-text-primary);
+            margin-bottom: 20px;
+        }
+
+        .overview-text strong {
+            color: var(--azure-dark-blue);
+        }
+
+        /* Before/After Comparison */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-card {
+            border-radius: 10px;
+            padding: 24px;
+            border: 2px solid;
+        }
+
+        .comparison-card.before {
+            background: #FEF2F2;
+            border-color: var(--ms-red);
+        }
+
+        .comparison-card.after {
+            background: #F0FFF4;
+            border-color: var(--ms-green);
+        }
+
+        .comparison-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .comparison-card.before h3 {
+            color: var(--ms-red);
+        }
+
+        .comparison-card.after h3 {
+            color: var(--ms-green);
+        }
+
+        .comparison-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .comparison-card ul li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 0.95rem;
+        }
+
+        .comparison-card.before ul li::before {
+            content: '\2716';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .comparison-card.after ul li::before {
+            content: '\2714';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid Diagram */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat-card {
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--azure-blue);
+            margin-bottom: 4px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .feature-card {
+            background: var(--ms-surface-secondary);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 0 8px 8px 0;
+            padding: 20px 24px;
+        }
+
+        .feature-card h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 0.92rem;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Tech Spec Table */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 0.92rem;
+        }
+
+        .tech-table th,
+        .tech-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .tech-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-dark-blue);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .tech-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid #333;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        .code-section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-top: 24px;
+            margin-bottom: 8px;
+        }
+
+        /* Use Case Cards */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase-card h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-weight: 500;
+            color: var(--ms-text-primary);
+            margin-bottom: 10px;
+        }
+
+        .usecase-card ul {
+            padding-left: 20px;
+            color: var(--ms-text-secondary);
+            font-size: 0.92rem;
+        }
+
+        .usecase-card ul li {
+            margin-bottom: 4px;
+        }
+
+        .usecase-card .effect {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: #F0FFF4;
+            border-left: 3px solid var(--ms-green);
+            border-radius: 0 6px 6px 0;
+            color: var(--ms-green);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Warning/Note Boxes */
+        .warning-box {
+            background: #FFF8E1;
+            border-left: 4px solid var(--ms-orange);
+            border-radius: 0 8px 8px 0;
+            padding: 16px 20px;
+            margin: 16px 0;
+            font-size: 0.92rem;
+        }
+
+        .warning-box h4 {
+            color: var(--ms-orange);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .warning-box ul {
+            padding-left: 20px;
+            color: var(--ms-text-secondary);
+        }
+
+        .warning-box ul li {
+            margin-bottom: 4px;
+        }
+
+        /* Related Services */
+        .related-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .related-tag {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 10px;
+            padding: 24px 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .footer h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 0.92rem;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+            color: var(--ms-blue-800);
+        }
+
+        .footer-note {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 0.82rem;
+            color: var(--ms-text-disabled);
+            text-align: center;
+        }
+
+        /* Summary Box */
+        .summary-box {
+            background: linear-gradient(135deg, var(--ms-blue-100) 0%, var(--ms-blue-200) 100%);
+            border-radius: 10px;
+            padding: 24px;
+            margin-top: 16px;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        .summary-box h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 12px;
+        }
+
+        .summary-box ol {
+            padding-left: 20px;
+            color: var(--ms-text-primary);
+            font-size: 0.92rem;
+        }
+
+        .summary-box ol li {
+            margin-bottom: 6px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 1.4rem;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="badge-row">
+                <span class="service-badge">Azure Service Bus</span>
+                <span class="badge-ga">GA (一般提供)</span>
+                <span class="category-badge">Security</span>
+                <span class="category-badge">Integration</span>
+            </div>
+            <h1>Network Security Perimeter の一般提供開始</h1>
+            <div class="title-meta">
+                <span>リリース日: 2026-04-06</span>
+                <span>機能: Network Security Perimeter (NSP) サポート</span>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Service Bus における <strong>Network Security Perimeter (NSP)</strong> のサポートが一般提供 (GA) となった。Network Security Perimeter は、Azure PaaS リソースの周囲に<strong>論理的なネットワーク境界</strong>を作成し、不正なパブリックアクセスをブロックする機能である。
+            </p>
+            <p class="overview-text">
+                Service Bus 名前空間を NSP に関連付けることで、同一ペリメーター内の PaaS リソース間のみに通信が制限される。外部との通信が必要な場合は、明示的なアクセスルールを設定することで許可できる。ペリメーター内通信は<strong>デフォルトで許可</strong>、外部アクセスは<strong>デフォルトで拒否</strong>される。
+            </p>
+
+            <!-- Before/After Comparison -->
+            <div class="comparison-grid">
+                <div class="comparison-card before">
+                    <h3>Before (従来)</h3>
+                    <ul>
+                        <li>IP ファイアウォール、VNet エンドポイント、プライベートエンドポイントなど個別機能に依存</li>
+                        <li>複数 PaaS 間の一元的セキュリティ管理なし</li>
+                        <li>Data Exfiltration リスクの統合管理困難</li>
+                    </ul>
+                </div>
+                <div class="comparison-card after">
+                    <h3>After (NSP 導入後)</h3>
+                    <ul>
+                        <li>論理的なネットワーク境界で複数 PaaS を統合保護</li>
+                        <li>ペリメーター内通信はデフォルト許可、外部はデフォルト拒否</li>
+                        <li>アクセスログによる監査・コンプライアンス対応</li>
+                        <li>Portal / PowerShell / CLI での一元管理</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title">アーキテクチャ図</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Internet["インターネット"]
+        ExtClient["外部クライアント"]
+    end
+
+    subgraph NSP["Network Security Perimeter"]
+        subgraph Profile["NSP プロファイル"]
+            InboundRules["受信アクセスルール<br/>(IP / サブスクリプション)"]
+            OutboundRules["送信アクセスルール<br/>(FQDN)"]
+        end
+
+        SB["Azure Service Bus<br/>名前空間"]
+        KV["Azure Key Vault<br/>(CMK 用)"]
+        Storage["Azure Storage"]
+
+        SB <-->|"ペリメーター内通信<br/>(デフォルト許可)"| KV
+        SB <-->|"ペリメーター内通信<br/>(デフォルト許可)"| Storage
+    end
+
+    subgraph VNet["仮想ネットワーク"]
+        PE["プライベート<br/>エンドポイント"]
+        VM["VM / アプリ"]
+    end
+
+    ExtClient -->|"パブリックアクセス<br/>(アクセスルールで制御)"| InboundRules
+    InboundRules --> SB
+    VM --> PE
+    PE -->|"プライベートリンク<br/>(NSP ルール対象外)"| SB
+
+    DiagLogs["診断ログ<br/>(NSPAccessLogs)"]
+    NSP -.-> DiagLogs
+                </pre>
+            </div>
+            <p style="margin-top: 12px; font-size: 0.9rem; color: var(--ms-text-secondary);">
+                Network Security Perimeter は Service Bus 名前空間を含む PaaS リソースの周囲に論理境界を形成する。ペリメーター内のリソース間通信はデフォルトで許可され、外部からのパブリックアクセスはアクセスルールによって制御される。プライベートエンドポイント経由のトラフィックは NSP ルールの対象外として常に許可される。
+            </p>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title">主要機能</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <h4>1. ペリメーター内リソース間通信</h4>
+                    <p>同一 NSP 内に関連付けられた PaaS リソース間の通信がデフォルトで許可される。Service Bus と Azure Key Vault 間の CMK 通信など、PaaS 間連携をセキュアに実現。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>2. パブリックアクセスの明示的制御</h4>
+                    <p>Enforced モードではペリメーター外からのパブリックトラフィックがデフォルトで拒否される。インバウンドルール (IP ベース / サブスクリプションベース) およびアウトバウンドルール (FQDN ベース) で例外を設定可能。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>3. アクセスモード (Transition / Enforced)</h4>
+                    <p>Transition モード (旧 Learning モード) で既存のアクセスパターンを分析し、準備が整ったら Enforced モードに移行。段階的な導入が可能。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>4. 診断ログ (NSPAccessLogs)</h4>
+                    <p>NSPAccessLogs テーブルを通じてアクセスログを収集可能。インバウンド/アウトバウンドの許可・拒否の各カテゴリでログを取得。Log Analytics、Azure Storage、Event Hubs へのログ送信に対応。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>5. Service Bus 固有シナリオ対応</h4>
+                    <p>カスタマーマネージドキー (CMK) のための Azure Key Vault との通信をサポート。Key Vault を同一ペリメーター内に配置することで、暗号化キーへのセキュアなアクセスを実現。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">100</div>
+                    <div class="stat-label">サブスクリプションあたりペリメーター上限</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1,000</div>
+                    <div class="stat-label">ペリメーターあたり PaaS リソース上限</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2 モード</div>
+                    <div class="stat-label">Transition / Enforced</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">44 文字</div>
+                    <div class="stat-label">リソース名の長さ制限</div>
+                </div>
+            </div>
+
+            <table class="tech-table" style="margin-top: 24px;">
+                <tbody>
+                    <tr>
+                        <th>リソースタイプ</th>
+                        <td>Microsoft.ServiceBus/namespaces</td>
+                    </tr>
+                    <tr>
+                        <th>アクセスモード</th>
+                        <td>Transition (旧 Learning) / Enforced</td>
+                    </tr>
+                    <tr>
+                        <th>インバウンドルール</th>
+                        <td>IP ベース、サブスクリプションベース</td>
+                    </tr>
+                    <tr>
+                        <th>アウトバウンドルール</th>
+                        <td>FQDN ベース</td>
+                    </tr>
+                    <tr>
+                        <th>ペリメーターあたり上限</th>
+                        <td>サブスクリプションあたり 100</td>
+                    </tr>
+                    <tr>
+                        <th>PaaS リソース関連付け上限</th>
+                        <td>ペリメーターあたり 1,000</td>
+                    </tr>
+                    <tr>
+                        <th>プライベートエンドポイント</th>
+                        <td>NSP ルール対象外 (常に許可)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Code Examples -->
+        <div class="section">
+            <h2 class="section-title">設定方法 (Azure CLI)</h2>
+
+            <h3 class="code-section-title">Network Security Perimeter の作成と関連付け</h3>
+            <pre><code class="language-bash"># Network Security Perimeter の作成
+az network perimeter create \
+  --name myNSP \
+  --resource-group myResourceGroup \
+  --location japaneast
+
+# プロファイルの作成
+az network perimeter profile create \
+  --perimeter-name myNSP \
+  --resource-group myResourceGroup \
+  --name myProfile
+
+# Service Bus 名前空間をペリメーターに関連付け
+az network perimeter association create \
+  --perimeter-name myNSP \
+  --resource-group myResourceGroup \
+  --name myAssociation \
+  --access-mode Transition \
+  --profile myProfile \
+  --private-link-resource "/subscriptions/{subscription-id}/resourceGroups/{rg}/providers/Microsoft.ServiceBus/namespaces/{namespace-name}"</code></pre>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title">ユースケース</h2>
+
+            <div class="usecase-card">
+                <h4>ユースケース 1: メッセージングシステムのデータ漏洩防止</h4>
+                <p class="scenario">金融機関で Service Bus を使用したメッセージングシステムを運用しており、機密データの外部漏洩を防止する必要がある。</p>
+                <ul>
+                    <li>Service Bus + Key Vault (暗号化キー管理) + Storage (メッセージアーカイブ) をペリメーターで保護</li>
+                    <li>ペリメーター内の PaaS リソース間通信はデフォルトで許可</li>
+                    <li>外部への不正なデータ送信がデフォルトでブロック</li>
+                    <li>診断ログにより全アクセス試行を監査可能</li>
+                </ul>
+                <div class="effect">Service Bus と Key Vault がペリメーター内で安全に通信でき、データ漏洩リスクを大幅に軽減</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>ユースケース 2: 段階的なセキュリティ強化</h4>
+                <p class="scenario">既存の Service Bus 環境に対して、サービスを停止させることなく段階的に NSP を導入したい場合。</p>
+                <ul>
+                    <li>まず Transition モードで関連付け (既存トラフィックへの影響なし)</li>
+                    <li>診断ログを有効化してアクセスパターンを分析</li>
+                    <li>必要なアクセスルールを作成</li>
+                    <li>準備が整ったら Enforced モードへ移行</li>
+                </ul>
+                <div class="effect">Transition モードでアクセスパターンを把握し、サービス中断リスクを最小化して移行可能</div>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2 class="section-title">制約事項・注意点</h2>
+
+            <div class="warning-box" style="background: #FFF0F0; border-left-color: var(--ms-red);">
+                <h4 style="color: var(--ms-red);">制約事項</h4>
+                <ul>
+                    <li><strong>Geo-Replication 非対応</strong>: Service Bus の Geo-Replication 機能は現時点で NSP に対応していない</li>
+                    <li><strong>プライベートエンドポイントは NSP ルール対象外</strong>: プライベートエンドポイント経由のトラフィックは NSP アクセスルールでは制御されない</li>
+                    <li><strong>サービスエンドポイント非対応</strong>: サービスエンドポイント経由のトラフィックは NSP ではサポートされない。IaaS - PaaS 間通信にはプライベートエンドポイントの使用を推奨</li>
+                </ul>
+            </div>
+
+            <div class="warning-box">
+                <h4>注意事項</h4>
+                <ul>
+                    <li><strong>SAS トークン認証の制限</strong>: ペリメーター内通信およびサブスクリプションベースのインバウンドルールでは SAS トークン認証がサポートされない。Microsoft Entra ID など別の認証方法を使用する必要がある</li>
+                    <li><strong>リソース名の長さ制限</strong>: NSP リソース関連付けの名前は最大 80 文字のため、リソース名は 44 文字以内に制限される</li>
+                    <li><strong>ログ送信先の制約</strong>: 診断ログの送信先 (Log Analytics、Storage、Event Hubs) は同一ペリメーター内に存在する必要がある</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="related-tags">
+                <span class="related-tag">Azure Private Link</span>
+                <span class="related-tag">Azure Key Vault</span>
+                <span class="related-tag">Azure Event Hubs</span>
+                <span class="related-tag">Azure Storage</span>
+                <span class="related-tag">Azure Monitor</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=559899" target="_blank">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/azure/service-bus-messaging/network-security-perimeter" target="_blank">Microsoft Learn - Service Bus の Network Security Perimeter</a></li>
+                <li><a href="https://learn.microsoft.com/azure/private-link/network-security-perimeter-concepts" target="_blank">Microsoft Learn - Network Security Perimeter の概要</a></li>
+            </ul>
+            <div class="footer-note">
+                Generated on 2026-04-06 | Azure News Summary
+            </div>
+        </div>
+
+    </div>
+
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
