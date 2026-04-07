@@ -5,6 +5,9 @@
 
 ## 2026 年
 
+- [2026-04-07 - Azure Kubernetes Service (AKS): HTTP プロキシの無効化](2026/2026-04-07-aks-disable-http-proxy.md)
+- [2026-04-07 - Azure Functions: MCP リソーストリガーの一般提供開始](2026/2026-04-07-azure-functions-mcp-resource-triggers.md)
+- [2026-04-07 - Azure Kubernetes Service (AKS): Pod CIDR Expansion (Pod CIDR 拡張)](2026/2026-04-07-aks-pod-cidr-expansion.md)
 - [2026-04-06 - Azure Network Watcher: ルール影響分析 (Rule Impact Analysis)](2026/2026-04-06-network-watcher-rule-impact-analysis.md)
 - [2026-04-06 - Azure Service Bus: Network Security Perimeter の一般提供開始](2026/2026-04-06-service-bus-network-security-perimeter.md)
 - [2026-04-02 - Azure App Service / Azure Functions: Windows 上の Python サポート廃止予告](2026/2026-04-02-app-service-functions-python-windows-retirement.md)
