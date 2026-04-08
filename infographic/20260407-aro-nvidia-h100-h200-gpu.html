@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Red Hat OpenShift: NVIDIA H100 / H200 GPU サポートの一般提供開始</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface-secondary);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--azure-dark-blue) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: 20%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .category-badge {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .title-area h1 {
+            font-size: 1.9rem;
+            font-weight: 900;
+            line-height: 1.4;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta span {
+            margin-right: 20px;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border-radius: 10px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--ms-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 1.4rem;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 1rem;
+            line-height: 2;
+            color: var(--ms-text-primary);
+            margin-bottom: 20px;
+        }
+
+        .overview-text strong {
+            color: var(--azure-dark-blue);
+        }
+
+        /* Before/After Comparison */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-card {
+            border-radius: 10px;
+            padding: 24px;
+            border: 2px solid;
+        }
+
+        .comparison-card.before {
+            background: #FEF2F2;
+            border-color: var(--ms-red);
+        }
+
+        .comparison-card.after {
+            background: #F0FFF4;
+            border-color: var(--ms-green);
+        }
+
+        .comparison-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .comparison-card.before h3 {
+            color: var(--ms-red);
+        }
+
+        .comparison-card.after h3 {
+            color: var(--ms-green);
+        }
+
+        .comparison-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .comparison-card ul li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 0.95rem;
+        }
+
+        .comparison-card.before ul li::before {
+            content: '\2716';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .comparison-card.after ul li::before {
+            content: '\2714';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid Diagram */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat-card {
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--azure-blue);
+            margin-bottom: 4px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .feature-card {
+            background: var(--ms-surface-secondary);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 0 8px 8px 0;
+            padding: 20px 24px;
+        }
+
+        .feature-card h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 0.92rem;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Tech Spec Table */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 0.92rem;
+        }
+
+        .tech-table th,
+        .tech-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .tech-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-dark-blue);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .tech-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid #333;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        .code-section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-top: 24px;
+            margin-bottom: 8px;
+        }
+
+        /* Use Case Cards */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase-card h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-weight: 500;
+            color: var(--ms-text-primary);
+            margin-bottom: 10px;
+        }
+
+        .usecase-card p {
+            font-size: 0.92rem;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        .usecase-card .effect {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: #F0FFF4;
+            border-left: 3px solid var(--ms-green);
+            border-radius: 0 6px 6px 0;
+            color: var(--ms-green);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Warning/Note Boxes */
+        .warning-box {
+            background: #FFF8E1;
+            border-left: 4px solid var(--ms-orange);
+            border-radius: 0 8px 8px 0;
+            padding: 16px 20px;
+            margin: 16px 0;
+            font-size: 0.92rem;
+        }
+
+        .warning-box h4 {
+            color: var(--ms-orange);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .warning-box ul {
+            padding-left: 20px;
+            color: var(--ms-text-secondary);
+        }
+
+        .warning-box ul li {
+            margin-bottom: 4px;
+        }
+
+        /* Related Services */
+        .related-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .related-tag {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 10px;
+            padding: 24px 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .footer h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 0.92rem;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+            color: var(--ms-blue-800);
+        }
+
+        .footer-note {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 0.82rem;
+            color: var(--ms-text-disabled);
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 1.4rem;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="badge-row">
+                <span class="service-badge">Azure Red Hat OpenShift</span>
+                <span class="badge-ga">GA (一般提供)</span>
+                <span class="category-badge">AI / ML</span>
+                <span class="category-badge">HPC</span>
+                <span class="category-badge">GPU</span>
+            </div>
+            <h1>NVIDIA H100 / H200 GPU サポートの一般提供開始</h1>
+            <div class="title-meta">
+                <span>リリース日: 2026-04-07</span>
+                <span>サービス: Azure Red Hat OpenShift (ARO)</span>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Red Hat OpenShift (ARO) が、<strong>NVIDIA H100 および H200 GPU</strong> を搭載した Azure VM SKU のサポートを GA 開始。フルマネージドの OpenShift サービス上で大規模な <strong>AI/ML および HPC ワークロード</strong>を実行可能に。
+            </p>
+            <p class="overview-text">
+                ARO はこれまで T4、V100、A100 をサポートしていたが、最新の <strong>Hopper アーキテクチャ (H100)</strong> と後継 <strong>H200</strong> が追加された。H100 は A100 比で AI トレーニング/推論のパフォーマンスが大幅向上。H200 は HBM3e メモリで LLM 推論に最適化。H100/H200 は「<strong>Day-2</strong>」オペレーションとしてのみサポートされ、ARO 4.19 以降が必要。クラスター作成後に MachineSet を追加する形で利用する。
+            </p>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">8x H100</div>
+                    <div class="stat-label">80GB HBM3 / ノード (計 640GB)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">8x H200</div>
+                    <div class="stat-label">141GB HBM3e / ノード (計 1128GB)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">400 Gb/s</div>
+                    <div class="stat-label">InfiniBand NDR 接続</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">96 vCPU</div>
+                    <div class="stat-label">ノードあたりの vCPU 数</div>
+                </div>
+            </div>
+
+            <!-- Before/After Comparison -->
+            <div class="comparison-grid">
+                <div class="comparison-card before">
+                    <h3>Before (従来)</h3>
+                    <ul>
+                        <li>最新 Hopper アーキテクチャ GPU が利用できなかった</li>
+                        <li>A100 では GPU メモリやスループットが不足するケースが増加</li>
+                        <li>最新 GPU には ARO 以外の環境を選択する必要があった</li>
+                    </ul>
+                </div>
+                <div class="comparison-card after">
+                    <h3>After (アップデート後)</h3>
+                    <ul>
+                        <li>H100 (80GB HBM3) / H200 (141GB HBM3e) が ARO ワーカーノードとして利用可能</li>
+                        <li>OpenShift の統一運用管理で最先端 GPU を活用</li>
+                        <li>NVIDIA GPU Operator と NFD で自動 GPU 検出・ドライバ管理</li>
+                        <li>InfiniBand 対応で分散トレーニング実現</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title">アーキテクチャ図</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Azure["Azure Cloud"]
+        subgraph AROCluster["Azure Red Hat OpenShift クラスター (v4.19+)"]
+            CP["Control Plane Nodes<br/>Standard_D8s_v5 x3"]
+
+            subgraph Workers["Worker Nodes"]
+                GW["General Purpose Workers<br/>Standard_D4s_v5"]
+                subgraph GPUNodes["GPU Worker Nodes (Day-2)"]
+                    H100["ND96isr_H100_v5<br/>96 vCPU / 1900 GiB RAM<br/>8x NVIDIA H100 (80GB HBM3)<br/>InfiniBand 400 Gb/s"]
+                    H200["ND96isr_H200_v5<br/>96 vCPU / 1850 GiB RAM<br/>8x NVIDIA H200 (141GB HBM3e)<br/>InfiniBand 400 Gb/s"]
+                end
+            end
+
+            subgraph Operators["OpenShift Operators"]
+                NFD["Node Feature Discovery<br/>GPU ノード自動検出"]
+                NGPU["NVIDIA GPU Operator<br/>ドライバ / ランタイム管理"]
+            end
+        end
+
+        VNET["Azure Virtual Network<br/>Master Subnet + Worker Subnet"]
+        QUOTA["GPU Quota<br/>事前申請が必要"]
+    end
+
+    subgraph Workloads["AI/ML ワークロード"]
+        TRAIN["分散トレーニング<br/>LLM / Foundation Model"]
+        INFER["推論サービング<br/>vLLM / TGI"]
+        HPC["HPC ワークロード<br/>科学技術計算"]
+    end
+
+    CP --> VNET
+    Workers --> VNET
+    NFD -->|"GPU 検出・ラベリング"| GPUNodes
+    NGPU -->|"ドライバ・コンテナランタイム"| GPUNodes
+    Workloads -->|"nodeSelector:<br/>nvidia.com/gpu.present=true"| GPUNodes
+
+    style H100 fill:#76b900,color:#fff
+    style H200 fill:#76b900,color:#fff
+    style NFD fill:#ee0000,color:#fff
+    style NGPU fill:#76b900,color:#fff
+                </pre>
+            </div>
+            <p style="margin-top: 12px; font-size: 0.9rem; color: var(--ms-text-secondary);">
+                ARO クラスター上で GPU ワーカーノード (H100/H200) を Day-2 オペレーションとして追加し、NVIDIA GPU Operator と Node Feature Discovery によって GPU リソースを自動管理する構成。AI/ML および HPC ワークロードは nodeSelector を使用して GPU ノードにスケジューリングされる。
+            </p>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title">主要機能</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <h4>1. NVIDIA H100 GPU サポート</h4>
+                    <p>96 vCPU、1900 GiB RAM、8 基の NVIDIA H100 Tensor Core GPU (各 80 GB HBM3)。400 Gb/s InfiniBand 接続によるマルチノード分散トレーニング対応。FP8 Transformer Engine による AI トレーニング / 推論の高速化。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>2. NVIDIA H200 GPU サポート</h4>
+                    <p>96 vCPU、1850 GiB RAM、8 基の NVIDIA H200 Tensor Core GPU (各 141 GB HBM3e)。H100 比で約 1.8 倍の GPU メモリ容量により、大規模モデルの推論パフォーマンスが向上。400 Gb/s InfiniBand 接続。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>3. Day-2 MachineSet スケーリング</h4>
+                    <p>クラスター作成後に GPU ワーカーノードを MachineSet として追加する運用モデル。GPU ノード数の増減を MachineSet のレプリカ数で制御可能。GPU ワークロードの需要に応じた柔軟なスケーリング。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>4. NVIDIA GPU Operator / NFD</h4>
+                    <p>Node Feature Discovery Operator が GPU ハードウェアを自動検出しノードにラベルを付与。NVIDIA GPU Operator がドライバ、コンテナランタイム、デバイスプラグイン、モニタリングツールを自動デプロイ。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2 class="section-title">技術仕様 (比較表)</h2>
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>H100 (ND96isr_H100_v5)</th>
+                        <th>H200 (ND96isr_H200_v5)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <th>vCPU</th>
+                        <td>96</td>
+                        <td>96</td>
+                    </tr>
+                    <tr>
+                        <th>メモリ</th>
+                        <td>1900 GiB</td>
+                        <td>1850 GiB</td>
+                    </tr>
+                    <tr>
+                        <th>GPU</th>
+                        <td>8x H100</td>
+                        <td>8x H200</td>
+                    </tr>
+                    <tr>
+                        <th>GPU メモリ</th>
+                        <td>各 80GB HBM3 (計 640GB)</td>
+                        <td>各 141GB HBM3e (計 1128GB)</td>
+                    </tr>
+                    <tr>
+                        <th>InfiniBand</th>
+                        <td>NDR 400 Gb/s</td>
+                        <td>NDR 400 Gb/s</td>
+                    </tr>
+                    <tr>
+                        <th>必須 ARO</th>
+                        <td>4.19+</td>
+                        <td>4.19+</td>
+                    </tr>
+                    <tr>
+                        <th>デプロイ</th>
+                        <td>Day-2 MachineSet のみ</td>
+                        <td>Day-2 MachineSet のみ</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Code Examples -->
+        <div class="section">
+            <h2 class="section-title">設定コード</h2>
+
+            <h3 class="code-section-title">GPU MachineSet 作成</h3>
+            <pre><code class="language-bash"># GPU MachineSet 作成
+MACHINESET=$(oc get machineset -n openshift-machine-api -o=jsonpath='{.items[0]}' | jq -r '[.metadata.name] | @tsv')
+oc get machineset -n openshift-machine-api $MACHINESET -o json > gpu_machineset.json
+jq '.spec.replicas = 1' gpu_machineset.json | sponge gpu_machineset.json
+jq '.spec.template.spec.providerSpec.value.vmSize = "Standard_ND96isr_H100_v5"' gpu_machineset.json | sponge gpu_machineset.json
+oc create -f gpu_machineset.json</code></pre>
+
+            <h3 class="code-section-title">GPU 動作確認</h3>
+            <pre><code class="language-bash"># GPU 動作確認
+oc describe node | egrep 'Roles|pci-10de' | grep -v master
+for i in $(oc get pod -lopenshift.driver-toolkit=true --no-headers | awk '{print $1}'); do
+  oc exec -it $i -- nvidia-smi
+done</code></pre>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title">ユースケース</h2>
+
+            <div class="usecase-card">
+                <h4>ユースケース 1: LLM ファインチューニング</h4>
+                <p>H100 x 4 ノード = 32 GPU で 70B パラメータモデルのファインチューニングを数時間で完了。InfiniBand でノード間通信最小化。</p>
+                <div class="effect">32 GPU の分散トレーニングにより、大規模モデルのファインチューニング時間を大幅短縮</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>ユースケース 2: LLM 推論サービング</h4>
+                <p>H200 の 141GB HBM3e で 70B+ モデルを 1 ノード (8GPU) で完全収容。テンソル並列化の分割数削減で推論レイテンシ向上。</p>
+                <div class="effect">大容量 HBM3e メモリにより、モデル分割数を削減し推論スループットが向上</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>ユースケース 3: HPC / 科学技術計算</h4>
+                <p>製薬企業の分子動力学シミュレーション。OpenShift のジョブスケジューリング + InfiniBand 対応 H100 で効率的に実行。</p>
+                <div class="effect">コンテナ化された HPC 環境で、研究者がセルフサービスで GPU リソースを利用可能</div>
+            </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="section">
+            <h2 class="section-title">料金</h2>
+            <p class="overview-text">
+                GPU VM はリージョン・契約形態により異なる。<strong>リザーブドインスタンス (1 年 / 3 年)</strong> で大幅コスト削減可能。ARO OpenShift ライセンス料が別途発生。
+            </p>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2 class="section-title">制約事項・注意点</h2>
+
+            <div class="warning-box" style="background: #FFF0F0; border-left-color: var(--ms-red);">
+                <h4 style="color: var(--ms-red);">制約事項</h4>
+                <ul>
+                    <li><strong>Day-2 オペレーションのみ</strong>: クラスター作成時のインストールオプションとしては不可</li>
+                    <li><strong>ARO 4.19 以降が必須</strong>: 既存クラスターのアップグレードが必要な場合がある</li>
+                    <li><strong>Generation 2 VM が必須</strong>: MachineSet の image SKU を v2 バージョンに設定する必要がある</li>
+                </ul>
+            </div>
+
+            <div class="warning-box">
+                <h4>注意事項</h4>
+                <ul>
+                    <li><strong>GPU クォータはデフォルト 0</strong>: Azure Portal から事前にクォータ増加を申請する必要がある</li>
+                    <li><strong>96 vCPU/ノード</strong>: サブスクリプション全体の vCPU クォータへの影響が大きい</li>
+                    <li><strong>高額な GPU VM 料金</strong>: コスト管理に十分な注意が必要。リザーブドインスタンスの活用を推奨</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="related-tags">
+                <span class="related-tag">Azure Kubernetes Service (AKS)</span>
+                <span class="related-tag">Azure Machine Learning</span>
+                <span class="related-tag">NVIDIA GPU Operator</span>
+                <span class="related-tag">Node Feature Discovery</span>
+                <span class="related-tag">Azure Virtual Network</span>
+                <span class="related-tag">InfiniBand</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=559547" target="_blank">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/openshift/howto-gpu-workloads" target="_blank">Microsoft Learn - ARO での GPU ワークロードの使用</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/openshift/support-policies-v4" target="_blank">Microsoft Learn - ARO サポートポリシー</a></li>
+                <li><a href="https://docs.nvidia.com/datacenter/cloud-native/gpu-operator/openshift/install-gpu-ocp.html" target="_blank">NVIDIA GPU Operator ドキュメント</a></li>
+            </ul>
+            <div class="footer-note">
+                Generated on 2026-04-07 | Azure News Summary
+            </div>
+        </div>
+
+    </div>
+
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

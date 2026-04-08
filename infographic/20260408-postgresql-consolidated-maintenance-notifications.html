@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Database for PostgreSQL: メンテナンス通知のリージョンレベル統合</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface-secondary);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--azure-dark-blue) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: 20%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .category-badge {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .title-area h1 {
+            font-size: 1.9rem;
+            font-weight: 900;
+            line-height: 1.4;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta span {
+            margin-right: 20px;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border-radius: 10px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--ms-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 1.4rem;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 1rem;
+            line-height: 2;
+            color: var(--ms-text-primary);
+            margin-bottom: 20px;
+        }
+
+        .overview-text strong {
+            color: var(--azure-dark-blue);
+        }
+
+        /* Before/After Comparison */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-card {
+            border-radius: 10px;
+            padding: 24px;
+            border: 2px solid;
+        }
+
+        .comparison-card.before {
+            background: #FEF2F2;
+            border-color: var(--ms-red);
+        }
+
+        .comparison-card.after {
+            background: #F0FFF4;
+            border-color: var(--ms-green);
+        }
+
+        .comparison-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .comparison-card.before h3 {
+            color: var(--ms-red);
+        }
+
+        .comparison-card.after h3 {
+            color: var(--ms-green);
+        }
+
+        .comparison-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .comparison-card ul li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 0.95rem;
+        }
+
+        .comparison-card.before ul li::before {
+            content: '\2716';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .comparison-card.after ul li::before {
+            content: '\2714';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid Diagram */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat-card {
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--azure-blue);
+            margin-bottom: 4px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .feature-card {
+            background: var(--ms-surface-secondary);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 0 8px 8px 0;
+            padding: 20px 24px;
+        }
+
+        .feature-card h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 0.92rem;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Tech Spec Table */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 0.92rem;
+        }
+
+        .tech-table th,
+        .tech-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .tech-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-dark-blue);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .tech-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid #333;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        .code-section-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-top: 24px;
+            margin-bottom: 8px;
+        }
+
+        /* Use Case Cards */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase-card h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-weight: 500;
+            color: var(--ms-text-primary);
+            margin-bottom: 10px;
+        }
+
+        .usecase-card ul {
+            padding-left: 20px;
+            color: var(--ms-text-secondary);
+            font-size: 0.92rem;
+        }
+
+        .usecase-card ul li {
+            margin-bottom: 4px;
+        }
+
+        .usecase-card .effect {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: #F0FFF4;
+            border-left: 3px solid var(--ms-green);
+            border-radius: 0 6px 6px 0;
+            color: var(--ms-green);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Warning/Note Boxes */
+        .warning-box {
+            background: #FFF8E1;
+            border-left: 4px solid var(--ms-orange);
+            border-radius: 0 8px 8px 0;
+            padding: 16px 20px;
+            margin: 16px 0;
+            font-size: 0.92rem;
+        }
+
+        .warning-box h4 {
+            color: var(--ms-orange);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .warning-box ul {
+            padding-left: 20px;
+            color: var(--ms-text-secondary);
+        }
+
+        .warning-box ul li {
+            margin-bottom: 4px;
+        }
+
+        /* Pricing Box */
+        .pricing-box {
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            padding: 20px 24px;
+            margin-top: 16px;
+            border: 1px solid var(--ms-blue-300);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .pricing-box .price-icon {
+            font-size: 2rem;
+        }
+
+        .pricing-box .price-text {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+        }
+
+        .pricing-box .price-detail {
+            font-size: 0.88rem;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Related Services */
+        .related-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .related-tag {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 10px;
+            padding: 24px 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .footer h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 0.92rem;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+            color: var(--ms-blue-800);
+        }
+
+        .footer-note {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 0.82rem;
+            color: var(--ms-text-disabled);
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 1.4rem;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="badge-row">
+                <span class="service-badge">Azure Database for PostgreSQL</span>
+                <span class="badge-ga">GA (一般提供)</span>
+                <span class="category-badge">Databases</span>
+                <span class="category-badge">Monitoring</span>
+            </div>
+            <h1>メンテナンス通知のリージョンレベル統合</h1>
+            <div class="title-meta">
+                <span>リリース日: 2026-04-08</span>
+                <span>対象: Flexible Server</span>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Database for PostgreSQL のメンテナンス通知が強化され、<strong>Azure Service Health においてリージョンレベルで統合されたメンテナンス通知</strong>が導入された。
+            </p>
+            <p class="overview-text">
+                従来はサーバーごとに個別のメンテナンス通知が送信され、多数のサーバー環境では大量の通知が発生していた。今回のアップデートにより、<strong>同一リージョン内のメンテナンスは1つの統合通知にまとめられる</strong>ようになった。
+            </p>
+
+            <!-- Before/After Comparison -->
+            <div class="comparison-grid">
+                <div class="comparison-card before">
+                    <h3>Before (従来)</h3>
+                    <ul>
+                        <li>サーバーごとに個別通知が大量に発生</li>
+                        <li>同一リージョン内の同時期メンテナンスでも個別確認が必要</li>
+                        <li>重要な通知が埋もれるリスク</li>
+                        <li>複数通知の手動集約・整理作業</li>
+                    </ul>
+                </div>
+                <div class="comparison-card after">
+                    <h3>After (統合通知)</h3>
+                    <ul>
+                        <li>リージョン単位で1つの通知に統合</li>
+                        <li>通知総数が大幅に削減</li>
+                        <li>重要通知の見落としリスク低減</li>
+                        <li>メンテナンス対応計画が効率的に</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title">アーキテクチャ図</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Azure["Azure Cloud"]
+        subgraph Region["リージョン (例: East US)"]
+            PG1["PostgreSQL Server A"]
+            PG2["PostgreSQL Server B"]
+            PG3["PostgreSQL Server C"]
+            Maintenance["スケジュールメンテナンス"]
+        end
+
+        subgraph ServiceHealth["Azure Service Health"]
+            Consolidation["通知統合エンジン"]
+            Notification["統合メンテナンス通知<br/>(リージョン単位)"]
+        end
+    end
+
+    subgraph Ops["運用チーム"]
+        Email["メール通知"]
+        Portal["Azure Portal"]
+        Alert["Service Health アラート"]
+    end
+
+    Maintenance -->|"メンテナンス予定"| PG1
+    Maintenance -->|"メンテナンス予定"| PG2
+    Maintenance -->|"メンテナンス予定"| PG3
+    PG1 -->|"通知イベント"| Consolidation
+    PG2 -->|"通知イベント"| Consolidation
+    PG3 -->|"通知イベント"| Consolidation
+    Consolidation -->|"1 通に統合"| Notification
+    Notification --> Email
+    Notification --> Portal
+    Notification --> Alert
+                </pre>
+            </div>
+            <p style="margin-top: 12px; font-size: 0.9rem; color: var(--ms-text-secondary);">
+                同一リージョン内の複数の PostgreSQL サーバーに対するメンテナンス通知が、通知統合エンジンにより1つのリージョンレベル通知にまとめられ、Azure Service Health 経由で運用チームに配信される。
+            </p>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title">主要機能</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <h4>1. リージョンレベルの通知統合</h4>
+                    <p>同一リージョン内の全 PostgreSQL Flexible Server に対するメンテナンス通知が1つに統合される。50台のサーバーがあっても受信する通知は1件のみとなり、通知の管理負荷が大幅に軽減される。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>2. Azure Service Health との統合</h4>
+                    <p>統合通知は Azure Service Health の計画メンテナンスカテゴリに表示される。メール、SMS、プッシュ通知など複数チャネルでの受信が可能。既存の Service Health アラートルールがそのまま利用できる。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>3. 既存メンテナンスウィンドウとの互換性</h4>
+                    <p>カスタムメンテナンスウィンドウやシステム管理スケジュールはそのまま維持される。通知の統合方法が変わるだけで、メンテナンスの実行タイミングやサーバー個別の設定には影響しない。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">5日前</div>
+                    <div class="stat-label">事前通知期間</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">23:00-07:00</div>
+                    <div class="stat-label">システム管理ウィンドウ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">30日+</div>
+                    <div class="stat-label">最小メンテナンス間隔</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">リージョン単位</div>
+                    <div class="stat-label">通知統合単位</div>
+                </div>
+            </div>
+
+            <table class="tech-table" style="margin-top: 24px;">
+                <tbody>
+                    <tr>
+                        <th>対象サービス</th>
+                        <td>Azure Database for PostgreSQL Flexible Server</td>
+                    </tr>
+                    <tr>
+                        <th>通知統合単位</th>
+                        <td>リージョン単位</td>
+                    </tr>
+                    <tr>
+                        <th>事前通知期間</th>
+                        <td>メンテナンスの 5 カレンダー日前</td>
+                    </tr>
+                    <tr>
+                        <th>メンテナンスウィンドウ</th>
+                        <td>カスタム or システム管理 (23:00-07:00)</td>
+                    </tr>
+                    <tr>
+                        <th>最小メンテナンス間隔</th>
+                        <td>通常 30 日以上</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Code Examples -->
+        <div class="section">
+            <h2 class="section-title">設定方法 (Azure CLI)</h2>
+
+            <h3 class="code-section-title">Service Health アラート作成</h3>
+            <pre><code class="language-bash"># Service Health アラート作成
+az monitor activity-log alert create \
+  --resource-group &lt;resource-group-name&gt; \
+  --name "postgresql-maintenance-alert" \
+  --description "PostgreSQL メンテナンス通知アラート" \
+  --condition category=ServiceHealth \
+  --condition cause=PlannedMaintenance \
+  --action-group &lt;action-group-id&gt;</code></pre>
+
+            <h3 class="code-section-title">カスタムメンテナンスウィンドウ設定</h3>
+            <pre><code class="language-bash"># カスタムメンテナンスウィンドウ設定
+az postgres flexible-server update \
+  --resource-group &lt;resource-group-name&gt; \
+  --name &lt;server-name&gt; \
+  --maintenance-window "day=0 hour=23 minute=0"</code></pre>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title">ユースケース</h2>
+
+            <div class="usecase-card">
+                <h4>ユースケース 1: 大規模マルチサーバー環境</h4>
+                <p class="scenario">East US リージョンに 50 台の PostgreSQL Flexible Server を運用している環境。</p>
+                <ul>
+                    <li>従来: 50 件の個別メンテナンス通知を受信・管理</li>
+                    <li>アップデート後: 1 件のリージョンレベル統合通知に集約</li>
+                    <li>通知の確認作業が大幅に効率化</li>
+                    <li>重要な通知を見落とすリスクが低減</li>
+                </ul>
+                <div class="effect">50 件 → 1 件: 通知数を 98% 削減し、運用チームの負荷を大幅に軽減</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>ユースケース 2: マルチリージョン展開</h4>
+                <p class="scenario">5 リージョンにそれぞれ 10 台ずつ PostgreSQL を展開している環境。</p>
+                <ul>
+                    <li>従来: 50 件 (5 リージョン x 10 台) の個別通知</li>
+                    <li>アップデート後: 5 件 (各リージョン 1 件) の統合通知に削減</li>
+                    <li>リージョンごとのメンテナンス状況を一目で把握可能</li>
+                    <li>マルチリージョンでのメンテナンス対応計画が容易に</li>
+                </ul>
+                <div class="effect">50 件 → 5 件: リージョン単位での管理が可能になり、グローバル運用が効率化</div>
+            </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="section">
+            <h2 class="section-title">料金</h2>
+            <div class="pricing-box">
+                <div class="price-icon">&#x1F4B0;</div>
+                <div>
+                    <div class="price-text">追加料金なし</div>
+                    <div class="price-detail">本アップデートに追加料金は発生しません。Azure Service Health の通知機能は無料で利用できます。</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2 class="section-title">制約事項・注意点</h2>
+
+            <div class="warning-box">
+                <h4>注意事項</h4>
+                <ul>
+                    <li><strong>個別サーバーの詳細</strong>: 統合通知を展開して個別サーバーの詳細を確認する必要がある</li>
+                    <li><strong>緊急セキュリティアップデート</strong>: 緊急の場合は 5 日未満、または通知なしでメンテナンスが実施される場合がある</li>
+                    <li><strong>メンテナンス中の操作制限</strong>: メンテナンス実行中はサーバー操作を避ける必要がある</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="related-tags">
+                <span class="related-tag">Azure Service Health</span>
+                <span class="related-tag">Azure Monitor</span>
+                <span class="related-tag">Azure Database for PostgreSQL</span>
+                <span class="related-tag">Azure Action Groups</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=559628" target="_blank">Azure Updates - メンテナンス通知のリージョンレベル統合</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/concepts-maintenance" target="_blank">Microsoft Learn - PostgreSQL Flexible Server メンテナンス</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/service-health/service-health-notifications-properties" target="_blank">Microsoft Learn - Service Health 通知プロパティ</a></li>
+            </ul>
+            <div class="footer-note">
+                Generated on 2026-04-08 | Azure News Summary
+            </div>
+        </div>
+
+    </div>
+
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

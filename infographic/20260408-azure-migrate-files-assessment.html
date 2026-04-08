@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Migrate: Azure Files アセスメントのパブリックプレビュー開始</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface-secondary);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--azure-dark-blue) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: 20%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .badge-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .category-badge {
+            background: #0078D4;
+            color: white;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .title-area h1 {
+            font-size: 1.9rem;
+            font-weight: 900;
+            line-height: 1.4;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-meta span {
+            margin-right: 20px;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border-radius: 10px;
+            padding: 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--ms-border);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 1.4rem;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 1rem;
+            line-height: 2;
+            color: var(--ms-text-primary);
+            margin-bottom: 20px;
+        }
+
+        .overview-text strong {
+            color: var(--azure-dark-blue);
+        }
+
+        /* Before/After Comparison */
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 640px) {
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .comparison-card {
+            border-radius: 10px;
+            padding: 24px;
+            border: 2px solid;
+        }
+
+        .comparison-card.before {
+            background: #FEF2F2;
+            border-color: var(--ms-red);
+        }
+
+        .comparison-card.after {
+            background: #F0FFF4;
+            border-color: var(--ms-green);
+        }
+
+        .comparison-card h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .comparison-card.before h3 {
+            color: var(--ms-red);
+        }
+
+        .comparison-card.after h3 {
+            color: var(--ms-green);
+        }
+
+        .comparison-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .comparison-card ul li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 0.95rem;
+        }
+
+        .comparison-card.before ul li::before {
+            content: '\2716';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .comparison-card.after ul li::before {
+            content: '\2714';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid Diagram */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .stat-card {
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        .stat-card .stat-value {
+            font-size: 1.3rem;
+            font-weight: 900;
+            color: var(--azure-blue);
+            margin-bottom: 4px;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.85rem;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .feature-card {
+            background: var(--ms-surface-secondary);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 0 8px 8px 0;
+            padding: 20px 24px;
+        }
+
+        .feature-card h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 0.92rem;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Tech Spec Table */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 0.92rem;
+        }
+
+        .tech-table th,
+        .tech-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .tech-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-dark-blue);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .tech-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Pricing Table */
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+            font-size: 0.92rem;
+        }
+
+        .pricing-table th {
+            background: var(--azure-blue);
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+        }
+
+        .pricing-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .pricing-table tr:nth-child(odd) td {
+            background: var(--ms-blue-100);
+        }
+
+        .pricing-table tr:hover td {
+            background: var(--ms-blue-200);
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 16px 0;
+            border: 1px solid #333;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+
+        /* Use Case Cards */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase-card h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-weight: 500;
+            color: var(--ms-text-primary);
+            margin-bottom: 10px;
+            font-size: 0.95rem;
+        }
+
+        .usecase-card .effect {
+            margin-top: 10px;
+            padding: 10px 14px;
+            background: #F0FFF4;
+            border-left: 3px solid var(--ms-green);
+            border-radius: 0 6px 6px 0;
+            color: var(--ms-green);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Warning/Note Boxes */
+        .warning-box {
+            background: #FFF8E1;
+            border-left: 4px solid var(--ms-orange);
+            border-radius: 0 8px 8px 0;
+            padding: 16px 20px;
+            margin: 16px 0;
+            font-size: 0.92rem;
+        }
+
+        .warning-box h4 {
+            color: var(--ms-orange);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .warning-box ul {
+            padding-left: 20px;
+            color: var(--ms-text-secondary);
+        }
+
+        .warning-box ul li {
+            margin-bottom: 4px;
+        }
+
+        /* Info Box */
+        .info-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 0 8px 8px 0;
+            padding: 16px 20px;
+            margin: 16px 0;
+            font-size: 0.92rem;
+            color: var(--ms-text-primary);
+        }
+
+        .info-box strong {
+            color: var(--azure-dark-blue);
+        }
+
+        /* Related Services */
+        .related-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .related-tag {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 10px;
+            padding: 24px 32px;
+            margin-bottom: 24px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .footer h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 0.92rem;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+            color: var(--ms-blue-800);
+        }
+
+        .footer-note {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 0.82rem;
+            color: var(--ms-text-disabled);
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 1.4rem;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="badge-row">
+                <span class="service-badge">Azure Migrate</span>
+                <span class="service-badge">Azure Files</span>
+                <span class="badge-preview">In Preview</span>
+                <span class="category-badge">Migration</span>
+            </div>
+            <h1>Azure Migrate: Azure Files アセスメントのパブリックプレビュー開始</h1>
+            <div class="title-meta">
+                <span>リリース日: 2026-04-08</span>
+                <span>ステータス: パブリックプレビュー</span>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F50D;</span> 概要</h2>
+            <p class="overview-text">
+                Azure Migrate において、<strong>Azure Files アセスメント</strong>がパブリックプレビューとして利用可能になった。オンプレミス環境の <strong>SMB および NFS ファイル共有</strong>（Windows / Linux）を Azure Files へ移行する際の計画立案を、Azure Migrate の統合プラットフォーム上で効率的に実施できる。
+            </p>
+            <p class="overview-text">
+                本機能は、オンプレミスのファイル共有を<strong>自動的に検出</strong>し、使用パターンの可視化を提供する。既存の VM / SQL / Web アプリアセスメントと統合され、移行計画を一元的に管理できる。
+            </p>
+
+            <!-- Before/After Comparison -->
+            <div class="comparison-grid">
+                <div class="comparison-card before">
+                    <h3>Before (従来の課題)</h3>
+                    <ul>
+                        <li>手動でのサイジングや互換性調査が必要</li>
+                        <li>使用パターンの可視化ツールが Azure Migrate に未統合</li>
+                        <li>SMB / NFS のインベントリ収集を個別のツールや手作業で実施</li>
+                        <li>コスト見積もりを一元的に行えなかった</li>
+                    </ul>
+                </div>
+                <div class="comparison-card after">
+                    <h3>After (改善点)</h3>
+                    <ul>
+                        <li>Azure Migrate アプライアンスで自動検出</li>
+                        <li>使用パターン（容量、アクセスパターン等）の可視化</li>
+                        <li>SMB / NFS 両対応アセスメント</li>
+                        <li>サイジング推奨やコスト見積もりが統合的に確認可能</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F3D7;</span> アーキテクチャ図</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph OnPrem["オンプレミス環境"]
+        WinFS["Windows ファイルサーバー\n(SMB 共有)"]
+        LinuxFS["Linux ファイルサーバー\n(NFS 共有)"]
+        Appliance["Azure Migrate\nアプライアンス"]
+    end
+
+    subgraph Azure["Azure Cloud"]
+        subgraph MigrateHub["Azure Migrate ハブ"]
+            Discovery["検出エンジン"]
+            Assessment["Azure Files\nアセスメント"]
+            Recommendation["推奨事項\n・サイジング\n・コスト見積もり"]
+        end
+
+        subgraph Target["移行先"]
+            SMBShare["Azure Files\n(SMB 共有)"]
+            NFSShare["Azure Files\n(NFS 共有)"]
+        end
+    end
+
+    WinFS --> Appliance
+    LinuxFS --> Appliance
+    Appliance -- "メタデータ &\n使用パターン" --> Discovery
+    Discovery --> Assessment
+    Assessment --> Recommendation
+    Recommendation -. "移行計画" .-> SMBShare
+    Recommendation -. "移行計画" .-> NFSShare
+                </pre>
+            </div>
+            <p style="margin-top: 12px; font-size: 0.9rem; color: var(--ms-text-secondary);">
+                Azure Migrate アプライアンスがオンプレミスのファイルサーバーからメタデータと使用パターンを収集し、Azure Migrate ハブで検出・アセスメント・推奨事項を生成する。最終的に Azure Files (SMB / NFS) への移行計画を提供する。
+            </p>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x2B50;</span> 主要機能</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <h4>1. ファイル共有の自動検出</h4>
+                    <p>Azure Migrate アプライアンスを使用して、オンプレミス環境の SMB / NFS ファイル共有を自動検出する。Windows ファイルサーバーと Linux ファイルサーバーの両方に対応し、手動でのインベントリ収集が不要になる。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>2. 使用パターンの可視化</h4>
+                    <p>ファイル共有の容量、アクセスパターン等のデータを収集・分析し、使用状況を可視化する。移行計画に必要な情報をデータドリブンで提供する。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>3. Azure Files 向けアセスメント</h4>
+                    <p>移行適性の評価、ティア推奨（Standard / Premium）、プロトコル推奨を提供する。各ファイル共有に最適な Azure Files の構成を自動的に提案する。</p>
+                </div>
+                <div class="feature-card">
+                    <h4>4. 移行計画の効率化</h4>
+                    <p>既存の VM / SQL / Web アプリアセスメントと統合されており、ファイル共有を含む包括的な移行計画を Azure Migrate の単一プラットフォーム上で管理できる。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x2699;</span> 技術仕様</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">SMB + NFS</div>
+                    <div class="stat-label">対応プロトコル</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">Windows + Linux</div>
+                    <div class="stat-label">対応 OS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">自動検出</div>
+                    <div class="stat-label">検出方法</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">Preview</div>
+                    <div class="stat-label">ステータス</div>
+                </div>
+            </div>
+
+            <table class="tech-table" style="margin-top: 24px;">
+                <tbody>
+                    <tr>
+                        <th>アセスメントタイプ</th>
+                        <td>Azure Files</td>
+                    </tr>
+                    <tr>
+                        <th>対応プロトコル</th>
+                        <td>SMB (Windows)、NFS (Linux)</td>
+                    </tr>
+                    <tr>
+                        <th>検出方法</th>
+                        <td>Azure Migrate アプライアンス経由</td>
+                    </tr>
+                    <tr>
+                        <th>ステータス</th>
+                        <td>パブリックプレビュー</td>
+                    </tr>
+                    <tr>
+                        <th>統合対象</th>
+                        <td>VM / SQL / Web アプリアセスメントと統合</td>
+                    </tr>
+                    <tr>
+                        <th>推奨出力</th>
+                        <td>ティア推奨 (Standard / Premium)、サイジング、コスト見積もり</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pricing -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F4B0;</span> 料金情報</h2>
+            <div class="info-box">
+                <strong>Azure Migrate 自体は無料</strong>で利用可能。Azure Files アセスメント機能に追加料金はなし。移行後は Azure Files のティアに応じた料金が発生する。
+            </div>
+            <table class="pricing-table">
+                <thead>
+                    <tr>
+                        <th>ティア</th>
+                        <th>課金モデル</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Standard</strong></td>
+                        <td>保存容量 + トランザクション数</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Premium</strong></td>
+                        <td>プロビジョニング容量ベース</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F4A1;</span> ユースケース</h2>
+
+            <div class="usecase-card">
+                <h4>ユースケース 1: 大規模ファイルサーバー統合</h4>
+                <p class="scenario">複数拠点の Windows ファイルサーバーを Azure Files に統合する。Azure Migrate アプライアンスで全共有を自動検出し、各共有に最適なティアを選定する。</p>
+                <div class="effect">アプライアンスによる自動検出で全拠点のファイル共有を一括把握し、適切なティア選定とコスト見積もりにより、効率的な統合計画を策定できる。</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>ユースケース 2: Linux NFS 共有のクラウド移行</h4>
+                <p class="scenario">開発チームのオンプレミス Linux NFS ファイル共有を Azure Files (NFS) に移行する。使用状況の分析により移行適性を評価する。</p>
+                <div class="effect">NFS 共有の使用パターンを可視化し、移行適性と最適な構成を事前に把握できるため、ダウンタイムを最小化した移行計画が可能になる。</div>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x26A0;</span> 制約事項</h2>
+            <div class="warning-box">
+                <h4>制約・注意事項</h4>
+                <ul>
+                    <li>パブリックプレビュー段階のため、機能や仕様が変更される可能性がある</li>
+                    <li>SLA はプレビュー機能には適用されない</li>
+                    <li>本番環境での利用は十分な検証の上で判断すること</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#x1F517;</span> 関連サービス</h2>
+            <div class="related-tags">
+                <span class="related-tag">Azure Migrate</span>
+                <span class="related-tag">Azure Files</span>
+                <span class="related-tag">Azure Storage</span>
+                <span class="related-tag">Azure File Sync</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=560025" target="_blank">公式アップデート情報 - Azure Updates</a></li>
+                <li><a href="https://learn.microsoft.com/azure/storage/files/storage-files-introduction" target="_blank">Azure Files の概要 - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/azure/migrate/overview" target="_blank">Azure Migrate の概要 - Microsoft Learn</a></li>
+            </ul>
+            <div class="footer-note">
+                Generated on 2026-04-08 | Azure News Summary
+            </div>
+        </div>
+
+    </div>
+
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
