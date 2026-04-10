@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-04-10 - Azure Event Grid: Stripe イベントのパートナートピック統合がパブリックプレビュー開始](2026/2026-04-10-event-grid-stripe-events-integration.md)
 - [2026-04-08 - Azure Kubernetes Service (AKS): Namespace / Workload ビューでの Observability 機能が一般提供開始](2026/2026-04-08-aks-namespace-workload-observability.md)
 - [2026-04-08 - Azure Migrate: Azure Files アセスメントのパブリックプレビュー開始](2026/2026-04-08-azure-migrate-files-assessment.md)
 - [2026-04-08 - Azure Database for PostgreSQL: PgBouncer 1.25.1 サポートの一般提供開始](2026/2026-04-08-postgresql-pgbouncer-1-25-1.md)
