@@ -5,6 +5,12 @@
 
 ## 2026 年
 
+- [2026-04-13 - Azure Managed Grafana: Essential SKU の廃止 (2027 年 3 月 30 日)](2026/2026-04-13-managed-grafana-essential-sku-retirement.md)
+- [2026-04-13 - Azure Bastion: グラフィカルセッション記録におけるマネージド ID サポート (パブリックプレビュー)](2026/2026-04-13-bastion-managed-identity-session-recording.md)
+- [2026-04-13 - Azure Kubernetes Service (AKS): StandardV2 NAT Gateway をアウトバウンドタイプとして利用可能に (パブリックプレビュー)](2026/2026-04-13-aks-standardv2-nat-gateway.md)
+- [2026-04-13 - Azure Storage Mover: Azure Government (US) リージョンで一般提供開始](2026/2026-04-13-storage-mover-azure-government.md)
+- [2026-04-13 - Azure Files: SMB/NFS プロトコル別の転送中暗号化制御が一般提供開始](2026/2026-04-13-azure-files-encryption-in-transit-smb-nfs.md)
+- [2026-04-13 - Azure Monitor: AKS アプリケーションの OpenTelemetry モニタリングがパブリックプレビュー開始](2026/2026-04-13-aks-opentelemetry-azure-monitor.md)
 - [2026-04-10 - Azure Event Grid: Stripe イベントのパートナートピック統合がパブリックプレビュー開始](2026/2026-04-10-event-grid-stripe-events-integration.md)
 - [2026-04-08 - Azure Kubernetes Service (AKS): Namespace / Workload ビューでの Observability 機能が一般提供開始](2026/2026-04-08-aks-namespace-workload-observability.md)
 - [2026-04-08 - Azure Migrate: Azure Files アセスメントのパブリックプレビュー開始](2026/2026-04-08-azure-migrate-files-assessment.md)

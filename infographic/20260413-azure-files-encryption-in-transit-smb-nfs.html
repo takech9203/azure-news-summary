@@ -1,0 +1,1312 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Files: SMB/NFS 転送中暗号化制御 - Infographic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue), var(--azure-dark-blue));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-badges {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-date {
+            font-size: 15px;
+            opacity: 0.85;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section Headers */
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--azure-blue);
+        }
+
+        .section-header .section-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+        }
+
+        .section-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+        }
+
+        /* Cards */
+        .card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .highlight-box p {
+            font-size: 15px;
+            color: var(--ms-text-primary);
+        }
+
+        /* Overview Key Points */
+        .key-points {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 10px 0 10px 32px;
+            position: relative;
+            border-bottom: 1px solid var(--ms-border);
+            font-size: 15px;
+        }
+
+        .key-points li:last-child {
+            border-bottom: none;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 20px;
+            height: 20px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+            opacity: 0.15;
+        }
+
+        .key-points li::after {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 20px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .before li::before {
+            content: '\2716 ';
+            color: var(--ms-red);
+            font-weight: bold;
+            margin-right: 4px;
+        }
+
+        .after li::before {
+            content: '\2714 ';
+            color: var(--ms-green);
+            font-weight: bold;
+            margin-right: 4px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Architecture Diagram */
+        .mermaid-container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 16px 0;
+            border: 1px solid var(--ms-border);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .mermaid svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .arch-description {
+            background: var(--ms-surface-secondary);
+            padding: 16px 20px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Use Case Cards */
+        .usecase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s;
+        }
+
+        .usecase-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .usecase-card .usecase-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--azure-blue);
+        }
+
+        .usecase-card .scenario {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-text-primary);
+            background: var(--ms-blue-100);
+            padding: 10px 12px;
+            border-radius: 6px;
+            line-height: 1.6;
+        }
+
+        .usecase-card .effect strong {
+            color: var(--azure-blue);
+        }
+
+        /* Technical Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th {
+            background: var(--azure-blue);
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .specs-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table tr:nth-child(even) td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-blue-100);
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Setup Steps */
+        .setup-steps {
+            margin: 16px 0;
+        }
+
+        .step {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        .step-number {
+            width: 32px;
+            height: 32px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .step-content {
+            flex: 1;
+        }
+
+        .step-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .step-content p, .step-content ol {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .step-content ol {
+            padding-left: 20px;
+        }
+
+        .step-content ol li {
+            margin-bottom: 4px;
+        }
+
+        /* Pricing Table */
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .pricing-table th {
+            background: var(--ms-green);
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .pricing-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .pricing-table tr:nth-child(even) td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 28px;
+            position: relative;
+            font-size: 14px;
+            border-bottom: 1px solid var(--ms-border);
+            color: var(--ms-text-secondary);
+        }
+
+        .limitations-list li:last-child {
+            border-bottom: none;
+        }
+
+        .limitations-list li::before {
+            content: '\26A0';
+            position: absolute;
+            left: 0;
+            color: var(--ms-orange);
+        }
+
+        /* Benefits */
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .benefits-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .benefits-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .benefits-card ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .benefits-card li {
+            padding: 6px 0 6px 20px;
+            position: relative;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .benefits-card li::before {
+            content: '\2714';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Related Services */
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .related-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .related-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 6px;
+        }
+
+        .related-card p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Region Info */
+        .region-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .region-card {
+            background: var(--ms-blue-100);
+            border: 1px solid var(--ms-blue-300);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .region-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .region-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            padding: 24px;
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--ms-text-primary);
+        }
+
+        .footer ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer li {
+            margin-bottom: 6px;
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer .generated-info {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 22px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .usecase-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .related-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .region-info {
+                grid-template-columns: 1fr;
+            }
+
+            .stat-value {
+                font-size: 26px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="title-badges">
+                <span class="service-badge">Azure Files</span>
+                <span class="service-badge">Storage</span>
+                <span class="badge badge-ga">Launched (GA)</span>
+            </div>
+            <h1>SMB/NFS プロトコル別の転送中暗号化制御が一般提供開始</h1>
+            <div class="title-date">2026-04-13 | Azure Files - Encryption in Transit for SMB &amp; NFS</div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F4CB;</div>
+                <h2>概要</h2>
+            </div>
+
+            <div class="highlight-box">
+                <p>Azure Files において、SMB と NFS プロトコルの転送中暗号化設定をストレージアカウントレベルで独立して構成できる機能が一般提供 (GA) となった。プロトコルごとに暗号化ポリシーを個別定義でき、レガシークライアントのサポートとセキュリティ要件の両立がより柔軟に実現できる。</p>
+            </div>
+
+            <ul class="key-points">
+                <li>SMB 用「Require Encryption in Transit for SMB」と NFS 用「Require Encryption in Transit for NFS」の専用設定がそれぞれ導入</li>
+                <li>プロトコルごとに独立して暗号化要件を有効/無効化でき、きめ細かなセキュリティポリシーが定義可能</li>
+                <li>従来の「Secure transfer required」は REST/HTTPS トラフィックのみに適用され、ファイル共有プロトコルとの役割分離が明確化</li>
+                <li>Azure Portal で作成した新規ストレージアカウントでは、SMB・NFS ともにデフォルトで暗号化が有効化</li>
+                <li>既存ストレージアカウントへの影響はなく、明示的に設定を変更した場合にのみ新しい動作が有効化</li>
+            </ul>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>「Secure transfer required」が SMB、NFS、REST すべてのトラフィックに一律適用</li>
+                        <li>SMB で暗号化を強制すると NFS クライアントにも影響</li>
+                        <li>レガシー SMB 2.1 クライアントのために暗号化を無効化すると、NFS を含む全プロトコルでセキュリティ低下</li>
+                        <li>同一ストレージアカウント内で SMB と NFS の暗号化要件を個別管理する手段がなかった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>SMB と NFS にそれぞれ専用の「Require Encryption in Transit」設定を導入</li>
+                        <li>プロトコルごとに独立して暗号化要件を有効/無効化可能</li>
+                        <li>「Secure transfer required」は REST/HTTPS トラフィックのみに適用され、役割分離が明確化</li>
+                        <li>新規アカウント (Portal) では SMB・NFS ともにデフォルトで暗号化が有効</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F4CA;</div>
+                <h2>数字で見るアップデート</h2>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">対応プロトコル<br>(SMB / NFS)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">SMB 暗号化アルゴリズム<br>(AES-256/128-GCM, CCM)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">追加料金<br>(無料で利用可能)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">設定レベル<br>(SMB / NFS / REST)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F3D7;</div>
+                <h2>アーキテクチャ図</h2>
+            </div>
+
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Clients["クライアント"]
+        SMBClient["Windows/Linux SMB クライアント"]
+        NFSClient["Linux NFS クライアント"]
+    end
+
+    subgraph StorageAccount["ストレージアカウント"]
+        subgraph SecuritySettings["セキュリティ設定"]
+            SMBEncryption["Require Encryption in Transit for SMB"]
+            NFSEncryption["Require Encryption in Transit for NFS"]
+            SecureTransfer["Secure Transfer Required REST/HTTPS のみ"]
+        end
+
+        subgraph FileShares["Azure File Shares"]
+            SMBShare["SMB ファイル共有 SMB 3.x + AES 暗号化"]
+            NFSShare["NFS ファイル共有 NFSv4.1 + TLS"]
+        end
+    end
+
+    SMBClient -->|"SMB 3.x 暗号化チャネル"| SMBEncryption
+    NFSClient -->|"TLS 暗号化 Stunnel/AZNFS"| NFSEncryption
+    SMBEncryption -->|"許可/拒否"| SMBShare
+    NFSEncryption -->|"許可/拒否"| NFSShare
+    SecureTransfer -.->|"REST API のみ制御"| FileShares
+                </pre>
+            </div>
+
+            <div class="arch-description">
+                SMB クライアントと NFS クライアントはそれぞれ独立した暗号化設定によって制御され、プロトコルごとに暗号化要件の有無を個別に判定する。従来の Secure Transfer Required 設定は REST/HTTPS トラフィックのみに適用される。SMB は AES ベースのチャネル暗号化、NFS は Stunnel/AZNFS を使用した TLS 暗号化トンネルでデータを保護する。
+            </div>
+        </div>
+
+        <!-- Key Features Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x2B50;</div>
+                <h2>主要機能</h2>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F512;</div>
+                <div class="feature-content">
+                    <h4>1. SMB 向け転送中暗号化制御</h4>
+                    <p>SMB ファイル共有へのアクセスに対して暗号化を要求するかどうかを独立して制御。有効化すると SMB 3.x + チャネル暗号化 (AES-256-GCM、AES-128-GCM、AES-128-CCM) をサポートするクライアントのみがマウント可能。SMB 2.1 など暗号化非対応クライアントからの接続は拒否される。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F6E1;</div>
+                <div class="feature-content">
+                    <h4>2. NFS 向け転送中暗号化制御</h4>
+                    <p>NFS ファイル共有へのアクセスに対して TLS 暗号化を要求するかどうかを独立して制御。AZNFS マウントヘルパーと Stunnel を使用した TLS 暗号化トンネルによるデータ保護。AES-GCM による暗号化で、Kerberos や Active Directory のセットアップが不要。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F504;</div>
+                <div class="feature-content">
+                    <h4>3. Secure Transfer Required の役割変更</h4>
+                    <p>プロトコル別の暗号化設定が構成されると、Secure Transfer Required は REST/HTTPS トラフィックのみに適用される。プロトコル別設定が「Not selected」の場合、従来どおり Secure Transfer Required が SMB/NFS の暗号化動作を制御する。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x2699;</div>
+                <div class="feature-content">
+                    <h4>4. 既存ストレージアカウントとの後方互換性</h4>
+                    <p>既存ストレージアカウントではプロトコル別設定は「Not selected」として表示される。明示的に設定を変更しない限り既存の動作に影響はない。一度明示的に設定すると、その設定が Secure Transfer Required よりも優先される。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F4DD;</div>
+                <h2>技術仕様</h2>
+            </div>
+
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>SMB</th>
+                        <th>NFS</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>設定名</td>
+                        <td>Require Encryption in Transit for SMB</td>
+                        <td>Require Encryption in Transit for NFS</td>
+                    </tr>
+                    <tr>
+                        <td>プロトコルバージョン</td>
+                        <td>SMB 3.0 / SMB 3.1.1</td>
+                        <td>NFSv4.1</td>
+                    </tr>
+                    <tr>
+                        <td>暗号化方式</td>
+                        <td>AES-256-GCM、AES-128-GCM、AES-128-CCM</td>
+                        <td>TLS (Stunnel 経由、AES-GCM)</td>
+                    </tr>
+                    <tr>
+                        <td>新規アカウント (Portal) デフォルト</td>
+                        <td>有効</td>
+                        <td>有効</td>
+                    </tr>
+                    <tr>
+                        <td>新規アカウント (CLI/PS/API) デフォルト</td>
+                        <td>Not selected (後方互換)</td>
+                        <td>Not selected (後方互換)</td>
+                    </tr>
+                    <tr>
+                        <td>既存アカウント初期値</td>
+                        <td>Not selected</td>
+                        <td>Not selected</td>
+                    </tr>
+                    <tr>
+                        <td>追加料金</td>
+                        <td>なし</td>
+                        <td>なし</td>
+                    </tr>
+                    <tr>
+                        <td>クライアント要件</td>
+                        <td>SMB 3.x 対応 OS (Windows 8.1+ / Server 2012 R2+)</td>
+                        <td>AZNFS マウントヘルパー + Stunnel</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Setup Steps -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F6E0;</div>
+                <h2>設定方法</h2>
+            </div>
+
+            <h3 style="font-size: 18px; margin-bottom: 16px; color: var(--azure-blue);">Azure Portal</h3>
+
+            <div class="setup-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>対象のストレージアカウントに移動</h4>
+                        <ol>
+                            <li>Azure Portal にサインイン</li>
+                            <li>左メニューの「Data storage」>「File shares」を選択</li>
+                            <li>「File share settings」セクションで「Security」に関連する値を選択</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>プロトコル別暗号化設定を構成</h4>
+                        <ol>
+                            <li><strong>SMB</strong>: 「Require Encryption in Transit for SMB」の有効/無効を設定</li>
+                            <li><strong>NFS</strong>: 「Require Encryption in Transit for NFS」の有効/無効を設定</li>
+                            <li>必要に応じて SMB セキュリティプロファイルを選択 (Maximum compatibility / Maximum security / Custom)</li>
+                            <li>「Save」を選択して設定を保存</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 18px; margin-bottom: 16px; margin-top: 32px; color: var(--azure-blue);">Azure PowerShell</h3>
+
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">PowerShell</span></div>
+                <pre><code class="language-powershell"># SMB の転送中暗号化を有効化
+Update-AzStorageFileServiceProperty `
+    -ResourceGroupName "&lt;resource-group&gt;" `
+    -StorageAccountName "&lt;storage-account-name&gt;" `
+    -SmbEncryptionInTransitRequired $true
+
+# NFS の転送中暗号化を有効化
+Update-AzStorageFileServiceProperty `
+    -ResourceGroupName "&lt;resource-group&gt;" `
+    -StorageAccountName "&lt;storage-account-name&gt;" `
+    -NfsEncryptionInTransitRequired $true</code></pre>
+            </div>
+
+            <h3 style="font-size: 18px; margin-bottom: 16px; margin-top: 32px; color: var(--azure-blue);">Azure CLI</h3>
+
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span></div>
+                <pre><code class="language-bash"># SMB の転送中暗号化を有効化
+az storage account file-service-properties update \
+    --require-smb-encryption-in-transit --smb-eit true \
+    -n &lt;storage-account-name&gt; -g &lt;resource-group&gt;
+
+# NFS の転送中暗号化を有効化
+az storage account file-service-properties update \
+    --nfs-eit --require-nfs-encryption-in-transit true \
+    -n &lt;storage-account-name&gt; -g &lt;resource-group&gt;</code></pre>
+            </div>
+
+            <h3 style="font-size: 18px; margin-bottom: 16px; margin-top: 32px; color: var(--azure-blue);">NFS クライアント側 (AZNFS マウントヘルパー)</h3>
+
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span></div>
+                <pre><code class="language-bash"># AZNFS マウントヘルパーのインストール (Ubuntu/Debian)
+curl -sSL -O https://packages.microsoft.com/config/$(source /etc/os-release &amp;&amp; echo "$ID/$VERSION_ID")/packages-microsoft-prod.deb
+sudo dpkg -i packages-microsoft-prod.deb
+rm packages-microsoft-prod.deb
+sudo apt-get update
+sudo apt-get install aznfs
+
+# TLS 暗号化ありで NFS 共有をマウント
+sudo mount -t aznfs &lt;storage-account-name&gt;.file.core.windows.net:/&lt;storage-account-name&gt;/&lt;share-name&gt; \
+    /mount/&lt;storage-account-name&gt;/&lt;share-name&gt; \
+    -o vers=4,minorversion=1,sec=sys,nconnect=4</code></pre>
+            </div>
+        </div>
+
+        <!-- Benefits Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F4AA;</div>
+                <h2>メリット</h2>
+            </div>
+
+            <div class="benefits-grid">
+                <div class="benefits-card">
+                    <h4>&#x1F4BC; ビジネス面</h4>
+                    <ul>
+                        <li>SMB と NFS で異なるコンプライアンス要件を持つワークロードを同一ストレージアカウントで運用可能になり、管理コストを削減</li>
+                        <li>セキュリティポリシーの粒度が向上し、監査や規制対応が容易に</li>
+                        <li>追加料金なしで利用できるため、セキュリティ強化にコスト負担がない</li>
+                    </ul>
+                </div>
+                <div class="benefits-card">
+                    <h4>&#x1F527; 技術面</h4>
+                    <ul>
+                        <li>プロトコルごとに独立した暗号化ポリシーを定義でき、レガシークライアントサポートと高セキュリティ要件を両立</li>
+                        <li>NFS の TLS 暗号化は Stunnel ベースで Kerberos や AD セットアップが不要、導入が簡素化</li>
+                        <li>既存ストレージアカウントに対して即座の動作変更がないため、安全に移行計画を立てられる</li>
+                        <li>SMB チャネル暗号化アルゴリズム (AES-256-GCM など) と組み合わせて多層的な暗号化戦略を構築可能</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Use Cases Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F4A1;</div>
+                <h2>ユースケース</h2>
+            </div>
+
+            <div class="usecase-grid">
+                <div class="usecase-card">
+                    <div class="usecase-icon">&#x1F3E2;</div>
+                    <h4>ハイブリッド環境での SMB/NFS 共存</h4>
+                    <div class="scenario">Windows ベースのアプリケーション (SMB) と Linux ベースの HPC ワークロード (NFS) を同一ストレージアカウントで運用しつつ、セキュリティポリシーを個別に制御。SMB は暗号化を強制し、VNet 内の NFS ではパフォーマンスを優先する構成が可能。</div>
+                    <div class="effect"><strong>効果:</strong> SMB クライアントには最大限のセキュリティを適用しつつ、VNet 内で保護された NFS ワークロードではパフォーマンスを優先する構成が可能に。</div>
+                </div>
+
+                <div class="usecase-card">
+                    <div class="usecase-icon">&#x1F504;</div>
+                    <h4>段階的なセキュリティ強化の移行</h4>
+                    <div class="scenario">既存のストレージアカウントに対して、レガシークライアントへの影響を最小化しながら段階的に暗号化要件を導入。NFS の暗号化を先行して有効化し、レガシー SMB クライアントの更新後に SMB の暗号化を有効化する段階的アプローチ。</div>
+                    <div class="effect"><strong>効果:</strong> プロトコルごとに独立したタイムラインでセキュリティ強化を実施でき、レガシークライアントの更新計画と暗号化導入計画を分離して管理可能。</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F4B0;</div>
+                <h2>料金情報</h2>
+            </div>
+
+            <div class="highlight-box">
+                <p>転送中暗号化の有効化に追加料金は発生しない。Azure Files の料金はストレージティアと使用量に基づく従来の課金モデルが適用される。</p>
+            </div>
+
+            <table class="pricing-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>概要</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>転送中暗号化 (SMB)</td><td>追加料金なし</td></tr>
+                    <tr><td>転送中暗号化 (NFS)</td><td>追加料金なし</td></tr>
+                    <tr><td>ストレージ料金</td><td>ストレージティア (Premium SSD / Standard HDD/SSD) と使用量に基づく従量課金</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Region Info -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F30D;</div>
+                <h2>利用可能リージョン</h2>
+            </div>
+
+            <div class="region-info">
+                <div class="region-card">
+                    <h4>&#x1F512; SMB 転送中暗号化</h4>
+                    <p>Azure Files をサポートするすべてのリージョンで利用可能</p>
+                </div>
+                <div class="region-card">
+                    <h4>&#x1F6E1; NFS 転送中暗号化</h4>
+                    <p>SSD (Premium) Azure ファイル共有をサポートするすべてのリージョンで利用可能</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Limitations Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x26A0;</div>
+                <h2>制限事項・注意点</h2>
+            </div>
+
+            <div class="card">
+                <ul class="limitations-list">
+                    <li>NFS の暗号化にはクライアント側に AZNFS マウントヘルパーと Stunnel のインストールが必要であり、OS 依存の設定作業が発生する</li>
+                    <li>AZNFS がサポートする Linux ディストリビューションは限定されている (Ubuntu、RHEL、CentOS、SUSE、Oracle Linux、Alma Linux、Azure Linux)</li>
+                    <li>Azure PowerShell、Azure CLI、FileREST API で作成したストレージアカウントはデフォルトで「Not selected」となるため、明示的な設定変更が必要</li>
+                    <li>NFS ファイル共有は SSD (Premium) ティアのみで利用可能であり、HDD (Standard) ティアはサポートされない</li>
+                    <li>同一ストレージアカウント・同一サーバーエンドポイントへの接続で、TLS と非 TLS のマウントを混在させることはできない</li>
+                    <li>SMB 2.1 のみをサポートするレガシー OS (Windows 7、Windows Server 2008 R2 など) は暗号化有効時に接続できない</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F310;</div>
+                <h2>関連サービス</h2>
+            </div>
+
+            <div class="related-grid">
+                <div class="related-card">
+                    <h4>Azure Storage セキュア転送</h4>
+                    <p>ストレージアカウントレベルの暗号化設定。本アップデートにより REST/HTTPS トラフィックのみに役割が限定された。</p>
+                </div>
+                <div class="related-card">
+                    <h4>Azure Private Endpoints</h4>
+                    <p>NFS ファイル共有へのアクセスにはプライベートエンドポイントまたはサービスエンドポイントが必要。</p>
+                </div>
+                <div class="related-card">
+                    <h4>SMB Multichannel</h4>
+                    <p>SSD ファイル共有向けの SMB パフォーマンス最適化機能。暗号化と併用可能。</p>
+                </div>
+                <div class="related-card">
+                    <h4>Azure File Sync</h4>
+                    <p>オンプレミスの Windows Server への SMB ファイル共有のキャッシュ。転送中暗号化の設定に影響される。</p>
+                </div>
+                <div class="related-card">
+                    <h4>AZNFS マウントヘルパー</h4>
+                    <p>NFS の TLS 暗号化を実現するクライアントユーティリティ。Stunnel を使用してローカルで暗号化トンネルを構築する。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul>
+                <li><a href="https://azure.microsoft.com/updates?id=560001" target="_blank">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/azure/storage/files/files-smb-protocol" target="_blank">SMB File Shares in Azure Files - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/azure/storage/files/files-nfs-protocol" target="_blank">NFS File Shares in Azure Files - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/azure/storage/files/encryption-in-transit-for-nfs-shares" target="_blank">Encryption in Transit for NFS Shares - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/azure/storage/common/storage-require-secure-transfer" target="_blank">Require Secure Transfer - Microsoft Learn</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/storage/files/" target="_blank">Azure Files 料金ページ</a></li>
+            </ul>
+            <div class="generated-info">
+                Generated on 2026-04-13 | Source: reports/2026/2026-04-13-azure-files-encryption-in-transit-smb-nfs.md
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/powershell.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#EFF6FC',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#DEECF9',
+                tertiaryColor: '#FAF9F8',
+                background: '#FFFFFF',
+                mainBkg: '#EFF6FC',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#F3F2F1',
+                clusterBorder: '#0078D4',
+                titleColor: '#323130',
+                edgeLabelBackground: '#FFFFFF',
+                fontSize: '14px'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+</body>
+</html>

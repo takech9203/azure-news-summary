@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Bastion: マネージド ID によるセッション記録 - Infographic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            /* Azure Brand Colors */
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+
+            /* Microsoft Fluent Colors */
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+
+            /* Status Colors */
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+
+            /* Text Colors */
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+
+            /* Surface Colors */
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-800));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(80,230,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-badges {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1.4;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-area .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-date {
+            margin-top: 12px;
+            font-size: 14px;
+            opacity: 0.8;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--ms-blue-300);
+        }
+
+        .section-icon {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            font-size: 20px;
+        }
+
+        .section-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+        }
+
+        /* Card */
+        .card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .highlight-box p {
+            color: var(--ms-text-primary);
+            font-size: 15px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .before li::before {
+            content: '\2716';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-size: 12px;
+        }
+
+        .after li::before {
+            content: '\2714';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-size: 12px;
+        }
+
+        /* Feature Card */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: white;
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 24px;
+            margin: 16px 0;
+            overflow-x: auto;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .mermaid-caption {
+            text-align: center;
+            color: var(--ms-text-secondary);
+            font-size: 13px;
+            margin-top: 12px;
+            font-style: italic;
+        }
+
+        /* Use Case Cards */
+        .usecase-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .usecase-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--azure-blue), var(--azure-light-blue));
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 10px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .usecase-card .effect {
+            font-size: 14px;
+            color: var(--ms-text-primary);
+            background: var(--ms-blue-100);
+            padding: 12px;
+            border-radius: 6px;
+            line-height: 1.6;
+        }
+
+        .usecase-card .effect-label {
+            font-weight: 700;
+            color: var(--azure-blue);
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        /* Tech Table */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .tech-table th, .tech-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .tech-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-dark-blue);
+            font-weight: 700;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tech-table tr:hover {
+            background: var(--ms-surface-secondary);
+        }
+
+        .tech-table td:first-child {
+            font-weight: 500;
+            color: var(--ms-text-primary);
+            white-space: nowrap;
+        }
+
+        /* Steps */
+        .steps-list {
+            counter-reset: step-counter;
+            list-style: none;
+            padding: 0;
+            margin: 16px 0;
+        }
+
+        .steps-list li {
+            counter-increment: step-counter;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--ms-border);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .steps-list li:last-child {
+            border-bottom: none;
+        }
+
+        .steps-list li::before {
+            content: counter(step-counter);
+            background: var(--azure-blue);
+            color: white;
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+
+        /* CORS Table */
+        .cors-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .cors-table th, .cors-table td {
+            padding: 10px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .cors-table th {
+            background: var(--ms-surface-tertiary);
+            color: var(--ms-text-primary);
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .cors-table code {
+            background: #1E1E1E;
+            color: #E8E8E8;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+        }
+
+        /* Pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .pricing-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .pricing-card .pricing-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .pricing-card h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 8px;
+        }
+
+        .pricing-card p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+            margin: 16px 0;
+        }
+
+        .limitations-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            font-size: 14px;
+            line-height: 1.6;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li:last-child {
+            border-bottom: none;
+        }
+
+        .limitations-list .limit-icon {
+            color: var(--ms-orange);
+            font-size: 16px;
+            min-width: 20px;
+            margin-top: 2px;
+        }
+
+        /* Related Services */
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .related-card {
+            display: flex;
+            gap: 12px;
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .related-card .related-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+        }
+
+        .related-card h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 4px;
+        }
+
+        .related-card p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 32px;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 6px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--ms-blue-800);
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Code Block */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+            border-radius: 8px;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        /* Subsection title */
+        .subsection-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--ms-blue-800);
+            margin: 20px 0 12px 0;
+            padding-left: 12px;
+            border-left: 3px solid var(--azure-blue);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 22px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .usecase-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .related-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="title-badges">
+                <span class="service-badge">Azure Bastion</span>
+                <span class="badge badge-preview">In Preview</span>
+            </div>
+            <h1>グラフィカルセッション記録における<br>マネージド ID サポート</h1>
+            <p class="subtitle">SAS トークン管理から解放 -- マネージド ID でセッション記録のストレージアクセスをよりセキュアに</p>
+            <p class="title-date">2026-04-13 | Public Preview</p>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F4CB;</div>
+                <h2>概要</h2>
+            </div>
+
+            <div class="highlight-box">
+                <p>Azure Bastion のグラフィカルセッション記録機能において、ストレージアカウントへの書き込みアクセスにマネージド ID (システム割り当て / ユーザー割り当て) が利用可能になった。従来の SAS URL に代わる認証方式として、セキュリティと運用効率の両方が向上する。</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">Premium</div>
+                    <div class="stat-label">必要な SKU</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2 種類</div>
+                    <div class="stat-label">サポート ID 種別</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">RDP/SSH</div>
+                    <div class="stat-label">対象プロトコル</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0 円</div>
+                    <div class="stat-label">マネージド ID 追加料金</div>
+                </div>
+            </div>
+
+            <!-- Before/After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>SAS URL の生成・管理が必要</li>
+                        <li>SAS トークンの有効期限管理とローテーション作業が運用負荷</li>
+                        <li>SAS トークンの漏洩リスクがあり、セキュリティ上の懸念</li>
+                        <li>期限切れによりセッション記録が失敗する可能性</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>マネージド ID により SAS トークンの管理が不要に</li>
+                        <li>Azure RBAC でアクセス制御、セキュリティポスチャ向上</li>
+                        <li>有効期限管理やローテーション作業から解放</li>
+                        <li>システム割り当て / ユーザー割り当てを選択可能</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F3D7;</div>
+                <h2>アーキテクチャ図</h2>
+            </div>
+
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Azure["Azure Cloud"]
+        subgraph VNet["仮想ネットワーク"]
+            VM["仮想マシン\n(RDP / SSH)"]
+            Bastion["Azure Bastion\n(Premium SKU)"]
+        end
+
+        subgraph Identity["Microsoft Entra ID"]
+            SystemMI["システム割り当て\nマネージド ID"]
+            UserMI["ユーザー割り当て\nマネージド ID"]
+            RBAC["Azure RBAC\nStorage Blob Data Contributor"]
+        end
+
+        subgraph Storage["Azure Storage Account"]
+            Container["Blob コンテナ\n(セッション記録)"]
+        end
+
+        User["管理者 / ユーザー"]
+        Portal["Azure Portal\n(セッション記録ビューア)"]
+    end
+
+    User -->|"RDP / SSH 接続"| Bastion
+    Bastion -->|"セッション中継"| VM
+    Bastion -->|"マネージド ID で認証"| SystemMI
+    Bastion -.->|"または"| UserMI
+    SystemMI --> RBAC
+    UserMI --> RBAC
+    RBAC -->|"認可"| Container
+    Bastion -->|"セッション録画データ書き込み"| Container
+    User -->|"録画再生"| Portal
+    Portal -->|"録画データ読み取り"| Container
+                </pre>
+                <p class="mermaid-caption">Azure Bastion がマネージド ID を使用してストレージアカウントに認証し、セッション録画データを Blob コンテナに書き込む。管理者は Azure Portal の統合ビューアからセッション録画を再生できる。</p>
+            </div>
+        </div>
+
+        <!-- Key Features Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x2B50;</div>
+                <h2>主要機能</h2>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F510;</div>
+                <div class="feature-content">
+                    <h4>マネージド ID によるストレージ認証</h4>
+                    <p>システム割り当て / ユーザー割り当てマネージド ID でストレージアカウントに認証。SAS URL の生成・管理・ローテーションが不要になり、Azure RBAC (Storage Blob Data Contributor ロール) を通じたアクセス制御が可能に。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x2699;</div>
+                <div class="feature-content">
+                    <h4>システム割り当てマネージド ID の設定</h4>
+                    <p>Bastion リソースの Identity ブレードでシステム割り当てマネージド ID を有効化し、ストレージアカウントに対して Storage Blob Data Contributor ロールを割り当て。Configuration で Blob コンテナ URI を指定して使用開始。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F464;</div>
+                <div class="feature-content">
+                    <h4>ユーザー割り当てマネージド ID の設定</h4>
+                    <p>事前に作成したユーザー割り当てマネージド ID を Bastion に関連付け。Bastion リソースのライフサイクルとは独立した ID 管理が可能で、複数リソース間での共有にも対応。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F504;</div>
+                <div class="feature-content">
+                    <h4>既存の SAS URL 方式との共存</h4>
+                    <p>マネージド ID は SAS URL の代替として提供される。既存の SAS URL 方式も引き続き利用可能であり、段階的な移行が可能。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs Table -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F4CA;</div>
+                <h2>技術仕様</h2>
+            </div>
+
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ステータス</td>
+                        <td>パブリックプレビュー</td>
+                    </tr>
+                    <tr>
+                        <td>必要な SKU</td>
+                        <td>Premium SKU</td>
+                    </tr>
+                    <tr>
+                        <td>サポートされる ID 種別</td>
+                        <td>システム割り当てマネージド ID、ユーザー割り当てマネージド ID</td>
+                    </tr>
+                    <tr>
+                        <td>必要な RBAC ロール</td>
+                        <td>Storage Blob Data Contributor (ストレージアカウントスコープ)</td>
+                    </tr>
+                    <tr>
+                        <td>録画対象プロトコル</td>
+                        <td>RDP、SSH (グラフィカルセッション)</td>
+                    </tr>
+                    <tr>
+                        <td>ストレージ構成</td>
+                        <td>1 コンテナ / 1 ストレージアカウント</td>
+                    </tr>
+                    <tr>
+                        <td>録画再生方法</td>
+                        <td>Azure Portal 統合 Web プレーヤー</td>
+                    </tr>
+                    <tr>
+                        <td>録画閲覧に必要なロール</td>
+                        <td>Storage Blob Data Reader</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Setup Steps -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F6E0;</div>
+                <h2>設定方法</h2>
+            </div>
+
+            <h3 class="subsection-title">前提条件</h3>
+            <ul class="limitations-list">
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>Azure Bastion が Premium SKU でデプロイされていること</span>
+                </li>
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>セッション記録用のストレージアカウントと Blob コンテナが作成済みであること</span>
+                </li>
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>ストレージアカウントに CORS ポリシーが設定されていること</span>
+                </li>
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>ストレージアカウントに不変ストレージポリシーが設定されていないこと</span>
+                </li>
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>Blob バージョニングが無効であること</span>
+                </li>
+            </ul>
+
+            <h3 class="subsection-title">Azure Portal (マネージド ID 設定手順)</h3>
+            <ol class="steps-list">
+                <li>Azure Portal で Bastion リソースに移動する</li>
+                <li>左ペインから <strong>Identity</strong> ブレードを選択する</li>
+                <li>システム割り当てマネージド ID のステータスを <strong>On</strong> に変更し、構成の完了を待つ</li>
+                <li><strong>Azure role assignments</strong> を選択し、<strong>Add role assignment (Preview)</strong> をクリックする</li>
+                <li>ロール割り当てを追加: スコープ: Storage / リソース: ストレージアカウント名 / ロール: Storage Blob Data Contributor</li>
+                <li><strong>Save</strong> をクリックしてロール割り当てを保存する</li>
+                <li>Bastion リソースに戻り、左ペインから <strong>Configuration</strong> を選択する</li>
+                <li><strong>Session Recording Configuration</strong> で <strong>System Assigned Managed Identity</strong> を選択する</li>
+                <li><strong>Blob Container URI</strong> にストレージコンテナの URI を入力する</li>
+                <li><strong>Apply</strong> をクリックして設定を適用する (反映に約 10 分)</li>
+            </ol>
+
+            <h3 class="subsection-title">ストレージアカウントの CORS 設定</h3>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 12px;">ストレージアカウントの Resource sharing (CORS) で Blob service に以下のポリシーを設定:</p>
+            <table class="cors-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>値</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Allowed origins</td>
+                        <td><code>https://</code> + Bastion の完全な DNS 名 (<code>bst-</code> で始まる)</td>
+                    </tr>
+                    <tr>
+                        <td>Allowed methods</td>
+                        <td><code>GET</code></td>
+                    </tr>
+                    <tr>
+                        <td>Allowed headers</td>
+                        <td><code>*</code></td>
+                    </tr>
+                    <tr>
+                        <td>Exposed headers</td>
+                        <td><code>*</code></td>
+                    </tr>
+                    <tr>
+                        <td>Max age</td>
+                        <td><code>86400</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Use Cases Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F4BC;</div>
+                <h2>ユースケース</h2>
+            </div>
+
+            <div class="usecase-grid">
+                <div class="usecase-card">
+                    <h4>&#x1F3E6; 金融機関の特権アクセス監査</h4>
+                    <p class="scenario">金融機関において、本番環境の仮想マシンへの特権アクセスを記録し、監査証跡を残す必要がある。SAS トークンの管理を排除し、セキュリティポスチャを強化したい。</p>
+                    <div class="effect">
+                        <div class="effect-label">期待される効果</div>
+                        マネージド ID で SAS トークン漏洩リスクを排除。全セッションの録画を安全にストレージに保存し、Azure RBAC と組み合わせて監査要件を満たす堅牢なセッション管理を実現。
+                    </div>
+                </div>
+                <div class="usecase-card">
+                    <h4>&#x1F465; マルチチーム環境でのセッション記録管理</h4>
+                    <p class="scenario">複数のチームが共有する Bastion ホストで、セッション記録用ストレージのアクセス管理を簡素化したい。SAS URL の共有・ローテーション管理が煩雑になっている。</p>
+                    <div class="effect">
+                        <div class="effect-label">期待される効果</div>
+                        ユーザー割り当てマネージド ID で Bastion リソースのライフサイクルとは独立した ID 管理が可能に。Azure RBAC でストレージアクセスを制御し、SAS URL 管理作業から解放。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F4B0;</div>
+                <h2>料金情報</h2>
+            </div>
+
+            <div class="highlight-box">
+                <p>マネージド ID の使用自体に追加料金は発生しません。以下の既存コストが適用されます。</p>
+            </div>
+
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F3F0;</div>
+                    <h4>Azure Bastion Premium SKU</h4>
+                    <p>Premium SKU のホスティング料金 (時間単位での課金)</p>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F4E6;</div>
+                    <h4>ストレージアカウント</h4>
+                    <p>セッション録画データの保存に対するストレージ料金 (容量、トランザクション)</p>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F310;</div>
+                    <h4>ネットワーク転送</h4>
+                    <p>Bastion からストレージアカウントへのデータ転送料金</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Limitations Section -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x26A0;</div>
+                <h2>制限事項・注意点</h2>
+            </div>
+
+            <ul class="limitations-list">
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>パブリックプレビュー段階であり、SLA の対象外</span>
+                </li>
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>Premium SKU が必須。Basic や Standard SKU では利用不可</span>
+                </li>
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>Entra ID による RDP セッション認証とグラフィカルセッション記録は同時に利用できない</span>
+                </li>
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>ネイティブクライアント経由のセッション記録は現時点で非サポート</span>
+                </li>
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>セッション記録は 1 コンテナ / 1 ストレージアカウントの制限あり</span>
+                </li>
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>セッション記録が有効化されると、Bastion ホスト経由の全セッションが記録対象 (個別選択不可)</span>
+                </li>
+                <li>
+                    <span class="limit-icon">&#x26A0;</span>
+                    <span>アクティブなセッション中にストレージコンテナを変更するとセッションが中断される可能性あり</span>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <div class="section-header">
+                <div class="section-icon">&#x1F517;</div>
+                <h2>関連サービス</h2>
+            </div>
+
+            <div class="related-grid">
+                <div class="related-card">
+                    <div class="related-icon">&#x1F6E1;</div>
+                    <div>
+                        <h4>Azure Bastion</h4>
+                        <p>仮想マシンへの安全なリモートアクセスを提供するフルマネージドサービス。本アップデートの対象。</p>
+                    </div>
+                </div>
+                <div class="related-card">
+                    <div class="related-icon">&#x1F511;</div>
+                    <div>
+                        <h4>マネージド ID (Microsoft Entra ID)</h4>
+                        <p>Azure リソースに自動管理される ID を提供。SAS トークンに代わる認証方式として使用。</p>
+                    </div>
+                </div>
+                <div class="related-card">
+                    <div class="related-icon">&#x1F4E6;</div>
+                    <div>
+                        <h4>Azure Blob Storage</h4>
+                        <p>セッション録画データの保存先。Storage Blob Data Contributor ロールによるアクセス制御。</p>
+                    </div>
+                </div>
+                <div class="related-card">
+                    <div class="related-icon">&#x1F512;</div>
+                    <div>
+                        <h4>Azure RBAC</h4>
+                        <p>マネージド ID に対するストレージアカウントへのアクセス権限を管理。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=560162" target="_blank">公式アップデート情報 - Azure Updates</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/bastion/session-recording" target="_blank">Microsoft Learn - Record Bastion sessions</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/entra/identity/managed-identities-azure-resources/overview" target="_blank">Microsoft Learn - マネージド ID の概要</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/bastion/bastion-overview" target="_blank">Microsoft Learn - Azure Bastion の概要</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/azure-bastion/" target="_blank">Azure Bastion 料金ページ</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-04-13 | Azure News Summary Infographic</p>
+        </div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#EFF6FC',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#DEECF9',
+                tertiaryColor: '#FAF9F8',
+                background: '#FFFFFF',
+                mainBkg: '#EFF6FC',
+                secondBkg: '#DEECF9',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#F3F2F1',
+                clusterBorder: '#C7E0F4',
+                titleColor: '#003D69',
+                edgeLabelBackground: '#FFFFFF',
+                fontFamily: 'Noto Sans JP, Segoe UI, sans-serif'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+</body>
+</html>
