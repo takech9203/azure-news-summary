@@ -5,7 +5,10 @@
 
 ## 2026 年
 
+- [2026-04-15 - Azure Disk Storage: Premium SSD v2 / Ultra Disk のクロステナント カスタマー マネージド キー暗号化が一般提供開始](2026/2026-04-15-disk-storage-cross-tenant-cmk.md)
 - [2026-04-14 - Azure Blob Storage / Azure Data Lake Storage: Smart Tier の一般提供開始 (GA)](2026/2026-04-14-blob-storage-smart-tier.md)
+- [2026-04-14 - Azure Site Recovery: Windows Azure VM における NVMe ディスクコントローラーサポート (パブリックプレビュー)](2026/2026-04-14-site-recovery-nvme-windows-vms.md)
+- [2026-04-14 - Azure Blob Storage / Azure Data Lake Storage: クーラーティアにおける最小課金オブジェクトサイズの導入](2026/2026-04-14-blob-storage-minimum-billable-object-size.md)
 - [2026-04-13 - Azure Managed Grafana: Essential SKU の廃止 (2027 年 3 月 30 日)](2026/2026-04-13-managed-grafana-essential-sku-retirement.md)
 - [2026-04-13 - Azure Bastion: グラフィカルセッション記録におけるマネージド ID サポート (パブリックプレビュー)](2026/2026-04-13-bastion-managed-identity-session-recording.md)
 - [2026-04-13 - Azure Kubernetes Service (AKS): StandardV2 NAT Gateway をアウトバウンドタイプとして利用可能に (パブリックプレビュー)](2026/2026-04-13-aks-standardv2-nat-gateway.md)
