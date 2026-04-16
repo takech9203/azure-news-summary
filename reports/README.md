@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-04-16 - Azure NetApp Files: ユーザーおよびグループ クォータ レポート](2026/2026-04-16-netapp-files-user-group-quota-reports.md)
 - [2026-04-15 - Azure Disk Storage: Premium SSD v2 / Ultra Disk のクロステナント カスタマー マネージド キー暗号化が一般提供開始](2026/2026-04-15-disk-storage-cross-tenant-cmk.md)
 - [2026-04-14 - Azure Blob Storage / Azure Data Lake Storage: Smart Tier の一般提供開始 (GA)](2026/2026-04-14-blob-storage-smart-tier.md)
 - [2026-04-14 - Azure Site Recovery: Windows Azure VM における NVMe ディスクコントローラーサポート (パブリックプレビュー)](2026/2026-04-14-site-recovery-nvme-windows-vms.md)
