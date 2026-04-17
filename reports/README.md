@@ -5,8 +5,11 @@
 
 ## 2026 年
 
+- [2026-04-17 - Azure Backup: AKS バックアップを単一の Azure CLI コマンドで構成](2026/2026-04-17-aks-backup-single-cli-command.md)
+- [2026-04-16 - Azure Kubernetes Service (AKS): Ubuntu 22.04 サポート終了](2026/2026-04-16-aks-ubuntu-2204-retirement.md)
 - [2026-04-16 - Azure NetApp Files: ユーザーおよびグループ クォータ レポート](2026/2026-04-16-netapp-files-user-group-quota-reports.md)
 - [2026-04-15 - Azure Disk Storage: Premium SSD v2 / Ultra Disk のクロステナント カスタマー マネージド キー暗号化が一般提供開始](2026/2026-04-15-disk-storage-cross-tenant-cmk.md)
+- [2026-04-15 - Azure Batch: HBv2/HC/NP シリーズ VM サポート終了のお知らせ](2026/2026-04-15-batch-hbv2-hc-np-series-retirement.md)
 - [2026-04-14 - Azure Blob Storage / Azure Data Lake Storage: Smart Tier の一般提供開始 (GA)](2026/2026-04-14-blob-storage-smart-tier.md)
 - [2026-04-14 - Azure Site Recovery: Windows Azure VM における NVMe ディスクコントローラーサポート (パブリックプレビュー)](2026/2026-04-14-site-recovery-nvme-windows-vms.md)
 - [2026-04-14 - Azure Blob Storage / Azure Data Lake Storage: クーラーティアにおける最小課金オブジェクトサイズの導入](2026/2026-04-14-blob-storage-minimum-billable-object-size.md)
