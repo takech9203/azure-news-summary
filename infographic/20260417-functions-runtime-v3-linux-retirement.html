@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Functions: Runtime v3 (Linux Consumption) Retirement</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, #5C1300 0%, var(--ms-red) 50%, #FF6D3F 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255, 109, 63, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-retirement {
+            background: var(--ms-red);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        .alert-box {
+            background: #FFEBEE;
+            border-left: 4px solid var(--ms-red);
+            border-radius: 0 12px 12px 0;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+        }
+
+        .alert-box h3 {
+            color: var(--ms-red);
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .alert-box p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-card.breaking {
+            border-left: 4px solid var(--ms-red);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-icon.warning {
+            background: #FFEBEE;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-card.critical {
+            border-color: var(--ms-red);
+            background: #FFF8F6;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--azure-blue);
+        }
+
+        .stat-value.critical {
+            color: var(--ms-red);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            margin: 24px 0;
+            padding-left: 32px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--ms-blue-300);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 16px 0 16px 24px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -26px;
+            top: 22px;
+            width: 14px;
+            height: 14px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+            border: 3px solid var(--ms-blue-200);
+        }
+
+        .timeline-item.critical::before {
+            background: var(--ms-red);
+            border-color: #FFCDD2;
+            width: 18px;
+            height: 18px;
+            left: -28px;
+            top: 20px;
+        }
+
+        .timeline-item.past::before {
+            background: var(--ms-text-disabled);
+            border-color: var(--ms-surface-tertiary);
+        }
+
+        .timeline-date {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+        }
+
+        .timeline-item.critical .timeline-date {
+            color: var(--ms-red);
+        }
+
+        .timeline-item.past .timeline-date {
+            color: var(--ms-text-disabled);
+        }
+
+        .timeline-title {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--ms-text-primary);
+            margin-top: 2px;
+        }
+
+        .timeline-desc {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+            line-height: 1.6;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .implementation {
+            font-size: 13px;
+            color: var(--ms-text-primary);
+        }
+
+        .usecase-card .implementation ul {
+            margin-top: 4px;
+            padding-left: 20px;
+        }
+
+        .usecase-card .implementation li {
+            padding: 2px 0;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+            border-radius: 0;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Merits */
+        .merits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .merit-section h4 {
+            font-size: 15px;
+            color: var(--ms-blue-900);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .merit-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .merit-section li {
+            font-size: 13px;
+            padding: 4px 0;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .merits-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Functions</span>
+            <h1>Azure Functions Runtime v3<br>(Linux Consumption) Retirement</h1>
+            <p class="hero-subtitle">Linux Consumption プラン上のランタイム v3 アプリケーションの実行停止</p>
+            <div class="hero-meta">
+                <span class="badge badge-retirement">Retirement</span>
+                <span class="badge badge-date">2026-04-17</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">Overview</h2>
+
+            <div class="alert-box">
+                <h3>Action Required: 2026-09-30 Deadline</h3>
+                <p>Linux Consumption プラン上で動作する Azure Functions ランタイム v3 のアプリケーションは <strong>2026 年 9 月 30 日</strong> 以降に実行が完全に停止します。期限までに v4 ランタイムへの移行が必須です。</p>
+            </div>
+
+            <p class="overview-text">
+                Microsoft Azure は、Linux Consumption プラン上で動作する Azure Functions ランタイム v3 のアプリケーションが 2026 年 9 月 30 日以降に実行を停止することを発表した。ランタイム v3 は 2022 年 12 月 13 日に既に正式に廃止 (End of Life) となっているが、レガシーインフラストラクチャへの依存を削減しサポート対象のプラットフォームへの投資を集中するため、v3 ランタイムの強制的な廃止が実施される。Azure Functions v4 は v3 との後方互換性が高く、多くのアプリケーションでは大きなコード変更なしに移行が可能である。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>Linux Consumption プラン上のランタイム v3 Function App が 2026/9/30 に実行停止</li>
+                    <li>ランタイム v3 は 2022/12/13 に既に正式廃止済み (セキュリティパッチ・バグ修正なし)</li>
+                    <li>v4 ランタイムへの移行は後方互換性が高く、多くの場合は少ないコード変更で対応可能</li>
+                    <li>Linux Consumption プラン自体も 2028/9/30 に廃止予定 (Flex Consumption へ移行推奨)</li>
+                    <li>Windows Consumption プランのアプリケーションは現時点では影響を受けない</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before (v3 Runtime)</h4>
+                    <ul>
+                        <li>2022/12/13 に正式廃止済みだが Linux Consumption 上で動作継続</li>
+                        <li>セキュリティパッチやバグ修正を受けていない状態</li>
+                        <li>レガシーインフラストラクチャへの依存が残存</li>
+                        <li>古い言語バージョン (.NET Core 3.1, Node.js 12 等) に制約</li>
+                        <li>Azure Functions Proxies などの廃止予定機能に依存</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After (v4 Runtime)</h4>
+                    <ul>
+                        <li>サポート対象プラットフォームで SLA の適用を維持</li>
+                        <li>セキュリティパッチ・バグ修正が継続的に提供</li>
+                        <li>最新言語バージョン (.NET 8/10, Node.js 20/22, Python 3.12) を利用可能</li>
+                        <li>C# isolated worker model で将来の .NET 対応が容易に</li>
+                        <li>強化されたモニタリング・Key Vault 統合などの新機能を活用</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Migration Path Diagram -->
+        <section class="section">
+            <h2 class="section-title">Migration Path</h2>
+            <p class="overview-text">Azure Functions ランタイム v3 から v4 への移行は、影響範囲の特定、ローカルプロジェクトの移行、Azure 上のアプリ更新の 3 つのステップで構成される。</p>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph Current["現在の状態 (廃止対象)"]
+        V3["Azure Functions ランタイム v3\nLinux Consumption プラン\nFUNCTIONS_EXTENSION_VERSION=~3"]
+    end
+
+    subgraph Identify["Step 1: 影響範囲の特定"]
+        Check["PowerShell / Azure CLI で\nv3 アプリを一覧取得"]
+        Validator["Azure Portal で\nPre-Upgrade Validator 実行"]
+    end
+
+    subgraph Migrate["Step 2: ローカルプロジェクトの移行"]
+        Lang{"開発言語"}
+        CS[".NET: TargetFramework 更新\nAzureFunctionsVersion=v4\nisolated worker model 推奨"]
+        Node["Node.js: サポート対象\nバージョンに更新"]
+        Python["Python: 3.7+ に更新\nextension bundle 2.x+"]
+        Java["Java: POM.xml 更新\nFUNCTIONS_EXTENSION_VERSION=~4"]
+        PS["PowerShell: 7.2+ に更新"]
+    end
+
+    subgraph Deploy["Step 3: Azure 上のアプリ更新"]
+        Setting["FUNCTIONS_EXTENSION_VERSION=~4\nに設定"]
+        LinuxFx["linuxFxVersion を\n対象言語バージョンに更新"]
+        Slot["ステージングスロットで\n検証後にスワップ"]
+    end
+
+    subgraph Target["移行完了"]
+        V4["Azure Functions ランタイム v4\nLinux Consumption プラン\n(将来的に Flex Consumption へ)"]
+    end
+
+    V3 --> Check
+    V3 --> Validator
+    Check --> Lang
+    Validator --> Lang
+    Lang -->|C#| CS
+    Lang -->|JavaScript/TypeScript| Node
+    Lang -->|Python| Python
+    Lang -->|Java| Java
+    Lang -->|PowerShell| PS
+    CS --> Setting
+    Node --> Setting
+    Python --> Setting
+    Java --> Setting
+    PS --> Setting
+    Setting --> LinuxFx
+    LinuxFx --> Slot
+    Slot --> V4
+
+    style Current fill:#fee,stroke:#c00,stroke-width:2px
+    style Target fill:#efe,stroke:#0a0,stroke-width:2px
+    style Identify fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    style Migrate fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    style Deploy fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline -->
+        <section class="section">
+            <h2 class="section-title">Timeline</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" style="font-size: 18px;">2022-12-13</div>
+                    <div class="stat-label">v3 正式廃止日</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="font-size: 18px;">2026-04-17</div>
+                    <div class="stat-label">強制廃止の発表</div>
+                </div>
+                <div class="stat-card critical">
+                    <div class="stat-value critical" style="font-size: 18px;">2026-09-30</div>
+                    <div class="stat-label">v3 実行停止日</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" style="font-size: 18px;">2028-09-30</div>
+                    <div class="stat-label">Linux Consumption 廃止</div>
+                </div>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item past">
+                    <div class="timeline-date">2022-12-13</div>
+                    <div class="timeline-title">Azure Functions Runtime v2.x/v3.x End of Life</div>
+                    <div class="timeline-desc">ランタイム v3 の延長サポートが終了。セキュリティパッチ・バグ修正の提供が停止。ただし Linux Consumption 上のアプリは動作を継続。</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">2026-04-17</div>
+                    <div class="timeline-title">Linux Consumption での v3 強制廃止を発表</div>
+                    <div class="timeline-desc">レガシーインフラストラクチャの依存削減のため、Linux Consumption プランでの v3 ランタイムの実行停止を発表。</div>
+                </div>
+                <div class="timeline-item critical">
+                    <div class="timeline-date">2026-09-30</div>
+                    <div class="timeline-title">v3 ランタイムの実行停止</div>
+                    <div class="timeline-desc">Linux Consumption プラン上のランタイム v3 アプリケーションが完全に実行停止。HTTP/Timer/Queue など全トリガータイプが影響。v4 への移行が必須。</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-date">2028-09-30</div>
+                    <div class="timeline-title">Linux Consumption プラン自体の廃止</div>
+                    <div class="timeline-desc">Linux Consumption プランが廃止予定。Flex Consumption プランへの移行を長期的に計画する必要がある。</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Breaking Changes -->
+        <section class="section">
+            <h2 class="section-title">Breaking Changes (v3 to v4)</h2>
+
+            <div class="feature-cards">
+                <div class="feature-card breaking">
+                    <div class="feature-icon warning">&#x26D4;</div>
+                    <div class="feature-content">
+                        <h4>Azure Functions Proxies</h4>
+                        <p>v4 では非サポート。API Management への移行が必要。Proxies 機能を使用して API ルーティングやレスポンス変換を行っていた場合、Azure API Management で同等の機能を構成する。</p>
+                    </div>
+                </div>
+                <div class="feature-card breaking">
+                    <div class="feature-icon warning">&#x26D4;</div>
+                    <div class="feature-content">
+                        <h4>AzureWebJobsDashboard</h4>
+                        <p>v4 では非サポート。Application Insights を使用したモニタリングに移行する。AzureWebJobsDashboard アプリケーション設定は削除し、APPINSIGHTS_INSTRUMENTATIONKEY を設定。</p>
+                    </div>
+                </div>
+                <div class="feature-card breaking">
+                    <div class="feature-icon warning">&#x1F512;</div>
+                    <div class="feature-content">
+                        <h4>Extension Minimum Version</h4>
+                        <p>v4 ではバインディング拡張機能の最小バージョン要件が強制される。extension bundle を 2.x 以上に更新し、すべてのバインディングパッケージが最新バージョンであることを確認する。</p>
+                    </div>
+                </div>
+                <div class="feature-card breaking">
+                    <div class="feature-icon warning">&#x1F511;</div>
+                    <div class="feature-content">
+                        <h4>Key Vault Provider</h4>
+                        <p>Key Vault 参照プロバイダーが <code>Azure.Identity</code> / <code>Azure.Security.KeyVault.Secrets</code> に変更。古い Key Vault SDK に依存していたコードは更新が必要。</p>
+                    </div>
+                </div>
+                <div class="feature-card breaking">
+                    <div class="feature-icon warning">&#x23F1;</div>
+                    <div class="feature-content">
+                        <h4>Linux Consumption Timeout</h4>
+                        <p>v4 ではデフォルトおよび最大タイムアウトが強制される。長時間実行されるファンクションではタイムアウト設定を見直し、必要に応じて処理の分割を検討する。</p>
+                    </div>
+                </div>
+                <div class="feature-card breaking">
+                    <div class="feature-icon warning">&#x1F4DB;</div>
+                    <div class="feature-content">
+                        <h4>Host ID Uniqueness</h4>
+                        <p>ストレージアカウントを共有するアプリではホスト ID が一意である必要がある。同一ストレージアカウントを使用する複数の Function App がある場合、ホスト ID の重複がないことを確認する。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Language Version Table -->
+        <section class="section">
+            <h2 class="section-title">Language Version Support (v4)</h2>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>Language</th>
+                        <th>Supported Versions</th>
+                        <th>Migration Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>C# (.NET)</strong></td>
+                        <td>.NET 8 (LTS), .NET 9 (STS), .NET 10 (LTS), .NET Framework 4.8</td>
+                        <td>isolated worker model への移行を推奨。in-process model は .NET 8 まで (2026/11/10 サポート終了)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Java</strong></td>
+                        <td>Java 8, 11, 17, 21</td>
+                        <td>POM.xml の FUNCTIONS_EXTENSION_VERSION を ~4 に更新</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Node.js</strong></td>
+                        <td>Node.js 18, 20, 22</td>
+                        <td>Node.js 10/12 は非サポート。extension bundle 2.x 以上が必要</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Python</strong></td>
+                        <td>Python 3.7, 3.8, 3.9, 3.10, 3.11, 3.12</td>
+                        <td>Python 3.6 は非サポート。extension bundle 2.x 以上が必要</td>
+                    </tr>
+                    <tr>
+                        <td><strong>PowerShell</strong></td>
+                        <td>PowerShell 7.2, 7.4</td>
+                        <td>Linux 上の PowerShell は v4 からサポート</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3 style="font-size: 16px; margin: 24px 0 12px; color: var(--ms-blue-900);">Application Settings Changes</h3>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>Setting</th>
+                        <th>v3 Value</th>
+                        <th>v4 Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>FUNCTIONS_EXTENSION_VERSION</td>
+                        <td>~3</td>
+                        <td>~4</td>
+                    </tr>
+                    <tr>
+                        <td>FUNCTIONS_WORKER_RUNTIME (C# isolated)</td>
+                        <td>dotnet</td>
+                        <td>dotnet-isolated</td>
+                    </tr>
+                    <tr>
+                        <td>FUNCTIONS_INPROC_NET8_ENABLED (C# in-process)</td>
+                        <td>-</td>
+                        <td>1 (in-process model で .NET 8 を使用する場合)</td>
+                    </tr>
+                    <tr>
+                        <td>linuxFxVersion</td>
+                        <td>Language/Version dependent</td>
+                        <td>Update to latest supported version</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: IoT Data Pipeline Migration</h4>
+                    <p class="scenario">Linux Consumption プラン上で Azure Functions v3 (Python 3.8) を使用して IoT Hub からのイベントを処理し、Cosmos DB に格納するパイプラインを運用している組織が、v4 ランタイムへ移行する。</p>
+                    <div class="implementation">
+                        <strong>Migration Steps:</strong>
+                        <ul>
+                            <li>extension bundle を 2.x 以上に更新</li>
+                            <li>Python バージョンを 3.10 以上に更新</li>
+                            <li>FUNCTIONS_EXTENSION_VERSION を ~4 に変更</li>
+                            <li>linuxFxVersion を Python|3.10 に更新</li>
+                        </ul>
+                    </div>
+                    <p class="effect">-- 最新の Python ランタイムとバインディングにより、パフォーマンスの向上とセキュリティの強化が期待できる。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: .NET Web API Modernization</h4>
+                    <p class="scenario">Linux Consumption プラン上で Azure Functions v3 (C# / .NET Core 3.1 in-process) を使用して REST API を提供している組織が、v4 ランタイムおよび .NET 8 isolated worker model へ移行する。</p>
+                    <div class="implementation">
+                        <strong>Migration Steps:</strong>
+                        <ul>
+                            <li>.csproj の TargetFramework を net8.0、AzureFunctionsVersion を v4 に変更</li>
+                            <li>Microsoft.NET.Sdk.Functions パッケージを Microsoft.Azure.Functions.Worker 系パッケージに置換</li>
+                            <li>Program.cs を追加し、ConfigureFunctionsWebApplication() で ASP.NET Core 統合を構成</li>
+                            <li>FUNCTIONS_WORKER_RUNTIME を dotnet-isolated に変更</li>
+                        </ul>
+                    </div>
+                    <p class="effect">-- ASP.NET Core 統合によるパフォーマンス向上と、isolated worker model による将来の .NET バージョンへのスムーズな対応が可能になる。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Samples -->
+        <section class="section">
+            <h2 class="section-title">Code Samples</h2>
+
+            <h3 style="font-size: 16px; margin: 0 0 12px; color: var(--ms-blue-900);">Find Affected Apps (PowerShell)</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">PowerShell</span>
+                </div>
+                <pre><code class="language-powershell">$Subscription = '&lt;YOUR SUBSCRIPTION ID&gt;'
+
+Set-AzContext -Subscription $Subscription | Out-Null
+
+$FunctionApps = Get-AzFunctionApp
+
+$AppInfo = @{}
+
+foreach ($App in $FunctionApps)
+{
+     if ($App.ApplicationSettings["FUNCTIONS_EXTENSION_VERSION"] -like '*3*')
+     {
+          $AppInfo.Add($App.Name, $App.ApplicationSettings["FUNCTIONS_EXTENSION_VERSION"])
+     }
+}
+
+$AppInfo</code></pre>
+            </div>
+
+            <h3 style="font-size: 16px; margin: 24px 0 12px; color: var(--ms-blue-900);">Update Runtime Version (Azure CLI)</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Bash</span>
+                </div>
+                <pre><code class="language-bash"># Check current runtime version
+az functionapp config appsettings list \
+  --name &lt;APP_NAME&gt; \
+  --resource-group &lt;RESOURCE_GROUP_NAME&gt; \
+  --query "[?name=='FUNCTIONS_EXTENSION_VERSION']"
+
+# Update runtime version to v4
+az functionapp config appsettings set \
+  --settings FUNCTIONS_EXTENSION_VERSION=~4 \
+  -g &lt;RESOURCE_GROUP_NAME&gt; \
+  -n &lt;APP_NAME&gt;
+
+# Update linuxFxVersion (e.g., Python 3.10)
+az functionapp config set \
+  --name &lt;APP_NAME&gt; \
+  --resource-group &lt;RESOURCE_GROUP_NAME&gt; \
+  --linux-fx-version "Python|3.10"</code></pre>
+            </div>
+
+            <h3 style="font-size: 16px; margin: 24px 0 12px; color: var(--ms-blue-900);">Safe Migration with Staging Slot</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Bash</span>
+                </div>
+                <pre><code class="language-bash"># Set WEBSITE_OVERRIDE_STICKY_EXTENSION_VERSIONS on staging slot
+az functionapp config appsettings set \
+  --settings WEBSITE_OVERRIDE_STICKY_EXTENSION_VERSIONS=0 \
+  -g &lt;RESOURCE_GROUP_NAME&gt; \
+  -n &lt;APP_NAME&gt; \
+  --slot staging
+
+# Update runtime version on staging slot
+az functionapp config appsettings set \
+  --settings FUNCTIONS_EXTENSION_VERSION=~4 \
+  -g &lt;RESOURCE_GROUP_NAME&gt; \
+  -n &lt;APP_NAME&gt; \
+  --slot staging
+
+# Swap staging to production after verification
+az functionapp deployment slot swap \
+  -g &lt;RESOURCE_GROUP_NAME&gt; \
+  -n &lt;APP_NAME&gt; \
+  --slot staging \
+  --target-slot production</code></pre>
+            </div>
+        </section>
+
+        <!-- Benefits -->
+        <section class="section">
+            <h2 class="section-title">Benefits of Migration</h2>
+            <div class="merits-grid">
+                <div class="merit-section">
+                    <h4>Business</h4>
+                    <ul>
+                        <li>サポート対象プラットフォーム上で SLA の適用を維持し、サービス継続を確保</li>
+                        <li>セキュリティパッチ・バグ修正が提供される最新ランタイムでコンプライアンスリスクを低減</li>
+                    </ul>
+                </div>
+                <div class="merit-section">
+                    <h4>Technical</h4>
+                    <ul>
+                        <li>.NET 8/10、Node.js 20/22、Python 3.12 など最新言語バージョンを利用可能</li>
+                        <li>C# isolated worker model で将来の .NET バージョンへの対応が容易に</li>
+                        <li>extension bundle 最新バージョンで新しいバインディング機能やパフォーマンス改善を活用</li>
+                        <li>強化されたモニタリング・Key Vault 統合などの v4 プラットフォーム機能を利用可能</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">Limitations / Caveats</h2>
+            <ul class="limitations-list">
+                <li>Azure Functions Proxies は v4 で利用不可。API Management への移行が必要</li>
+                <li>一部バインディングのパッケージ名・クラス名が変更されており、コード修正が必要な場合がある</li>
+                <li>C# in-process model は .NET 8 までのサポート (2026/11/10 サポート終了)。isolated worker model への二段階移行が必要になる可能性</li>
+                <li>移行後のアプリケーション動作検証に一定のテスト工数が必要</li>
+                <li>Linux Consumption プラン自体も 2028/9/30 に廃止予定。長期的には Flex Consumption への移行計画が必要</li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source URLs</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=559311" target="_blank">Azure Updates - Azure Functions Runtime v3 Linux Consumption Retirement</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-functions/migrate-version-3-version-4" target="_blank">Microsoft Learn - Migrate from v3 to v4</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-functions/functions-versions" target="_blank">Microsoft Learn - Azure Functions runtime versions overview</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-functions/supported-languages" target="_blank">Microsoft Learn - Supported languages in Azure Functions</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-functions/migration/migrate-plan-consumption-to-flex" target="_blank">Microsoft Learn - Migrate to Flex Consumption plan</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/functions/" target="_blank">Azure Functions Pricing</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-04-18 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

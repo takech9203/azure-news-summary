@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-04-17 - Azure Databricks: Anthropic Claude Opus 4.7 の一般提供開始](2026/2026-04-17-databricks-claude-opus-4-7.md)
+- [2026-04-17 - Azure Functions: ランタイム v3 (Linux Consumption) の実行停止のお知らせ](2026/2026-04-17-functions-runtime-v3-linux-retirement.md)
 - [2026-04-17 - Azure Backup: AKS バックアップを単一の Azure CLI コマンドで構成](2026/2026-04-17-aks-backup-single-cli-command.md)
 - [2026-04-16 - Azure Kubernetes Service (AKS): Ubuntu 22.04 サポート終了](2026/2026-04-16-aks-ubuntu-2204-retirement.md)
 - [2026-04-16 - Azure NetApp Files: ユーザーおよびグループ クォータ レポート](2026/2026-04-16-netapp-files-user-group-quota-reports.md)
