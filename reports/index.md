@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-04-20 - Azure Monitor: Azure Monitor Agent によるネイティブ OTLP インジェストのサポート](2026/2026-04-20-azure-monitor-otlp-ama-ingestion.md)
 - [2026-04-17 - Azure Databricks: Anthropic Claude Opus 4.7 の一般提供開始](2026/2026-04-17-databricks-claude-opus-4-7.md)
 - [2026-04-17 - Azure Functions: ランタイム v3 (Linux Consumption) の実行停止のお知らせ](2026/2026-04-17-functions-runtime-v3-linux-retirement.md)
 - [2026-04-17 - Azure Backup: AKS バックアップを単一の Azure CLI コマンドで構成](2026/2026-04-17-aks-backup-single-cli-command.md)
