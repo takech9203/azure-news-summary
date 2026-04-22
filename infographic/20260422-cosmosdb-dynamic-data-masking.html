@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Cosmos DB: Dynamic Data Masking (DDM) の一般提供開始</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: #107C10;
+            color: white;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--azure-blue);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .implementation {
+            font-size: 13px;
+            color: var(--ms-text-primary);
+        }
+
+        .usecase-card .implementation ul {
+            margin-top: 4px;
+            padding-left: 20px;
+        }
+
+        .usecase-card .implementation li {
+            padding: 2px 0;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Region Tags */
+        .region-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .region-tag {
+            background: var(--ms-blue-200);
+            color: var(--ms-blue-900);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Pricing */
+        .pricing-note {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            border-left: 4px solid var(--ms-green);
+        }
+
+        .pricing-note .price-highlight {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ms-green);
+        }
+
+        .pricing-note p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-top: 8px;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Merits */
+        .merits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .merit-section h4 {
+            font-size: 15px;
+            color: var(--ms-blue-900);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .merit-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .merit-section li {
+            font-size: 13px;
+            padding: 4px 0;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .merits-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Cosmos DB</span>
+            <h1>Dynamic Data Masking (DDM) の一般提供開始</h1>
+            <p class="hero-subtitle">サーバーサイドのポリシー設定で機密データを保護、アプリケーションコード変更不要</p>
+            <div class="hero-meta">
+                <span class="badge badge-ga">Launched (GA)</span>
+                <span class="badge badge-date">2026-04-22</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Cosmos DB の Dynamic Data Masking (DDM) が一般提供 (GA) となった。DDM はサーバーサイドのポリシーベースのセキュリティ機能であり、クエリ実行時にリアルタイムでデータをマスキングする。格納されたデータ自体は一切変更されず、ユーザーの RBAC 権限に応じて自動的にマスク済みデータまたは元データが返される。アプリケーションコードの変更は不要で、コンテナーレベルのポリシー設定のみでデータ保護を実現できる。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>サーバーサイドのリアルタイムマスキング</li>
+                    <li>3種類のマスキング戦略 (Default, Custom String, Email)</li>
+                    <li>RBAC 連携による権限ベースの自動マスキング</li>
+                    <li>アプリケーションコード変更不要</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>アプリケーション側でマスキングロジック実装が必要</li>
+                        <li>ユーザー権限に応じたデータ表示制御がサーバーサイドで不可</li>
+                        <li>コンプライアンス対応に追加開発工数</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>サーバーサイドのポリシー設定のみで実現</li>
+                        <li>RBAC連携で権限レベルに応じた自動マスキング</li>
+                        <li>複数戦略の柔軟な組み合わせ</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph Azure["Azure Cloud"]
+        subgraph EntraID["Microsoft Entra ID"]
+            MI["マネージド ID"]
+        end
+
+        subgraph CosmosDB["Azure Cosmos DB"]
+            RBAC["データプレーン RBAC"]
+            DDM["DDM エンジン"]
+            Policy["マスキングポリシー"]
+            Data[("元データ\n(変更なし)")]
+        end
+
+        HighUser["高権限ユーザー\n(unmask 権限あり)"]
+        LowUser["低権限ユーザー\n(読み取り専用)"]
+    end
+
+    HighUser -->|"認証"| MI
+    LowUser -->|"認証"| MI
+    MI -->|"ロール判定"| RBAC
+    RBAC -->|"unmask 権限あり"| Data
+    RBAC -->|"unmask 権限なし"| DDM
+    DDM -->|"ポリシー参照"| Policy
+    DDM -->|"マスク済みデータ"| LowUser
+    Data -->|"元データ"| HighUser
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">3種類</div>
+                    <div class="stat-label">マスキング戦略</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">15分</div>
+                    <div class="stat-label">有効化所要時間(最大)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0円</div>
+                    <div class="stat-label">DDM 追加費用</div>
+                </div>
+            </div>
+
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F512;</div>
+                    <div class="feature-content">
+                        <h4>サーバーサイドリアルタイムマスキング</h4>
+                        <p>クエリ実行時にマスク、元データは変更なし</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F3AD;</div>
+                    <div class="feature-content">
+                        <h4>3種類のマスキング戦略</h4>
+                        <p>Default (XXXX/0/false), Custom String (部分マスク), Email (aXXXX@XXXXXXX.com)</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4CB;</div>
+                    <div class="feature-content">
+                        <h4>ポリシーベースの柔軟な設定</h4>
+                        <p>パス単位で戦略定義、includedPaths/excludedPaths、ネスト・配列対応</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F511;</div>
+                    <div class="feature-content">
+                        <h4>RBAC 連携</h4>
+                        <p>Microsoft Entra ID + データプレーン RBAC、unmask 権限による制御</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x2699;</div>
+                    <div class="feature-content">
+                        <h4>コード変更不要</h4>
+                        <p>アプリケーション側の変更なしでデータ保護を実現</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">Technical Specs</h2>
+            <table class="specs-table">
+                <tbody>
+                    <tr><th>対応 API</th><td>NoSQL API のみ</td></tr>
+                    <tr><th>認証方式</th><td>Microsoft Entra ID マネージド ID</td></tr>
+                    <tr><th>マスキング戦略</th><td>Default / Custom String / Email</td></tr>
+                    <tr><th>ポリシー適用単位</th><td>コンテナーレベル</td></tr>
+                    <tr><th>有効化後の無効化</th><td>不可</td></tr>
+                    <tr><th>有効化所要時間</th><td>最大 15 分</td></tr>
+                    <tr><th>RU への影響</th><td>若干の RU 増加あり</td></tr>
+                </tbody>
+            </table>
+
+            <h3 style="font-size: 16px; margin: 24px 0 12px; color: var(--ms-blue-900);">Masking Policy Configuration</h3>
+            <pre><code class="language-json">{
+  "dataMaskingPolicy": {
+    "includedPaths": [
+      { "path": "/" },
+      { "path": "/profile/contact/email", "strategy": "Email" },
+      {
+        "path": "/employment/history/[]/company",
+        "strategy": "MaskSubstring",
+        "startPosition": 2,
+        "length": 4
+      }
+    ],
+    "excludedPaths": [
+      { "path": "/id" },
+      { "path": "/department" }
+    ]
+  }
+}</code></pre>
+
+            <h3 style="font-size: 16px; margin: 24px 0 12px; color: var(--ms-blue-900);">Unmask Role Definition</h3>
+            <pre><code class="language-bash">az cosmosdb sql role definition create \
+  --account-name "&lt;CosmosDB-account-name&gt;" \
+  --resource-group "&lt;resource-group-name&gt;" \
+  --body "@unmasked_role_definition.json"</code></pre>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: 医療データの保護</h4>
+                    <p class="scenario">HIPAA コンプライアンス要件に対応し、患者の個人情報や医療記録をマスキングするケース。</p>
+                    <div class="implementation">
+                        <strong>Implementation:</strong>
+                        <ul>
+                            <li>患者名・住所・電話番号に Default マスキングを適用</li>
+                            <li>メールアドレスに Email 戦略を適用</li>
+                            <li>医師・管理者には unmask 権限を付与</li>
+                            <li>一般スタッフはマスク済みデータのみ参照可能</li>
+                        </ul>
+                    </div>
+                    <p class="effect">-- HIPAA コンプライアンスをサーバーサイドで自動的に実現し、開発工数を大幅削減。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: IoT デバイスデータの機密保護</h4>
+                    <p class="scenario">IoT デバイスから収集されるメトリクスは表示しつつ、個人情報やデバイスオーナー情報はマスクするケース。</p>
+                    <div class="implementation">
+                        <strong>Implementation:</strong>
+                        <ul>
+                            <li>デバイスメトリクス (温度・湿度等) のパスを excludedPaths に設定</li>
+                            <li>オーナー情報・位置情報に Custom String マスキングを適用</li>
+                            <li>運用チームには部分的な unmask 権限を付与</li>
+                        </ul>
+                    </div>
+                    <p class="effect">-- デバイスメトリクスは全スタッフが確認でき、個人情報は権限に応じて自動保護。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC3: マルチテナント SaaS</h4>
+                    <p class="scenario">サポートチームが顧客データを確認する際に、機密情報を部分的にマスクして表示するケース。</p>
+                    <div class="implementation">
+                        <strong>Implementation:</strong>
+                        <ul>
+                            <li>顧客のクレジットカード情報・SSN に Default マスキングを適用</li>
+                            <li>メールアドレスに Email 戦略で部分表示</li>
+                            <li>サポートチームは読み取り専用 (マスク済み)、管理者は unmask 権限付与</li>
+                        </ul>
+                    </div>
+                    <p class="effect">-- サポート業務に必要な情報は確認可能、機密データは権限レベルに応じて自動制御。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">Limitations / Caveats</h2>
+            <ul class="limitations-list">
+                <li>NoSQL API のみ (他 API 非対応)</li>
+                <li>有効化後の無効化不可</li>
+                <li>アカウントキー認証非対応</li>
+                <li>配列の特定インデックスへのマスキング非対応</li>
+                <li>Change Feed は unmask 権限なしユーザーには利用不可</li>
+                <li>Fabric ミラーリング・Analytical Store はデフォルト非対応</li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source URLs</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=559633" target="_blank">Azure Updates - Dynamic Data Masking for Azure Cosmos DB</a></li>
+                <li><a href="https://learn.microsoft.com/azure/cosmos-db/dynamic-data-masking" target="_blank">Microsoft Learn - Azure Cosmos DB Dynamic Data Masking</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/cosmos-db/" target="_blank">Azure Cosmos DB Pricing</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-04-22 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

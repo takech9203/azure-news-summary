@@ -5,6 +5,12 @@
 
 ## 2026 年
 
+- [2026-04-22 - Azure Cosmos DB: Dynamic Data Masking (DDM) の一般提供開始](2026/2026-04-22-cosmosdb-dynamic-data-masking.md)
+- [2026-04-22 - Azure Database for PostgreSQL: VNet 統合から Private Endpoint 対応ネットワーク構成への移行](2026/2026-04-22-postgresql-vnet-to-private-endpoint.md)
+- [2026-04-22 - Azure Database for PostgreSQL: Denmark East リージョン対応 & レプリケーションスロット同期メトリック](2026/2026-04-22-postgresql-denmark-east-replication-metric.md)
+- [2026-04-22 - Azure Database for PostgreSQL: Fabric Mirroring の機能強化が一般提供開始](2026/2026-04-22-postgresql-fabric-mirroring-enhanced.md)
+- [2026-04-22 - Azure Database for PostgreSQL: Premium SSD v2 ストレージの一般提供開始 (GA)](2026/2026-04-22-postgresql-premium-ssd-v2.md)
+- [2026-04-21 - Azure Monitor Pipeline: 一般提供開始 (GA)](2026/2026-04-21-azure-monitor-pipeline-ga.md)
 - [2026-04-21 - Azure Monitor: Application Insights API キーの廃止と Microsoft Entra ID への移行](2026/2026-04-21-monitor-application-insights-entra-id-retirement.md)
 - [2026-04-21 - Azure NetApp Files: Advanced Ransomware Protection (ANF ARP) が GA](2026/2026-04-21-netapp-files-ransomware-protection.md)
 - [2026-04-20 - Azure Monitor: Azure Monitor Agent によるネイティブ OTLP インジェストのサポート](2026/2026-04-20-azure-monitor-otlp-ama-ingestion.md)
