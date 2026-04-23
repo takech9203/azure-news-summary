@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Arc: SQL Server on Azure VM を移行ターゲットとして追加</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .category-badge {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+            border-left-color: var(--azure-blue);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Migration Workflow */
+        .workflow-steps {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0;
+            margin: 20px 0;
+            position: relative;
+        }
+
+        .workflow-step {
+            display: flex;
+            gap: 16px;
+            padding: 16px 0;
+            position: relative;
+        }
+
+        .workflow-step:not(:last-child) {
+            border-bottom: 1px dashed var(--ms-border);
+        }
+
+        .step-number {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .step-content h4 {
+            font-size: 15px;
+            color: var(--ms-blue-900);
+            margin-bottom: 4px;
+        }
+
+        .step-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .implementation {
+            font-size: 13px;
+            color: var(--ms-text-primary);
+        }
+
+        .usecase-card .implementation ul {
+            margin-top: 4px;
+            padding-left: 20px;
+        }
+
+        .usecase-card .implementation li {
+            padding: 2px 0;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .pricing-item {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 16px;
+            border-left: 4px solid var(--ms-green);
+        }
+
+        .pricing-item h4 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            margin-bottom: 4px;
+        }
+
+        .pricing-item p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Related Services Tags */
+        .service-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .service-tag {
+            background: var(--ms-blue-200);
+            color: var(--ms-blue-900);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #D4D4D4;
+            font-family: 'Consolas', 'Courier New', monospace;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Arc</span>
+            <span class="category-badge">Database</span>
+            <h1>SQL Server on Azure Virtual Machines を移行ターゲットとして追加</h1>
+            <p class="hero-subtitle">Azure Arc の統合マイグレーションエクスペリエンスに IaaS 型移行先を追加、PaaS / IaaS を単一 UI で選択可能に</p>
+            <div class="hero-meta">
+                <span class="badge badge-preview">In Preview</span>
+                <span class="badge badge-date">2026-04-22</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview + Before/After -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Arc のマイグレーション機能に SQL Server on Azure VM が新たな移行ターゲットとして追加された（パブリックプレビュー）。これまで Azure SQL Managed Instance のみだった移行先に、IaaS 型の SQL Server on Azure VM が加わり、同一の統合マイグレーションエクスペリエンスで実行可能になった。Azure Database Migration Service (DMS) との統合により、オンライン移行（最小ダウンタイム）およびオフライン移行の両方をサポートする。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>Azure Arc の「Database Migration」ペインから SQL Server on Azure VM を直接選択可能</li>
+                    <li>Azure SQL Managed Instance と SQL Server on Azure VM の両ターゲットに統一 UI で対応</li>
+                    <li>オンライン移行（最小ダウンタイム）とオフライン移行の両モードをサポート</li>
+                    <li>Azure Database Migration Service (DMS) との統合による自動化された移行ワークフロー</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>Azure Arc を通じた SQL Server の移行ターゲットは Azure SQL Managed Instance のみに限定</li>
+                        <li>SQL Server on Azure VM への移行は Azure Arc の統合エクスペリエンスとは別に DMS を個別構成する必要</li>
+                        <li>IaaS 型ターゲットでは移行ツールが分散し管理が複雑化</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>Azure Arc の「Database Migration」ペインから SQL Server on Azure VM を直接選択可能</li>
+                        <li>Azure SQL Managed Instance と SQL Server on Azure VM の両方に対応した統一的マイグレーション</li>
+                        <li>評価・選択・実行・監視・カットオーバーを単一インターフェースで完結</li>
+                        <li>ワークロード互換性要件に応じて最適な移行先を柔軟に選択可能</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph OnPrem["オンプレミス / エッジ環境"]
+        SQL_SRC[("SQL Server\n(ソースインスタンス)")]
+        ArcAgent["Azure Arc Agent\n(Azure Connected Machine Agent)"]
+        ArcExt["Azure Extension\nfor SQL Server"]
+        SHIR["Self-hosted\nIntegration Runtime\n(オプション)"]
+        Backup["バックアップファイル\n(SMB 共有)"]
+
+        SQL_SRC --- ArcAgent
+        ArcAgent --- ArcExt
+        SQL_SRC -->|"バックアップ"| Backup
+        Backup --- SHIR
+    end
+
+    subgraph Azure["Azure Cloud"]
+        Portal["Azure Portal\nDatabase Migration ペイン"]
+        DMS["Azure Database\nMigration Service"]
+        BlobStorage["Azure Blob Storage\n(中間バックアップ格納)"]
+
+        subgraph Target1["移行先 1: PaaS"]
+            SQLMI[("Azure SQL\nManaged Instance")]
+        end
+
+        subgraph Target2["移行先 2: IaaS (New)"]
+            SQLVM[("SQL Server on\nAzure VM")]
+        end
+    end
+
+    ArcExt -->|"評価・移行制御"| Portal
+    Portal --> DMS
+    SHIR -->|"バックアップ\nアップロード"| BlobStorage
+    DMS -->|"Managed Instance Link\nor LRS"| SQLMI
+    DMS -->|"バックアップ\nリストア"| SQLVM
+    BlobStorage --> DMS
+
+    style Target2 fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+    style SQLVM fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats / Key Numbers -->
+        <section class="section">
+            <h2 class="section-title">Key Numbers</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">移行ターゲット種別</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">移行モード (Online / Offline)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2012+</div>
+                    <div class="stat-label">対応ソース SQL Server</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1</div>
+                    <div class="stat-label">統一 UI で完結</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F504;</div>
+                    <div class="feature-content">
+                        <h4>SQL Server on Azure VM への統合マイグレーション</h4>
+                        <p>Azure Arc の「Database Migration」ペインから直接選択可能。既存の Managed Instance 移行と同じ UI / ワークフローで IaaS 型ターゲットへの移行を実行できる。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F50D;</div>
+                    <div class="feature-content">
+                        <h4>移行先の評価と推奨</h4>
+                        <p>ソース SQL Server の構成やワークロード特性を自動評価。Managed Instance vs Azure VM の最適推奨と互換性問題の事前検出を行う。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x26A1;</div>
+                    <div class="feature-content">
+                        <h4>オンライン移行とオフライン移行のサポート</h4>
+                        <p>オンライン: 継続的リストアで最小ダウンタイム。オフライン: バックアップ/リストア方式。SHIR 経由 SMB 共有または Blob Storage 直接対応。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F3AF;</div>
+                    <div class="feature-content">
+                        <h4>Azure Portal からのエンドツーエンドの移行管理</h4>
+                        <p>評価 → 実行 → 監視 → カットオーバーを一元管理。ステータス追跡により移行進捗をリアルタイムで確認可能。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Migration Workflow Steps -->
+        <section class="section">
+            <h2 class="section-title">Migration Workflow</h2>
+            <div class="workflow-steps">
+                <div class="workflow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h4>Azure Arc エージェントのインストールと SQL Server の登録</h4>
+                        <p>オンプレミスの SQL Server に Azure Arc Agent (Azure Connected Machine Agent) をインストールし、Azure Extension for SQL Server を有効化する。</p>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h4>Azure Portal で「Database Migration」ペインを開く</h4>
+                        <p>Arc 対応 SQL Server のリソースページから「Database Migration」セクションに移動し、移行ウィザードを起動する。</p>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h4>移行先ターゲットの選択</h4>
+                        <p>Azure SQL Managed Instance または SQL Server on Azure VM のいずれかを移行先として選択する。ワークロード評価結果に基づき最適なターゲットを推奨。</p>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h4>移行モードとバックアップ設定の構成</h4>
+                        <p>オンライン(最小ダウンタイム)またはオフライン移行を選択。バックアップ格納先として Azure Blob Storage または SMB 共有(SHIR 経由)を設定する。</p>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h4>移行の実行と監視</h4>
+                        <p>DMS が自動でバックアップの転送とリストアを実行。Portal からリアルタイムで移行ステータスを追跡できる。</p>
+                    </div>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <h4>カットオーバーの実行</h4>
+                        <p>オンライン移行の場合、最終同期後にカットオーバーを実行して移行を完了。アプリケーション接続先を新しいターゲットに切り替える。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">Technical Specs</h2>
+            <table class="specs-table">
+                <tbody>
+                    <tr><th>ステータス</th><td>パブリックプレビュー</td></tr>
+                    <tr><th>移行元</th><td>Azure Arc 対応 SQL Server (SQL Server 2012 以降)</td></tr>
+                    <tr><th>移行先 (既存)</th><td>Azure SQL Managed Instance</td></tr>
+                    <tr><th>移行先 (新規)</th><td>SQL Server on Azure Virtual Machines</td></tr>
+                    <tr><th>移行モード</th><td>オンライン (最小ダウンタイム)、オフライン</td></tr>
+                    <tr><th>バックアップ格納先</th><td>Azure Blob Storage / SMB ネットワーク共有</td></tr>
+                    <tr><th>必須コンポーネント</th><td>Azure Extension for SQL Server (最新版)</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: 高い互換性要件を持つレガシーアプリケーションの移行</h4>
+                    <p class="scenario">SQL Agent ジョブ、リンクサーバー、CLR アセンブリなど、Managed Instance で制限がある機能に依存するアプリケーションの移行。</p>
+                    <div class="implementation">
+                        <strong>Implementation:</strong>
+                        <ul>
+                            <li>Azure Arc のワークロード評価で Managed Instance との非互換項目を検出</li>
+                            <li>SQL Server on Azure VM を移行先として選択し、オンプレミス同等環境を実現</li>
+                            <li>SQL Agent ジョブやリンクサーバーの設定をそのまま移行可能</li>
+                        </ul>
+                    </div>
+                    <p class="effect">-- IaaS 環境でオンプレミス同等の互換性を維持しつつクラウドのメリットを享受。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: 段階的なクラウドモダナイゼーション</h4>
+                    <p class="scenario">まずリフト&シフトで Azure VM に移行し、将来的に PaaS 化を検討する段階的アプローチ。</p>
+                    <div class="implementation">
+                        <strong>Implementation:</strong>
+                        <ul>
+                            <li>第 1 段階: SQL Server on Azure VM にオンライン移行（最小ダウンタイム）</li>
+                            <li>第 2 段階: Azure VM 上で動作検証とパフォーマンスチューニング</li>
+                            <li>第 3 段階: 準備が整い次第、Azure SQL Managed Instance へ再移行</li>
+                        </ul>
+                    </div>
+                    <p class="effect">-- リスクを最小化しながら段階的にクラウドネイティブ化を推進。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC3: マルチクラウド / エッジ環境からの集約</h4>
+                    <p class="scenario">Azure Arc で管理された複数拠点の SQL Server を、Azure VM に集約・統合するケース。</p>
+                    <div class="implementation">
+                        <strong>Implementation:</strong>
+                        <ul>
+                            <li>各拠点の Arc 対応 SQL Server から統一 UI で移行を管理</li>
+                            <li>複数データベースを同一 Azure VM インスタンスに集約</li>
+                            <li>集約後のパフォーマンスを Azure Monitor で統合監視</li>
+                        </ul>
+                    </div>
+                    <p class="effect">-- 分散した SQL Server 環境を Azure VM に統合し、運用管理コストを大幅に削減。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">Constraints / Limitations</h2>
+            <ul class="limitations-list">
+                <li>パブリックプレビューのため SLA 対象外</li>
+                <li>SQL Server on Azure VM は IaaS のため、OS パッチ適用やバックアップ管理の運用責任がユーザーに</li>
+                <li>SHIR 構成が必要な場合、追加ネットワーク要件あり</li>
+                <li>TDE 保護データベースの移行には事前に証明書移行が必要</li>
+                <li>Managed Instance Link 方式は Azure VM 移行では利用不可の可能性</li>
+            </ul>
+        </section>
+
+        <!-- Pricing -->
+        <section class="section">
+            <h2 class="section-title">Pricing Overview</h2>
+            <div class="pricing-grid">
+                <div class="pricing-item">
+                    <h4>Azure VM コンピューティング</h4>
+                    <p>VM サイズに応じた時間単位の課金。ワークロードに最適なサイズを選択可能。</p>
+                </div>
+                <div class="pricing-item">
+                    <h4>SQL Server ライセンス</h4>
+                    <p>従量課金 (Pay-as-you-go) または Azure Hybrid Benefit で既存ライセンスを活用。</p>
+                </div>
+                <div class="pricing-item">
+                    <h4>ストレージ料金</h4>
+                    <p>マネージドディスク (Premium SSD / Standard SSD) の容量に応じた課金。</p>
+                </div>
+                <div class="pricing-item">
+                    <h4>移行時一時コスト</h4>
+                    <p>Blob Storage (バックアップ格納)、SHIR 実行環境の一時的なコストが発生。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Related Services -->
+        <section class="section">
+            <h2 class="section-title">Related Services</h2>
+            <div class="service-tags">
+                <span class="service-tag">Azure Arc 対応 SQL Server</span>
+                <span class="service-tag">Azure Database Migration Service</span>
+                <span class="service-tag">Azure SQL Managed Instance</span>
+                <span class="service-tag">SQL Server on Azure VM</span>
+                <span class="service-tag">Azure Blob Storage</span>
+                <span class="service-tag">SQL IaaS Agent Extension</span>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source URLs</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=560805" target="_blank">Azure Updates - SQL Server on Azure VM migration target</a></li>
+                <li><a href="https://learn.microsoft.com/sql/sql-server/azure-arc/migrate-to-azure-sql-managed-instance" target="_blank">Microsoft Learn - Migrate to Azure SQL Managed Instance via Arc</a></li>
+                <li><a href="https://learn.microsoft.com/azure/dms/" target="_blank">Microsoft Learn - Azure Database Migration Service</a></li>
+                <li><a href="https://learn.microsoft.com/data-migration/sql-server/virtual-machines/database-migration-service-online" target="_blank">Microsoft Learn - DMS Online Migration to SQL Server on Azure VM</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-04-22 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+</body>
+</html>
