@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Elastic SAN: CRC Protection (CRC-32C チェックサム検証) が一般提供開始</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --storage-color: #00BCF2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: var(--storage-color);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+            border-left-color: var(--azure-blue);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Parameters Table */
+        .params-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .params-table th, .params-table td {
+            padding: 10px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .params-table th {
+            background: var(--ms-surface-tertiary);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        .params-table td code {
+            background: var(--ms-blue-100);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 13px;
+            color: var(--ms-blue-900);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .code-tab-container {
+            margin: 16px 0;
+        }
+
+        .code-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid var(--ms-border);
+        }
+
+        .code-tab {
+            padding: 8px 20px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: none;
+            background: var(--ms-surface-tertiary);
+            color: var(--ms-text-secondary);
+            border-radius: 6px 6px 0 0;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .code-tab.active {
+            background: #1E1E1E;
+            color: white;
+        }
+
+        .code-panel {
+            display: none;
+        }
+
+        .code-panel.active {
+            display: block;
+        }
+
+        .code-panel pre:not(.mermaid) {
+            margin-top: 0;
+            border-radius: 0 8px 8px 8px;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Related Services */
+        .related-services {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .related-tag {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-800);
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 400;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Elastic SAN</span>
+            <h1>CRC Protection (CRC-32C チェックサム検証) が一般提供開始</h1>
+            <p class="hero-subtitle">iSCSI ヘッダーとデータペイロードに CRC-32C チェックサムを適用し、サイレントデータ破損リスクを低減</p>
+            <div class="hero-meta">
+                <span class="badge badge-ga">Launched (GA)</span>
+                <span class="badge badge-date">2026-04-24</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview + Before/After -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Elastic SAN の CRC Protection 機能が一般提供 (GA) となった。iSCSI プロトコルのヘッダーおよびデータペイロードに CRC-32C (Castagnoli) チェックサムを適用し、ネットワーク機器やメモリにおけるビットフリップに起因するサイレントデータ破損を検出・防止する。ボリュームグループ単位で適用され、グループ内の全ボリュームが設定を継承する。有効化すると CRC-32C 未設定のクライアント接続を拒否し、データ整合性を強制する。新規・既存の Elastic SAN いずれにも設定可能で、追加料金は不要。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>CRC-32C チェックサムを iSCSI ヘッダーとデータダイジェストの両方に適用</li>
+                    <li>ボリュームグループ単位で設定 -- グループ内の全ボリュームが継承</li>
+                    <li>有効化時、CRC-32C 未設定のクライアント接続を拒否</li>
+                    <li>新規・既存の Elastic SAN いずれにも設定可能</li>
+                    <li>追加料金なし -- Elastic SAN の標準機能として提供</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>データ整合性が TCP チェックサムのみに依存し、サイレントデータ破損の検出能力が限定的</li>
+                        <li>CRC-32C 未設定のクライアントも接続を許可されていた</li>
+                        <li>ネットワーク機器やメモリにおけるビットフリップに対する保護が不十分</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>CRC-32C チェックサムを iSCSI ヘッダーとデータペイロードの両方に適用</li>
+                        <li>ボリュームグループ単位の強制により CRC-32C 未設定クライアントの接続を拒否</li>
+                        <li>新規・既存の Elastic SAN いずれにも適用可能</li>
+                        <li>サイレントデータ破損リスクを大幅に低減</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram (Mermaid) -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph Client["クライアント (VM / AKS / Linux / Windows)"]
+        APP["アプリケーション"]
+        ISCSI["iSCSI イニシエーター"]
+        CRC_C["CRC-32C 計算\n(ヘッダー + データダイジェスト)"]
+    end
+
+    subgraph Network["Azure ネットワーク"]
+        PE["Private Endpoint /\nService Endpoint"]
+        TRANSPORT["iSCSI over TCP/IP\n(CRC-32C ダイジェスト付き)"]
+    end
+
+    subgraph ElasticSAN["Azure Elastic SAN"]
+        CRC_V["CRC-32C 検証\n(ヘッダー + データダイジェスト)"]
+        ENFORCE{"CRC Protection\n有効?"}
+        REJECT["接続拒否\n(CRC-32C 未設定の場合)"]
+        ACCEPT["接続許可"]
+        subgraph VolumeGroup["ボリュームグループ"]
+            CRC_PROP["EnforceDataIntegrityCheck\nプロパティ"]
+            VOL1["Volume 1"]
+            VOL2["Volume 2"]
+            VOL3["Volume 3"]
+        end
+    end
+
+    APP --> ISCSI
+    ISCSI --> CRC_C
+    CRC_C -->|"iSCSI PDU\n(CRC-32C ダイジェスト付与)"| PE
+    PE --> TRANSPORT
+    TRANSPORT --> CRC_V
+    CRC_V --> ENFORCE
+    ENFORCE -->|"有効 & CRC-32C 未設定"| REJECT
+    ENFORCE -->|"有効 & CRC-32C 設定済み"| ACCEPT
+    ENFORCE -->|"無効"| ACCEPT
+    ACCEPT --> VolumeGroup
+    CRC_PROP --> VOL1
+    CRC_PROP --> VOL2
+    CRC_PROP --> VOL3
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">CRC-32C</div>
+                    <div class="stat-label">チェックサムアルゴリズム</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">ボリュームグループ単位</div>
+                    <div class="stat-label">設定レベル</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">追加料金なし</div>
+                    <div class="stat-label">コスト</div>
+                </div>
+            </div>
+
+            <!-- Feature Cards -->
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F6E1;</div>
+                    <div class="feature-content">
+                        <h4>CRC-32C チェックサム検証 (iSCSI ヘッダー + データダイジェスト)</h4>
+                        <p>iSCSI プロトコルのヘッダーダイジェストとデータダイジェストの両方に CRC-32C (Castagnoli) チェックサムを適用。ネットワーク転送中のビットフリップやサイレントデータ破損を検出し、データ整合性を保証する。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4C1;</div>
+                    <div class="feature-content">
+                        <h4>ボリュームグループ単位の強制 -- 全ボリュームが継承</h4>
+                        <p>CRC Protection はボリュームグループレベルで設定され、グループ内のすべてのボリュームが自動的に設定を継承する。個別のボリュームごとの設定は不要で、一貫した保護を実現。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F6AB;</div>
+                    <div class="feature-content">
+                        <h4>接続制御 -- CRC-32C 未設定クライアントの拒否</h4>
+                        <p>CRC Protection を有効化すると、CRC-32C チェックサムを設定していないクライアントからの接続を拒否する。これにより、保護されていない接続によるデータ破損リスクを排除する。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x2699;</div>
+                    <div class="feature-content">
+                        <h4>既存環境サポート -- 既存 SAN でも有効化可能</h4>
+                        <p>新規作成時だけでなく、既存の Elastic SAN のボリュームグループに対しても後から CRC Protection を有効化できる。段階的な導入が可能。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F504;</div>
+                    <div class="feature-content">
+                        <h4>柔軟な無効化 -- 無効時は接続を拒否しない</h4>
+                        <p>CRC Protection を無効に設定した場合、CRC-32C 未設定のクライアントからの接続も許可される。互換性を優先する場合は無効のままで運用可能。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">Technical Specs</h2>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>機能名</td><td>CRC Protection (CRC-32C Checksum Verification)</td></tr>
+                    <tr><td>ステータス</td><td>一般提供 (GA)</td></tr>
+                    <tr><td>チェックサムアルゴリズム</td><td>CRC-32C (Castagnoli)</td></tr>
+                    <tr><td>プロトコル</td><td>iSCSI</td></tr>
+                    <tr><td>適用対象</td><td>iSCSI ヘッダーダイジェスト + データダイジェスト</td></tr>
+                    <tr><td>設定レベル</td><td>ボリュームグループ単位</td></tr>
+                    <tr><td>保存時暗号化</td><td>AES-256</td></tr>
+                    <tr><td>冗長性</td><td>LRS / ZRS</td></tr>
+                    <tr><td>追加料金</td><td>なし (Elastic SAN 標準機能)</td></tr>
+                </tbody>
+            </table>
+
+            <h3 style="font-size: 16px; margin: 24px 0 12px; color: var(--ms-blue-900);">CLI / PowerShell Parameters</h3>
+            <table class="params-table">
+                <thead>
+                    <tr>
+                        <th>ツール</th>
+                        <th>パラメータ</th>
+                        <th>説明</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>PowerShell</td><td><code>-EnforceDataIntegrityCheckForIscsi</code></td><td>CRC Protection の有効/無効 ($true / $false)</td></tr>
+                    <tr><td>Azure CLI</td><td><code>--data-integrity-check</code></td><td>CRC Protection の有効/無効 (true / false)</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Code Samples -->
+        <section class="section">
+            <h2 class="section-title">Code Samples</h2>
+
+            <div class="code-tab-container">
+                <div class="code-tabs">
+                    <button class="code-tab active" onclick="switchTab(event, 'tab-ps')">PowerShell</button>
+                    <button class="code-tab" onclick="switchTab(event, 'tab-cli')">Azure CLI</button>
+                </div>
+                <div id="tab-ps" class="code-panel active">
+                    <pre><code class="language-powershell"># PowerShell - Create volume group with CRC Protection
+New-AzElasticSanVolumeGroup `
+  -ResourceGroupName $RgName `
+  -ElasticSANName $EsanName `
+  -Name $EsanVgName `
+  -EnforceDataIntegrityCheckForIscsi $true</code></pre>
+                </div>
+                <div id="tab-cli" class="code-panel">
+                    <pre><code class="language-bash"># Azure CLI - Create volume group with CRC Protection
+az elastic-san volume-group create \
+  --elastic-san-name $EsanName \
+  -g $RgName \
+  -n $EsanVgName \
+  --data-integrity-check true</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: ミッションクリティカルなデータベース (SQL Server, Oracle)</h4>
+                    <p class="scenario">金融・医療など高いデータ整合性が要求されるデータベースワークロードにおいて、ネットワーク転送中のサイレントデータ破損はデータ不整合やシステム障害の原因となる。CRC Protection により iSCSI レベルでの整合性検証が追加され、データベースの信頼性を向上させる。</p>
+                    <p class="effect">-- iSCSI レベルでの CRC-32C 検証により、データベースの整合性保証を強化。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: 金融・医療業界のワークロード</h4>
+                    <p class="scenario">規制要件により高いデータ整合性が求められる金融・医療業界では、サイレントデータ破損の検出能力が重要なコンプライアンス要素となる。CRC Protection を有効化することで、ストレージレベルでのデータ整合性検証を追加し、規制要件への適合を支援する。</p>
+                    <p class="effect">-- ストレージレベルの整合性検証により、規制コンプライアンス要件への適合を支援。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC3: 大規模 AKS クラスターのストレージ</h4>
+                    <p class="scenario">多数のノードから同時にアクセスされる大規模 AKS クラスター環境では、ネットワーク経路が複雑化しビットフリップのリスクが増加する。CRC Protection により、コンテナワークロードのストレージアクセスにおけるデータ整合性を確保する。</p>
+                    <p class="effect">-- 大規模コンテナ環境でのストレージアクセスにおけるデータ整合性を確保。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC4: ディザスタリカバリ環境</h4>
+                    <p class="scenario">DR 環境では、バックアップデータの整合性が復旧時の成否を左右する。CRC Protection により、DR ストレージへの書き込み時にもデータ整合性を検証し、復旧時のデータ破損リスクを低減する。</p>
+                    <p class="effect">-- DR ストレージのデータ整合性を保証し、確実な復旧を支援。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">Limitations / Caveats</h2>
+            <ul class="limitations-list">
+                <li>North Europe および South Central US リージョンでは利用不可</li>
+                <li>Fedora および下流の Linux ディストリビューション (RHEL, CentOS, Rocky) は iSCSI データダイジェストをサポートしていないため、有効化すると接続が失敗する</li>
+                <li>Azure VMware Solution との互換性なし</li>
+                <li>クライアント側の iSCSI イニシエーター設定が必要</li>
+                <li>既存のボリュームグループで有効化すると、CRC-32C 未設定の既存クライアント接続が拒否される可能性がある</li>
+            </ul>
+        </section>
+
+        <!-- Related Services -->
+        <section class="section">
+            <h2 class="section-title">Related Services</h2>
+            <div class="related-services">
+                <span class="related-tag">Elastic SAN Capacity Autoscaling</span>
+                <span class="related-tag">Elastic SAN Snapshots</span>
+                <span class="related-tag">Azure Private Link</span>
+                <span class="related-tag">VNet Service Endpoints</span>
+                <span class="related-tag">AKS</span>
+                <span class="related-tag">Azure VMware Solution</span>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source URLs</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=560889" target="_blank">Azure Updates - CRC Protection for Azure Elastic SAN</a></li>
+                <li><a href="https://learn.microsoft.com/azure/storage/elastic-san/elastic-san-introduction" target="_blank">Microsoft Learn - Azure Elastic SAN Introduction</a></li>
+                <li><a href="https://learn.microsoft.com/azure/storage/elastic-san/elastic-san-create" target="_blank">Microsoft Learn - Create an Elastic SAN</a></li>
+                <li><a href="https://learn.microsoft.com/azure/storage/elastic-san/elastic-san-networking" target="_blank">Microsoft Learn - Elastic SAN Networking</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/elastic-san/" target="_blank">Azure Elastic SAN Pricing</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-04-24 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <script>
+        function switchTab(event, tabId) {
+            document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.code-panel').forEach(p => p.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+    </script>
+</body>
+</html>

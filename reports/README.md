@@ -5,6 +5,9 @@
 
 ## 2026 年
 
+- [2026-04-24 - Azure App Service: .NET 8 (LTS) サポート終了 -- .NET 10 (LTS) へのアップグレードが必要](2026/2026-04-24-app-service-dotnet-8-retirement.md)
+- [2026-04-24 - Azure Elastic SAN: CRC Protection (CRC-32C チェックサム検証) が一般提供開始](2026/2026-04-24-elastic-san-crc-protection.md)
+- [2026-04-24 - Azure Database for PostgreSQL: カスケード読み取りレプリカの一般提供開始 (GA)](2026/2026-04-24-postgresql-cascading-read-replicas.md)
 - [2026-04-23 - Azure Elastic SAN: Capacity Autoscaling が一般提供開始](2026/2026-04-23-elastic-san-capacity-autoscaling.md)
 - [2026-04-23 - Azure Monitor: Azure Arc 対応 Kubernetes での OpenShift および Azure Red Hat OpenShift サポートが一般提供開始](2026/2026-04-23-azure-monitor-arc-openshift.md)
 - [2026-04-22 - Azure Database for PostgreSQL: VNet 統合から Private Endpoint 対応ネットワーク構成への移行](2026/2026-04-22-postgresql-vnet-to-private-endpoint.md)
