@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Backup: Elastic SAN バックアップ (パブリックプレビュー)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --storage-color: #00BCF2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: var(--storage-color);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+            border-left-color: var(--azure-blue);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Pricing */
+        .pricing-box {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--ms-blue-300);
+            margin: 16px 0;
+        }
+
+        .pricing-box h4 {
+            color: var(--ms-blue-900);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .pricing-box p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Related Services */
+        .related-services {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .related-tag {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-800);
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 400;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Backup / Azure Elastic SAN</span>
+            <h1>Azure Backup: Elastic SAN バックアップ (パブリックプレビュー)</h1>
+            <p class="hero-subtitle">Elastic SAN ボリュームのバックアップとリストアをフルマネージドで実行可能に。Backup vault を通じた一元管理と増分スナップショットによる効率的なデータ保護</p>
+            <div class="hero-meta">
+                <span class="badge badge-preview">In Preview</span>
+                <span class="badge badge-date">2026-04-24</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview + Before/After -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Backup が Azure Elastic SAN のバックアップをサポートするパブリックプレビューが開始された。Elastic SAN ボリュームのバックアップとリストアをフルマネージドで実行可能になり、Backup vault を通じてバックアップを管理する。バックアップは増分スナップショット(オペレーショナルティア)としてエクスポートされる仕組みで、一時スナップショットを作成後、変更データのみを増分スナップショットとしてエクスポートすることで、ストレージコストを最適化しつつ信頼性の高いデータ保護を実現する。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>Backup vault を通じたフルマネージドなバックアップ・リストア</li>
+                    <li>日次・週次のスケジュールバックアップとオンデマンドバックアップをサポート</li>
+                    <li>最大 450 のリカバリポイントを保持、柔軟な保持ポリシー</li>
+                    <li>ZRS / LRS 冗長性を選択可能</li>
+                    <li>Backup Center からの一元的な監視・管理</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>統合的なバックアップソリューションが存在せず独自の仕組みが必要</li>
+                        <li>ボリュームスナップショットの管理を手動で行う必要</li>
+                        <li>ポイントインタイムリカバリが困難</li>
+                        <li>監視やコンプライアンスレポートが一元化されていない</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>Backup vault を通じたフルマネージドなバックアップ・リストアが可能</li>
+                        <li>日次・週次のスケジュールバックアップとオンデマンドバックアップをサポート</li>
+                        <li>最大 450 のリカバリポイントを保持、柔軟な保持ポリシー</li>
+                        <li>ZRS / LRS 冗長性を選択可能</li>
+                        <li>Backup Center からの一元的な監視・管理</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram (Mermaid) -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph Azure["Azure Cloud"]
+        subgraph BackupInfra["Azure Backup インフラストラクチャ"]
+            BV["Backup Vault\n(マネージド ID)"]
+            BP["バックアップポリシー\n(日次 / 週次)"]
+            BC["Backup Center\n(監視・管理)"]
+        end
+
+        subgraph ElasticSAN["Azure Elastic SAN"]
+            SAN["Elastic SAN"]
+            VG["ボリュームグループ"]
+            VOL["ボリューム\n(<= 4 TB)"]
+            SNAP["一時スナップショット\n(バックアップ処理中のみ)"]
+        end
+
+        subgraph SnapshotRG["スナップショットリソースグループ"]
+            INC1["増分スナップショット\n(リカバリポイント 1)"]
+            INC2["増分スナップショット\n(リカバリポイント 2)"]
+            INC3["増分スナップショット\n(リカバリポイント N)"]
+        end
+
+        subgraph RestoreTarget["リストア先"]
+            NEW_VOL["新しい Elastic SAN\nボリューム"]
+            MD["マネージドディスク\n(ポータルから直接作成可)"]
+        end
+
+        BV -->|"1. スナップショット取得"| VOL
+        VOL -->|"2. 一時スナップショット作成"| SNAP
+        SNAP -->|"3. 変更データを\n増分スナップショットへ\nエクスポート"| INC1
+        BV -->|"ライフサイクル管理"| INC1
+        BV -->|"ライフサイクル管理"| INC2
+        BV -->|"ライフサイクル管理"| INC3
+        BP --> BV
+        BC --> BV
+        INC1 -->|"リストア\n(Import API)"| NEW_VOL
+        INC1 -->|"ディスク作成"| MD
+        SAN --> VG
+        VG --> VOL
+    end
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">450</div>
+                    <div class="stat-label">最大リカバリポイント数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">4 TB</div>
+                    <div class="stat-label">最大ボリュームサイズ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">10 回/日</div>
+                    <div class="stat-label">オンデマンドバックアップ上限</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">7 日</div>
+                    <div class="stat-label">デフォルト保持期間</div>
+                </div>
+            </div>
+
+            <!-- Feature Cards -->
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4F8;</div>
+                    <div class="feature-content">
+                        <h4>スナップショットエクスポートによるバックアップ</h4>
+                        <p>バックアップ処理では、まず対象ボリュームの一時スナップショットを作成し、その後変更データを増分スナップショットとしてスナップショットリソースグループにエクスポートする。増分スナップショットにより、変更分のみを保存するため、ストレージコストを最適化できる。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4C5;</div>
+                    <div class="feature-content">
+                        <h4>柔軟なバックアップスケジュールとリテンション</h4>
+                        <p>日次および週次のスケジュールバックアップに対応。最大 450 のリカバリポイントを保持可能で、デフォルトの保持期間は 7 日間。ビジネス要件に合わせた柔軟な保持ポリシーを設定できる。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F6E1;</div>
+                    <div class="feature-content">
+                        <h4>ストレージ冗長性の選択</h4>
+                        <p>Backup vault のストレージ冗長性として ZRS (ゾーン冗長ストレージ) と LRS (ローカル冗長ストレージ) を選択可能。可用性要件やコストに応じて最適な冗長性レベルを選択できる。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F504;</div>
+                    <div class="feature-content">
+                        <h4>代替場所へのリストア (ALR)</h4>
+                        <p>バックアップからのリストアは、同一サブスクリプション内だけでなく異なるサブスクリプションの Elastic SAN ボリュームへのリストアにも対応。Import API を使用して新しいボリュームとしてリストアするほか、ポータルからマネージドディスクとして直接作成することも可能。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">Technical Specs</h2>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>機能名</td><td>Azure Backup for Elastic SAN</td></tr>
+                    <tr><td>ステータス</td><td>パブリックプレビュー</td></tr>
+                    <tr><td>サポートされるボリュームサイズ</td><td>4 TB 以下</td></tr>
+                    <tr><td>バックアップ頻度</td><td>日次、週次</td></tr>
+                    <tr><td>最大リカバリポイント数</td><td>450</td></tr>
+                    <tr><td>デフォルト保持期間</td><td>7 日間</td></tr>
+                    <tr><td>バックアップティア</td><td>オペレーショナルティアのみ</td></tr>
+                    <tr><td>ストレージ冗長性</td><td>ZRS / LRS</td></tr>
+                    <tr><td>オンデマンドバックアップ上限</td><td>1 日 10 回</td></tr>
+                    <tr><td>リストア上限</td><td>1 日 10 回</td></tr>
+                    <tr><td>リカバリ方式</td><td>ALR のみ (OLR 非対応)</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: ミッションクリティカルなデータベースワークロードのデータ保護</h4>
+                    <p class="scenario">Elastic SAN 上で稼働する SQL Server や Oracle などのミッションクリティカルなデータベースに対して、スケジュールバックアップによる定期的なデータ保護を実現。最大 450 のリカバリポイントにより、細かい粒度でのポイントインタイムリカバリが可能になり、データ損失リスクを最小化する。</p>
+                    <p class="effect">-- Backup vault による自動化されたバックアップで、データベースの継続的なデータ保護を実現。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: AKS ワークロードの永続ボリュームバックアップ</h4>
+                    <p class="scenario">AKS クラスターで使用される Elastic SAN の永続ボリュームに対して、フルマネージドなバックアップを提供。コンテナ化されたステートフルアプリケーションのデータを定期的にバックアップし、障害時には代替場所へのリストア (ALR) により迅速な復旧を実現する。</p>
+                    <p class="effect">-- コンテナワークロードのデータ保護をフルマネージドで自動化。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC3: コンプライアンス要件への対応</h4>
+                    <p class="scenario">規制要件によりデータの定期バックアップと一定期間の保持が求められる環境において、Backup Center からの一元的な監視・管理と柔軟な保持ポリシーにより、コンプライアンス要件を満たすバックアップ運用を構築する。</p>
+                    <p class="effect">-- Backup Center による一元管理で、コンプライアンスレポートと監視を実現。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section class="section">
+            <h2 class="section-title">Pricing</h2>
+            <div class="pricing-box">
+                <h4>プレビュー期間中の料金</h4>
+                <p>プレビュー期間中は保護インスタンス料金が無料。増分スナップショットの料金はマネージドディスク料金に準拠する。GA 後の料金体系については、別途発表される予定。</p>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">Limitations / Caveats</h2>
+            <ul class="limitations-list">
+                <li>4 TB 以下のボリュームのみサポート</li>
+                <li>Vault ティア非対応 -- オペレーショナルティアのみ</li>
+                <li>OLR (元の場所へのリストア) 非対応 -- ALR のみ</li>
+                <li>時間単位のバックアップ非対応 -- 日次・週次のみ</li>
+                <li>プレビュー段階のため、本番ワークロードでの利用は慎重に検討が必要</li>
+                <li>オンデマンドバックアップは 1 日 10 回まで、リストアも 1 日 10 回まで</li>
+            </ul>
+        </section>
+
+        <!-- Related Services -->
+        <section class="section">
+            <h2 class="section-title">Related Services</h2>
+            <div class="related-services">
+                <span class="related-tag">Azure Backup</span>
+                <span class="related-tag">Azure Elastic SAN</span>
+                <span class="related-tag">Backup Center</span>
+                <span class="related-tag">Managed Disks</span>
+                <span class="related-tag">AKS</span>
+                <span class="related-tag">Azure Elastic SAN Snapshots</span>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source URLs</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates/" target="_blank">Azure Updates - Elastic SAN Backup (Public Preview)</a></li>
+                <li><a href="https://learn.microsoft.com/azure/backup/" target="_blank">Microsoft Learn - Azure Backup</a></li>
+                <li><a href="https://learn.microsoft.com/azure/storage/elastic-san/" target="_blank">Microsoft Learn - Azure Elastic SAN</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank">Azure Backup Pricing</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/elastic-san/" target="_blank">Azure Elastic SAN Pricing</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-04-24 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+</body>
+</html>
