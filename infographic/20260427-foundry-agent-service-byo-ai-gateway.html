@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Foundry Agent Service: Bring Your Own AI Gateway</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --service-color: #8764B8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(135, 100, 184, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: var(--service-color);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+            border-left-color: var(--azure-blue);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Auth Cards */
+        .auth-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .auth-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            border-top: 3px solid var(--azure-blue);
+        }
+
+        .auth-card .auth-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .auth-card h4 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .auth-card p {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .pricing-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .pricing-card h4 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .pricing-card p {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .pricing-card .pricing-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        /* Setup Steps */
+        .setup-steps {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0;
+            margin: 16px 0;
+        }
+
+        .setup-step {
+            display: flex;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .setup-step:last-child {
+            border-bottom: none;
+        }
+
+        .setup-step-num {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .setup-step-content h4 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            margin-bottom: 2px;
+        }
+
+        .setup-step-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        .code-comment {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Related Services */
+        .related-services {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .related-service {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .related-service h4 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            margin-bottom: 4px;
+        }
+
+        .related-service p {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .auth-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .related-services {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Microsoft Foundry Agent Service</span>
+            <h1>Bring Your Own AI Gateway</h1>
+            <p class="hero-subtitle">外部 AI ゲートウェイのモデルを Foundry Agent Service のエージェントから利用可能に</p>
+            <div class="hero-meta">
+                <span class="badge badge-ga">Launched (GA)</span>
+                <span class="badge badge-date">2026-04-27</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview + Before/After -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Foundry Agent Service に「Bring Your Own AI Gateway」(BYO AI Gateway) 機能が一般提供 (GA) として追加された。Azure API Management などのエンタープライズ AI ゲートウェイの背後にホストされた AI モデルを、Foundry Agent Service のエージェントから利用できるようになる。Azure API Management 接続と、非 Azure の Model Gateway 接続の 2 種類をサポートし、既存のモデル管理インフラを維持したまま Foundry のエージェント機能を活用可能。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>Azure API Management と非 Azure ゲートウェイの両方に対応</li>
+                    <li>OpenAI 互換のチャット補完 API を実装するモデルを接続可能</li>
+                    <li>API キー、マネージド ID、OAuth 2.0 による柔軟な認証</li>
+                    <li>Code Interpreter、ファイル検索、MCP 等の組み込みツールと併用可能</li>
+                    <li>既存のエンタープライズセキュリティポリシーをそのまま活用</li>
+                    <li>パブリック / プライベートネットワーキング両対応</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>Foundry モデルカタログ内のモデル (Azure OpenAI, Llama, DeepSeek 等) のみ利用可能</li>
+                        <li>既存の API Management ガバナンス基盤を Foundry と統合不可</li>
+                        <li>サードパーティ / セルフホストモデルの利用には独自基盤が必要</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>AI ゲートウェイ背後のモデルをエージェントから直接利用可能</li>
+                        <li>既存のセキュリティポリシー・トークン管理をそのまま活用</li>
+                        <li>API キー / マネージド ID / OAuth 2.0 による柔軟な認証</li>
+                        <li>Foundry 組み込みツールを外部モデルと組み合わせ可能</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram (Mermaid) -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart LR
+    subgraph FoundryAgent["Foundry Agent Service"]
+        Agent["エージェント\n(プロンプトエージェント)"]
+        Tools["組み込みツール\n(Code Interpreter,\nファイル検索, MCP 等)"]
+    end
+
+    subgraph Gateway["エンタープライズ AI ゲートウェイ"]
+        APIM["Azure API Management"]
+        OtherGW["その他のゲートウェイ\n(セルフホスト等)"]
+    end
+
+    subgraph Models["AI モデル"]
+        AzureOAI["Azure OpenAI\nモデル"]
+        ThirdParty["サードパーティ\nモデル"]
+        SelfHosted["セルフホスト\nモデル"]
+    end
+
+    subgraph Auth["認証"]
+        APIKey["API キー"]
+        ManagedID["マネージド ID"]
+        OAuth["OAuth 2.0"]
+    end
+
+    Agent --> Tools
+    Agent -->|"接続名/モデル名"| APIM
+    Agent -->|"接続名/モデル名"| OtherGW
+    APIM --> AzureOAI
+    APIM --> ThirdParty
+    OtherGW --> ThirdParty
+    OtherGW --> SelfHosted
+    Auth -.->|認証| Gateway
+                </pre>
+            </div>
+            <p style="font-size: 13px; color: var(--ms-text-secondary); margin-top: 8px;">Foundry Agent Service のエージェントがエンタープライズ AI ゲートウェイを経由して外部モデルにリクエストをルーティングする構成。</p>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">2 種類</div>
+                    <div class="stat-label">接続タイプ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3 種類</div>
+                    <div class="stat-label">認証方式</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">9+</div>
+                    <div class="stat-label">対応ツール</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">GA</div>
+                    <div class="stat-label">一般提供</div>
+                </div>
+            </div>
+
+            <!-- Feature Cards -->
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F3E2;</div>
+                    <div class="feature-content">
+                        <h4>Azure API Management 接続</h4>
+                        <p>既存の Azure API Management リソースを選択し、OpenAI 互換チャット補完 API を実装するモデルデプロイメントに接続。API キーまたはマネージド ID で認証。インテリジェントなデフォルト設定により、デプロイメント一覧エンドポイント (/deployments) を自動検出。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F310;</div>
+                    <div class="feature-content">
+                        <h4>Model Gateway 接続 (非 Azure)</h4>
+                        <p>セルフホスト、非 Azure ホスト、カスタムソリューションへの接続をサポート。ベース URL を指定して任意のゲートウェイエンドポイントに接続。API キーまたは OAuth 2.0 (クライアント資格情報) で認証。静的・動的モデルディスカバリーに対応。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4E6;</div>
+                    <div class="feature-content">
+                        <h4>モデルデプロイメント自動管理</h4>
+                        <p>接続ウィザードで追加したモデルは Foundry にデプロイメントとして自動登録。エージェント構成時に admin-connected デプロイメントとして選択可能で、リクエストはゲートウェイ経由で自動ルーティング。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F9F0;</div>
+                    <div class="feature-content">
+                        <h4>Foundry 組み込みツール対応</h4>
+                        <p>Code Interpreter、Functions、ファイル検索、OpenAPI、Foundry IQ、SharePoint Grounding、Fabric Data Agent、MCP、Browser Automation が BYO モデルと組み合わせ可能。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F512;</div>
+                    <div class="feature-content">
+                        <h4>ネットワーク分離サポート</h4>
+                        <p>パブリックネットワーキングと完全なネットワーク分離の両方に対応。API Management は専用 Bicep テンプレート、セルフホストゲートウェイは VNet 内アクセスで構成。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Authentication -->
+        <section class="section">
+            <h2 class="section-title">認証方式</h2>
+            <div class="auth-grid">
+                <div class="auth-card">
+                    <div class="auth-icon">&#x1F511;</div>
+                    <h4>API キー</h4>
+                    <p>API Management サブスクリプションキーまたはカスタム API キーによる認証。最もシンプルな接続方式。</p>
+                </div>
+                <div class="auth-card">
+                    <div class="auth-icon">&#x1F464;</div>
+                    <h4>マネージド ID</h4>
+                    <p>Microsoft Entra ID によるマネージド ID 認証。API Management 接続で利用可能。シークレット管理が不要。</p>
+                </div>
+                <div class="auth-card">
+                    <div class="auth-icon">&#x1F50F;</div>
+                    <h4>OAuth 2.0</h4>
+                    <p>クライアント ID、クライアントシークレット、トークン URL、スコープを指定。Model Gateway 接続で利用可能。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">Technical Specs</h2>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>対応エージェントタイプ</td><td>プロンプトエージェント (Agent SDK 経由)</td></tr>
+                    <tr><td>接続タイプ</td><td>API Management (ApiManagement)、Model Gateway (ModelGateway)</td></tr>
+                    <tr><td>認証 (API Management)</td><td>API キー、マネージド ID (Microsoft Entra ID)</td></tr>
+                    <tr><td>認証 (Model Gateway)</td><td>API キー、OAuth 2.0 (クライアント資格情報)</td></tr>
+                    <tr><td>SDK バージョン</td><td>azure-ai-projects 2.0.0 以降</td></tr>
+                    <tr><td>Azure CLI バージョン</td><td>2.67 以降</td></tr>
+                    <tr><td>Python バージョン</td><td>3.10 以降</td></tr>
+                    <tr><td>モデル API 要件</td><td>OpenAI 互換のチャット補完 API</td></tr>
+                    <tr><td>URL パス形式</td><td>OpenAI スタイル または Azure OpenAI スタイルを選択可能</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Setup -->
+        <section class="section">
+            <h2 class="section-title">セットアップ手順 (Azure API Management)</h2>
+            <div class="setup-steps">
+                <div class="setup-step">
+                    <div class="setup-step-num">1</div>
+                    <div class="setup-step-content">
+                        <h4>Microsoft Foundry にサインイン</h4>
+                        <p><a href="https://ai.azure.com" style="color: var(--azure-blue);">ai.azure.com</a> にアクセスし、Operate &gt; Admin console を選択</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <div class="setup-step-num">2</div>
+                    <div class="setup-step-content">
+                        <h4>プロジェクトの Parent resource を選択</h4>
+                        <p>All projects タブから対象プロジェクトの Parent resource リンクをクリック</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <div class="setup-step-num">3</div>
+                    <div class="setup-step-content">
+                        <h4>Admin-connected models で Add を選択</h4>
+                        <p>Connection Type で Azure API Management を選択し、既存の API Management リソースとモデルデプロイメントを指定</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <div class="setup-step-num">4</div>
+                    <div class="setup-step-content">
+                        <h4>認証とモデル設定</h4>
+                        <p>API キーまたはマネージド ID を選択し、デプロイメント名・モデル名・表示名を設定</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <div class="setup-step-num">5</div>
+                    <div class="setup-step-content">
+                        <h4>接続を作成</h4>
+                        <p>Advanced で API バージョンやカスタムヘッダーを構成し、Add をクリック</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Samples -->
+        <section class="section">
+            <h2 class="section-title">Code Sample</h2>
+            <p class="code-comment">Python SDK でのエージェント作成 (BYO モデルを使用)</p>
+            <pre><code class="language-python">import os
+from azure.ai.projects import AIProjectClient
+from azure.identity import DefaultAzureCredential
+
+# 環境変数の設定
+# FOUNDRY_PROJECT_ENDPOINT: プロジェクトエンドポイント URL
+# FOUNDRY_MODEL_DEPLOYMENT_NAME: &lt;接続名&gt;/&lt;モデル名&gt; (例: my-apim-connection/gpt-4o)
+
+client = AIProjectClient(
+    endpoint=os.getenv("FOUNDRY_PROJECT_ENDPOINT"),
+    credential=DefaultAzureCredential(),
+)
+
+# エージェントの作成 (BYO モデルを使用)
+agent = client.agents.create_version(
+    model=os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME"),
+    name="my-byom-agent",
+    instructions="You are a helpful assistant.",
+)</code></pre>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: エンタープライズ AI ガバナンスの統合</h4>
+                    <p class="scenario">Azure API Management で複数の AI モデルデプロイメントを一元管理し、部門ごとのトークン制限、コンテンツセーフティポリシー、アクセスログの監査を行っている組織が、既存のガバナンス基盤を維持しつつ Foundry Agent Service でエージェントを構築。</p>
+                    <p class="effect">-- API Management の既存ポリシー（トークンレート制限、セマンティックキャッシュ、ロードバランシング）をそのまま活用しながら、Foundry のエージェントオーケストレーション機能を組み合わせ、ガバナンスとエージェント機能を両立。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: マルチプロバイダーモデルの活用</h4>
+                    <p class="scenario">AI ゲートウェイの背後に Azure OpenAI の GPT モデル、セルフホストのオープンソースモデル、サードパーティプロバイダーのモデルなど、複数モデルを運用し、用途に応じて最適なモデルをエージェントに割り当て。</p>
+                    <p class="effect">-- Model Gateway 接続で複数のモデルエンドポイントを Foundry に登録し、コストパフォーマンスや精度の要件に応じた最適なモデル選択が可能に。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section class="section">
+            <h2 class="section-title">料金</h2>
+            <p class="overview-text">BYO AI Gateway 機能自体の追加料金は明示されていない。料金は以下の要素で構成される。</p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F916;</div>
+                    <h4>Foundry Agent Service</h4>
+                    <p>エージェントが使用するモデルデプロイメントの従量課金 (トークン料金)</p>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F3E2;</div>
+                    <h4>Azure API Management</h4>
+                    <p>APIM インスタンス料金。AI Gateway 無料枠あり。v2 ティア (Basic/Standard/Premium v2) が必要</p>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F310;</div>
+                    <h4>外部モデル</h4>
+                    <p>BYOM モデルの利用料金はサードパーティプロバイダーのライセンス条項に従う</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">Limitations / Caveats</h2>
+            <ul class="limitations-list">
+                <li>BYOM モデルは「非 Microsoft 製品」として扱われ、Responsible AI の軽減策は利用者が実装する必要がある</li>
+                <li>データ処理要件の遵守は利用者の責任であり、データが Azure のコンプライアンス・地理的境界を越える可能性がある</li>
+                <li>現時点では Agent SDK のプロンプトエージェントのみ対応。ホステッドエージェントやワークフローエージェントは未サポート</li>
+                <li>モデルは OpenAI 互換のチャット補完 API を実装している必要がある</li>
+            </ul>
+        </section>
+
+        <!-- Related Services -->
+        <section class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="related-services">
+                <div class="related-service">
+                    <h4>Azure API Management</h4>
+                    <p>エンタープライズ AI ゲートウェイとして、トークン管理、アクセス制御、ロードバランシング、セマンティックキャッシュ、コンテンツセーフティを提供。</p>
+                </div>
+                <div class="related-service">
+                    <h4>Microsoft Foundry Agent Service</h4>
+                    <p>AI エージェントの構築、デプロイ、スケーリングのフルマネージドプラットフォーム。BYO AI Gateway はこのサービスの拡張機能。</p>
+                </div>
+                <div class="related-service">
+                    <h4>Microsoft Entra ID</h4>
+                    <p>マネージド ID を使用した AI ゲートウェイへの認証を提供。シークレット管理不要のセキュアな接続。</p>
+                </div>
+                <div class="related-service">
+                    <h4>Azure AI Content Safety</h4>
+                    <p>API Management のポリシーを通じて LLM プロンプトのコンテンツ安全性チェックを適用。</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=561002" target="_blank" rel="noopener noreferrer">Azure Updates - BYO AI Gateway</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/ai-gateway" target="_blank" rel="noopener noreferrer">Microsoft Learn - Bring Your Own Model to Foundry Agent Service</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/api-management/genai-gateway-capabilities" target="_blank" rel="noopener noreferrer">Microsoft Learn - AI Gateway in Azure API Management</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/foundry/configuration/enable-ai-api-management-gateway-portal" target="_blank" rel="noopener noreferrer">Microsoft Learn - Configure AI Gateway in Foundry</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/foundry/agents/overview" target="_blank" rel="noopener noreferrer">Microsoft Learn - Foundry Agent Service 概要</a></li>
+                <li><a href="https://aka.ms/AgentService_pricing" target="_blank" rel="noopener noreferrer">Foundry Agent Service 料金ページ</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/api-management/" target="_blank" rel="noopener noreferrer">API Management 料金ページ</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-04-27 -- This infographic is based on publicly available information at the time of generation.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
