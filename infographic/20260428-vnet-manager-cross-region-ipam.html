@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Virtual Network Manager: クロスリージョン IPAM プール関連付け GA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --service-color: #00A651;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 166, 81, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: var(--service-color);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+            border-left-color: var(--azure-blue);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Setup Steps */
+        .setup-steps {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0;
+            margin: 16px 0;
+        }
+
+        .setup-step {
+            display: flex;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .setup-step:last-child {
+            border-bottom: none;
+        }
+
+        .setup-step-num {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .setup-step-content h4 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            margin-bottom: 2px;
+        }
+
+        .setup-step-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        .code-comment {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        .code-header + pre:not(.mermaid) {
+            border-radius: 0 0 8px 8px;
+            margin-top: 0;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .pricing-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .pricing-card h4 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .pricing-card p {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .pricing-card .pricing-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        /* Related Services */
+        .related-services {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .related-service {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .related-service h4 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            margin-bottom: 4px;
+        }
+
+        .related-service p {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .related-services {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Virtual Network Manager</span>
+            <h1>クロスリージョン IPAM プール関連付け</h1>
+            <p class="hero-subtitle">単一の IPAM プールで複数リージョンの仮想ネットワーク IP アドレスを一元管理</p>
+            <div class="hero-meta">
+                <span class="badge badge-ga">Launched (GA)</span>
+                <span class="badge badge-date">2026-04-28</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview + Before/After -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Virtual Network Manager の IP Address Management (IPAM) 機能において、クロスリージョン IPAM プール関連付けが一般提供 (GA) となった。単一の IPAM プールを複数の Azure リージョンにまたがる仮想ネットワークに関連付けることが可能になり、マルチリージョン環境における IP アドレス空間の一元管理が大幅に簡素化される。従来はリージョンごとに個別の IPAM プールを作成・管理する必要があり、IP アドレスの重複防止に手動での調整が求められていたが、本アップデートにより単一のプールからリージョン横断で CIDR を自動割り当てできるようになった。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>単一の IPAM プールを複数リージョンの仮想ネットワークに関連付け可能</li>
+                    <li>リージョン間での IP アドレス重複を自動的に防止</li>
+                    <li>階層型プール構造 (最大 7 階層) によるスケーラブルな管理</li>
+                    <li>IPv4 / IPv6 デュアルスタック対応</li>
+                    <li>Azure CLI および Azure PowerShell からの操作をサポート</li>
+                    <li>予約 IP アドレスによる静的 CIDR 管理が可能</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>複数リージョンの IP アドレス空間管理がスケーリング困難で設定ミスが発生しやすい</li>
+                        <li>リージョンごとに個別の IPAM プールを作成・管理する必要があり運用負荷が高い</li>
+                        <li>リージョン間での IP アドレス重複を防ぐために手動での調整作業が必要</li>
+                        <li>グローバル環境での IP アドレスガバナンスの一貫性確保が困難</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>単一の IPAM プールを複数リージョンの仮想ネットワークに関連付け可能</li>
+                        <li>リージョン間での IP アドレス重複が自動的に防止</li>
+                        <li>グローバルな IP アドレスガバナンスを単一プールから実現</li>
+                        <li>Azure CLI / PowerShell で簡便にクロスリージョン IP 割り当てが可能</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram (Mermaid) -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Azure["Azure Cloud"]
+        subgraph AVNM["Azure Virtual Network Manager"]
+            subgraph IPAM["IPAM (IP Address Management)"]
+                RootPool["Root Pool\n10.0.0.0/8"]
+                ChildPool["Child Pool\n10.1.0.0/16"]
+                RootPool --> ChildPool
+            end
+        end
+
+        subgraph RegionA["Region A (East US)"]
+            VNet1["VNet 1\n10.1.1.0/24"]
+            VNet2["VNet 2\n10.1.2.0/24"]
+        end
+
+        subgraph RegionB["Region B (West Europe)"]
+            VNet3["VNet 3\n10.1.3.0/24"]
+            VNet4["VNet 4\n10.1.4.0/24"]
+        end
+
+        subgraph RegionC["Region C (Japan East)"]
+            VNet5["VNet 5\n10.1.5.0/24"]
+        end
+
+        ChildPool -->|"CIDR 自動割り当て\n(重複なし)"| VNet1
+        ChildPool -->|"CIDR 自動割り当て\n(重複なし)"| VNet2
+        ChildPool -->|"クロスリージョン\n関連付け"| VNet3
+        ChildPool -->|"クロスリージョン\n関連付け"| VNet4
+        ChildPool -->|"クロスリージョン\n関連付け"| VNet5
+    end
+                </pre>
+            </div>
+            <p style="font-size: 13px; color: var(--ms-text-secondary); margin-top: 8px;">単一の IPAM プール (Child Pool) から複数リージョンの仮想ネットワークに対して、重複のない CIDR が自動的に割り当てられる。IPAM プールのリージョンに関係なく、任意のリージョンの仮想ネットワークに関連付け可能。</p>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">7 階層</div>
+                    <div class="stat-label">プール最大深度</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">IPv4/v6</div>
+                    <div class="stat-label">デュアルスタック対応</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">全リージョン</div>
+                    <div class="stat-label">利用可能範囲</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">GA</div>
+                    <div class="stat-label">一般提供</div>
+                </div>
+            </div>
+
+            <!-- Feature Cards -->
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F30D;</div>
+                    <div class="feature-content">
+                        <h4>クロスリージョン IPAM プール関連付け</h4>
+                        <p>単一の IPAM プールを異なるリージョンに存在する複数の仮想ネットワークに関連付け可能。IPAM プールが配置されたリージョンに制限されず、任意のリージョンの仮想ネットワークに CIDR を割り当てできる。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F6E1;</div>
+                    <div class="feature-content">
+                        <h4>自動 CIDR 重複防止</h4>
+                        <p>プール内で割り当て済みの CIDR と重複しないように、システムが自動的に非重複の CIDR を割り当て。リージョンをまたいでもアドレス空間の整合性が維持される。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4CA;</div>
+                    <div class="feature-content">
+                        <h4>階層型プール構造</h4>
+                        <p>ルートプール (組織全体の IP アドレスレンジ) から子プール (用途別・部門別) への階層構造をサポート。最大 7 階層までのプール階層を構成可能で、各階層レベルで権限委譲が可能。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F504;</div>
+                    <div class="feature-content">
+                        <h4>IPv4 / IPv6 デュアルスタック対応</h4>
+                        <p>IPv4 および IPv6 の両方のアドレスプールをサポート。クロスリージョンでのデュアルスタック環境にも対応し、モダンなネットワーク要件に対応。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4CC;</div>
+                    <div class="feature-content">
+                        <h4>予約 IP アドレスのサポート</h4>
+                        <p>特定の用途のために CIDR を予約 (静的割り当て) 可能。Azure でまだ使用されていないアドレスや、IPAM サービスが未対応のリソースのアドレスを管理できる。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">Technical Specs</h2>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>機能名</td><td>Cross-region IPAM pool association</td></tr>
+                    <tr><td>ステータス</td><td>一般提供 (GA)</td></tr>
+                    <tr><td>対象サービス</td><td>Azure Virtual Network Manager IPAM</td></tr>
+                    <tr><td>対象リソース</td><td>仮想ネットワーク (VNet)</td></tr>
+                    <tr><td>サポートプロトコル</td><td>IPv4, IPv6</td></tr>
+                    <tr><td>プール階層の最大深度</td><td>7 階層</td></tr>
+                    <tr><td>プールタイプ</td><td>ルートプール、子プール</td></tr>
+                    <tr><td>操作方法</td><td>Azure CLI, Azure PowerShell</td></tr>
+                    <tr><td>権限モデル</td><td>IPAM Pool User ロール + Network Manager Read アクセス</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Setup -->
+        <section class="section">
+            <h2 class="section-title">セットアップ手順</h2>
+            <div class="setup-steps">
+                <div class="setup-step">
+                    <div class="setup-step-num">1</div>
+                    <div class="setup-step-content">
+                        <h4>前提条件の確認</h4>
+                        <p>Azure Virtual Network Manager インスタンスと IPAM プールが構成済みであることを確認。IPAM Pool User ロールおよび Network Manager Read アクセスが付与されていること。</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <div class="setup-step-num">2</div>
+                    <div class="setup-step-content">
+                        <h4>IPAM プールの作成</h4>
+                        <p>Azure Portal で Virtual Network Manager &gt; IP address management (IPAM) からルートプールまたは子プールを作成</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <div class="setup-step-num">3</div>
+                    <div class="setup-step-content">
+                        <h4>クロスリージョン関連付けの構成</h4>
+                        <p>Azure CLI または PowerShell を使用して、異なるリージョンの仮想ネットワークに IPAM プールを関連付け</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <div class="setup-step-num">4</div>
+                    <div class="setup-step-content">
+                        <h4>CIDR の自動割り当てを確認</h4>
+                        <p>プールから各 VNet に非重複の CIDR が自動割り当てされたことを確認</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Samples -->
+        <section class="section">
+            <h2 class="section-title">Code Sample</h2>
+            <p class="code-comment">Azure CLI: 異なるリージョンの IPAM プールを仮想ネットワークに関連付け</p>
+            <div class="code-header">
+                <span class="code-lang">bash</span>
+                <span style="color: #888;">新規 VNet 作成時のクロスリージョン関連付け</span>
+            </div>
+            <pre><code class="language-bash"># リージョン B にある IPAM プールを、リージョン A に新規作成する仮想ネットワークに関連付け
+ipamAllocation='[{
+  "numberOfIpAddresses": 100,
+  "id": "/subscriptions/&lt;subscription-id&gt;/resourceGroups/&lt;rg-name&gt;/providers/Microsoft.Network/networkManagers/&lt;nm-name&gt;/ipamPools/&lt;pool-name-region-b&gt;"
+}]'
+
+az network vnet create \
+    --name "&lt;virtual-network-name&gt;" \
+    --resource-group "&lt;resource-group-name&gt;" \
+    --ipam-allocations "$ipamAllocation" \
+    --location "Region A"</code></pre>
+
+            <p class="code-comment" style="margin-top: 24px;">Azure CLI: 既存の仮想ネットワークに IPAM プールを関連付け</p>
+            <div class="code-header">
+                <span class="code-lang">bash</span>
+                <span style="color: #888;">既存 VNet のクロスリージョン関連付け</span>
+            </div>
+            <pre><code class="language-bash"># リージョン A にある既存の仮想ネットワークを、リージョン B の IPAM プールに関連付け
+az network vnet update \
+    --name "&lt;virtual-network-name&gt;" \
+    --resource-group "&lt;resource-group-name&gt;" \
+    --ipam-allocations "$ipamAllocation" \
+    --location "Region A"</code></pre>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: グローバル企業のマルチリージョン IP アドレス統合管理</h4>
+                    <p class="scenario">北米、ヨーロッパ、アジアの各リージョンに仮想ネットワークを展開するグローバル企業が、IP アドレス空間の重複防止と一元管理を必要としている。</p>
+                    <p class="effect">-- 単一のグローバルプールから各リージョンの VNet に非重複の CIDR が自動割り当てされ、IP アドレスの重複による接続障害のリスクが排除される。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: ハブ・スポーク型ネットワークのマルチリージョン展開</h4>
+                    <p class="scenario">ハブ・スポーク型ネットワークアーキテクチャを複数リージョンに展開する際、全リージョンのスポーク VNet に対して一貫した IP アドレス計画を適用したい。</p>
+                    <p class="effect">-- 中央の IPAM プールから全リージョンのスポーク VNet に CIDR を割り当てることで、ハブ VNet のルーティング構成と整合性のある IP アドレス計画が自動的に維持される。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC3: DR (災害復旧) 環境の IP アドレス事前計画</h4>
+                    <p class="scenario">プライマリリージョンと DR リージョンにわたる仮想ネットワーク環境で、IP アドレス空間の重複を避けつつ、DR リージョンへのフェイルオーバーに備えた IP 割り当てを事前に計画したい。</p>
+                    <p class="effect">-- 単一の IPAM プールからプライマリ・DR 両リージョンの VNet に CIDR を割り当て、フェイルオーバー時の IP 衝突を防止。予約 IP 機能で DR 用の CIDR を事前に確保可能。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section class="section">
+            <h2 class="section-title">料金</h2>
+            <p class="overview-text">Azure Virtual Network Manager の料金体系は仮想ネットワーク単位の課金モデルに移行中。IPAM 機能は Virtual Network Manager の一部として提供される。</p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F4B0;</div>
+                    <h4>VNet 単位課金</h4>
+                    <p>仮想ネットワーク単位の課金モデルに段階的に移行中</p>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F4C5;</div>
+                    <h4>旧モデル廃止予定</h4>
+                    <p>サブスクリプション単位の課金は 2028 年 2 月 6 日に完全廃止予定</p>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F517;</div>
+                    <h4>IPAM 機能</h4>
+                    <p>Virtual Network Manager の一部として IPAM 機能が提供される</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">Limitations / Caveats</h2>
+            <ul class="limitations-list">
+                <li>Azure CLI および Azure PowerShell からの操作がサポートされているが、Azure Portal からのクロスリージョン関連付けの操作性については公式ドキュメントで確認が必要</li>
+                <li>IPAM Pool User ロール単体では利用が不十分な場合があり、Network Manager Read アクセスも併せて付与する必要がある</li>
+                <li>プール階層の最大深度は 7 階層に制限されている</li>
+                <li>IPAM サービスが未対応のリソースタイプについては、静的 CIDR の手動割り当てで対応する必要がある</li>
+            </ul>
+        </section>
+
+        <!-- Related Services -->
+        <section class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="related-services">
+                <div class="related-service">
+                    <h4>Azure Virtual Network Manager</h4>
+                    <p>IPAM 機能を含む仮想ネットワークの一元管理サービス。接続構成、セキュリティ管理構成、ルーティング構成などの機能を提供。</p>
+                </div>
+                <div class="related-service">
+                    <h4>Azure Virtual Network (VNet)</h4>
+                    <p>IPAM プールの割り当て対象となる Azure の仮想ネットワークリソース。</p>
+                </div>
+                <div class="related-service">
+                    <h4>Connectivity Configuration</h4>
+                    <p>仮想ネットワーク間のメッシュまたはハブ・スポーク型接続を構成。IPAM と組み合わせて IP 計画と接続構成を一元管理。</p>
+                </div>
+                <div class="related-service">
+                    <h4>Security Admin Rules</h4>
+                    <p>IPAM で管理されるネットワークに対して、グローバルなセキュリティルールを適用する機能。</p>
+                </div>
+                <div class="related-service">
+                    <h4>Azure Policy</h4>
+                    <p>ネットワークグループの動的メンバーシップを定義し、IPAM プールの適用範囲を自動的に管理。</p>
+                </div>
+                <div class="related-service">
+                    <h4>Network Watcher</h4>
+                    <p>ネットワークの監視・診断ツール。IPAM で管理されるネットワーク環境のトラブルシューティングに活用可能。</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=561067" target="_blank" rel="noopener noreferrer">Azure Updates - Cross-region IPAM pool association</a></li>
+                <li><a href="https://learn.microsoft.com/azure/virtual-network-manager/concept-ip-address-management" target="_blank" rel="noopener noreferrer">Microsoft Learn - IPAM in Azure Virtual Network Manager</a></li>
+                <li><a href="https://learn.microsoft.com/azure/virtual-network-manager/overview" target="_blank" rel="noopener noreferrer">Microsoft Learn - Azure Virtual Network Manager 概要</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/virtual-network-manager/" target="_blank" rel="noopener noreferrer">Azure Virtual Network Manager 料金ページ</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-04-28 -- This infographic is based on publicly available information at the time of generation.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

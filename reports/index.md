@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-04-28 - Azure WAF on Azure Front Door Premium: Microsoft HTTP DDoS Ruleset のパブリックプレビュー](2026/2026-04-28-waf-http-ddos-ruleset-front-door.md)
+- [2026-04-28 - Azure Virtual Network Manager: クロスリージョン IPAM プール関連付けの一般提供開始](2026/2026-04-28-vnet-manager-cross-region-ipam.md)
 - [2026-04-27 - Foundry Agent Service: Bring Your Own AI Gateway](2026/2026-04-27-foundry-agent-service-byo-ai-gateway.md)
 - [2026-04-27 - Prompt Flow: Azure Machine Learning および Microsoft Foundry における廃止のお知らせ](2026/2026-04-27-prompt-flow-retirement.md)
 - [2026-04-24 - Azure Database for PostgreSQL: カスケード読み取りレプリカの一般提供開始 (GA)](2026/2026-04-24-postgresql-cascading-read-replicas.md)

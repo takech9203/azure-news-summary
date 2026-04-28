@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure WAF: Microsoft HTTP DDoS Ruleset (Public Preview)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --service-color: #D83B01;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(216, 59, 1, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: var(--service-color);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+            border-left-color: var(--azure-blue);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* WAF Rule Chain */
+        .rule-chain {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            margin: 24px 0;
+            flex-wrap: wrap;
+        }
+
+        .rule-chain-item {
+            background: var(--ms-surface);
+            border: 2px solid var(--azure-blue);
+            border-radius: 12px;
+            padding: 16px 20px;
+            text-align: center;
+            min-width: 160px;
+        }
+
+        .rule-chain-item.highlight {
+            background: var(--ms-blue-100);
+            border-color: var(--ms-red);
+            border-width: 3px;
+        }
+
+        .rule-chain-item h5 {
+            font-size: 13px;
+            color: var(--ms-blue-900);
+            margin-bottom: 4px;
+        }
+
+        .rule-chain-item p {
+            font-size: 11px;
+            color: var(--ms-text-secondary);
+        }
+
+        .rule-chain-arrow {
+            font-size: 24px;
+            color: var(--azure-blue);
+            padding: 0 8px;
+        }
+
+        /* Setup Steps */
+        .setup-steps {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0;
+            margin: 16px 0;
+        }
+
+        .setup-step {
+            display: flex;
+            gap: 16px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .setup-step:last-child {
+            border-bottom: none;
+        }
+
+        .setup-step-num {
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .setup-step-content h4 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            margin-bottom: 2px;
+        }
+
+        .setup-step-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        .code-comment {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Pricing */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .pricing-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .pricing-card h4 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .pricing-card p {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .pricing-card .pricing-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        /* Related Services */
+        .related-services {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .related-service {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .related-service h4 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            margin-bottom: 4px;
+        }
+
+        .related-service p {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Defense Layer Visual */
+        .defense-layers {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0;
+            margin: 24px 0;
+            border: 2px solid var(--ms-border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .defense-layer {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .defense-layer:last-child {
+            border-bottom: none;
+        }
+
+        .defense-layer.new-layer {
+            background: linear-gradient(90deg, #FFF3E0 0%, var(--ms-surface) 100%);
+            border-left: 4px solid var(--ms-red);
+        }
+
+        .defense-layer-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+            width: 40px;
+            text-align: center;
+        }
+
+        .defense-layer-content h5 {
+            font-size: 14px;
+            color: var(--ms-blue-900);
+        }
+
+        .defense-layer-content p {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+        }
+
+        .new-badge {
+            background: var(--ms-red);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .related-services {
+                grid-template-columns: 1fr;
+            }
+
+            .rule-chain {
+                flex-direction: column;
+            }
+
+            .rule-chain-arrow {
+                transform: rotate(90deg);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure WAF / Azure Front Door Premium</span>
+            <h1>Microsoft HTTP DDoS Ruleset</h1>
+            <p class="hero-subtitle">HTTP レイヤー DDoS 攻撃に特化したマネージドルールセットによる多層防御</p>
+            <div class="hero-meta">
+                <span class="badge badge-preview">In Preview</span>
+                <span class="badge badge-date">2026-04-28</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview + Before/After -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Front Door Premium 上の Azure Web Application Firewall (WAF) に、新たに Microsoft HTTP DDoS Ruleset がパブリックプレビューとして追加された。HTTP レイヤー (L7) の DDoS 攻撃はアプリケーションのダウンタイムを引き起こす主要な原因の一つであり、従来の静的な制御手法では進化するボットネットに十分に対応できなかった。本ルールセットは Microsoft が管理・更新するマネージドルールで、HTTP フラッド攻撃やキャッシュバイパス攻撃、ボットネットによる分散型攻撃を自動的に検出・緩和する。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>HTTP DDoS 攻撃に特化した Microsoft マネージドルールセット</li>
+                    <li>Azure Front Door Premium の 192+ エッジ PoP でグローバルに動作</li>
+                    <li>既存の Default Rule Set / Bot Manager Rule Set と組み合わせた多層防御</li>
+                    <li>検出 (Detection) / 防止 (Prevention) モードによる柔軟な運用</li>
+                    <li>攻撃シグネチャを Microsoft が継続的に更新</li>
+                    <li>オリジンサーバーへの攻撃到達前にエッジで遮断</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>L7 DDoS 攻撃に対し静的なレート制限や IP ブロックで手動対応が必要</li>
+                        <li>新しい攻撃パターンへの迅速な対応が困難</li>
+                        <li>HTTP DDoS 攻撃に特化した防御ルールセットが存在しなかった</li>
+                        <li>大規模 HTTP フラッド攻撃に対する包括的な自動防御が不足</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>Microsoft 管理のマネージドルールで自動的に攻撃を検出・緩和</li>
+                        <li>進化するボットネットに対して Microsoft が継続的にルールを更新</li>
+                        <li>既存ルールセットと組み合わせた多層的な防御戦略を構築可能</li>
+                        <li>グローバルエッジネットワーク上で攻撃を遮断しオリジン負荷を軽減</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Defense Layers -->
+        <section class="section">
+            <h2 class="section-title">WAF 多層防御アーキテクチャ</h2>
+            <p class="overview-text" style="margin-bottom: 16px;">WAF ポリシー内のルールチェーン。リクエストは上から順に評価され、攻撃トラフィックはエッジで遮断される。</p>
+            <div class="defense-layers">
+                <div class="defense-layer">
+                    <div class="defense-layer-icon">&#x1F4CB;</div>
+                    <div class="defense-layer-content">
+                        <h5>カスタムルール</h5>
+                        <p>IP 制限 / レート制限 / Geo フィルタリング -- ユーザー定義の制御</p>
+                    </div>
+                </div>
+                <div class="defense-layer new-layer">
+                    <div class="defense-layer-icon">&#x1F525;</div>
+                    <div class="defense-layer-content">
+                        <h5>HTTP DDoS Ruleset <span class="new-badge">NEW</span></h5>
+                        <p>HTTP フラッド / キャッシュバイパス / ボットネット攻撃の自動検出・緩和</p>
+                    </div>
+                </div>
+                <div class="defense-layer">
+                    <div class="defense-layer-icon">&#x1F916;</div>
+                    <div class="defense-layer-content">
+                        <h5>Bot Manager Rule Set</h5>
+                        <p>既知の悪意あるボットの検出・ブロック</p>
+                    </div>
+                </div>
+                <div class="defense-layer">
+                    <div class="defense-layer-icon">&#x1F4DC;</div>
+                    <div class="defense-layer-content">
+                        <h5>Default Rule Set (OWASP)</h5>
+                        <p>OWASP Top 10 等の一般的な Web 脆弱性に対する防御</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram (Mermaid) -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Internet["インターネット"]
+        LU["正規ユーザー"]
+        AT["攻撃者\n(HTTP Flood / ボットネット)"]
+    end
+
+    subgraph AzureEdge["Azure Front Door Premium (グローバルエッジ PoP)"]
+        FD["Azure Front Door\nエッジノード"]
+        subgraph WAFPolicy["WAF ポリシー"]
+            CR["カスタムルール\n(IP制限/レート制限/Geoフィルタ)"]
+            DDOS["HTTP DDoS Ruleset\n(新規マネージドルール)"]
+            BOT["Bot Manager\nRule Set"]
+            DRS["Default Rule Set\n(OWASP脆弱性防御)"]
+        end
+        FD --> CR
+        CR --> DDOS
+        DDOS --> BOT
+        BOT --> DRS
+    end
+
+    subgraph Origin["オリジンサーバー"]
+        APP["Web アプリケーション"]
+    end
+
+    LU -->|HTTPS リクエスト| FD
+    AT -->|"HTTP DDoS 攻撃\n(HTTP Flood等)"| FD
+    DRS -->|"正規トラフィックのみ転送"| APP
+    WAFPolicy -.->|"攻撃トラフィック\nブロック / ログ"| Block["ブロック"]
+                </pre>
+            </div>
+            <p style="font-size: 13px; color: var(--ms-text-secondary); margin-top: 8px;">Azure Front Door Premium のエッジノードで WAF ポリシーのルールチェーンを通過。攻撃トラフィックはエッジで遮断され、正規トラフィックのみオリジンに転送される。</p>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">192+</div>
+                    <div class="stat-label">エッジ PoP</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">L7</div>
+                    <div class="stat-label">保護レイヤー</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">4 種類</div>
+                    <div class="stat-label">アクション種別</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">Preview</div>
+                    <div class="stat-label">パブリックプレビュー</div>
+                </div>
+            </div>
+
+            <!-- Feature Cards -->
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F525;</div>
+                    <div class="feature-content">
+                        <h4>HTTP DDoS 攻撃に特化したマネージドルールセット</h4>
+                        <p>Microsoft が管理・更新する HTTP DDoS 攻撃防御用ルールセット。HTTP フラッド攻撃やボットネットによる分散型攻撃パターンを検出・緩和。攻撃シグネチャの継続的な更新により、新たな攻撃手法への対応が自動化される。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F6E1;</div>
+                    <div class="feature-content">
+                        <h4>既存 WAF 防御機能との多層的な統合</h4>
+                        <p>Default Rule Set (OWASP Top 10 等)、Bot Manager Rule Set (悪意のあるボット防御)、カスタムルール (レート制限、IP 制限、Geo フィルタリング) と組み合わせた多層防御を実現。WAF ポリシー内で他のルールセットと並行して適用可能。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F30D;</div>
+                    <div class="feature-content">
+                        <h4>グローバルエッジでの攻撃緩和</h4>
+                        <p>Azure Front Door の 192 以上のエッジ PoP 上で動作し、攻撃トラフィックを攻撃元に近いネットワークエッジで遮断。オリジンサーバーに到達する前に攻撃を緩和し、バックエンドの可用性とパフォーマンスを保護。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x2699;</div>
+                    <div class="feature-content">
+                        <h4>WAF モードによる柔軟な運用</h4>
+                        <p>検出モード (Detection): ルールに一致するリクエストをログに記録するのみ。本番導入前のテストに活用可能。防止モード (Prevention): ルールに一致するリクエストに対してブロック、リダイレクト等のアクションを実行。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">Technical Specs</h2>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>サービスティア</td><td>Azure Front Door Premium (Premium ティアのみ)</td></tr>
+                    <tr><td>ルールセット種別</td><td>マネージドルールセット (Microsoft 管理)</td></tr>
+                    <tr><td>対象レイヤー</td><td>L7 (HTTP/HTTPS アプリケーション層)</td></tr>
+                    <tr><td>ステータス</td><td>パブリックプレビュー</td></tr>
+                    <tr><td>対応プロトコル</td><td>HTTP / HTTPS</td></tr>
+                    <tr><td>デプロイ範囲</td><td>グローバル (Azure Front Door の全エッジ PoP)</td></tr>
+                    <tr><td>WAF モード</td><td>検出 (Detection) / 防止 (Prevention)</td></tr>
+                    <tr><td>アクション種別</td><td>Allow / Block / Log / Redirect</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Setup -->
+        <section class="section">
+            <h2 class="section-title">セットアップ手順</h2>
+            <div class="setup-steps">
+                <div class="setup-step">
+                    <div class="setup-step-num">1</div>
+                    <div class="setup-step-content">
+                        <h4>前提条件の確認</h4>
+                        <p>Azure Front Door Premium プロファイルと、それに関連付けられた WAF ポリシーが存在することを確認</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <div class="setup-step-num">2</div>
+                    <div class="setup-step-content">
+                        <h4>WAF ポリシーを開く</h4>
+                        <p>Azure Portal で WAF ポリシーを開き、マネージドルールセクションに移動</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <div class="setup-step-num">3</div>
+                    <div class="setup-step-content">
+                        <h4>HTTP DDoS Ruleset を追加</h4>
+                        <p>ルールセットの追加から Microsoft HTTP DDoS Ruleset を選択し、個別ルールの有効/無効やアクションを設定</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <div class="setup-step-num">4</div>
+                    <div class="setup-step-content">
+                        <h4>WAF モードの設定</h4>
+                        <p>テスト時は検出 (Detection) モード、本番時は防止 (Prevention) モードに設定</p>
+                    </div>
+                </div>
+                <div class="setup-step">
+                    <div class="setup-step-num">5</div>
+                    <div class="setup-step-content">
+                        <h4>ドメインへの関連付け</h4>
+                        <p>WAF ポリシーを Azure Front Door Premium のドメインに関連付けて適用開始</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: EC サイトの大規模セール時の DDoS 防御</h4>
+                    <p class="scenario">大規模オンラインセールイベント時に、ボットネットによる HTTP フラッド攻撃でサイトがダウンするリスクがある。既存のレート制限ルールだけでは、分散型の低頻度攻撃を検出できない。</p>
+                    <p class="effect">-- HTTP DDoS Ruleset を WAF ポリシーに追加し、Microsoft 管理の攻撃シグネチャによる自動防御を有効化。既存のレート制限では検出困難な攻撃パターンにも対応可能に。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: 金融サービスの API エンドポイント保護</h4>
+                    <p class="scenario">金融機関が Azure Front Door Premium 経由で公開する API エンドポイントが、HTTP レイヤーの DDoS 攻撃を受けてレスポンス遅延が発生し、取引処理に影響が出ている。</p>
+                    <p class="effect">-- HTTP DDoS Ruleset と Bot Manager Rule Set を組み合わせ、悪意のあるボットによる API 乱用と HTTP DDoS 攻撃の両方を防御し、API の可用性とパフォーマンスを維持。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC3: グローバル展開の SaaS アプリケーション防御</h4>
+                    <p class="scenario">複数リージョンに展開された SaaS アプリケーションが、地理的に分散したボットネットからの HTTP DDoS 攻撃を受けている。攻撃元 IP が頻繁に変わるため、IP ベースのブロックでは対応しきれない。</p>
+                    <p class="effect">-- 192 以上のグローバル PoP で HTTP DDoS Ruleset が動作し、攻撃元に最も近いエッジで攻撃を遮断。IP に依存しないルールベースの検出により、IP ローテーション型攻撃にも対応可能。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section class="section">
+            <h2 class="section-title">料金</h2>
+            <p class="overview-text">Azure Front Door Premium WAF の料金体系に基づく。HTTP DDoS Ruleset のプレビュー期間中の追加料金については公式情報を確認してください。</p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F6E1;</div>
+                    <h4>WAF ポリシー</h4>
+                    <p>Azure Front Door Premium プロファイルに含まれる</p>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F4DC;</div>
+                    <h4>マネージドルールセット</h4>
+                    <p>WAF ポリシーの一部として提供される</p>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-icon">&#x1F4CA;</div>
+                    <h4>リクエスト処理</h4>
+                    <p>WAF で処理されるリクエスト数に基づく従量課金</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">Limitations / Caveats</h2>
+            <ul class="limitations-list">
+                <li>パブリックプレビュー段階であり、SLA の対象外。本番ワークロードへの適用は慎重に検討する必要がある</li>
+                <li>Azure Front Door Premium のみ対応。Standard ティアでは利用できない。Premium ティアへのアップグレードが必要</li>
+                <li>マネージドルールセットの特性上、正規トラフィックが誤ってブロックされる可能性がある。導入初期は検出モードで十分なテストを推奨</li>
+                <li>ルールの詳細やカスタマイズ可能な範囲がプレビュー期間中に変更される可能性がある</li>
+            </ul>
+        </section>
+
+        <!-- Related Services -->
+        <section class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="related-services">
+                <div class="related-service">
+                    <h4>Azure Front Door Premium</h4>
+                    <p>HTTP DDoS Ruleset の実行基盤となるグローバル CDN/リバースプロキシサービス。Premium ティアで WAF のフル機能が利用可能。</p>
+                </div>
+                <div class="related-service">
+                    <h4>Azure DDoS Protection</h4>
+                    <p>ネットワーク層 (L3/L4) の DDoS 防御サービス。HTTP DDoS Ruleset (L7) と組み合わせて全レイヤーの防御を実現。</p>
+                </div>
+                <div class="related-service">
+                    <h4>WAF Default Rule Set</h4>
+                    <p>OWASP Top 10 などの一般的な Web 脆弱性に対するマネージドルールセット。HTTP DDoS Ruleset と併用して多層防御を構築。</p>
+                </div>
+                <div class="related-service">
+                    <h4>WAF Bot Manager Rule Set</h4>
+                    <p>既知の悪意あるボットに対する防御ルールセット。HTTP DDoS Ruleset と補完的に動作し、ボット攻撃全般をカバー。</p>
+                </div>
+                <div class="related-service">
+                    <h4>Azure Monitor / Log Analytics</h4>
+                    <p>WAF ログの収集・分析基盤。HTTP DDoS Ruleset のルール一致状況やブロックされたリクエストの監視に活用。</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=561148" target="_blank" rel="noopener noreferrer">Azure Updates - Microsoft HTTP DDoS Ruleset</a></li>
+                <li><a href="https://learn.microsoft.com/azure/web-application-firewall/afds/afds-overview" target="_blank" rel="noopener noreferrer">Microsoft Learn - Azure WAF on Azure Front Door 概要</a></li>
+                <li><a href="https://learn.microsoft.com/azure/web-application-firewall/shared/application-ddos-protection" target="_blank" rel="noopener noreferrer">Microsoft Learn - Application DDoS Protection</a></li>
+                <li><a href="https://learn.microsoft.com/azure/frontdoor/front-door-ddos" target="_blank" rel="noopener noreferrer">Microsoft Learn - DDoS protection on Azure Front Door</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/web-application-firewall/" target="_blank" rel="noopener noreferrer">Azure WAF 料金ページ</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-04-28 -- This infographic is based on publicly available information at the time of generation.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
