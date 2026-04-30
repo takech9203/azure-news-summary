@@ -5,8 +5,11 @@
 
 ## 2026 年
 
+- [2026-04-30 - Azure Functions: Java 25 サポート](2026/2026-04-30-azure-functions-java-25.md)
+- [2026-04-30 - Azure Blob Storage: ユーザー委任 SAS のプレフィックススコープアクセス](2026/2026-04-30-blob-storage-prefix-scoped-delegation-sas.md)
 - [2026-04-29 - Microsoft Agent Framework: バージョン 1.0 GA (一般提供開始)](2026/2026-04-29-agent-framework-1-0-ga.md)
 - [2026-04-29 - Foundry Agent Service: Memory (Preview)](2026/2026-04-29-foundry-agent-service-memory.md)
+- [2026-04-29 - Azure Red Hat OpenShift: Austria East リージョンで一般提供開始](2026/2026-04-29-aro-austria-east.md)
 - [2026-04-28 - Azure Virtual Network Manager: クロスリージョン IPAM プール関連付けの一般提供開始](2026/2026-04-28-vnet-manager-cross-region-ipam.md)
 - [2026-04-28 - Azure WAF on Azure Front Door Premium: Microsoft HTTP DDoS Ruleset のパブリックプレビュー](2026/2026-04-28-waf-http-ddos-ruleset-front-door.md)
 - [2026-04-28 - Azure Elastic SAN: Windows VM 向け VM 拡張機能による接続が一般提供開始](2026/2026-04-28-elastic-san-windows-vm-extension.md)
