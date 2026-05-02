@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Networking: 英国におけるエグレスおよびデータ転送の無料化</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-800));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--azure-blue);
+            border-radius: 2px;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--ms-text-primary);
+            margin-bottom: 20px;
+        }
+
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .before li::before {
+            content: '- ';
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '+ ';
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 24px 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Card */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Use Case */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .effect {
+            font-size: 14px;
+            color: var(--ms-green);
+            font-weight: 500;
+        }
+
+        /* Table */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .info-table th, .info-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .info-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .info-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Pricing table */
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .pricing-table th, .pricing-table td {
+            padding: 14px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .pricing-table th {
+            background: var(--ms-surface-tertiary);
+            font-weight: 600;
+        }
+
+        .pricing-free {
+            color: var(--ms-green);
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        /* Region badges */
+        .region-badges {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+
+        .region-badge {
+            background: var(--ms-blue-100);
+            border: 1px solid var(--ms-blue-300);
+            color: var(--ms-blue-900);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* Related services */
+        .related-services {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .related-service-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+        }
+
+        .related-service-item .icon {
+            font-size: 18px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .related-service-item .info h5 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ms-text-primary);
+        }
+
+        .related-service-item .info p {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Limitations */
+        .limitation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitation-item:last-child {
+            border-bottom: none;
+        }
+
+        .limitation-item .icon {
+            color: var(--ms-orange);
+            font-size: 16px;
+            margin-top: 2px;
+        }
+
+        .limitation-item p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+        }
+
+        .footer h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-date {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .section {
+                padding: 24px 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .related-services {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="header-meta">
+                    <span class="service-badge">Azure Networking</span>
+                    <span class="service-badge">Pricing & Offerings</span>
+                    <span class="badge badge-ga">GA</span>
+                </div>
+                <h1>英国におけるエグレスおよびデータ転送の無料化</h1>
+                <p class="header-date">2026-05-01 | Azure Networking</p>
+            </div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Microsoft Azure は、英国 (United Kingdom) のお客様および CSP パートナーに対して、Azure からインターネット経由でデータを転送する際のエグレス料金を無料化し、データ転送を原価で提供するアップデートを発表した。これは、既にヨーロッパで提供されている同様のポリシーを英国にも拡大するものである。
+            </p>
+            <div class="highlight-box">
+                <strong>ポイント:</strong> Azure はお客様の選択を尊重しており、Azure と Azure 外の環境間でデータを転送する自由を支持している。ヨーロッパで先行提供されていた無料エグレスおよび原価データ転送のポリシーが、英国にも適用されることとなった。
+            </div>
+        </div>
+
+        <!-- Before/After -->
+        <div class="section">
+            <h2 class="section-title">Before / After 比較</h2>
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>英国のお客様は Azure からのデータエグレスに対して標準的な帯域幅料金を支払う必要があった</li>
+                        <li>データ移行コストがマルチクラウド戦略やデータポータビリティの障壁に</li>
+                        <li>ヨーロッパには無料エグレスが提供されていたが英国には未適用</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li>インターネット経由でのデータエグレスが無料に</li>
+                        <li>Azure 外の環境へのデータ転送が原価で提供</li>
+                        <li>マルチクラウドやハイブリッド環境の構築がコスト面で容易に</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="section">
+            <h2 class="section-title">数字で見るアップデート</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">&#xA5;0</div>
+                    <div class="stat-label">インターネット経由<br>エグレス料金</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">対象リージョン<br>(UK South / UK West)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">100%</div>
+                    <div class="stat-label">ヨーロッパと同等の<br>ポリシー適用</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title">アーキテクチャ図</h2>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 16px;">英国リージョンの Azure サービスから外部環境へのインターネット経由のデータ転送が無料となり、その他のデータ転送方法についても原価で提供される。</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart LR
+    subgraph Azure["&#9729;&#65039; Azure (UK Regions)"]
+        VM["Virtual Machines"]
+        STORAGE["Storage Accounts"]
+        DB["Databases"]
+        SERVICES["その他 Azure サービス"]
+    end
+
+    subgraph External["&#127760; 外部環境"]
+        ONPREM["オンプレミス"]
+        OTHERCLOUD["他クラウド"]
+        INTERNET["インターネット"]
+    end
+
+    VM -->|"無料エグレス&#10;(インターネット経由)"| INTERNET
+    STORAGE -->|"無料エグレス&#10;(インターネット経由)"| INTERNET
+    DB -->|"無料エグレス&#10;(インターネット経由)"| OTHERCLOUD
+    SERVICES -->|"原価データ転送"| ONPREM
+
+    style Azure fill:#E6F2FF,color:#003D69
+    style External fill:#f5f5f5,color:#333
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title">主要機能</h2>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <div class="feature-content">
+                    <h4>インターネット経由の無料エグレス</h4>
+                    <p>英国リージョンから外部へのインターネット経由のデータ転送が無料化。お客様および CSP パートナーが対象。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💰</div>
+                <div class="feature-content">
+                    <h4>原価でのデータ転送</h4>
+                    <p>Azure と Azure 外の環境間のデータ転送が原価で提供。データポータビリティの促進を目的としている。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🇪🇺</div>
+                <div class="feature-content">
+                    <h4>ヨーロッパのポリシーとの整合性</h4>
+                    <p>既にヨーロッパで提供されていたポリシーと同等の条件が英国にも適用。EU Data Act への対応と同様の顧客選択の尊重が英国でも実現。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <table class="info-table">
+                <tbody>
+                    <tr>
+                        <th>対象リージョン</th>
+                        <td>英国 (UK South, UK West)</td>
+                    </tr>
+                    <tr>
+                        <th>対象顧客</th>
+                        <td>英国のお客様および CSP パートナー</td>
+                    </tr>
+                    <tr>
+                        <th>エグレス方法</th>
+                        <td>インターネット経由</td>
+                    </tr>
+                    <tr>
+                        <th>エグレス料金</th>
+                        <td><span class="pricing-free">無料</span></td>
+                    </tr>
+                    <tr>
+                        <th>データ転送料金</th>
+                        <td>原価</td>
+                    </tr>
+                    <tr>
+                        <th>ステータス</th>
+                        <td><span class="badge badge-ga">GA (一般提供)</span></td>
+                    </tr>
+                    <tr>
+                        <th>適用開始日</th>
+                        <td>2026-05-01</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title">ユースケース</h2>
+            <div class="usecase-card">
+                <h4>🔄 マルチクラウド環境でのデータ連携</h4>
+                <p class="scenario"><strong>シナリオ:</strong> 英国に拠点を持つ企業が Azure と他のクラウドプロバイダーの両方を使用し、定期的にデータを同期する必要がある場合。</p>
+                <p class="effect">✅ Azure からのエグレス料金が無料になるため、マルチクラウドデータ連携のランニングコストが大幅に削減される。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>🚀 クラウド移行の柔軟性確保</h4>
+                <p class="scenario"><strong>シナリオ:</strong> Azure から他のクラウドやオンプレミスへのワークロード移行を検討している英国の企業。</p>
+                <p class="effect">✅ データ転送コストを気にせずに移行計画を策定でき、ベンダーロックインのリスクなくクラウド戦略を見直すことが可能。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>💾 ハイブリッドクラウドでのバックアップ</h4>
+                <p class="scenario"><strong>シナリオ:</strong> Azure 上のデータをオンプレミスやサードパーティのバックアップサービスに定期バックアップしている場合。</p>
+                <p class="effect">✅ バックアップデータのエグレスコストがゼロになり、ディザスタリカバリ体制をコスト効率よく維持できる。</p>
+            </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="section">
+            <h2 class="section-title">料金情報</h2>
+            <table class="pricing-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>料金</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>インターネット経由のエグレス (英国)</td>
+                        <td><span class="pricing-free">無料</span></td>
+                    </tr>
+                    <tr>
+                        <td>データ転送 (Azure 外への転送)</td>
+                        <td>原価</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="highlight-box">
+                <strong>注意:</strong> 原価でのデータ転送の具体的な料金については、<a href="https://azure.microsoft.com/pricing/details/bandwidth/" style="color: var(--azure-blue);">Azure Bandwidth 料金ページ</a>で最新情報を確認することを推奨します。
+            </div>
+        </div>
+
+        <!-- Regions -->
+        <div class="section">
+            <h2 class="section-title">利用可能リージョン</h2>
+            <div class="region-badges">
+                <div class="region-badge">🇬🇧 UK South (ロンドン)</div>
+                <div class="region-badge">🇬🇧 UK West (カーディフ)</div>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2 class="section-title">制限事項・注意点</h2>
+            <div class="limitation-item">
+                <span class="icon">⚠️</span>
+                <p>インターネット経由の転送のみが無料エグレスの対象である (ExpressRoute などの専用接続については詳細が確認できていない)</p>
+            </div>
+            <div class="limitation-item">
+                <span class="icon">⚠️</span>
+                <p>Azure リージョン間の転送 (リージョン間データ転送) は本ポリシーの対象外の可能性がある</p>
+            </div>
+            <div class="limitation-item">
+                <span class="icon">⚠️</span>
+                <p>具体的なデータ転送量の上限や条件の詳細は公式ドキュメントを確認する必要がある</p>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="related-services">
+                <div class="related-service-item">
+                    <div class="icon">📡</div>
+                    <div class="info">
+                        <h5>Azure Bandwidth</h5>
+                        <p>データ転送料金体系の基盤サービス。英国リージョンの料金体系が変更される</p>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <div class="icon">🔗</div>
+                    <div class="info">
+                        <h5>Azure ExpressRoute</h5>
+                        <p>Azure とオンプレミス間の専用接続。本アップデートとの関係は公式情報を確認</p>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <div class="icon">📦</div>
+                    <div class="info">
+                        <h5>Azure Data Box</h5>
+                        <p>大量データの物理的な転送サービス。ネットワーク経由のエグレスと組み合わせて利用可能</p>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <div class="icon">🇪🇺</div>
+                    <div class="info">
+                        <h5>ヨーロッパ向けエグレス無料化</h5>
+                        <p>先行して実施されたヨーロッパ向けの同等ポリシー。英国版はこの延長</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="section">
+            <h2 class="section-title">まとめ</h2>
+            <p class="overview-text">
+                Microsoft は英国のお客様および CSP パートナーに対して、Azure からのインターネット経由のデータエグレスを無料化し、データ転送を原価で提供するポリシーを開始した。これは既にヨーロッパで実施されているポリシーの英国への拡大であり、データポータビリティの促進とお客様の選択の自由を支持する取り組みの一環である。マルチクラウドやハイブリッド環境を運用する英国の組織にとって、データ転送コストの削減による大きなメリットが期待される。
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4>出典・参考リンク</h4>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=561392" target="_blank">公式アップデート情報 - Azure Updates</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/bandwidth/" target="_blank">Azure Bandwidth 料金ページ</a></li>
+                <li><a href="https://learn.microsoft.com/azure/networking/fundamentals/azure-network-transfer-overview" target="_blank">Azure データ転送の概要 - Microsoft Learn</a></li>
+            </ul>
+            <p class="footer-date">Generated: 2026-05-02 | Source: reports/2026/2026-05-01-azure-uk-egress-data-transfer.md</p>
+        </div>
+    </div>
+</body>
+</html>

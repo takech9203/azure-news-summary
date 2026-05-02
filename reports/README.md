@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-05-01 - Azure Networking: 英国におけるエグレスおよびデータ転送の無料化](2026/2026-05-01-azure-uk-egress-data-transfer.md)
 - [2026-04-30 - Azure Functions: Java 25 サポート](2026/2026-04-30-azure-functions-java-25.md)
 - [2026-04-30 - Azure Blob Storage: ユーザー委任 SAS のプレフィックススコープアクセス](2026/2026-04-30-blob-storage-prefix-scoped-delegation-sas.md)
 - [2026-04-29 - Microsoft Agent Framework: バージョン 1.0 GA (一般提供開始)](2026/2026-04-29-agent-framework-1-0-ga.md)
