@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-05-04 - Azure Communication Services: レガシー AlternateId 使用のクリーンアップ](2026/2026-05-04-acs-alternateid-cleanup.md)
+- [2026-05-04 - Azure Functions: Durable Task Scheduler Consumption SKU の一般提供開始](2026/2026-05-04-functions-durable-task-scheduler-consumption.md)
 - [2026-05-01 - Azure Networking: 英国におけるエグレスおよびデータ転送の無料化](2026/2026-05-01-azure-uk-egress-data-transfer.md)
 - [2026-04-30 - Azure Functions: Java 25 サポート](2026/2026-04-30-azure-functions-java-25.md)
 - [2026-04-30 - Azure Blob Storage: ユーザー委任 SAS のプレフィックススコープアクセス](2026/2026-04-30-blob-storage-prefix-scoped-delegation-sas.md)

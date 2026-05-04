@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Communication Services: レガシー AlternateId 使用のクリーンアップ</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-800));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--azure-blue);
+            border-radius: 2px;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--ms-text-primary);
+            margin-bottom: 20px;
+        }
+
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .before li::before {
+            content: '- ';
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '+ ';
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 24px 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Card */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Use Case */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .effect {
+            font-size: 14px;
+            color: var(--ms-green);
+            font-weight: 500;
+        }
+
+        /* Table */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .info-table th, .info-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .info-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .info-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Related services */
+        .related-services {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .related-service-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+        }
+
+        .related-service-item .icon {
+            font-size: 18px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .related-service-item .info h5 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ms-text-primary);
+        }
+
+        .related-service-item .info p {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Limitations */
+        .limitation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitation-item:last-child {
+            border-bottom: none;
+        }
+
+        .limitation-item .icon {
+            color: var(--ms-orange);
+            font-size: 16px;
+            margin-top: 2px;
+        }
+
+        .limitation-item p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Code block */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+            border-radius: 8px;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+        }
+
+        .footer h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-date {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .section {
+                padding: 24px 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .related-services {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="header-meta">
+                    <span class="service-badge">Azure Communication Services</span>
+                    <span class="service-badge">Teams Phone</span>
+                    <span class="badge badge-ga">Launched (GA)</span>
+                </div>
+                <h1>レガシー AlternateId 使用のクリーンアップ</h1>
+                <p class="header-date">2026-05-04 | Azure Communication Services</p>
+            </div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Microsoft は、Azure Communication Services (ACS) における Teams Phone の Multi-line (Multiple Number Assignment) 機能の有効化に影響する問題を特定した。この問題は、顧客の内部実装で AlternateId が使用されていることに起因しており、レガシーな AlternateId の使用をクリーンアップすることでサービスの継続的な動作を確保する対応が GA として提供された。
+            </p>
+            <div class="highlight-box">
+                <strong>ポイント:</strong> Teams Phone の Multi-line 機能は、管理者が単一ユーザーに複数の電話番号を割り当てることを可能にする機能であり、ACS のダイレクトルーティングと連携して動作する。レガシー AlternateId のクリーンアップにより、この機能が正常に動作するようになった。
+            </div>
+        </div>
+
+        <!-- Before/After -->
+        <div class="section">
+            <h2 class="section-title">Before / After 比較</h2>
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>顧客の内部実装でレガシーな AlternateId が使用されていた</li>
+                        <li>Teams Phone の Multi-line 機能の有効化に影響が発生</li>
+                        <li>AlternateId のレガシー使用が残存し、サービス継続性にリスクが存在</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>レガシーな AlternateId 使用がクリーンアップされた</li>
+                        <li>Teams Phone の Multi-line 機能が正常に動作するようになった</li>
+                        <li>サービスの継続的な動作が確保された</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="section">
+            <h2 class="section-title">数字で見るアップデート</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">11</div>
+                    <div class="stat-label">最大回線数<br>(1 Primary + 1 Private + 9 Alternate)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">4</div>
+                    <div class="stat-label">対応接続タイプ<br>(DR / OC / CP / TPM)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">GA</div>
+                    <div class="stat-label">ステータス<br>一般提供開始</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title">アーキテクチャ図</h2>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 16px;">Teams Phone の Multi-line 機能と ACS Direct Routing の連携構成。レガシー AlternateId がクリーンアップされ、正常なルーティングが実現された。</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Teams["Microsoft Teams Phone"]
+        PL["Primary Line"]
+        AL["Alternate Lines (Multi-line)"]
+    end
+
+    subgraph ACS["Azure Communication Services"]
+        DR["Direct Routing"]
+        SIP["SIP Proxy"]
+        MP["Media Processor"]
+    end
+
+    subgraph Legacy["Legacy Implementation"]
+        AID["AlternateId (deprecated)"]
+    end
+
+    subgraph SBC["Session Border Controller"]
+        PSTN["PSTN Trunks"]
+    end
+
+    PL --> DR
+    AL --> DR
+    DR --> SIP
+    SIP --> MP
+    MP --> SBC
+    AID -.->|"クリーンアップ対象"| DR
+    SBC --> PSTN
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title">主要機能</h2>
+            <div class="feature-card">
+                <div class="feature-icon">🧹</div>
+                <div class="feature-content">
+                    <h4>レガシー AlternateId のクリーンアップ</h4>
+                    <p>顧客の内部実装で使用されていたレガシーな AlternateId 参照を削除・移行。Teams Phone の Multi-line 機能との互換性を確保し、将来的なメンテナンス性を向上。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <div class="feature-content">
+                    <h4>サービス継続性の確保</h4>
+                    <p>クリーンアップ後もサービスが中断なく継続動作することを保証。Multi-line (Multiple Number Assignment) 機能の正常な有効化を実現。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📞</div>
+                <div class="feature-content">
+                    <h4>Multi-line 機能の正常動作</h4>
+                    <p>管理者が単一ユーザーに最大 11 回線 (1 プライマリ + 1 プライベート + 最大 9 代替回線) を割り当て可能。Direct Routing、Operator Connect、Calling Plan、Teams Phone Mobile に対応。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <table class="info-table">
+                <tbody>
+                    <tr>
+                        <th>対象サービス</th>
+                        <td>Azure Communication Services</td>
+                    </tr>
+                    <tr>
+                        <th>関連機能</th>
+                        <td>Teams Phone Multi-line (Multiple Number Assignment)</td>
+                    </tr>
+                    <tr>
+                        <th>ステータス</th>
+                        <td><span class="badge badge-ga">Generally Available (GA)</span></td>
+                    </tr>
+                    <tr>
+                        <th>影響範囲</th>
+                        <td>ACS で AlternateId をレガシー実装として使用している顧客</td>
+                    </tr>
+                    <tr>
+                        <th>Multi-line 最大回線数</th>
+                        <td>1 プライマリ + 1 プライベート + 最大 9 代替回線 (合計 11)</td>
+                    </tr>
+                    <tr>
+                        <th>対応接続タイプ</th>
+                        <td>Direct Routing, Operator Connect, Calling Plan, Teams Phone Mobile</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title">ユースケース</h2>
+            <div class="usecase-card">
+                <h4>📞 コールセンターの複数回線運用</h4>
+                <p class="scenario"><strong>シナリオ:</strong> コールセンターのオペレーターが部署ごとに異なる電話番号を持ち、ACS の Direct Routing を介して PSTN に接続している場合。</p>
+                <p class="effect">Multi-line 機能の正常化により、1 ユーザーで複数の電話番号を安定して運用でき、コールセンターの柔軟な回線管理が実現される。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>🏢 企業内の代表番号と個人番号の併用</h4>
+                <p class="scenario"><strong>シナリオ:</strong> 企業の従業員が代表電話番号と個人の直通番号の両方を Teams Phone で利用し、ACS のダイレクトルーティングで SBC 経由の通話を行う場合。</p>
+                <p class="effect">レガシー AlternateId のクリーンアップにより、Multi-line 割り当てが正常に機能し、代表番号と個人番号の同時運用が安定する。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>🌐 グローバル企業のマルチリージョン通話</h4>
+                <p class="scenario"><strong>シナリオ:</strong> 複数国に拠点を持つ企業が各国のローカル番号を従業員に割り当て、ACS と SBC を組み合わせて PSTN 接続を行っている場合。</p>
+                <p class="effect">サービス継続性の確保により、複数のローカル番号を持つグローバルなテレフォニー環境が安定的に動作する。</p>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2 class="section-title">制限事項・注意点</h2>
+            <div class="limitation-item">
+                <span class="icon">&#9888;&#65039;</span>
+                <p>レガシー AlternateId を使用した既存の内部実装は、新しい仕組みへの移行が必要になる可能性がある</p>
+            </div>
+            <div class="limitation-item">
+                <span class="icon">&#9888;&#65039;</span>
+                <p>具体的な移行手順については公式ドキュメントの確認が推奨される</p>
+            </div>
+            <div class="limitation-item">
+                <span class="icon">&#9888;&#65039;</span>
+                <p>Multi-line 機能の最大回線数は合計 11 回線 (1 プライマリ + 1 プライベート + 最大 9 代替回線) に制限される</p>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="related-services">
+                <div class="related-service-item">
+                    <div class="icon">📱</div>
+                    <div class="info">
+                        <h5>Microsoft Teams Phone</h5>
+                        <p>Multi-line 機能を提供する通話サービス。単一ユーザーへの複数番号割り当てを実現</p>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <div class="icon">🔗</div>
+                    <div class="info">
+                        <h5>ACS Direct Routing</h5>
+                        <p>SBC を介して PSTN に接続するためのルーティング機能</p>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <div class="icon">🖧</div>
+                    <div class="info">
+                        <h5>Session Border Controller (SBC)</h5>
+                        <p>ACS と PSTN ネットワーク間のシグナリングとメディア処理を担当</p>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <div class="icon">☁️</div>
+                    <div class="info">
+                        <h5>Operator Connect</h5>
+                        <p>通信事業者経由の PSTN 接続オプション。Multi-line に対応</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4>出典・参考リンク</h4>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=561432" target="_blank">公式アップデート情報 - Azure Updates</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/microsoftteams/multi-line" target="_blank">Teams Phone Multi-line - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/communication-services/concepts/telephony/direct-routing-infrastructure" target="_blank">ACS Direct Routing Infrastructure - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/communication-services/concepts/teams-endpoint" target="_blank">ACS Teams Endpoint - Microsoft Learn</a></li>
+            </ul>
+            <p class="footer-date">Generated: 2026-05-04 | Source: reports/2026/2026-05-04-acs-alternateid-cleanup.md</p>
+        </div>
+    </div>
+</body>
+</html>

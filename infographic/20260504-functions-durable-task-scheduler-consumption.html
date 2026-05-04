@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Functions: Durable Task Scheduler Consumption SKU の一般提供開始</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--ms-surface-secondary);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--ms-blue-800) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
+        }
+
+        .title-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .release-date {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.4;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-top: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Sections */
+        .section {
+            background: var(--ms-surface);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            border: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 24px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            line-height: 1.9;
+            margin-bottom: 24px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 14px;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .before li::before {
+            content: '\2717';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: 700;
+        }
+
+        .after li::before {
+            content: '\2713';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: 700;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Pricing Table */
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .pricing-table thead {
+            background: var(--ms-blue-100);
+        }
+
+        .pricing-table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .pricing-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+            color: var(--ms-text-secondary);
+        }
+
+        .pricing-table tr:hover {
+            background: var(--ms-surface-secondary);
+        }
+
+        .pricing-highlight {
+            background: var(--ms-blue-100);
+            font-weight: 500;
+            color: var(--azure-blue) !important;
+        }
+
+        /* Use Cases */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 12px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Code Block */
+        .code-container {
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            color: #E8E8E8;
+            padding: 20px;
+            border-radius: 0;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        pre:not(.mermaid) code {
+            background: transparent;
+            color: inherit;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        /* Constraints */
+        .constraints-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .constraints-list li {
+            font-size: 14px;
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .constraints-list li:last-child {
+            border-bottom: none;
+        }
+
+        .constraints-list li::before {
+            content: '\26A0';
+            position: absolute;
+            left: 0;
+            color: var(--ms-orange);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .footer h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .footer a {
+            display: block;
+            color: var(--azure-blue);
+            font-size: 13px;
+            text-decoration: none;
+            padding: 4px 0;
+            word-break: break-all;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px 16px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 22px;
+            }
+
+            .section {
+                padding: 24px 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .feature-card {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="title-meta">
+                <span class="service-badge">Azure Functions</span>
+                <span class="badge-ga">Launched (GA)</span>
+                <span class="release-date">2026-05-04</span>
+            </div>
+            <h1>Durable Task Scheduler Consumption SKU の一般提供開始</h1>
+            <p class="title-subtitle">従量課金モデルでストレージ管理不要のマネージドオーケストレーションバックエンド</p>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4CA;</span> 数字で見るアップデート</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">500</div>
+                    <div class="stat-label">最大アクション/秒</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">30日</div>
+                    <div class="stat-label">データ保持期間</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0円</div>
+                    <div class="stat-label">アイドル時コスト</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1 MB</div>
+                    <div class="stat-label">最大ペイロード</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4DD;</span> 概要</h2>
+            <p class="overview-text">
+                Azure Functions の Durable Task Scheduler に Consumption SKU が一般提供 (GA) として追加されました。Durable Task Scheduler は、Durable Functions および Durable Task SDK のオーケストレーション状態を永続化するためのマネージドバックエンドサービスです。従来の BYO (Bring Your Own) ストレージプロバイダー (Azure Storage、MSSQL など) に代わる専用バックエンドとして構築されています。
+            </p>
+            <p class="overview-text">
+                Consumption SKU は従量課金 (Pay-per-use) モデルを採用し、アクション単位での課金となります。初期費用、最低利用コミットメント、基本料金が不要で、アイドル時のコストも発生しません。
+            </p>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>BYO ストレージプロバイダーの手動管理が必要</li>
+                        <li>キャパシティプランニングやパーティション管理のオーバーヘッド</li>
+                        <li>Dedicated SKU のみで小規模ワークロードでも固定費発生</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>ストレージ管理完全不要、自動永続化</li>
+                        <li>実行アクション分のみ課金、アイドルコストゼロ</li>
+                        <li>500 アクション/秒まで自動スケール</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F3D7;</span> アーキテクチャ</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Client["&#x1F4F1; クライアント"]
+        A[HTTP リクエスト / イベント]
+    end
+
+    subgraph Azure["&#x2601;&#xFE0F; Azure Cloud"]
+        subgraph Functions["&#x26A1; Azure Functions"]
+            B[Orchestrator Function]
+            C[Activity Function 1]
+            D[Activity Function 2]
+            E[Activity Function N]
+        end
+
+        subgraph DTS["&#x1F5C4;&#xFE0F; Durable Task Scheduler&lt;br/&gt;Consumption SKU"]
+            F[タスクハブ]
+            G[状態管理&lt;br/&gt;インメモリ + 永続ストレージ]
+            H[ワークアイテム&lt;br/&gt;ディスパッチ]
+        end
+    end
+
+    A -->|トリガー| B
+    B <-->|gRPC / TLS| F
+    F --> H
+    H -->|アクティビティ&lt;br/&gt;ディスパッチ| C
+    H -->|アクティビティ&lt;br/&gt;ディスパッチ| D
+    H -->|アクティビティ&lt;br/&gt;ディスパッチ| E
+    C -->|結果| F
+    D -->|結果| F
+    E -->|結果| F
+    F --> G
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x2B50;</span> 主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4B0;</div>
+                <div class="feature-content">
+                    <h4>従量課金 (Pay-per-use)</h4>
+                    <p>アクション単位での課金。初期費用、最低コミットメント、基本料金なし。アイドル時のコストゼロを実現し、使った分だけ支払うシンプルなモデル。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4E6;</div>
+                <div class="feature-content">
+                    <h4>フルマネージドストレージ</h4>
+                    <p>ストレージアカウントの管理不要。オーケストレーション状態はサービス内部で自動的に永続化。インメモリストアと永続ストアの組み合わせによる最適化。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F680;</div>
+                <div class="feature-content">
+                    <h4>プッシュベースのワークアイテム配信</h4>
+                    <p>gRPC 接続によるプッシュモデルでワークアイテムをストリーミング。ポーリング不要でエンドツーエンドのレイテンシを削減。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4CA;</div>
+                <div class="feature-content">
+                    <h4>Durable Task Scheduler ダッシュボード</h4>
+                    <p>オーケストレーションとエンティティインスタンスの監視・管理。フィルタリング、詳細確認、サブオーケストレーションの追跡。一時停止・終了・再起動などの管理操作に対応。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F510;</div>
+                <div class="feature-content">
+                    <h4>マネージド ID 認証</h4>
+                    <p>接続文字列ではなくマネージド ID による認証のみサポート。RBAC によるきめ細かいアクセス制御で高いセキュリティを確保。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F527;</span> 技術仕様</h2>
+            <table class="pricing-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>最大アクション/秒</td>
+                        <td class="pricing-highlight">500</td>
+                    </tr>
+                    <tr>
+                        <td>データ保持期間</td>
+                        <td>最大 30 日</td>
+                    </tr>
+                    <tr>
+                        <td>スケジューラー数上限</td>
+                        <td>10 (リージョンあたり、サブスクリプションあたり)</td>
+                    </tr>
+                    <tr>
+                        <td>タスクハブ数上限</td>
+                        <td>5 (リージョンあたり、サブスクリプションあたり)</td>
+                    </tr>
+                    <tr>
+                        <td>最大ペイロードサイズ</td>
+                        <td>1 MB</td>
+                    </tr>
+                    <tr>
+                        <td>インスタンス ID 最大長</td>
+                        <td>100 文字 (印字可能 ASCII のみ)</td>
+                    </tr>
+                    <tr>
+                        <td>接続方式</td>
+                        <td>gRPC (TLS 暗号化)</td>
+                    </tr>
+                    <tr>
+                        <td>認証方式</td>
+                        <td>マネージド ID のみ</td>
+                    </tr>
+                    <tr>
+                        <td>エンドポイント形式</td>
+                        <td><code>{scheduler-name}.{region}.durabletask.io</code></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pricing Comparison -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4B3;</span> 料金比較</h2>
+            <table class="pricing-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>Consumption SKU</th>
+                        <th>Dedicated SKU</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>課金モデル</td>
+                        <td class="pricing-highlight">アクション単位</td>
+                        <td>CU (Capacity Unit) 単位の固定費</td>
+                    </tr>
+                    <tr>
+                        <td>最大スループット</td>
+                        <td>500 アクション/秒</td>
+                        <td>2,000 アクション/秒/CU</td>
+                    </tr>
+                    <tr>
+                        <td>データ保持</td>
+                        <td>30 日</td>
+                        <td>90 日</td>
+                    </tr>
+                    <tr>
+                        <td>高可用性</td>
+                        <td>-</td>
+                        <td>3 CU 以上で対応</td>
+                    </tr>
+                    <tr>
+                        <td>推奨ワークロード</td>
+                        <td class="pricing-highlight">変動的・小規模</td>
+                        <td>大規模・安定的</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Code Sample -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4BB;</span> セットアップ (Azure CLI)</h2>
+            <div class="code-container">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                </div>
+                <pre><code class="language-bash"># Durable Task Scheduler CLI 拡張機能のインストール
+az extension add --name durabletask
+az extension update --name durabletask
+
+# Consumption SKU でスケジューラーを作成
+az durabletask scheduler create \
+  --name "YOUR_SCHEDULER" \
+  --resource-group "YOUR_RESOURCE_GROUP" \
+  --location "LOCATION" \
+  --ip-allowlist "[0.0.0.0/0]" \
+  --sku-name "consumption"
+
+# タスクハブの作成
+az durabletask taskhub create \
+  --resource-group YOUR_RESOURCE_GROUP \
+  --scheduler-name YOUR_SCHEDULER \
+  --name YOUR_TASKHUB</code></pre>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4A1;</span> ユースケース</h2>
+
+            <div class="usecase-card">
+                <h4>AI エージェントオーケストレーション</h4>
+                <p>マルチステップの AI エージェントワークフローを実行。各ステップで外部 API 呼び出しやモデル推論を行い、結果に基づいて次のアクションを決定。ワークロードは不定期に発生するため、アイドル時のコストゼロにより不定期に実行される AI エージェントワークフローのコストを最小化。</p>
+            </div>
+
+            <div class="usecase-card">
+                <h4>開発・テスト環境</h4>
+                <p>Durable Functions アプリケーションの開発・テストで、ストレージインフラの管理を避けたい場合に最適。ストレージアカウントの管理不要で、すぐに開発開始可能。使用した分のみ課金。</p>
+            </div>
+
+            <div class="usecase-card">
+                <h4>イベント駆動型ワークフロー</h4>
+                <p>EC サイトのプロモーションイベント時にオーダー処理のオーケストレーションが急増し、通常時はほぼゼロになる変動的なワークロード。従量課金によりピーク時のみコスト発生。</p>
+            </div>
+        </div>
+
+        <!-- Constraints -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x26A0;&#xFE0F;</span> 制約事項・注意点</h2>
+            <ul class="constraints-list">
+                <li>最大スループットが 500 アクション/秒 (Dedicated SKU は 2,000 アクション/秒/CU)</li>
+                <li>データ保持期間が最大 30 日 (Dedicated SKU は 90 日)</li>
+                <li>スケジューラー数がリージョンあたり 10 個まで</li>
+                <li>タスクハブ数がリージョンあたり 5 個まで</li>
+                <li>Extended Sessions 機能は未対応</li>
+                <li>マネージド ID 認証のみサポート (接続文字列は不可)</li>
+                <li>最大ペイロードサイズが 1 MB に制限</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <a href="https://azure.microsoft.com/updates?id=560957" target="_blank">Azure Updates - Durable Task Scheduler Consumption SKU</a>
+            <a href="https://learn.microsoft.com/azure/durable-task/scheduler/durable-task-scheduler" target="_blank">Microsoft Learn - Durable Task Scheduler</a>
+            <a href="https://learn.microsoft.com/azure/durable-task/scheduler/durable-task-scheduler-billing" target="_blank">Microsoft Learn - Durable Task Scheduler Billing</a>
+            <a href="https://learn.microsoft.com/azure/durable-task/common/durable-task-hubs" target="_blank">Microsoft Learn - Durable Task Hubs</a>
+            <a href="https://azure.microsoft.com/pricing/details/durable-task-scheduler/" target="_blank">Azure Pricing - Durable Task Scheduler</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
