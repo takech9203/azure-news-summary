@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Gateway for Containers: AKS Automatic マネージドアドオン対応</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Title Area */
+        .title-area {
+            text-align: center;
+            margin-bottom: 48px;
+            padding: 40px 24px;
+            background: linear-gradient(135deg, var(--ms-blue-100) 0%, var(--ms-blue-200) 100%);
+            border-radius: 16px;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: var(--azure-blue);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-badge {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .title-area .date {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 16px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h3, .after h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .before h3 {
+            color: var(--ms-red);
+        }
+
+        .after h3 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before ul li, .after ul li {
+            font-size: 14px;
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .before ul li::before {
+            content: "✕";
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after ul li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Technical Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+        }
+
+        .specs-table tr:hover {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        .code-desc {
+            color: #808080;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Use Case */
+        .use-case {
+            margin-bottom: 32px;
+        }
+
+        .use-case h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 8px;
+        }
+
+        .use-case p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        /* Regions */
+        .regions-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 20px 0;
+        }
+
+        .region-tag {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-800);
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Constraints */
+        .constraints-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .constraints-list li {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            background: var(--ms-surface-secondary);
+            border-left: 4px solid var(--ms-orange);
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 48px;
+            padding: 24px;
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .footer h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .footer ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer ul li {
+            margin-bottom: 6px;
+        }
+
+        .footer ul li a {
+            font-size: 13px;
+            color: var(--azure-blue);
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .footer ul li a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .title-area h1 {
+                font-size: 22px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="badges">
+                <span class="service-badge">Application Gateway for Containers</span>
+                <span class="status-badge">In Preview</span>
+            </div>
+            <h1>Application Gateway for Containers:<br>AKS Automatic マネージドアドオン対応</h1>
+            <p class="date">2026-05-05</p>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Application Gateway for Containers のマネージドアドオンが AKS Automatic クラスターで利用可能になりました（パブリックプレビュー）。Application Gateway for Containers は Kubernetes ワークロード向けのレイヤー 7 ロードバランシングおよび動的トラフィック管理プロダクトです。AKS Automatic はノード管理、スケーリング、セキュリティなどを自動化するマネージド体験を提供します。この統合により運用簡素化の利点を享受しつつ、高度なトラフィック管理機能を活用可能になります。
+            </p>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">23</div>
+                    <div class="stat-label">対応リージョン</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">L7</div>
+                    <div class="stat-label">ロードバランシング</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">対応 API (Gateway / Ingress)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">AZ</div>
+                    <div class="stat-label">ゾーン冗長対応</div>
+                </div>
+            </div>
+
+            <!-- Before/After -->
+            <div class="before-after">
+                <div class="before">
+                    <h3>Before</h3>
+                    <ul>
+                        <li>AKS Automatic クラスターでは Application Gateway for Containers マネージドアドオンを有効化できなかった</li>
+                        <li>高度なレイヤー 7 ロードバランシング機能を利用するために AKS Standard に切り替える必要があった</li>
+                        <li>デフォルトの Ingress（マネージド NGINX）では対応できない高度なトラフィック管理要件に対応が困難</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h3>After</h3>
+                    <ul>
+                        <li>AKS Automatic クラスターで Application Gateway for Containers マネージドアドオンを直接有効化可能に</li>
+                        <li>フルマネージドなノード管理・スケーリングと高度なトラフィック管理を組み合わせた構成が実現可能に</li>
+                        <li>Gateway API や Ingress API を通じた柔軟なトラフィックルーティングが AKS Automatic でも利用可能に</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title">アーキテクチャ</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Internet["Internet"]
+        Client["クライアント"]
+    end
+
+    subgraph Azure["Azure Cloud"]
+        subgraph AGC["Application Gateway for Containers"]
+            FE["Frontend"]
+            LB["L7 Load Balancer"]
+            WAF["WAF (オプション)"]
+        end
+
+        subgraph AKSAutomatic["AKS Automatic クラスター"]
+            ALB["ALB Controller<br/>(マネージドアドオン)"]
+            GW["Gateway / Ingress リソース"]
+            subgraph Pods["アプリケーション Pod"]
+                Pod1["Pod 1"]
+                Pod2["Pod 2"]
+                Pod3["Pod 3"]
+            end
+        end
+
+        subgraph Network["ネットワーク"]
+            VNet["Virtual Network"]
+            Subnet["委任サブネット<br/>(/24 以上)"]
+        end
+    end
+
+    Client --> FE
+    FE --> LB
+    LB --> WAF
+    WAF --> Pod1
+    WAF --> Pod2
+    WAF --> Pod3
+    ALB --> AGC
+    GW --> ALB
+    AGC -.-> Subnet
+    Subnet -.-> VNet
+    AKSAutomatic -.-> VNet
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title">主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F680;</div>
+                <div class="feature-content">
+                    <h4>AKS Automatic でのマネージドアドオン対応</h4>
+                    <p>AKS Automatic クラスターで Application Gateway for Containers マネージドアドオンを有効化可能。フルマネージドなクラスター運用と高度なトラフィック管理を両立。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F310;</div>
+                <div class="feature-content">
+                    <h4>Gateway API および Ingress API サポート</h4>
+                    <p>Kubernetes Gateway API v1 に準拠し、従来の Ingress API もサポート。標準的な API を通じた柔軟なトラフィック制御が可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x2699;</div>
+                <div class="feature-content">
+                    <h4>ALB Controller によるライフサイクル管理</h4>
+                    <p>ApplicationLoadBalancer カスタムリソースによる Application Gateway for Containers のライフサイクル管理。宣言的な構成管理を実現。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F500;</div>
+                <div class="feature-content">
+                    <h4>高度なトラフィック管理機能</h4>
+                    <p>トラフィックスプリッティング、ヘッダーリライト、URL リダイレクト、mTLS、gRPC、WebSocket サポートなど、エンタープライズ向け機能を提供。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ステータス</td>
+                        <td>パブリックプレビュー</td>
+                    </tr>
+                    <tr>
+                        <td>サポートする API</td>
+                        <td>Gateway API v1、Ingress API</td>
+                    </tr>
+                    <tr>
+                        <td>対応プロトコル</td>
+                        <td>HTTP/1.1、HTTP/2、gRPC、WebSocket、SSE</td>
+                    </tr>
+                    <tr>
+                        <td>TLS</td>
+                        <td>SSL 終端、エンドツーエンド SSL、mTLS</td>
+                    </tr>
+                    <tr>
+                        <td>証明書</td>
+                        <td>ECDSA および RSA</td>
+                    </tr>
+                    <tr>
+                        <td>サブネット要件</td>
+                        <td>最低 250 IP (/24 以上)</td>
+                    </tr>
+                    <tr>
+                        <td>サブネット委任</td>
+                        <td>Microsoft.ServiceNetworking/trafficControllers</td>
+                    </tr>
+                    <tr>
+                        <td>可用性ゾーン</td>
+                        <td>ゾーン冗長対応</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title">ユースケース</h2>
+
+            <div class="use-case">
+                <h4>1. マイクロサービスのカナリアデプロイ</h4>
+                <p>トラフィックを段階的に切り替え、新バージョンへの移行リスクを最小化</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">YAML</span>
+                        <span class="code-desc">HTTPRoute - カナリアデプロイ</span>
+                    </div>
+                    <pre><code class="language-yaml">apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: canary-route
+spec:
+  parentRefs:
+  - name: my-gateway
+  rules:
+  - backendRefs:
+    - name: app-v1
+      port: 80
+      weight: 90
+    - name: app-v2
+      port: 80
+      weight: 10</code></pre>
+                </div>
+            </div>
+
+            <div class="use-case">
+                <h4>2. マルチテナント SaaS アプリケーション</h4>
+                <p>ホスト名ベースのルーティングと mTLS によるテナント分離</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">YAML</span>
+                        <span class="code-desc">HTTPRoute - テナントルーティング</span>
+                    </div>
+                    <pre><code class="language-yaml">apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: tenant-routing
+spec:
+  parentRefs:
+  - name: my-gateway
+  hostnames:
+  - "tenant-a.example.com"
+  rules:
+  - backendRefs:
+    - name: tenant-a-service
+      port: 443</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Available Regions -->
+        <div class="section">
+            <h2 class="section-title">利用可能リージョン</h2>
+            <div class="regions-grid">
+                <span class="region-tag">Australia East</span>
+                <span class="region-tag">Brazil South</span>
+                <span class="region-tag">Canada Central</span>
+                <span class="region-tag">Central India</span>
+                <span class="region-tag">Central US</span>
+                <span class="region-tag">East Asia</span>
+                <span class="region-tag">East US</span>
+                <span class="region-tag">East US 2</span>
+                <span class="region-tag">France Central</span>
+                <span class="region-tag">Germany West Central</span>
+                <span class="region-tag">Korea Central</span>
+                <span class="region-tag">North Central US</span>
+                <span class="region-tag">North Europe</span>
+                <span class="region-tag">Norway East</span>
+                <span class="region-tag">South Central US</span>
+                <span class="region-tag">Southeast Asia</span>
+                <span class="region-tag">Switzerland North</span>
+                <span class="region-tag">UAE North</span>
+                <span class="region-tag">UK South</span>
+                <span class="region-tag">West US</span>
+                <span class="region-tag">West US 2</span>
+                <span class="region-tag">West US 3</span>
+                <span class="region-tag">West Europe</span>
+            </div>
+        </div>
+
+        <!-- Constraints -->
+        <div class="section">
+            <h2 class="section-title">制約事項・注意点</h2>
+            <ul class="constraints-list">
+                <li>パブリックプレビュー段階のため、本番環境での利用には注意が必要</li>
+                <li>委任サブネットに最低 250 の IP アドレスが必要（/24 以上のサブネット）</li>
+                <li>リスナーポートは 80 と 443 のみサポート</li>
+                <li>プレビュー中は SLA が適用されない可能性あり</li>
+                <li>デフォルト Ingress（マネージド NGINX）との共存時の設定に注意が必要</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul>
+                <li><a href="https://azure.microsoft.com/updates?id=558403" target="_blank">https://azure.microsoft.com/updates?id=558403</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/overview" target="_blank">https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/overview</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/aks/intro-aks-automatic" target="_blank">https://learn.microsoft.com/en-us/azure/aks/intro-aks-automatic</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/quickstart-create-application-gateway-for-containers-managed-by-alb-controller" target="_blank">https://learn.microsoft.com/en-us/azure/application-gateway/for-containers/quickstart-create-application-gateway-for-containers-managed-by-alb-controller</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

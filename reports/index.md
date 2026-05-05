@@ -5,6 +5,9 @@
 
 ## 2026 年
 
+- [2026-05-05 - Azure Elastic SAN: Azure VMware Solution (AVS) Gen2 および AV64 SKU サポート](2026/2026-05-05-elastic-san-avs-gen2-av64.md)
+- [2026-05-05 - Azure Elastic SAN: 単一ボリュームスナップショット (GA)](2026/2026-05-05-elastic-san-single-volume-snapshots.md)
+- [2026-05-05 - Application Gateway for Containers: AKS Automatic マネージドアドオン対応](2026/2026-05-05-appgw-containers-aks-automatic.md)
 - [2026-05-04 - Azure Communication Services: レガシー AlternateId 使用のクリーンアップ](2026/2026-05-04-acs-alternateid-cleanup.md)
 - [2026-05-04 - Azure Functions: Durable Task Scheduler Consumption SKU の一般提供開始](2026/2026-05-04-functions-durable-task-scheduler-consumption.md)
 - [2026-05-01 - Azure Networking: 英国におけるエグレスおよびデータ転送の無料化](2026/2026-05-01-azure-uk-egress-data-transfer.md)
