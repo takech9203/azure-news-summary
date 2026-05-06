@@ -5,7 +5,11 @@
 
 ## 2026 年
 
+- [2026-05-06 - Azure Cosmos DB: Shell - データワークフロー向け新コマンドラインツール (MCP 対応)](2026/2026-05-06-cosmosdb-shell-mcp-cli.md)
+- [2026-05-06 - Azure Cosmos DB: ベクトル検索のための球面量子化 (Spherical Quantization)](2026/2026-05-06-cosmosdb-spherical-quantization.md)
+- [2026-05-06 - Azure NetApp Files: ボリューム作成時のバックアップ既定有効化](2026/2026-05-06-netapp-files-backup-by-default.md)
 - [2026-05-05 - Azure Elastic SAN: Azure VMware Solution (AVS) Gen2 および AV64 SKU サポート](2026/2026-05-05-elastic-san-avs-gen2-av64.md)
+- [2026-05-05 - Azure Reserved Virtual Machine Instances: 旧世代 VM シリーズの予約廃止](2026/2026-05-05-reserved-vm-instances-retirement.md)
 - [2026-05-05 - Azure Elastic SAN: 単一ボリュームスナップショット (GA)](2026/2026-05-05-elastic-san-single-volume-snapshots.md)
 - [2026-05-05 - Application Gateway for Containers: AKS Automatic マネージドアドオン対応](2026/2026-05-05-appgw-containers-aks-automatic.md)
 - [2026-05-04 - Azure Communication Services: レガシー AlternateId 使用のクリーンアップ](2026/2026-05-04-acs-alternateid-cleanup.md)

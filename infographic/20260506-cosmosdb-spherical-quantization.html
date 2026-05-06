@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Cosmos DB: ベクトル検索のための球面量子化 (Spherical Quantization)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: var(--azure-blue);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .category-badge {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-preview {
+            background: #FFB900;
+            color: #323130;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .code-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--ms-blue-900);
+            margin: 24px 0 8px;
+        }
+
+        /* Pricing */
+        .pricing-note {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            border-left: 4px solid var(--ms-green);
+        }
+
+        .pricing-note .price-highlight {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ms-green);
+        }
+
+        .pricing-note p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-top: 8px;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Cosmos DB</span>
+            <span class="category-badge">Database</span>
+            <h1>ベクトル検索のための球面量子化 (Spherical Quantization)</h1>
+            <p class="hero-subtitle">高次元ベクトルにおいてより高い検索精度 (Recall) とインデックス作成速度の向上を実現する新しい量子化方式</p>
+            <div class="hero-meta">
+                <span class="badge badge-preview">Preview</span>
+                <span class="badge badge-date">2026-05-06</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Cosmos DB for NoSQL において、ベクトルインデックスの量子化方式として「球面量子化 (Spherical Quantization)」がパブリックプレビューで利用可能に。従来の積量子化 (Product Quantization) と比較して、高次元ベクトルにおいてより高い検索精度 (Recall) とインデックス作成速度の向上を実現。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>高次元ベクトルでの Recall 向上</li>
+                    <li>インデックス作成速度の改善</li>
+                    <li>DiskANN / quantizedFlat 両インデックスタイプで利用可能</li>
+                    <li><code>quantizerType: "spherical"</code> で簡単に設定可能</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>積量子化 (Product Quantization) のみが利用可能で、高次元ベクトルでは Recall が安定しない場合があった</li>
+                        <li>大規模ベクトルデータセットのインデックス作成時間が長い</li>
+                        <li>高次元エンベディング使用時、量子化による精度低下が課題</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>球面量子化により、高次元ベクトルでもより高い Recall を安定的に維持</li>
+                        <li>インデックス作成速度の向上</li>
+                        <li>DiskANN / quantizedFlat 両インデックスタイプで利用可能</li>
+                        <li><code>quantizerType: "spherical"</code> で簡単に設定可能</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph Client["クライアント"]
+        App["AI アプリケーション"]
+        EmbModel["エンベディングモデル<br/>(Azure OpenAI 等)"]
+    end
+
+    subgraph CosmosDB["Azure Cosmos DB for NoSQL"]
+        subgraph Container["コンテナー"]
+            Doc["ドキュメント<br/>(データ + ベクトル)"]
+        end
+
+        subgraph VectorIndex["ベクトルインデックス"]
+            SQ["球面量子化<br/>(Spherical Quantization)"]
+            DiskANN["DiskANN インデックス"]
+        end
+
+        subgraph Query["クエリエンジン"]
+            VectorDistance["VectorDistance()<br/>システム関数"]
+        end
+    end
+
+    App -->|"テキスト/画像"| EmbModel
+    EmbModel -->|"高次元ベクトル"| Doc
+    Doc -->|"ベクトル抽出"| SQ
+    SQ -->|"圧縮ベクトル"| DiskANN
+    App -->|"クエリベクトル"| VectorDistance
+    VectorDistance -->|"近似最近傍検索"| DiskANN
+    DiskANN -->|"類似ドキュメント"| App
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">4,096</div>
+                    <div class="stat-label">最大ベクトル次元数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1,000+</div>
+                    <div class="stat-label">最小ベクトル数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0円</div>
+                    <div class="stat-label">追加料金なし</div>
+                </div>
+            </div>
+
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F52E;</div>
+                    <div class="feature-content">
+                        <h4>球面量子化</h4>
+                        <p>ベクトルを球面上に正規化後に量子化。コサイン類似度の精度を維持しながら圧縮</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4CA;</div>
+                    <div class="feature-content">
+                        <h4>DiskANN 対応</h4>
+                        <p>大規模ベクトルデータセット向けの高性能近似最近傍検索インデックス</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F504;</div>
+                    <div class="feature-content">
+                        <h4>quantizedFlat 対応</h4>
+                        <p>小規模データセット向けのブルートフォース検索にも対応</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x2699;</div>
+                    <div class="feature-content">
+                        <h4>簡単な設定</h4>
+                        <p><code>quantizerType: "spherical"</code> をインデックスポリシーに追加するだけで利用可能</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">Technical Specs</h2>
+            <table class="specs-table">
+                <tbody>
+                    <tr><th>量子化タイプ</th><td>spherical (新規) / product (従来)</td></tr>
+                    <tr><th>対応インデックス</th><td>diskANN, quantizedFlat</td></tr>
+                    <tr><th>最大ベクトル次元数</th><td>4,096 次元</td></tr>
+                    <tr><th>最小ベクトル数</th><td>1,000</td></tr>
+                    <tr><th>対応データタイプ</th><td>float32, float16, int8, uint8</td></tr>
+                    <tr><th>対応距離関数</th><td>cosine, dot product, euclidean</td></tr>
+                </tbody>
+            </table>
+
+            <p class="code-label">Index Policy 設定例</p>
+            <pre><code class="language-json">{
+    "vectorIndexes": [
+        {
+            "path": "/contentVector",
+            "type": "diskANN",
+            "quantizerType": "spherical"
+        }
+    ]
+}</code></pre>
+
+            <p class="code-label">ベクトル検索クエリ</p>
+            <pre><code class="language-sql">SELECT TOP 10 c.title, VectorDistance(c.contentVector, @queryVector) AS SimilarityScore
+FROM c
+ORDER BY VectorDistance(c.contentVector, @queryVector)</code></pre>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: 大規模 RAG アプリケーション</h4>
+                    <p class="scenario">OpenAI text-embedding-3-large (3072次元) で数百万件のドキュメント検索。高次元ベクトルでの高い Recall を維持しつつ、大規模データセットで高速な近似最近傍検索を実現。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: マルチモーダル AI 検索</h4>
+                    <p class="scenario">IoT センサーデータと画像データのベクトル化、異常検知。多様なデータソースからのエンベディングを統合し、球面量子化による効率的なインデックスで類似パターンを高速検出。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC3: リアルタイムレコメンデーション</h4>
+                    <p class="scenario">EC サイトの商品レコメンデーション。ユーザー行動と商品特徴のベクトル化により、低レイテンシでパーソナライズされたレコメンドを提供。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section class="section">
+            <h2 class="section-title">Pricing</h2>
+            <div class="pricing-note">
+                <span class="price-highlight">追加料金なし</span>
+                <p>球面量子化自体に追加料金は不要。通常の Cosmos DB 課金 (RU/s + ストレージ) が適用されます。量子化によりストレージコストと RU 消費が削減されるため、コスト最適化に貢献します。</p>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">Limitations / Caveats</h2>
+            <ul class="limitations-list">
+                <li>プレビュー段階のため、本番ワークロードでの利用は慎重に検討</li>
+                <li>最低 1,000 件のベクトルが必要</li>
+                <li>最大 4,096 次元まで</li>
+                <li>共有スループットアカウントでは利用不可</li>
+                <li>ベクトルインデックスを有効にすると無効化できない</li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source URLs</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=561167" target="_blank">Azure Updates - Spherical Quantization for Vector Search</a></li>
+                <li><a href="https://learn.microsoft.com/azure/cosmos-db/nosql/vector-search" target="_blank">Microsoft Learn - Vector Search in Azure Cosmos DB for NoSQL</a></li>
+                <li><a href="https://learn.microsoft.com/azure/cosmos-db/nosql/index-policy#vector-indexes" target="_blank">Microsoft Learn - Vector Indexes in Index Policy</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-05-06 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
