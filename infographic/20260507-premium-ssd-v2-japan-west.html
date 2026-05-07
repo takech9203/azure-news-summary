@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Disk Storage: Premium SSD v2 が Japan West リージョンの全 3 AZ で利用可能に</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --storage-blue: #00BCF2;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .title-area {
+            background: linear-gradient(135deg, var(--storage-blue), #0078D4);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .title-area .service-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .title-area .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .title-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .title-meta span {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga { background: var(--ms-green); }
+        .badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .section h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--storage-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #E0F7FA;
+        }
+
+        .section h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--ms-text-primary);
+            margin: 20px 0 12px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--storage-blue), #0078D4);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .before li::before { content: '❌ '; }
+        .after li::before { content: '✅ '; }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--storage-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #E0F7FA;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 188, 242, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        th {
+            background: #E0F7FA;
+            color: var(--ms-text-primary);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .usecase {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase h4 {
+            color: var(--storage-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--storage-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--ms-text-secondary);
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: var(--storage-blue);
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .title-area { padding: 32px 24px; }
+            .title-area h1 { font-size: 22px; }
+            .before-after { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .section { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <span class="service-badge">Azure Disk Storage</span>
+            <h1>Premium SSD v2 が Japan West の全 3 AZ で利用可能に</h1>
+            <p class="subtitle">日本国内 2 リージョンで全 AZ 対応完了 - 対称的な HA/DR アーキテクチャが構築可能に</p>
+            <div class="title-meta">
+                <span>📅 2026-05-07</span>
+                <span><span class="badge badge-ga">Launched (GA)</span></span>
+                <span>🇯🇵 Japan West</span>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">3 AZ</div>
+                <div class="stat-label">全ゾーンで利用可能</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">80K</div>
+                <div class="stat-label">最大 IOPS</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2 GB/s</div>
+                <div class="stat-label">最大スループット</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">&lt;1ms</div>
+                <div class="stat-label">サブミリ秒レイテンシ</div>
+            </div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2>概要</h2>
+            <p>Azure Premium SSD v2 が <strong>Japan West (西日本)</strong> リージョンの全 3 Availability Zone で GA。これにより Japan East と Japan West の両方で Premium SSD v2 の全 AZ サポートが実現し、日本国内で対称的な HA/DR アーキテクチャの構築が可能に。</p>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>Japan West で一部 AZ のみ Premium SSD v2 対応</li>
+                        <li>国内 DR 構成でストレージ性能に非対称性</li>
+                        <li>ゾーン冗長構成の選択肢が制限</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li>Japan West の全 3 AZ で Premium SSD v2 利用可能</li>
+                        <li>国内 2 リージョン間の対称的 DR 設計が実現</li>
+                        <li>完全なゾーン冗長アーキテクチャを構築可能</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="section">
+            <h2>アーキテクチャ図</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph JapanWest["Japan West Region"]
+        subgraph AZ1["Availability Zone 1"]
+            VM1["Azure VM"]
+            Disk1["Premium SSD v2"]
+            VM1 --> Disk1
+        end
+        subgraph AZ2["Availability Zone 2"]
+            VM2["Azure VM"]
+            Disk2["Premium SSD v2"]
+            VM2 --> Disk2
+        end
+        subgraph AZ3["Availability Zone 3"]
+            VM3["Azure VM"]
+            Disk3["Premium SSD v2"]
+            VM3 --> Disk3
+        end
+    end
+
+    subgraph JapanEast["Japan East Region - DR"]
+        VM_DR["Azure VM"]
+        Disk_DR["Premium SSD v2"]
+        VM_DR --> Disk_DR
+    end
+
+    JapanWest <-.->|"Cross-Region DR"| JapanEast
+    AZ1 <-.->|"Zone Redundancy"| AZ2
+    AZ2 <-.->|"Zone Redundancy"| AZ3
+                </pre>
+            </div>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-top: 12px;">Japan West の 3 つの Availability Zone に Premium SSD v2 を分散配置し、Japan East との間でリージョン間 DR を構成。国内 2 リージョンの両方で全 AZ 対応となったことで、対称的な HA/DR アーキテクチャが構築可能に。</p>
+        </div>
+
+        <!-- Features -->
+        <div class="section">
+            <h2>主要機能</h2>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <div class="feature-content">
+                    <h4>全 3 AZ サポート</h4>
+                    <p>Japan West リージョンの 3 つすべての Availability Zone で Premium SSD v2 が利用可能に。完全なゾーン冗長構成が実現。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-content">
+                    <h4>独立したパフォーマンスチューニング</h4>
+                    <p>容量 (1 GiB ~ 64 TiB)、IOPS (最大 80,000)、スループット (最大 2,000 MB/s) をそれぞれ独立して設定可能。ダウンタイムなしで調整可能。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <div class="feature-content">
+                    <h4>サブミリ秒レイテンシ</h4>
+                    <p>99.9% の時間でサブミリ秒のレイテンシを提供。トランザクション集約型ワークロード (SQL Server, Oracle, SAP HANA 等) に最適。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💰</div>
+                <div class="feature-content">
+                    <h4>コスト効率の高い料金モデル</h4>
+                    <p>ベースライン IOPS (3,000) とスループット (125 MB/s) が無料。必要なパフォーマンスのみに課金される従量制モデル。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2>技術仕様</h2>
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>詳細</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>最大ディスクサイズ</td><td>65,536 GiB (64 TiB)</td></tr>
+                    <tr><td>最大 IOPS</td><td>80,000</td></tr>
+                    <tr><td>最大スループット</td><td>2,000 MB/s</td></tr>
+                    <tr><td>ベースライン IOPS (無料)</td><td>3,000</td></tr>
+                    <tr><td>ベースラインスループット (無料)</td><td>125 MB/s</td></tr>
+                    <tr><td>レイテンシ</td><td>サブミリ秒 (99.9% SLA)</td></tr>
+                    <tr><td>SKU</td><td>PremiumV2_LRS</td></tr>
+                    <tr><td>パフォーマンス変更</td><td>24 時間以内に最大 4 回</td></tr>
+                    <tr><td>セクターサイズ</td><td>4k (デフォルト) / 512E</td></tr>
+                    <tr><td>ホストキャッシュ</td><td>非対応</td></tr>
+                    <tr><td>OS ディスク</td><td>非対応 (データディスクのみ)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Code Sample -->
+        <div class="section">
+            <h2>設定方法 - Azure CLI</h2>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <span style="color: #888;">Japan West AZ 1 にディスク作成</span>
+                </div>
+                <pre><code class="language-bash"># Premium SSD v2 ディスクを Japan West の AZ 1 に作成
+az disk create -n myPremiumSSDv2Disk -g myResourceGroup \
+  --size-gb 100 \
+  --disk-iops-read-write 5000 \
+  --disk-mbps-read-write 150 \
+  --location japanwest \
+  --zone 1 \
+  --sku PremiumV2_LRS \
+  --logical-sector-size 4096
+
+# パフォーマンスの動的調整 (ダウンタイム不要)
+az disk update --resource-group myResourceGroup \
+  --name myPremiumSSDv2Disk \
+  --disk-iops-read-write 10000 \
+  --disk-mbps-read-write 300</code></pre>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2>ユースケース</h2>
+            <div class="usecase">
+                <h4>🏦 西日本拠点の金融機関向けデータベース基盤</h4>
+                <p><strong>シナリオ:</strong> 大阪に本拠を置く金融機関が、Japan West リージョンで SQL Server Always On 可用性グループを 3 つの AZ に分散配置。</p>
+                <p><strong>効果:</strong> 3 AZ にまたがる構成により、単一 DC 障害時も自動フェイルオーバーでサービス継続可能。セカンダリの IOPS を抑えてコスト最適化しつつ、必要時に動的引き上げ可能。</p>
+            </div>
+            <div class="usecase">
+                <h4>🔄 Japan East / Japan West 間の国内 DR 構成</h4>
+                <p><strong>シナリオ:</strong> 日本国内でデータ主権要件を満たしつつ、リージョン障害に備えた DR 構成を構築。プライマリを Japan East、DR サイトを Japan West に配置。</p>
+                <p><strong>効果:</strong> 両リージョンで Premium SSD v2 の全 AZ サポートが利用可能になったことで、DR サイトでも同等のストレージ性能を確保。DR サイトの IOPS を通常時は低く設定し、フェイルオーバー時に動的に引き上げ。</p>
+            </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="section">
+            <h2>料金</h2>
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>詳細</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>ディスク容量</td><td>GiB 単位で課金 (時間課金)</td></tr>
+                    <tr><td>プロビジョニング IOPS</td><td>3,000 IOPS まで無料、超過分は IOPS 単位で課金</td></tr>
+                    <tr><td>プロビジョニングスループット</td><td>125 MB/s まで無料、超過分は MB/s 単位で課金</td></tr>
+                </tbody>
+            </table>
+            <div class="highlight-box">
+                <p style="font-size: 14px;">💡 Premium SSD v1 と比較して、必要なパフォーマンスのみに課金される従量制モデルであるため、ワークロードによっては大幅なコスト削減が期待できる。</p>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2>制限事項・注意点</h2>
+            <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                <div class="feature-icon">⚠️</div>
+                <div class="feature-content">
+                    <h4>OS ディスク非対応</h4>
+                    <p>Premium SSD v2 はデータディスクのみ。OS ディスクには Premium SSD v1 を使用すること。</p>
+                </div>
+            </div>
+            <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                <div class="feature-icon">⚠️</div>
+                <div class="feature-content">
+                    <h4>ゾーナル VM 必須</h4>
+                    <p>Availability Zone を指定して VM を作成する必要がある。リージョナル VM にはアタッチ不可。</p>
+                </div>
+            </div>
+            <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                <div class="feature-icon">⚠️</div>
+                <div class="feature-content">
+                    <h4>LRS のみ</h4>
+                    <p>現時点では LRS (ローカル冗長ストレージ) 構成のみサポート。ホストキャッシュ非対応。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>出典: <a href="https://azure.microsoft.com/updates?id=561814" target="_blank">Azure Updates</a> |
+            <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/disks-types" target="_blank">Microsoft Learn - ディスクの種類</a> |
+            <a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank">料金ページ</a></p>
+            <p style="margin-top: 8px;">Generated: 2026-05-07 | Azure Disk Storage - Premium SSD v2 Japan West</p>
+        </div>
+    </div>
+</body>
+</html>

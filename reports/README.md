@@ -5,9 +5,14 @@
 
 ## 2026 年
 
+- [2026-05-07 - Azure Virtual Machines: Dl/D/E v7 シリーズ一般提供開始](2026/2026-05-07-vm-dl-d-e-v7-series.md)
+- [2026-05-07 - Azure Disk Storage: Premium SSD v2 が Japan West リージョンの全 3 Availability Zone で利用可能に](2026/2026-05-07-premium-ssd-v2-japan-west.md)
 - [2026-05-06 - Azure Cosmos DB: Shell - データワークフロー向け新コマンドラインツール (MCP 対応)](2026/2026-05-06-cosmosdb-shell-mcp-cli.md)
+- [2026-05-06 - Azure AI Document Intelligence: v3.0 API 廃止アナウンス (2029年3月30日)](2026/2026-05-06-document-intelligence-v3-retirement.md)
 - [2026-05-06 - Azure Cosmos DB: ベクトル検索のための球面量子化 (Spherical Quantization)](2026/2026-05-06-cosmosdb-spherical-quantization.md)
 - [2026-05-06 - Azure NetApp Files: ボリューム作成時のバックアップ既定有効化](2026/2026-05-06-netapp-files-backup-by-default.md)
+- [2026-05-06 - Azure SQL Managed Instance: Business Critical メモリの適正化 (Flexible Memory)](2026/2026-05-06-sql-managed-instance-rightsize-memory.md)
+- [2026-05-06 - Azure Backup: Azure VM の一括リストア (Bulk Restore)](2026/2026-05-06-azure-backup-bulk-restore.md)
 - [2026-05-05 - Azure Elastic SAN: Azure VMware Solution (AVS) Gen2 および AV64 SKU サポート](2026/2026-05-05-elastic-san-avs-gen2-av64.md)
 - [2026-05-05 - Azure Reserved Virtual Machine Instances: 旧世代 VM シリーズの予約廃止](2026/2026-05-05-reserved-vm-instances-retirement.md)
 - [2026-05-05 - Azure Elastic SAN: 単一ボリュームスナップショット (GA)](2026/2026-05-05-elastic-san-single-volume-snapshots.md)

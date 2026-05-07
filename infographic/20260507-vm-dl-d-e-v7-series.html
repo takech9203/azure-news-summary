@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Virtual Machines: Dl/D/E v7 シリーズ一般提供開始</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-900));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+        }
+
+        .title-area .service-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 16px;
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .title-area .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .title-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .title-meta span {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga { background: var(--ms-green); }
+        .badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .section h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--ms-blue-100);
+        }
+
+        .section h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--ms-text-primary);
+            margin: 20px 0 12px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-900));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .before li::before { content: '❌ '; }
+        .after li::before { content: '✅ '; }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        th {
+            background: var(--ms-blue-100);
+            color: var(--ms-text-primary);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .usecase {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase h4 {
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        .series-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .series-card {
+            background: var(--ms-surface);
+            border: 2px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: border-color 0.2s;
+        }
+
+        .series-card:hover {
+            border-color: var(--azure-blue);
+        }
+
+        .series-card h4 {
+            font-size: 20px;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .series-card .series-type {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .series-card p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 24px;
+            color: var(--ms-text-secondary);
+            font-size: 12px;
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .title-area { padding: 32px 24px; }
+            .title-area h1 { font-size: 22px; }
+            .before-after { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .series-grid { grid-template-columns: 1fr; }
+            .section { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <span class="service-badge">Azure Virtual Machines</span>
+            <h1>Dl/D/E v7 シリーズ一般提供開始</h1>
+            <p class="subtitle">Intel Xeon 6 (Granite Rapids) 搭載 - 前世代比で最大 20% のパフォーマンス向上</p>
+            <div class="title-meta">
+                <span>📅 2026-05-07</span>
+                <span><span class="badge badge-ga">Launched (GA)</span></span>
+                <span>🔲 Intel Xeon 6 Granite Rapids</span>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">20%</div>
+                <div class="stat-label">最大パフォーマンス向上</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">シリーズ (Dl/D/E)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">v7</div>
+                <div class="stat-label">最新世代</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">GA</div>
+                <div class="stat-label">一般提供開始</div>
+            </div>
+        </div>
+
+        <!-- Series Overview -->
+        <div class="section">
+            <h2>v7 シリーズラインナップ</h2>
+            <div class="series-grid">
+                <div class="series-card">
+                    <h4>Dl v7</h4>
+                    <div class="series-type">軽量汎用</div>
+                    <p>低メモリ比率<br>Web サーバー<br>開発/テスト環境<br>コスト効率重視</p>
+                </div>
+                <div class="series-card">
+                    <h4>D v7</h4>
+                    <div class="series-type">標準汎用</div>
+                    <p>バランス型<br>アプリケーションサーバー<br>エンタープライズアプリ<br>幅広いワークロード</p>
+                </div>
+                <div class="series-card">
+                    <h4>E v7</h4>
+                    <div class="series-type">メモリ最適化</div>
+                    <p>高メモリ比率<br>データベース<br>インメモリキャッシュ<br>SAP HANA</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2>概要</h2>
+            <p>Azure は最新の <strong>Intel Xeon 6 (Granite Rapids)</strong> プロセッサを搭載した Dl/D/E v7 シリーズ仮想マシンの一般提供を開始。前世代と比較して汎用コンピュートパフォーマンスが最大 20% 向上し、幅広いワークロードに対してより高いコストパフォーマンスを提供する。</p>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before (v6 以前)</h4>
+                    <ul>
+                        <li>前世代プロセッサの性能上限</li>
+                        <li>性能向上にはスケールアップ/アウトが必要</li>
+                        <li>メモリ集約型ワークロードの性能余地が限定的</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After (v7)</h4>
+                    <ul>
+                        <li>最大 20% のコンピュートパフォーマンス向上</li>
+                        <li>同じ VM サイズでより多くの処理を実行可能</li>
+                        <li>3 シリーズで最適な VM サイズ選択が可能</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="section">
+            <h2>アーキテクチャ図</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Azure["Azure Cloud"]
+        subgraph Compute["Azure Virtual Machines v7 シリーズ"]
+            subgraph GP["汎用 General Purpose"]
+                Dl["Dl v7\n軽量汎用\n低メモリ比率"]
+                D["D v7\n標準汎用\nバランス型"]
+            end
+            subgraph MO["メモリ最適化"]
+                E["E v7\nメモリ集約型\n高メモリ比率"]
+            end
+        end
+        CPU["Intel Xeon 6\nGranite Rapids\n最大 20% 性能向上"]
+    end
+
+    CPU --> Dl
+    CPU --> D
+    CPU --> E
+
+    Dl -->|適用| WL1["Web サーバー\n開発/テスト環境"]
+    D -->|適用| WL2["アプリサーバー\nエンタープライズアプリ"]
+    E -->|適用| WL3["データベース\nインメモリキャッシュ"]
+                </pre>
+            </div>
+        </div>
+
+        <!-- Features -->
+        <div class="section">
+            <h2>主要機能</h2>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <div class="feature-content">
+                    <h4>最大 20% のパフォーマンス向上</h4>
+                    <p>Intel Xeon 6 (Granite Rapids) の最新アーキテクチャにより IPC (Instructions Per Clock) が向上。同一 VM サイズでより多くの処理を実行可能。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💡</div>
+                <div class="feature-content">
+                    <h4>Dl v7 シリーズ (軽量汎用)</h4>
+                    <p>vCPU あたりのメモリ比率が低い汎用 VM。メモリ使用量が少ないワークロードに最適化。コスト効率を重視する軽量ワークロード向け。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚖️</div>
+                <div class="feature-content">
+                    <h4>D v7 シリーズ (標準汎用)</h4>
+                    <p>バランスの取れた vCPU とメモリの比率。幅広いエンタープライズワークロードに対応。前世代 D v6 からの直接的なアップグレードパス。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🧠</div>
+                <div class="feature-content">
+                    <h4>E v7 シリーズ (メモリ最適化)</h4>
+                    <p>vCPU あたりのメモリ比率が高い VM。データベース、キャッシュなどメモリ集約型ワークロードに最適化。大規模メモリを必要とするアプリ向け。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2>技術仕様</h2>
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>詳細</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>プロセッサ</td><td>Intel Xeon 6 (Granite Rapids)</td></tr>
+                    <tr><td>パフォーマンス向上</td><td>前世代比で最大 20%</td></tr>
+                    <tr><td>Dl v7 カテゴリ</td><td>汎用 - 軽量 (低メモリ比率)</td></tr>
+                    <tr><td>D v7 カテゴリ</td><td>汎用 - 標準 (バランス型)</td></tr>
+                    <tr><td>E v7 カテゴリ</td><td>メモリ最適化 (高メモリ比率)</td></tr>
+                    <tr><td>ステータス</td><td>一般提供 (GA)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Code Sample -->
+        <div class="section">
+            <h2>設定方法 - Azure CLI</h2>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <span style="color: #888;">D v7 VM の作成例</span>
+                </div>
+                <pre><code class="language-bash"># D v7 シリーズ VM の作成
+az vm create \
+  --resource-group myResourceGroup \
+  --name myVM \
+  --image Ubuntu2204 \
+  --size Standard_D4_v7 \
+  --admin-username azureuser \
+  --generate-ssh-keys
+
+# 利用可能な v7 VM サイズの確認
+az vm list-sizes --location eastus \
+  --query "[?contains(name, '_v7')]" --output table</code></pre>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2>ユースケース</h2>
+            <div class="usecase">
+                <h4>🌐 Web アプリケーションサーバー (D v7)</h4>
+                <p><strong>シナリオ:</strong> エンタープライズ Web アプリケーションを D v6 から D v7 にアップグレードし、同じコストでリクエスト処理能力を向上。</p>
+                <p><strong>効果:</strong> 最大 20% のパフォーマンス向上により、ピーク時のレスポンスタイムが改善。VM 台数削減によるコスト削減も可能。</p>
+            </div>
+            <div class="usecase">
+                <h4>🗄️ インメモリデータベース (E v7)</h4>
+                <p><strong>シナリオ:</strong> SQL Server や SAP HANA などのメモリ集約型データベースワークロードを E v7 シリーズで実行。</p>
+                <p><strong>効果:</strong> データベースクエリの処理速度が向上し、トランザクション処理能力が改善。メモリ帯域幅の向上により大規模データセットの処理が高速化。</p>
+            </div>
+            <div class="usecase">
+                <h4>🔧 開発/テスト環境 (Dl v7)</h4>
+                <p><strong>シナリオ:</strong> 開発・テスト環境に Dl v7 シリーズを使用し、メモリ使用量が少ないビルド・CI/CD パイプラインのコスト効率を最適化。</p>
+                <p><strong>効果:</strong> 低メモリ比率の VM を選択することで不要なメモリコストを削減しつつ、ビルド・テスト処理は 20% 高速化。</p>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2>制限事項・注意点</h2>
+            <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                <div class="feature-icon">⚠️</div>
+                <div class="feature-content">
+                    <h4>リージョン展開中</h4>
+                    <p>新シリーズのため、初期段階では利用可能リージョンが限定される可能性がある。</p>
+                </div>
+            </div>
+            <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                <div class="feature-icon">⚠️</div>
+                <div class="feature-content">
+                    <h4>IaC テンプレートの更新</h4>
+                    <p>前世代からの移行時に VM サイズ名が変更されるため、ARM/Bicep/Terraform テンプレートの更新が必要。</p>
+                </div>
+            </div>
+            <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                <div class="feature-icon">⚠️</div>
+                <div class="feature-content">
+                    <h4>Reserved Instances の考慮</h4>
+                    <p>既存の RI を購入済みの場合、v7 シリーズへの変更には予約の交換または新規購入が必要になる場合がある。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>出典: <a href="https://azure.microsoft.com/updates?id=560734" target="_blank">Azure Updates</a> |
+            <a href="https://learn.microsoft.com/azure/virtual-machines/sizes" target="_blank">Microsoft Learn - VM サイズ一覧</a> |
+            <a href="https://azure.microsoft.com/pricing/details/virtual-machines/" target="_blank">料金ページ</a></p>
+            <p style="margin-top: 8px;">Generated: 2026-05-07 | Azure Virtual Machines - Dl/D/E v7 Series</p>
+        </div>
+    </div>
+</body>
+</html>
