@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Service Bus: Premium 名前空間の 99.99% 稼働率 SLA (可用性ゾーン対応リージョン)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: var(--azure-blue);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .category-badge {
+            background: #0078D4;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Regions */
+        .regions-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .region-tag {
+            background: var(--ms-blue-100);
+            border: 1px solid var(--ms-blue-300);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--ms-blue-900);
+            text-align: center;
+        }
+
+        .region-tag.highlight {
+            background: var(--ms-blue-200);
+            border-color: var(--azure-blue);
+            font-weight: 500;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .regions-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .regions-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Service Bus</span>
+            <span class="category-badge">Integration</span>
+            <h1>Premium 名前空間の 99.99% 稼働率 SLA (可用性ゾーン対応リージョン)</h1>
+            <p class="hero-subtitle">可用性ゾーン対応リージョンの Premium 名前空間に 99.99% アップタイム SLA を自動適用。追加構成不要でミッションクリティカルなメッセージング基盤の可用性を強化。</p>
+            <div class="hero-meta">
+                <span class="badge badge-ga">GA (Generally Available)</span>
+                <span class="badge badge-date">2026-05-12</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                2026 年 5 月 1 日より、可用性ゾーン (Availability Zone) をサポートするリージョンにデプロイされたすべての Azure Service Bus Premium 名前空間が 99.99% のアップタイム SLA の対象となった。追加構成不要で自動的に SLA の対象となる。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>可用性ゾーン対応リージョンの Premium 名前空間に 99.99% SLA を自動適用</li>
+                    <li>追加の構成やオプトインは一切不要</li>
+                    <li>同期レプリケーションによりゾーン障害時のデータ損失なし</li>
+                    <li>追加費用なし - 既存の Premium 料金のみ</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>Service Bus Premium 名前空間の SLA は 99.99% 未満であり、ミッションクリティカルなメッセージング基盤としての可用性保証に改善の余地があった</li>
+                        <li>可用性ゾーン対応リージョンであっても、SLA として明示的に 99.99% が保証されていなかった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>可用性ゾーン対応リージョンの Premium 名前空間すべてに 99.99% アップタイム SLA が適用</li>
+                        <li>追加構成不要で自動的に SLA の対象となる</li>
+                        <li>ミッションクリティカルなワークロードに対するプラットフォームレベルの可用性コミットメントが強化</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph Azure["Azure Region (可用性ゾーン対応)"]
+        subgraph AZ1["可用性ゾーン 1"]
+            MU1["メッセージングユニット\nBroker + Store"]
+        end
+        subgraph AZ2["可用性ゾーン 2"]
+            MU2["メッセージングユニット\nBroker + Store"]
+        end
+        subgraph AZ3["可用性ゾーン 3"]
+            MU3["メッセージングユニット\nBroker + Store"]
+        end
+        LB["ロードバランサー"]
+    end
+
+    Client["クライアントアプリケーション"] --> LB
+    LB --> MU1
+    LB --> MU2
+    LB --> MU3
+    MU1 <-->|"同期レプリケーション"| MU2
+    MU2 <-->|"同期レプリケーション"| MU3
+    MU1 <-->|"同期レプリケーション"| MU3
+
+    style Azure fill:#e6f3ff,stroke:#0078d4
+    style AZ1 fill:#fff2e6,stroke:#ff8c00
+    style AZ2 fill:#fff2e6,stroke:#ff8c00
+    style AZ3 fill:#fff2e6,stroke:#ff8c00
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">99.99%</div>
+                    <div class="stat-label">アップタイム SLA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">~52.6分</div>
+                    <div class="stat-label">年間許容ダウンタイム</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3ゾーン</div>
+                    <div class="stat-label">同期レプリケーション</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0円</div>
+                    <div class="stat-label">追加費用なし</div>
+                </div>
+            </div>
+
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F3AF;</div>
+                    <div class="feature-content">
+                        <h4>99.99% アップタイム SLA</h4>
+                        <p>年間ダウンタイム許容量は約 52.6 分。ミッションクリティカルなメッセージング基盤に求められる高い可用性をプラットフォームレベルで保証。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F504;</div>
+                    <div class="feature-content">
+                        <h4>自動ゾーン冗長</h4>
+                        <p>可用性ゾーン対応リージョンに名前空間を作成すると自動的にゾーン冗長が有効化。追加の構成は不要。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F5C2;</div>
+                    <div class="feature-content">
+                        <h4>同期レプリケーション</h4>
+                        <p>メタデータおよびメッセージデータが複数の可用性ゾーンに同期レプリケーション。ゾーン障害時のデータ損失なし。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">Technical Specs</h2>
+            <table class="specs-table">
+                <tbody>
+                    <tr><th>対象ティア</th><td>Premium のみ</td></tr>
+                    <tr><th>SLA</th><td>99.99% アップタイム</td></tr>
+                    <tr><th>有効日</th><td>2026 年 5 月 1 日</td></tr>
+                    <tr><th>対象リージョン</th><td>可用性ゾーンをサポートするすべてのリージョン</td></tr>
+                    <tr><th>ゾーン冗長設定</th><td>自動 (追加構成不要)</td></tr>
+                    <tr><th>レプリケーション方式</th><td>同期 (ゾーン間)</td></tr>
+                    <tr><th>メッセージングユニット</th><td>1, 2, 4, 8, 16 MU 選択可能</td></tr>
+                    <tr><th>データ損失 (ゾーン障害時)</th><td>なし</td></tr>
+                    <tr><th>フェイルオーバー</th><td>自動・透過的</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Available Regions -->
+        <section class="section">
+            <h2 class="section-title">対応リージョン (例)</h2>
+            <div class="regions-grid">
+                <div class="region-tag">East US</div>
+                <div class="region-tag">East US 2</div>
+                <div class="region-tag">West US 2</div>
+                <div class="region-tag">West US 3</div>
+                <div class="region-tag highlight">Japan East (東日本)</div>
+                <div class="region-tag">West Europe</div>
+                <div class="region-tag">North Europe</div>
+                <div class="region-tag">Southeast Asia</div>
+                <div class="region-tag">Australia East</div>
+                <div class="region-tag">UK South</div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: 金融取引メッセージング基盤</h4>
+                    <p class="scenario">証券取引所や銀行間決済システムにおける注文・決済メッセージの中継。ゾーン障害が発生しても取引処理を継続。99.99% SLA により金融規制要件への適合性が向上。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: IoT イベント駆動アーキテクチャ</h4>
+                    <p class="scenario">製造業のスマートファクトリーにおけるセンサーイベントの集約・分散。メッセージ損失なしの保証により、リアルタイム品質監視やプロセス制御の信頼性が向上。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC3: マイクロサービス間非同期通信</h4>
+                    <p class="scenario">EC サイトの注文処理パイプラインにおける疎結合化。ゾーン障害時もメッセージ保持により、注文データの損失を防ぎビジネス継続性を確保。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">Limitations / Caveats</h2>
+            <ul class="limitations-list">
+                <li>Premium ティアのみが対象 (Standard / Basic ティアは対象外)</li>
+                <li>可用性ゾーンをサポートしないリージョンでは適用されない</li>
+                <li>Premium ティアは Standard と比較してコストが高い</li>
+                <li>同期レプリケーションにより、書き込みレイテンシが若干増加する可能性</li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source URLs</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=561947" target="_blank">Azure Updates - Service Bus Premium 99.99% SLA</a></li>
+                <li><a href="https://learn.microsoft.com/azure/service-bus-messaging/service-bus-premium-messaging" target="_blank">Microsoft Learn - Service Bus Premium Messaging</a></li>
+                <li><a href="https://learn.microsoft.com/azure/reliability/reliability-service-bus" target="_blank">Microsoft Learn - Reliability in Service Bus</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-05-12 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+</body>
+</html>
