@@ -5,10 +5,12 @@
 
 ## 2026 年
 
+- [2026-05-13 - Azure Container Apps: Container Apps Express (Public Preview)](2026/2026-05-13-container-apps-express.md)
 - [2026-05-12 - Azure Service Bus: Premium 名前空間の 99.99% 稼働率 SLA (可用性ゾーン対応リージョン)](2026/2026-05-12-service-bus-premium-9999-sla.md)
 - [2026-05-12 - Azure Virtual Network Manager: ルール影響分析 (Rule Impact Analyzer) が一般提供開始](2026/2026-05-12-virtual-network-manager-rule-impact-analyzer.md)
 - [2026-05-12 - Azure Service Bus Premium: Confidential Computing (機密コンピューティング)](2026/2026-05-12-service-bus-confidential-computing.md)
 - [2026-05-12 - Microsoft Sentinel: 脅威インテリジェンス (TI) のパターンパース精度向上とリボーク信頼性の改善](2026/2026-05-12-sentinel-ti-pattern-parsing-revoke.md)
+- [2026-05-12 - Azure Monitor: Dashboards with Grafana が Public、Government (Fairfax)、China で一般提供開始](2026/2026-05-12-azure-monitor-grafana-dashboards.md)
 - [2026-05-07 - Azure Virtual Machines: Dl/D/E v7 シリーズ一般提供開始](2026/2026-05-07-vm-dl-d-e-v7-series.md)
 - [2026-05-07 - Azure Disk Storage: Premium SSD v2 が Japan West リージョンの全 3 Availability Zone で利用可能に](2026/2026-05-07-premium-ssd-v2-japan-west.md)
 - [2026-05-06 - Azure Cosmos DB: Shell - データワークフロー向け新コマンドラインツール (MCP 対応)](2026/2026-05-06-cosmosdb-shell-mcp-cli.md)
