@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-05-14 - Azure NetApp Files: 通常ボリュームでの大容量ファイル (64 TiB) サポート](2026/2026-05-14-netapp-files-large-files.md)
+- [2026-05-14 - Azure Files: Managed Identity Support for SMB Access (GA)](2026/2026-05-14-azure-files-managed-identity-smb.md)
 - [2026-05-13 - Azure Container Apps: Container Apps Express (Public Preview)](2026/2026-05-13-container-apps-express.md)
 - [2026-05-12 - Azure Service Bus: Premium 名前空間の 99.99% 稼働率 SLA (可用性ゾーン対応リージョン)](2026/2026-05-12-service-bus-premium-9999-sla.md)
 - [2026-05-12 - Azure Virtual Network Manager: ルール影響分析 (Rule Impact Analyzer) が一般提供開始](2026/2026-05-12-virtual-network-manager-rule-impact-analyzer.md)

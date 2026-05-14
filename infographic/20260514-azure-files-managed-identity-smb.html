@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Files: Managed Identity Support for SMB Access (GA)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--ms-blue-800) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 50%;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-security {
+            background: var(--ms-red);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.8;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--azure-blue);
+            border-radius: 2px;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--ms-text-primary);
+            margin-bottom: 24px;
+        }
+
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .before li::before {
+            content: '• ';
+            color: var(--ms-red);
+        }
+
+        .after li::before {
+            content: '• ';
+            color: var(--ms-green);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card.security {
+            background: linear-gradient(135deg, var(--ms-red), #B7472A);
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Tech Specs Table */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        .spec-table th,
+        .spec-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+            font-size: 14px;
+        }
+
+        .spec-table th {
+            background: var(--ms-surface-tertiary);
+            font-weight: 600;
+            color: var(--ms-text-primary);
+        }
+
+        .spec-table tr:hover td {
+            background: var(--ms-blue-100);
+        }
+
+        /* Use Cases */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .effect {
+            font-size: 14px;
+            color: var(--ms-green);
+            font-weight: 500;
+        }
+
+        /* Limitations */
+        .limitation-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitation-list li {
+            padding: 10px 0;
+            padding-left: 28px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitation-list li:last-child {
+            border-bottom: none;
+        }
+
+        .limitation-list li::before {
+            content: '⚠️';
+            position: absolute;
+            left: 0;
+            top: 10px;
+        }
+
+        /* Merits */
+        .merits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .merit-column h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--azure-blue);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--ms-blue-200);
+        }
+
+        .merit-column ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .merit-column li {
+            padding: 8px 0;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .merit-column li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Related Services */
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .related-item {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 14px;
+        }
+
+        .related-item strong {
+            display: block;
+            color: var(--azure-blue);
+            margin-bottom: 4px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+        }
+
+        .footer-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .merits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .related-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-meta">
+                <span class="service-badge">Azure Files</span>
+                <span class="badge badge-ga">Launched (GA)</span>
+                <span class="badge badge-security">Security</span>
+            </div>
+            <h1>Managed Identity Support for SMB Access</h1>
+            <div class="header-date">2026年5月14日 リリース | Microsoft Build 2026</div>
+        </header>
+
+        <!-- Overview -->
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Files が SMB アクセスにおける<strong>マネージド ID (Managed Identity) 認証</strong>の一般提供 (GA) を開始。アプリケーションやサービスが静的な資格情報やストレージアカウントキーを保存することなく、Azure Files SMB ファイル共有に対して認証を行うことが可能になった。
+            </p>
+            <div class="highlight-box">
+                <strong>Zero Trust 原則に準拠:</strong> ワークロードが Microsoft Entra ID が発行するトークンを使用して Azure Files にアクセスでき、静的な資格情報の管理が不要に。
+            </div>
+        </section>
+
+        <!-- Before/After -->
+        <section class="section">
+            <h2 class="section-title">Before / After</h2>
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>SMB アクセスにストレージアカウントキーや静的資格情報が必要</li>
+                        <li>AD DS や Microsoft Entra Domain Services の複雑な構成が前提条件</li>
+                        <li>アプリケーションコード内に資格情報を保持する必要あり</li>
+                        <li>Kerberos チケット取得のための複雑なインフラ設定が必要</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li>マネージド ID による資格情報不要の認証が可能</li>
+                        <li>Zero Trust 原則に準拠した認証フローでセキュリティ向上</li>
+                        <li>トークンベース認証で資格情報ローテーションが自動化</li>
+                        <li>追加のインフラ構成なしに SMB ファイル共有へアクセス</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="section">
+            <h2 class="section-title">数字で見るアップデート</h2>
+            <div class="stats-grid">
+                <div class="stat-card security">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">静的キーの保管数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">100%</div>
+                    <div class="stat-label">自動ローテーション</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0円</div>
+                    <div class="stat-label">追加料金</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">GA</div>
+                    <div class="stat-label">本番環境対応</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture -->
+        <section class="section">
+            <h2 class="section-title">アーキテクチャ図</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph Workload["🖥️ Azure ワークロード"]
+            VM["Azure VM / App Service"]
+            MI["🔑 マネージド ID\n(System/User Assigned)"]
+        end
+
+        subgraph EntraID["🛡️ Microsoft Entra ID"]
+            Token["トークン発行\n(OAuth 2.0)"]
+            RBAC["RBAC ポリシー"]
+        end
+
+        subgraph Storage["💾 Azure Storage"]
+            FileShare["📁 Azure Files\nSMB ファイル共有"]
+        end
+    end
+
+    VM -->|"1. トークン要求"| MI
+    MI -->|"2. 認証要求"| Token
+    Token -->|"3. アクセストークン発行"| MI
+    MI -->|"4. トークン付き SMB アクセス"| FileShare
+    RBAC -->|"権限制御"| FileShare
+                </pre>
+            </div>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-top: 12px;">
+                マネージド ID を使用した Azure Files SMB 認証フロー。ワークロードがマネージド ID を通じて Microsoft Entra ID からトークンを取得し、そのトークンを使用して SMB ファイル共有にアクセスする。
+            </p>
+        </section>
+
+        <!-- Features -->
+        <section class="section">
+            <h2 class="section-title">主要機能</h2>
+            <div class="feature-card">
+                <div class="feature-icon">🔑</div>
+                <div class="feature-content">
+                    <h4>マネージド ID による SMB 認証</h4>
+                    <p>Azure リソースに割り当てられたマネージド ID (システム割り当ておよびユーザー割り当て) を使用して、SMB プロトコル経由で Azure Files にアクセス。ストレージアカウントキーや静的資格情報の保存が不要。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <div class="feature-content">
+                    <h4>Zero Trust 原則への準拠</h4>
+                    <p>「信頼しない、常に検証する」の原則に基づき、すべてのアクセスでトークンベースの認証を実施。最小権限の原則に沿ったアクセス制御が可能。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎫</div>
+                <div class="feature-content">
+                    <h4>Microsoft Entra トークンベース認証</h4>
+                    <p>Microsoft Entra ID が発行する OAuth 2.0 トークンを使用した認証フロー。トークンの有効期限とリフレッシュがプラットフォームにより自動管理される。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Specs -->
+        <section class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>プロトコル</td>
+                        <td>SMB (Server Message Block)</td>
+                    </tr>
+                    <tr>
+                        <td>認証方式</td>
+                        <td>Microsoft Entra トークンベース (マネージド ID)</td>
+                    </tr>
+                    <tr>
+                        <td>マネージド ID タイプ</td>
+                        <td>システム割り当て / ユーザー割り当て</td>
+                    </tr>
+                    <tr>
+                        <td>ステータス</td>
+                        <td><strong>一般提供 (GA)</strong></td>
+                    </tr>
+                    <tr>
+                        <td>セキュリティモデル</td>
+                        <td>Zero Trust</td>
+                    </tr>
+                    <tr>
+                        <td>既存認証方式との関係</td>
+                        <td>AD DS、Microsoft Entra Domain Services、Microsoft Entra Kerberos に加えた追加オプション</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Merits -->
+        <section class="section">
+            <h2 class="section-title">メリット</h2>
+            <div class="merits-grid">
+                <div class="merit-column">
+                    <h4>ビジネス面</h4>
+                    <ul>
+                        <li>静的資格情報の漏洩リスクを排除し、セキュリティインシデントの可能性を大幅に低減</li>
+                        <li>Zero Trust 原則への準拠により、セキュリティ監査やコンプライアンス要件への対応が容易</li>
+                        <li>資格情報のローテーション管理やシークレット管理の運用負担が軽減</li>
+                    </ul>
+                </div>
+                <div class="merit-column">
+                    <h4>技術面</h4>
+                    <ul>
+                        <li>マネージド ID のライフサイクルは Azure プラットフォームが管理し手動管理が不要</li>
+                        <li>ドメインコントローラーやドメイン参加の構成が不要でシンプル</li>
+                        <li>シークレット取得コードが不要になりアプリケーションのセキュリティ表面積が縮小</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">ユースケース</h2>
+            <div class="usecase-card">
+                <h4>Azure VM 上のアプリケーションからのファイルアクセス</h4>
+                <p class="scenario">Azure VM 上で動作するアプリケーションが、設定ファイルやデータファイルを Azure Files SMB 共有から読み書きする必要がある。従来はストレージアカウントキーをアプリケーション設定に保存していた。</p>
+                <p class="effect">✅ マネージド ID により、VM にシステム割り当て ID を有効化するだけで、キーレスでファイル共有にアクセス。資格情報の漏洩リスクがゼロに。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>コンテナワークロードからの共有ストレージアクセス</h4>
+                <p class="scenario">Azure Kubernetes Service (AKS) や Azure Container Apps で動作するコンテナが、複数のインスタンス間で共有するファイルストレージとして Azure Files を使用する。</p>
+                <p class="effect">✅ ポッドに割り当てられたマネージド ID を使用して、シークレットやキーなしに SMB マウントが可能。Kubernetes Secret にストレージキーを保存する必要がなくなる。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>Zero Trust アーキテクチャの実現</h4>
+                <p class="scenario">組織全体で Zero Trust セキュリティモデルを導入しており、すべてのサービス間通信から静的な資格情報を排除する方針を策定している。</p>
+                <p class="effect">✅ Azure Files へのアクセスにおいても資格情報レスの認証が実現し、組織の Zero Trust 戦略を完全に適用できる。</p>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">制約事項・注意点</h2>
+            <ul class="limitation-list">
+                <li>Azure リソース上で動作するワークロードのみが対象 (オンプレミスのクライアントからはマネージド ID を直接使用できない)</li>
+                <li>マネージド ID は Azure リソース単位で割り当てられるため、アクセス制御の粒度に注意が必要</li>
+                <li>既存のファイル共有で AD DS ベースの認証を使用している場合、マネージド ID 認証への移行計画が必要</li>
+            </ul>
+        </section>
+
+        <!-- Related Services -->
+        <section class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="related-grid">
+                <div class="related-item">
+                    <strong>Microsoft Entra ID</strong>
+                    マネージド ID の発行とトークン管理を行う ID プラットフォーム
+                </div>
+                <div class="related-item">
+                    <strong>Azure RBAC</strong>
+                    ファイル共有に対するアクセス権限のロールベースアクセス制御
+                </div>
+                <div class="related-item">
+                    <strong>Azure Key Vault</strong>
+                    従来の資格情報管理サービス。マネージド ID により不要になるケースあり
+                </div>
+                <div class="related-item">
+                    <strong>Azure Virtual Machines</strong>
+                    システム割り当てマネージド ID の主要な利用元
+                </div>
+                <div class="related-item">
+                    <strong>Azure Kubernetes Service</strong>
+                    ポッド ID やワークロード ID と連携したファイル共有アクセスに活用可能
+                </div>
+                <div class="related-item">
+                    <strong>Azure Container Apps</strong>
+                    マネージド ID でのファイルストレージアクセスに対応
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-title">出典・参考リンク</div>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=562350" target="_blank">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/azure/storage/files/storage-files-active-directory-overview" target="_blank">Azure Files ID ベース認証の概要</a></li>
+                <li><a href="https://learn.microsoft.com/azure/storage/files/storage-files-introduction" target="_blank">Azure Files の概要</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/storage/files/" target="_blank">Azure Files 料金ページ</a></li>
+            </ul>
+        </footer>
+    </div>
+</body>
+</html>
