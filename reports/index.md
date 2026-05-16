@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-05-15 - Microsoft Foundry: 組み込み RBAC ロールの名称変更と機能強化](2026/2026-05-15-foundry-rbac-role-naming.md)
 - [2026-05-15 - Azure Blob Storage: SDK for Rust (GA)](2026/2026-05-15-blob-storage-sdk-rust.md)
 - [2026-05-14 - Azure Files: Managed Identity Support for SMB Access (GA)](2026/2026-05-14-azure-files-managed-identity-smb.md)
 - [2026-05-14 - Azure NetApp Files: 通常ボリュームでの大容量ファイル (64 TiB) サポート](2026/2026-05-14-netapp-files-large-files.md)

@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft Foundry: 組み込み RBAC ロールの名称変更と機能強化</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-900));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -5%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--ms-blue-200);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 24px;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--ms-text-primary);
+            margin-bottom: 24px;
+        }
+
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .before li::before {
+            content: '• ';
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '• ';
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .feature-content .role-id {
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            margin-top: 4px;
+        }
+
+        /* Role Mapping Table */
+        .role-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .role-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .role-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .role-table tr:hover {
+            background: var(--ms-surface-secondary);
+        }
+
+        .role-old {
+            color: var(--ms-text-secondary);
+            text-decoration: line-through;
+        }
+
+        .role-new {
+            color: var(--azure-blue);
+            font-weight: 600;
+        }
+
+        .role-arrow {
+            color: var(--ms-green);
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Use Cases */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .effect {
+            font-size: 14px;
+            color: var(--ms-text-primary);
+            background: var(--ms-blue-100);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Limitations */
+        .limitation-item {
+            display: flex;
+            gap: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--ms-border);
+            font-size: 14px;
+        }
+
+        .limitation-item:last-child {
+            border-bottom: none;
+        }
+
+        .limitation-icon {
+            color: var(--ms-orange);
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 24px;
+        }
+
+        .footer h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+            display: block;
+            padding: 4px 0;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .feature-card {
+                flex-direction: column;
+            }
+
+            .role-table {
+                font-size: 12px;
+            }
+
+            .role-table th, .role-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <div class="header-meta">
+                    <span class="service-badge">Microsoft Foundry</span>
+                    <span class="badge badge-ga">Launched (GA)</span>
+                </div>
+                <h1>組み込み RBAC ロールの名称変更と機能強化</h1>
+                <div class="header-date">リリース日: 2026年5月15日</div>
+            </div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">📋</span>
+                概要
+            </h2>
+            <p class="overview-text">
+                Microsoft Foundry の組み込み RBAC (ロールベースアクセス制御) ロールの名称が、製品ブランドに合わせて更新された。従来「Azure AI」を冠していたロール名が「Foundry」ブランドに統一され、Microsoft Foundry のブランドアイデンティティとの一貫性が確保された。
+            </p>
+            <div class="highlight-box">
+                <strong>ポイント:</strong> ロール ID は変更されないため、既存のロール割り当ては自動的に新しい名称に移行される。ID ベースで参照している IaC テンプレートやスクリプトへの影響はない。
+            </div>
+
+            <!-- Before/After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>ロール名に「Azure AI」が残存し、リブランディング後も旧ブランド名が混在</li>
+                        <li>ドキュメントやポータルでの新旧ブランド名混在による混乱</li>
+                        <li>プロジェクト管理ロールの権限が十分に明確化されていなかった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li>全ロールが「Foundry」ブランドに統一され、製品名と一貫性確保</li>
+                        <li>ロール名から権限の範囲が直感的に理解可能に</li>
+                        <li>Foundry Project Manager により管理と制約付きロール割り当てが明確化</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">📊</span>
+                数字で見るアップデート
+            </h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">4</div>
+                    <div class="stat-label">名称変更ロール数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">ロール ID 変更数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">全</div>
+                    <div class="stat-label">対応リージョン</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">¥0</div>
+                    <div class="stat-label">追加料金</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Role Mapping -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">🔄</span>
+                ロール名称マッピング
+            </h2>
+            <table class="role-table">
+                <thead>
+                    <tr>
+                        <th>旧ロール名</th>
+                        <th style="text-align:center;width:50px;"></th>
+                        <th>新ロール名</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="role-old">Azure AI Account Owner</td>
+                        <td class="role-arrow">→</td>
+                        <td class="role-new">Foundry Account Owner</td>
+                    </tr>
+                    <tr>
+                        <td class="role-old">Azure AI Owner</td>
+                        <td class="role-arrow">→</td>
+                        <td class="role-new">Foundry Owner</td>
+                    </tr>
+                    <tr>
+                        <td class="role-old">Azure AI Project Manager</td>
+                        <td class="role-arrow">→</td>
+                        <td class="role-new">Foundry Project Manager</td>
+                    </tr>
+                    <tr>
+                        <td class="role-old">Azure AI User</td>
+                        <td class="role-arrow">→</td>
+                        <td class="role-new">Foundry User</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">🏗️</span>
+                RBAC ロール階層アーキテクチャ
+            </h2>
+            <p style="font-size:14px; color:var(--ms-text-secondary); margin-bottom:16px;">
+                Microsoft Foundry の RBAC ロール階層を示す。Foundry Account Owner と Foundry Project Manager は ABAC 条件付きで Foundry User ロールの割り当てが可能。
+            </p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph RBAC["🛡️ Microsoft Foundry RBAC 階層"]
+            AccountOwner["Foundry Account Owner<br/>（旧: Azure AI Account Owner）<br/>アカウント全体の管理 + ロール割り当て"]
+            Owner["Foundry Owner<br/>（旧: Azure AI Owner）<br/>フルアクセス + データプレーン操作"]
+            ProjectManager["Foundry Project Manager<br/>（旧: Azure AI Project Manager）<br/>プロジェクト管理 + 制約付きロール割り当て"]
+            User["Foundry User<br/>（旧: Azure AI User）<br/>読み取り + データプレーン操作"]
+        end
+
+        subgraph Scope["📋 適用スコープ"]
+            Account["Foundry アカウント"]
+            Project["Foundry プロジェクト"]
+        end
+
+        AccountOwner -->|"管理"| Account
+        AccountOwner -->|"Foundry User を割り当て可能"| User
+        Owner -->|"フルアクセス"| Account
+        Owner -->|"フルアクセス"| Project
+        ProjectManager -->|"管理"| Project
+        ProjectManager -->|"Foundry User を割り当て可能"| User
+        User -->|"データ操作"| Project
+    end
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">⚡</span>
+                主要機能 (ロール詳細)
+            </h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">👑</div>
+                <div class="feature-content">
+                    <h4>Foundry Account Owner</h4>
+                    <p>AI プロジェクトとアカウントの管理に対するフルアクセス。ABAC 条件により Foundry User ロールのみを他のユーザーに割り当て可能。</p>
+                    <div class="role-id">ID: e47c6f54-e4a2-4754-9501-8e0985b135e1</div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔑</div>
+                <div class="feature-content">
+                    <h4>Foundry Owner</h4>
+                    <p>AI プロジェクトとアカウントのフルアクセス。データプレーン操作 (Microsoft.CognitiveServices/*) へのアクセスとアラート管理権限を含む。</p>
+                    <div class="role-id">ID: c883944f-8b7b-4483-af10-35834be79c4a</div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📁</div>
+                <div class="feature-content">
+                    <h4>Foundry Project Manager</h4>
+                    <p>プロジェクトスコープでの開発者・管理アクションの実行が可能。ABAC 条件付きで Foundry User ロールの割り当てが可能。データプレーン操作へのアクセスを含む。</p>
+                    <div class="role-id">ID: eadc314b-1a2d-4efa-be10-5d325db5065e</div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">👤</div>
+                <div class="feature-content">
+                    <h4>Foundry User</h4>
+                    <p>AI プロジェクトおよびアカウントへの読み取りアクセス。データプレーン (Cognitive Services) へのフルアクセスを含み、推論やモデル呼び出しが可能。</p>
+                    <div class="role-id">ID: 53ca6127-db72-4b80-b1b0-d745d6d5456d</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">💡</span>
+                ユースケース
+            </h2>
+
+            <div class="usecase-card">
+                <h4>🏢 エンタープライズ AI プラットフォームの権限管理</h4>
+                <p class="scenario"><strong>シナリオ:</strong> 大規模組織で複数の AI プロジェクトを運用し、チームごとに適切なアクセス権限を付与する必要がある場合</p>
+                <p class="effect"><strong>効果:</strong> Foundry Account Owner がアカウントレベルで全体管理を行い、各プロジェクトには Foundry Project Manager を配置。チームメンバーに Foundry User ロールを委任割り当てする階層的な権限管理が実現できる。</p>
+            </div>
+
+            <div class="usecase-card">
+                <h4>🛠️ 開発者セルフサービス環境の構築</h4>
+                <p class="scenario"><strong>シナリオ:</strong> AI 開発者に必要最小限の権限を付与し、データプレーン操作 (モデルの呼び出し、推論の実行) を自律的に行わせたい場合</p>
+                <p class="effect"><strong>効果:</strong> Foundry User ロールにより、コントロールプレーンは読み取り専用としつつ、データプレーン (Cognitive Services) へのフルアクセスを付与。安全なセルフサービス環境が構築できる。</p>
+            </div>
+        </div>
+
+        <!-- Code Sample -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">💻</span>
+                設定方法 (Azure CLI)
+            </h2>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <span style="color: #888;">Azure CLI</span>
+                </div>
+                <pre><code class="language-bash"># Foundry Account Owner ロールの割り当て
+az role assignment create \
+  --assignee &lt;user-principal-name-or-object-id&gt; \
+  --role "Foundry Account Owner" \
+  --scope /subscriptions/&lt;subscription-id&gt;/resourceGroups/&lt;resource-group&gt;/providers/Microsoft.CognitiveServices/accounts/&lt;foundry-account&gt;
+
+# Foundry User ロールの割り当て
+az role assignment create \
+  --assignee &lt;user-principal-name-or-object-id&gt; \
+  --role "Foundry User" \
+  --scope /subscriptions/&lt;subscription-id&gt;/resourceGroups/&lt;resource-group&gt;/providers/Microsoft.CognitiveServices/accounts/&lt;foundry-account&gt;</code></pre>
+            </div>
+
+            <div class="highlight-box" style="margin-top: 20px;">
+                <strong>Azure Portal での設定:</strong> 対象の Microsoft Foundry リソース → アクセス制御 (IAM) → ロールの割り当ての追加 → ロール選択 → ユーザー/グループ選択 → レビューと割り当て
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">⚠️</span>
+                制限事項・注意点
+            </h2>
+
+            <div class="limitation-item">
+                <span class="limitation-icon">⚠️</span>
+                <span>ロール名で参照している既存の IaC テンプレート (ARM、Bicep、Terraform) やスクリプトは、新しいロール名への更新が必要になる可能性がある</span>
+            </div>
+            <div class="limitation-item">
+                <span class="limitation-icon">⚠️</span>
+                <span>Foundry Account Owner と Foundry Project Manager が割り当て可能なロールは Foundry User に限定されており、他のロールの委任はできない</span>
+            </div>
+            <div class="limitation-item">
+                <span class="limitation-icon">⚠️</span>
+                <span>Azure AI Administrator および Azure AI Developer ロールは引き続き「Azure AI」名称を維持。これらは Azure Machine Learning と Foundry ハブの両方に適用される別カテゴリのロール</span>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">🔗</span>
+                関連サービス
+            </h2>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <span class="service-badge" style="background: var(--azure-blue); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px;">Microsoft Entra ID</span>
+                <span class="service-badge" style="background: var(--ms-red); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px;">Azure RBAC</span>
+                <span class="service-badge" style="background: var(--ms-purple); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px;">Microsoft Foundry Control Plane</span>
+                <span class="service-badge" style="background: var(--ms-blue-800); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px;">Azure AI Administrator</span>
+                <span class="service-badge" style="background: var(--ms-blue-700); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px;">Azure AI Developer</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>📚 参考リンク</h3>
+            <a href="https://azure.microsoft.com/updates?id=562533" target="_blank">公式アップデート情報 - Azure Updates</a>
+            <a href="https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles/ai-machine-learning" target="_blank">Microsoft Learn - Azure 組み込みロール (AI + Machine Learning)</a>
+            <a href="https://learn.microsoft.com/en-us/azure/foundry/" target="_blank">Microsoft Learn - Microsoft Foundry ドキュメント</a>
+            <a href="https://learn.microsoft.com/en-us/azure/foundry/control-plane/overview" target="_blank">Microsoft Learn - Microsoft Foundry Control Plane</a>
+            <div class="footer-note">
+                このインフォグラフィックは Azure News Summary プロジェクトにより自動生成されました。<br>
+                生成日: 2026-05-16 | ソース: reports/2026/2026-05-15-foundry-rbac-role-naming.md
+            </div>
+        </div>
+    </div>
+
+    <!-- Mermaid.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+
+    <!-- highlight.js -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
