@@ -5,6 +5,9 @@
 
 ## 2026 年
 
+- [2026-05-18 - Azure Monitor Application Insights: AKS 自動インストルメンテーションの一般提供開始](2026/2026-05-18-app-insights-aks-auto-instrumentation.md)
+- [2026-05-18 - Azure Front Door: WebSocket サポート一般提供開始](2026/2026-05-18-front-door-websocket.md)
+- [2026-05-18 - Microsoft Marketplace: SaaS サブスクリプションの自動アクティベーション](2026/2026-05-18-marketplace-saas-auto-activation.md)
 - [2026-05-15 - Microsoft Foundry: 組み込み RBAC ロールの名称変更と機能強化](2026/2026-05-15-foundry-rbac-role-naming.md)
 - [2026-05-15 - Azure Blob Storage: SDK for Rust (GA)](2026/2026-05-15-blob-storage-sdk-rust.md)
 - [2026-05-14 - Azure Files: Managed Identity Support for SMB Access (GA)](2026/2026-05-14-azure-files-managed-identity-smb.md)
