@@ -5,6 +5,11 @@
 
 ## 2026 年
 
+- [2026-05-19 - Azure App Configuration: Scorecards によるフィーチャーロールアウト評価機能のパブリックプレビュー](2026/2026-05-19-app-configuration-scorecards.md)
+- [2026-05-19 - Azure NetApp Files: キャッシュボリューム (Cache Volumes) の一般提供開始](2026/2026-05-19-netapp-files-cache-volumes.md)
+- [2026-05-19 - Azure Virtual Network: NSG およびルートテーブルのデフォルト制限値の引き上げ](2026/2026-05-19-virtual-network-nsg-route-table-limits.md)
+- [2026-05-19 - Azure Storage Actions: Mock Runs (模擬実行) - 実行前の検証機能](2026/2026-05-19-storage-actions-mock-runs.md)
+- [2026-05-19 - Azure Network Watcher: ルール影響アナライザー (Rule Impact Analyser) が一般提供開始](2026/2026-05-19-network-watcher-rule-impact-analyser.md)
 - [2026-05-18 - Azure Monitor Application Insights: AKS 自動インストルメンテーションの一般提供開始](2026/2026-05-18-app-insights-aks-auto-instrumentation.md)
 - [2026-05-18 - Azure Front Door: WebSocket サポート一般提供開始](2026/2026-05-18-front-door-websocket.md)
 - [2026-05-18 - Microsoft Marketplace: SaaS サブスクリプションの自動アクティベーション](2026/2026-05-18-marketplace-saas-auto-activation.md)
