@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Event Grid: MQTT 機能拡張と Subscription Identifiers</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--ms-blue-900) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .header-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+
+        .header-date {
+            margin-top: 16px;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Section Styles */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 28px;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--ms-text-primary);
+            margin-bottom: 24px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-left: 8px;
+            border-left: 3px solid transparent;
+        }
+
+        .before li {
+            border-left-color: var(--ms-red);
+        }
+
+        .after li {
+            border-left-color: var(--ms-green);
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            gap: 12px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px;
+            margin: 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .feature-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .feature-badge-ga {
+            background: var(--ms-green);
+            color: white;
+        }
+
+        .feature-badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+        }
+
+        /* Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            font-weight: 700;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .specs-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Cases */
+        .use-cases {
+            display: grid;
+            gap: 16px;
+        }
+
+        .use-case-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .use-case-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+
+        .use-case-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 8px;
+        }
+
+        .use-case-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Stats */
+        .stats-section {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--ms-blue-900) 100%);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            color: white;
+        }
+
+        .stats-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-bottom: 24px;
+        }
+
+        .footer-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 8px;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 14px;
+            word-break: break-all;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .section {
+                padding: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-card {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .use-case-card {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="header-badges">
+                    <span class="service-badge">Azure Event Grid</span>
+                    <span class="badge badge-ga">GA</span>
+                    <span class="badge badge-preview">Preview</span>
+                </div>
+                <h1>MQTT 機能拡張と Subscription Identifiers</h1>
+                <p class="header-subtitle">MQTT v5 の Subscription Identifiers によりメッセージルーティングを大幅に簡素化。IoT シナリオにおけるクライアント側処理の複雑さを解消し、スケーラブルなリアルタイム通信を実現。</p>
+                <p class="header-date">2026-05-20</p>
+            </div>
+        </header>
+
+        <!-- Overview Section -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">📋</span>
+                概要
+            </h2>
+            <p class="overview-text">
+                Azure Event Grid の MQTT ブローカー機能に2つのアップデートが発表されました。MQTT 機能拡張が一般提供（GA）となり、エンタープライズグレードの MQTT v5 ブローカーとして本番環境での利用が可能になりました。同時に、Subscription Identifiers がプレビューとして提供開始され、サブスクライバーが各サブスクリプションに数値IDを割り当て、受信メッセージを即座に識別できるようになります。
+            </p>
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>複雑なトピック文字列マッチングロジック必要</li>
+                        <li>クライアント側処理複雑化</li>
+                        <li>開発コスト高い</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>Subscription IDでメッセージ即座に識別</li>
+                        <li>トピックマッチングロジック不要</li>
+                        <li>処理簡素化・高速化</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">🏗️</span>
+                アーキテクチャ
+            </h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart LR
+    subgraph Devices["📡 IoT デバイス"]
+        Sensor1["🌡️ 温度センサー"]
+        Sensor2["💧 湿度センサー"]
+        Sensor3["🏭 産業機器"]
+    end
+
+    subgraph EventGrid["☁️ Azure Event Grid Namespace"]
+        MQTT["📨 MQTT Broker\n(MQTT v5)"]
+        SubID["🏷️ Subscription\nIdentifiers"]
+        Topics["📋 Topic Spaces"]
+    end
+
+    subgraph Subscribers["📱 サブスクライバー"]
+        App1["⚙️ アプリケーション\nSub ID: 1 → 温度処理\nSub ID: 2 → 湿度処理"]
+        App2["📊 分析サービス"]
+    end
+
+    subgraph Azure["☁️ Azure Services"]
+        EH["Event Hubs"]
+        Storage["Blob Storage"]
+    end
+
+    Sensor1 -->|PUBLISH| MQTT
+    Sensor2 -->|PUBLISH| MQTT
+    Sensor3 -->|PUBLISH| MQTT
+    MQTT --> SubID
+    SubID -->|"メッセージ + Sub ID"| App1
+    SubID -->|"メッセージ + Sub ID"| App2
+    MQTT -->|Routing| Topics
+    Topics --> EH
+    Topics --> Storage
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">✨</span>
+                主要機能
+            </h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">🏷️</div>
+                    <div class="feature-content">
+                        <h4>Subscription Identifiers <span class="feature-badge feature-badge-preview">Preview</span></h4>
+                        <p>各サブスクリプションに一意の数値IDを割り当て可能。ブローカーがメッセージ配信時にIDを含めることで、クライアントはトピック文字列を解析せずにメッセージの送信元サブスクリプションを即座に特定できます。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📨</div>
+                    <div class="feature-content">
+                        <h4>MQTT 機能拡張 <span class="feature-badge feature-badge-ga">GA</span></h4>
+                        <p>MQTT v5 標準に準拠したエンタープライズグレードのブローカー。スケーラブルなリアルタイムソリューションとして、IoT デバイスからクラウドまでのセキュアな双方向通信を提供します。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚖️</div>
+                    <div class="feature-content">
+                        <h4>Shared Subscriptions <span class="feature-badge feature-badge-ga">GA</span></h4>
+                        <p>複数クライアントがグループとしてメッセージを消費し、自動的にロードバランスを実現。高スループットシナリオにおけるスケールアウトが容易になります。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <div class="feature-content">
+                        <h4>MQTT Retain <span class="feature-badge feature-badge-ga">GA</span></h4>
+                        <p>各トピックの最後のメッセージをブローカーが保存。新規サブスクライバーが接続した際に最新の状態が自動配信され、初期同期の実装が不要になります。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">🔧</span>
+                技術仕様
+            </h2>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>仕様</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>プロトコル</td>
+                        <td>MQTT v3.1.1, MQTT v5, WebSocket</td>
+                    </tr>
+                    <tr>
+                        <td>ポート</td>
+                        <td>8883 (MQTT over TLS), 443 (WebSocket)</td>
+                    </tr>
+                    <tr>
+                        <td>TLS</td>
+                        <td>TLS 1.2 以上必須</td>
+                    </tr>
+                    <tr>
+                        <td>QoS</td>
+                        <td>QoS 0 (At most once), QoS 1 (At least once)</td>
+                    </tr>
+                    <tr>
+                        <td>最大パケットサイズ</td>
+                        <td>512 KiB</td>
+                    </tr>
+                    <tr>
+                        <td>認証方式</td>
+                        <td>X.509 証明書, Microsoft Entra ID (JWT), カスタム認証</td>
+                    </tr>
+                    <tr>
+                        <td>セッション有効期限</td>
+                        <td>最大 8 時間</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">💡</span>
+                ユースケース
+            </h2>
+            <div class="use-cases">
+                <div class="use-case-card">
+                    <div class="use-case-icon">🏠</div>
+                    <div class="use-case-content">
+                        <h4>スマートホームモニタリング</h4>
+                        <p>Subscription Identifiers を使用して、温度・湿度・照明など異なるセンサーデータを種類別に効率的にルーティング。クライアントアプリケーションはSub IDに基づいて即座に適切なハンドラーにディスパッチできます。</p>
+                    </div>
+                </div>
+                <div class="use-case-card">
+                    <div class="use-case-icon">🏭</div>
+                    <div class="use-case-content">
+                        <h4>産業IoTテレメトリ処理</h4>
+                        <p>Shared Subscriptions により、大量の産業機器テレメトリを複数のワーカーで分散処理。負荷に応じてワーカーを追加するだけで水平スケーリングが可能になります。</p>
+                    </div>
+                </div>
+                <div class="use-case-card">
+                    <div class="use-case-icon">🚗</div>
+                    <div class="use-case-content">
+                        <h4>コネクテッドカーのリアルタイム通信</h4>
+                        <p>MQTT v5 の Request-Response パターンを活用し、車両とクラウド間の双方向リアルタイム通信を実現。OTA アップデートの配信やリモート診断などのシナリオに対応します。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="stats-section">
+            <h2 class="stats-title">
+                <span class="section-title-icon">📊</span>
+                主要スペック
+            </h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">512 KiB</div>
+                    <div class="stat-label">最大パケットサイズ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">QoS 0/1</div>
+                    <div class="stat-label">サポートされるQoSレベル</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">8時間</div>
+                    <div class="stat-label">セッション有効期限最大値</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p class="footer-title">参考リンク</p>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=562240" target="_blank">https://azure.microsoft.com/updates?id=562240</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=562970" target="_blank">https://azure.microsoft.com/updates?id=562970</a></li>
+                <li><a href="https://learn.microsoft.com/azure/event-grid/mqtt-overview" target="_blank">https://learn.microsoft.com/azure/event-grid/mqtt-overview</a></li>
+            </ul>
+        </footer>
+    </div>
+</body>
+</html>
