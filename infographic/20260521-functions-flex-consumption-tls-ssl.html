@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Functions - Flex Consumption プランにおける TLS/SSL 証明書サポート</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --category-color: #0078D4;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 80px;
+            opacity: 0.2;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: none;
+            border-left: 4px solid var(--category-color);
+            padding-left: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 24px;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px 24px;
+            border-radius: 0 12px 12px 0;
+            margin: 16px 0;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before ul li, .after ul li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .before ul li::before {
+            content: '× ';
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after ul li::before {
+            content: '+ ';
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--category-color);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 12px 12px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 900;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .tech-table th, .tech-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .tech-table th {
+            background: var(--ms-surface-tertiary);
+            font-weight: 700;
+            color: var(--ms-text-primary);
+        }
+
+        .tech-table tr:hover {
+            background: var(--ms-blue-100);
+        }
+
+        .status-yes {
+            color: var(--ms-green);
+            font-weight: 500;
+        }
+
+        .status-no {
+            color: var(--ms-red);
+            font-weight: 500;
+        }
+
+        /* Use Case */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        .usecase-card .usecase-effect {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Limitations */
+        .limitations-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .limitation-item {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            padding: 8px 12px;
+            background: var(--ms-surface-tertiary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .limitation-item::before {
+            content: '!';
+            color: var(--ms-orange);
+            font-weight: bold;
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 140, 0, 0.1);
+            border-radius: 50%;
+            font-size: 12px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin-top: 8px;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .header::after {
+                display: none;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .feature-card {
+                flex-direction: column;
+            }
+
+            .limitations-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-badges">
+                <span class="service-badge">Azure Functions</span>
+                <span class="badge badge-preview">In Preview</span>
+            </div>
+            <h1>Flex Consumption プランにおける TLS/SSL 証明書サポート</h1>
+            <p class="header-date">リリース日: 2026-05-21</p>
+        </header>
+
+        <!-- Overview + Before/After -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4CB;</span>概要</h2>
+            <div class="highlight-box">
+                Azure Functions の <strong>Flex Consumption プラン</strong>に、新しい<strong>サイトスコープ証明書モデル</strong>による TLS/SSL 証明書サポートが追加されました。従来の Web スペーススコープモデルとは異なり、証明書が個々の Function App に紐づけられるため、<strong>アプリ間の証明書分離</strong>が実現されます。全 Flex Consumption リージョンで利用可能です。
+            </div>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>Flex Consumption プランでは TLS/SSL 証明書をカスタムドメインに使用できなかった</li>
+                        <li>Web スペーススコープモデルでは同一リージョン・リソースグループ内のアプリ間で証明書が共有されていた</li>
+                        <li>証明書の分離が困難でセキュリティ境界が曖昧</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>サイトスコープモデルにより証明書がアプリごとに分離</li>
+                        <li>マネージド証明書、App Service 証明書、Key Vault インポート、PFX/CER アップロードに対応</li>
+                        <li>全 Flex Consumption リージョンで利用可能</li>
+                        <li>Key Vault 連携で自動同期 (24時間以内)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram (Mermaid) -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F3D7;&#xFE0F;</span>アーキテクチャ図: 証明書スコープモデルの比較</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Traditional["従来モデル: Web スペーススコープ"]
+        WS["Web スペース&lt;br/&gt;(リージョン + リソースグループ)"]
+        CERT1["証明書 A"]
+        APP1["Function App 1"]
+        APP2["Function App 2"]
+        APP3["Function App 3"]
+        WS --> CERT1
+        CERT1 --> APP1
+        CERT1 --> APP2
+        CERT1 --> APP3
+    end
+
+    subgraph New["新モデル: サイトスコープ"]
+        APPA["Function App X"]
+        APPB["Function App Y"]
+        APPC["Function App Z"]
+        CERTA["証明書 A"]
+        CERTB["証明書 B"]
+        CERTC["証明書 C"]
+        APPA --> CERTA
+        APPB --> CERTB
+        APPC --> CERTC
+    end
+                </pre>
+            </div>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-top: 12px;">従来の Web スペーススコープモデルでは証明書がリージョン+リソースグループ単位で共有されていましたが、新しいサイトスコープモデルではアプリごとに証明書が独立して管理されます。</p>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x26A1;</span>主要機能</h2>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F512;</div>
+                <div class="feature-content">
+                    <h4>サイトスコープ証明書モデル</h4>
+                    <p>証明書が個々の Function App に紐づけられる新モデル。同じリージョン・リソースグループ内の他アプリとは共有されず、セキュリティ境界が明確に分離されます。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4DC;</div>
+                <div class="feature-content">
+                    <h4>複数の証明書タイプのサポート</h4>
+                    <p>App Service マネージド証明書 (無料・自動更新)、App Service 証明書、Azure Key Vault からのインポート、PFX ファイルアップロード、CER ファイルアップロードに対応。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F511;</div>
+                <div class="feature-content">
+                    <h4>Key Vault 連携</h4>
+                    <p>マネージド ID による認証で Key Vault から証明書をインポート。証明書の更新は 24 時間以内に自動的に同期されます。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F504;</div>
+                <div class="feature-content">
+                    <h4>マネージド証明書の自動更新</h4>
+                    <p>App Service マネージド証明書は無料で提供され、プラットフォームにより自動的に更新されます。カスタムドメインの HTTPS 化を最小限の運用負荷で実現。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs Table -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F527;</span>技術仕様</h2>
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>プライベート証明書の上限</td>
+                        <td>アプリあたり最大 3 個</td>
+                    </tr>
+                    <tr>
+                        <td>パブリック証明書の上限</td>
+                        <td>アプリあたり最大 3 個</td>
+                    </tr>
+                    <tr>
+                        <td>証明書形式 (プライベート)</td>
+                        <td>パスワード保護された PFX</td>
+                    </tr>
+                    <tr>
+                        <td>証明書形式 (パブリック)</td>
+                        <td>.cer ファイル</td>
+                    </tr>
+                    <tr>
+                        <td>ECC 証明書</td>
+                        <td class="status-yes">PFX としてアップロード可</td>
+                    </tr>
+                    <tr>
+                        <td>E2E 暗号化</td>
+                        <td class="status-no">未サポート</td>
+                    </tr>
+                    <tr>
+                        <td>証明書ファイルパス (パブリック)</td>
+                        <td><code>/var/ssl/certs</code></td>
+                    </tr>
+                    <tr>
+                        <td>証明書ファイルパス (プライベート)</td>
+                        <td><code>/var/ssl/private</code></td>
+                    </tr>
+                    <tr>
+                        <td>Key Vault 同期間隔</td>
+                        <td>24 時間以内</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Stats Grid -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4CA;</span>数字で見るアップデート</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">プライベート証明書上限 / アプリ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">パブリック証明書上限 / アプリ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">24h</div>
+                    <div class="stat-label">Key Vault 同期間隔</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4A1;</span>ユースケース</h2>
+            <div class="usecase-card">
+                <h4>&#x1F310; サーバーレス API のカスタムドメイン HTTPS 化</h4>
+                <p>Flex Consumption プラン上の Function App にカスタムドメインを設定し、マネージド証明書を利用して HTTPS を有効化。無料かつ自動更新で運用負荷ゼロ。</p>
+                <div class="usecase-effect">マネージド証明書により証明書管理が完全に不要、コストゼロで HTTPS を実現</div>
+            </div>
+            <div class="usecase-card">
+                <h4>&#x1F511; Key Vault による証明書の一元管理</h4>
+                <p>組織全体の証明書を Azure Key Vault で一元管理し、各 Function App にマネージド ID 経由でインポート。証明書の更新は 24 時間以内に全アプリに自動反映。</p>
+                <div class="usecase-effect">証明書のライフサイクル管理を Key Vault に集約、更新忘れによるサービス停止リスクを排除</div>
+            </div>
+            <div class="usecase-card">
+                <h4>&#x1F50F; クライアント証明書認証 (mTLS)</h4>
+                <p>パブリック証明書を <code>/var/ssl/private</code> パスから読み込み、クライアント証明書認証 (相互 TLS) を実装。B2B API 連携のセキュリティを強化。</p>
+                <div class="usecase-effect">Flex Consumption プランでも mTLS ベースの高セキュリティ通信を実現</div>
+            </div>
+        </section>
+
+        <!-- Code Sample -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4BB;</span>利用可能リージョンの確認</h2>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 16px;">Azure CLI で Flex Consumption プランが利用可能なリージョン一覧を確認できます:</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <span style="color: #888;">Azure CLI</span>
+                </div>
+                <pre><code class="language-bash">az functionapp list-flexconsumption-locations --query "sort_by(@, &amp;name)[].{Region:name}" -o table</code></pre>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x26A0;&#xFE0F;</span>制約事項・注意点</h2>
+            <div class="limitations-grid">
+                <div class="limitation-item">E2E 暗号化は未サポート</div>
+                <div class="limitation-item">プライベート証明書はアプリあたり最大 3 個</div>
+                <div class="limitation-item">パブリック証明書はアプリあたり最大 3 個</div>
+                <div class="limitation-item">Key Vault 同期は最大 24 時間のラグあり</div>
+                <div class="limitation-item">プライベート証明書は PFX 形式のみ</div>
+                <div class="limitation-item">プレビュー段階のため仕様変更の可能性あり</div>
+            </div>
+            <p style="font-size: 13px; color: var(--ms-text-secondary); margin-top: 16px;">証明書の即座な反映が必要な場合は Key Vault 同期の 24 時間ラグに注意してください。緊急の証明書更新が必要な場合は直接アップロードを検討してください。</p>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <strong>出典:</strong>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=562808" target="_blank">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-functions/flex-consumption-plan" target="_blank">Flex Consumption プラン概要</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-functions/flex-consumption-how-to#configure-site-scoped-certificates" target="_blank">サイトスコープ証明書の設定</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/functions/" target="_blank">Azure Functions 料金ページ</a></li>
+            </ul>
+            <p style="margin-top: 12px; font-size: 12px; color: var(--ms-text-disabled);">Generated: 2026-05-21 | Azure News Summary Infographic</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

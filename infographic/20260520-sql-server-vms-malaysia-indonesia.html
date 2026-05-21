@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Server on Azure VMs - Malaysia West / Indonesia Central リージョン展開</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --category-color: #FFB900;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-700) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255, 185, 0, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: var(--category-color);
+            color: #323130;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: #107C10;
+            color: white;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .badge-category {
+            background: var(--category-color);
+            color: #323130;
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-left: 16px;
+            border-left: 4px solid var(--category-color);
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--category-color);
+        }
+
+        .key-points h3 {
+            color: var(--ms-blue-900);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--category-color);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFF5F2;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #F0FFF0;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(255, 185, 0, 0.4);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--category-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(255, 185, 0, 0.2);
+            border-color: var(--ms-blue-300);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #FFF8E1;
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--category-color);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.7;
+        }
+
+        .usecase-card .usecase-icon {
+            font-size: 24px;
+            margin-bottom: 12px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--category-color), var(--ms-orange));
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 4px;
+        }
+
+        /* Region Info */
+        .region-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .region-card {
+            background: var(--ms-surface);
+            border: 2px solid var(--category-color);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .region-card .region-flag {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        .region-card h4 {
+            font-size: 18px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .region-card p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Pricing Table */
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .pricing-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            border-top: 4px solid var(--category-color);
+        }
+
+        .pricing-card h4 {
+            font-size: 18px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .pricing-card .pricing-desc {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        .pricing-card .pricing-highlight {
+            background: #FFF8E1;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--ms-text-primary);
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: #FFF8E1;
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Code Blocks */
+        .code-block-wrapper {
+            position: relative;
+            margin: 16px 0;
+        }
+
+        .code-lang-label {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: #2D2D2D;
+            color: #9CDCFE;
+            padding: 4px 12px;
+            font-size: 11px;
+            border-radius: 0 8px 0 8px;
+            font-family: monospace;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 0;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .region-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">SQL Server on Azure Virtual Machines</span>
+            <h1>Malaysia West / Indonesia Central リージョン展開</h1>
+            <p class="hero-subtitle">SQL Server on Azure VMs が東南アジア 2 リージョンで一般提供開始</p>
+            <div class="hero-meta">
+                <span class="badge badge-ga">GA (一般提供)</span>
+                <span class="badge badge-date">2026-05-20</span>
+                <span class="badge badge-category">Database / Compute</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                SQL Server on Azure Virtual Machines が Malaysia West および Indonesia Central リージョンで一般提供 (GA) となりました。これにより、マレーシアおよびインドネシアのユーザーは、データ主権要件を満たしながら低レイテンシで SQL Server ワークロードを実行できるようになります。SQL Server 2016 から 2025 までの全バージョン、Windows Server および Linux をサポートし、従量課金制と Azure Hybrid Benefit (BYOL) の両方のライセンスモデルに対応しています。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>Malaysia West および Indonesia Central の 2 つの新しい東南アジアリージョンで GA</li>
+                    <li>SQL Server 2016, 2017, 2019, 2022, 2025 をサポート</li>
+                    <li>Windows Server 2016-2025 および Linux に対応</li>
+                    <li>Pay-as-you-go と Azure Hybrid Benefit (BYOL) の 2 つのライセンスモデル</li>
+                    <li>SQL IaaS Agent Extension (無料) による自動管理機能を提供</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>マレーシア/インドネシアのユーザーは地理的に離れたリージョンにデプロイする必要があった</li>
+                        <li>データ主権 (Data Residency) 要件を満たせない場合があった</li>
+                        <li>距離に起因する高レイテンシが業務に影響</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>Malaysia West / Indonesia Central に直接デプロイ可能</li>
+                        <li>データ主権コンプライアンスを達成</li>
+                        <li>ローカルリージョンによるレイテンシ大幅改善</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">アーキテクチャ</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph SEA["&#127759; 東南アジア リージョン展開"]
+        subgraph MY["&#127474;&#127486; Malaysia West"]
+            MY_VM["&#128421;&#65039; SQL Server VM"]
+            MY_SQLIAAS["&#9881;&#65039; SQL IaaS Agent Extension"]
+            MY_VM --> MY_SQLIAAS
+        end
+        subgraph ID["&#127470;&#127465; Indonesia Central"]
+            ID_VM["&#128421;&#65039; SQL Server VM"]
+            ID_SQLIAAS["&#9881;&#65039; SQL IaaS Agent Extension"]
+            ID_VM --> ID_SQLIAAS
+        end
+    end
+
+    Users_MY["&#128101; マレーシアのユーザー"] --> MY_VM
+    Users_ID["&#128101; インドネシアのユーザー"] --> ID_VM
+
+    subgraph Features["&#10024; 利用可能な機能"]
+        F1["&#128230; 自動バックアップ"]
+        F2["&#128260; 自動パッチ適用"]
+        F3["&#128274; Azure Key Vault 統合"]
+        F4["&#128202; SQL ベストプラクティス評価"]
+    end
+
+    MY_SQLIAAS --> Features
+    ID_SQLIAAS --> Features
+                </pre>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="section">
+            <h2 class="section-title">リージョン情報</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">新リージョン</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">対応 SQL Server バージョン</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">ライセンスモデル</div>
+                </div>
+            </div>
+
+            <div class="region-grid">
+                <div class="region-card">
+                    <div class="region-flag">&#127474;&#127486;</div>
+                    <h4>Malaysia West</h4>
+                    <p>マレーシア西部リージョン。マレーシア国内のデータ主権要件に対応し、金融機関や政府機関のワークロードに最適。</p>
+                </div>
+                <div class="region-card">
+                    <div class="region-flag">&#127470;&#127465;</div>
+                    <h4>Indonesia Central</h4>
+                    <p>インドネシア中央リージョン。東南アジア最大の経済圏であるインドネシア国内でのデータ処理を実現。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">主要機能 (SQL IaaS Agent Extension)</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#128187;</div>
+                    <div class="feature-content">
+                        <h4>Azure Portal 管理</h4>
+                        <p>SQL Server VM の一元管理。Azure Portal から SQL Server インスタンスの状態監視、構成変更、診断情報の確認を統合的に行えます。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128230;</div>
+                    <div class="feature-content">
+                        <h4>自動バックアップ</h4>
+                        <p>すべてのデータベースに対するバックアップスケジューリングの自動化。ポイントインタイムリストアに対応した包括的なバックアップ戦略を簡単に構成できます。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128260;</div>
+                    <div class="feature-content">
+                        <h4>自動パッチ適用</h4>
+                        <p>Azure Update Manager を通じたセキュリティパッチおよび重要な更新プログラムの自動インストール。メンテナンスウィンドウの指定も可能です。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128274;</div>
+                    <div class="feature-content">
+                        <h4>Azure Key Vault 統合</h4>
+                        <p>暗号化キーや証明書の自動インストールおよび構成。TDE (Transparent Data Encryption) との統合によりデータ保護を強化します。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128202;</div>
+                    <div class="feature-content">
+                        <h4>SQL ベストプラクティス評価</h4>
+                        <p>SQL Server のヘルスチェックと最適化推奨事項の提供。パフォーマンス、セキュリティ、可用性に関するベストプラクティスへの準拠度を評価します。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128272;</div>
+                    <div class="feature-content">
+                        <h4>Microsoft Entra 認証</h4>
+                        <p>Azure Active Directory (Entra ID) による認証をサポート。パスワードレス認証やゼロトラストセキュリティモデルの実現に貢献します。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128737;&#65039;</div>
+                    <div class="feature-content">
+                        <h4>拡張セキュリティ更新 (ESU)</h4>
+                        <p>サポート終了後の SQL Server に対して最大 3 年間のセキュリティ更新を提供。レガシーワークロードの保護を継続しながら移行計画を策定できます。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <table class="specs-table">
+                <tr>
+                    <th>サービス名</th>
+                    <td>SQL Server on Azure Virtual Machines</td>
+                </tr>
+                <tr>
+                    <th>新規対応リージョン</th>
+                    <td>Malaysia West, Indonesia Central</td>
+                </tr>
+                <tr>
+                    <th>対応 SQL Server</th>
+                    <td>SQL Server 2016, 2017, 2019, 2022, 2025</td>
+                </tr>
+                <tr>
+                    <th>対応 OS (Windows)</th>
+                    <td>Windows Server 2016, 2019, 2022, 2025</td>
+                </tr>
+                <tr>
+                    <th>対応 OS (Linux)</th>
+                    <td>RHEL, SLES, Ubuntu</td>
+                </tr>
+                <tr>
+                    <th>ライセンスモデル</th>
+                    <td>Pay-as-you-go / Azure Hybrid Benefit (BYOL)</td>
+                </tr>
+                <tr>
+                    <th>管理拡張機能</th>
+                    <td>SQL IaaS Agent Extension (無料)</td>
+                </tr>
+                <tr>
+                    <th>高可用性</th>
+                    <td>Always On 可用性グループ, フェールオーバークラスターインスタンス</td>
+                </tr>
+                <tr>
+                    <th>ステータス</th>
+                    <td>GA (一般提供)</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">ユースケース</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <div class="usecase-icon">&#127974;</div>
+                    <h4>マレーシアの金融機関向けデータベース移行</h4>
+                    <p class="scenario">マレーシア国内のデータ主権要件を満たしながら、オンプレミスの SQL Server を Azure に移行。Malaysia West リージョンにデプロイすることで、Bank Negara Malaysia (BNM) の規制要件に準拠しつつクラウドのスケーラビリティを活用できます。</p>
+                </div>
+                <div class="usecase-card">
+                    <div class="usecase-icon">&#128722;</div>
+                    <h4>インドネシアの EC サイト向けバックエンド</h4>
+                    <p class="scenario">Indonesia Central リージョンへのデプロイにより、インドネシア国内ユーザーへのレイテンシを大幅に削減。ピーク時のトランザクション処理性能を向上させ、ユーザー体験の改善とコンバージョン率の向上を実現します。</p>
+                </div>
+                <div class="usecase-card">
+                    <div class="usecase-icon">&#128737;&#65039;</div>
+                    <h4>東南アジア DR 構成 (Always On 可用性グループ)</h4>
+                    <p class="scenario">Malaysia West と Indonesia Central を組み合わせた東南アジア内でのディザスタリカバリ構成。Always On 可用性グループにより、リージョン障害時にも短い RTO/RPO でビジネス継続性を確保します。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pricing -->
+        <section class="section">
+            <h2 class="section-title">ライセンスモデル</h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h4>Pay-as-you-go</h4>
+                    <p class="pricing-desc">SQL Server ライセンスを従量課金制で利用。初期投資不要で、使用した分だけ支払います。開発/テスト環境や短期プロジェクトに最適。</p>
+                    <div class="pricing-highlight">VM コスト + SQL Server ライセンス (時間課金)</div>
+                </div>
+                <div class="pricing-card">
+                    <h4>Azure Hybrid Benefit (BYOL)</h4>
+                    <p class="pricing-desc">既存の SQL Server ライセンス (ソフトウェア アシュアランス付き) を Azure に持ち込み。ライセンスコストを最大 55% 削減可能。</p>
+                    <div class="pricing-highlight">VM コストのみ (既存ライセンス適用)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Sample -->
+        <section class="section">
+            <h2 class="section-title">デプロイ確認コマンド</h2>
+            <div class="code-block-wrapper">
+                <span class="code-lang-label">PowerShell</span>
+                <pre><code class="language-powershell"># 利用可能なイメージを確認
+$Location = "malaysiawest"  # または "indonesiacentral"
+Get-AzVMImageOffer -Location $Location -Publisher 'MicrosoftSQLServer'</code></pre>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=562094" target="_blank" rel="noopener noreferrer">Azure Updates - SQL Server on Azure VMs: Malaysia West / Indonesia Central</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-sql/virtual-machines/windows/sql-server-on-azure-vm-iaas-what-is-overview" target="_blank" rel="noopener noreferrer">SQL Server on Azure VMs 概要</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-sql/virtual-machines/windows/sql-vm-create-portal-quickstart" target="_blank" rel="noopener noreferrer">SQL Server VM クイックスタート</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-sql/virtual-machines/windows/pricing-guidance" target="_blank" rel="noopener noreferrer">料金ガイダンス</a></li>
+            </ul>
+            <p class="footer-note">このインフォグラフィックは Azure Updates の情報を基に自動生成されました。最新の情報は公式ドキュメントをご確認ください。</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#FFB900',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#FFB900',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#FFF8E1',
+                nodeBorder: '#FFB900',
+                clusterBkg: '#FFF8E1',
+                clusterBorder: '#FFB900',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+</body>
+</html>

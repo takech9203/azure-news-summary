@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure VPN Gateway - P2S ユーザーグループと IP アドレスプール (GA)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --category-color: #00A651;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 166, 81, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '\1F510';
+            position: absolute;
+            right: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 80px;
+            opacity: 0.2;
+        }
+
+        .header-badges {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-left: 4px solid var(--category-color);
+            padding-left: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 24px;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--category-color);
+            padding: 20px 24px;
+            border-radius: 0 12px 12px 0;
+            margin: 16px 0;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before ul li, .after ul li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .before ul li::before {
+            content: '\2022 ';
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after ul li::before {
+            content: '\2022 ';
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--category-color);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 12px 12px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--category-color), #007A3D);
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 900;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .tech-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .tech-table th, .tech-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .tech-table th {
+            background: var(--ms-surface-tertiary);
+            font-weight: 700;
+            color: var(--ms-text-primary);
+        }
+
+        .tech-table tr:hover {
+            background: var(--ms-blue-100);
+        }
+
+        /* Use Case */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--category-color);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        .usecase-card .usecase-effect {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+        }
+
+        /* Limitations */
+        .limitations-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .limitation-item {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            padding: 8px 12px;
+            background: var(--ms-surface-tertiary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .limitation-item::before {
+            content: '\2717';
+            color: var(--ms-red);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 166, 81, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Code Block */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin-top: 8px;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links li::before {
+            content: '\1F517 ';
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .header::after {
+                display: none;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .feature-card {
+                flex-direction: column;
+            }
+
+            .limitations-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-badges">
+                <span class="service-badge">Azure VPN Gateway</span>
+                <span class="badge badge-ga">GA</span>
+            </div>
+            <h1>P2S 接続のユーザーグループと IP アドレスプール</h1>
+            <p class="header-date">リリース日: 2026-05-21 | カテゴリ: Networking</p>
+        </header>
+
+        <!-- Overview + Before/After -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">📋</span>概要</h2>
+            <div class="highlight-box">
+                Azure VPN Gateway の Point-to-Site (P2S) 接続において、<strong>ユーザーの資格情報やグループに基づいて異なる IP アドレスプールを割り当てる</strong>機能が GA (一般提供) となりました。これにより、単一の VPN ゲートウェイで複数のセキュリティゾーンを実現し、<strong>NSG によるきめ細かいアクセス制御</strong>が可能になります。
+            </div>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>全 P2S ユーザーに単一のアドレスプールを割り当て</li>
+                        <li>ネットワークレベルでユーザーを区別できない</li>
+                        <li>グループベースのアクセス制御には別々のゲートウェイが必要</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li>グループに基づく IP プールの割り当てが可能</li>
+                        <li>単一ゲートウェイで複数のセキュリティゾーンに対応</li>
+                        <li>Entra ID / RADIUS / 証明書によるグループ識別をサポート</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">🏗️</span>アーキテクチャ図</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Users["👥 リモートユーザー"]
+        Eng["🔧 エンジニアリング部門"]
+        Fin["💰 財務部門"]
+        HR["📋 人事部門"]
+    end
+
+    subgraph Auth["🔐 認証"]
+        EntraID["Microsoft Entra ID"]
+        RADIUS["RADIUS サーバー"]
+        Cert["証明書認証"]
+    end
+
+    subgraph Gateway["☁️ Azure VPN Gateway (P2S)"]
+        Policy["ユーザーグループポリシー"]
+        Pool1["IP プール A\n10.1.0.0/24"]
+        Pool2["IP プール B\n10.2.0.0/24"]
+        Pool3["IP プール C\n10.3.0.0/24"]
+    end
+
+    subgraph VNet["🏢 Azure Virtual Network"]
+        DB["🗄️ データベース"]
+        App["⚙️ アプリケーション"]
+        HR_App["📂 人事システム"]
+    end
+
+    Eng --> EntraID
+    Fin --> RADIUS
+    HR --> Cert
+
+    EntraID --> Policy
+    RADIUS --> Policy
+    Cert --> Policy
+
+    Policy --> Pool1
+    Policy --> Pool2
+    Policy --> Pool3
+
+    Pool1 -->|"エンジニア: DB + App"| DB
+    Pool1 --> App
+    Pool2 -->|"財務: App のみ"| App
+    Pool3 -->|"人事: HR システム"| HR_App
+                </pre>
+            </div>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-top: 12px;">ユーザーの認証方式とグループに基づいて異なる IP プールが割り当てられ、NSG ルールにより各プールからのアクセス先を制御できます。</p>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">⚡</span>主要機能</h2>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <div class="feature-content">
+                    <h4>ユーザーグループ (ポリシーグループ)</h4>
+                    <p>ユーザーの論理的なグループ化を定義し、各グループに固有の IP アドレスプールを割り当て。最大 90 グループをサポート。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎫</div>
+                <div class="feature-content">
+                    <h4>グループメンバー (ポリシーメンバー)</h4>
+                    <p>認証方式に応じた条件でグループ所属を判定。Entra ID では AADGroupID、RADIUS では VSA、証明書では CN を使用。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔢</div>
+                <div class="feature-content">
+                    <h4>優先度によるグループ解決</h4>
+                    <p>複数グループに一致した場合、最低優先度値 (数値が小さい方) のグループに割り当て。明確なルールでグループ解決を実現。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔐</div>
+                <div class="feature-content">
+                    <h4>複数認証方式対応</h4>
+                    <p>Microsoft Entra ID (AADGroupID)、RADIUS (AzureRADIUSGroupID)、証明書認証 (AzureCertificateID / CN) の 3 方式に対応。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">🔧</span>技術仕様</h2>
+            <table class="tech-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>最大グループ数</td>
+                        <td>1 ゲートウェイあたり最大 90 グループ</td>
+                    </tr>
+                    <tr>
+                        <td>最大ポリシーメンバー数</td>
+                        <td>全グループで合計 390 メンバー</td>
+                    </tr>
+                    <tr>
+                        <td>対応認証方式</td>
+                        <td>Microsoft Entra ID、RADIUS、証明書認証</td>
+                    </tr>
+                    <tr>
+                        <td>Microsoft Entra ID メンバータイプ</td>
+                        <td>AADGroupID</td>
+                    </tr>
+                    <tr>
+                        <td>RADIUS メンバータイプ</td>
+                        <td>AzureRADIUSGroupID (6ad1bd prefix)</td>
+                    </tr>
+                    <tr>
+                        <td>証明書メンバータイプ</td>
+                        <td>AzureCertificateID (CN domain)</td>
+                    </tr>
+                    <tr>
+                        <td>対応トンネルタイプ</td>
+                        <td>OpenVPN (Entra ID)、OpenVPN + IKEv2 (cert, RADIUS)</td>
+                    </tr>
+                    <tr>
+                        <td>対応 SKU</td>
+                        <td>VpnGw1 以上 (Basic SKU は非対応)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Stats Grid -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">📊</span>数字で見るアップデート</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">90</div>
+                    <div class="stat-label">最大グループ数 / ゲートウェイ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">390</div>
+                    <div class="stat-label">最大ポリシーメンバー合計</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">対応認証方式</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">💡</span>ユースケース</h2>
+            <div class="usecase-card">
+                <h4>🏢 部門別アクセス制御</h4>
+                <p>財務部門、エンジニアリング部門、人事部門にそれぞれ異なる IP プールを割り当て、NSG ルールで各部門がアクセスできるリソースを制限。単一ゲートウェイで部門ごとのネットワーク分離を実現。</p>
+                <div class="usecase-effect">✨ ゲートウェイ数を削減しつつ、部門ごとのセキュリティ境界を維持</div>
+            </div>
+            <div class="usecase-card">
+                <h4>🤝 外部パートナーと社内ユーザーの分離</h4>
+                <p>外部パートナーと社内ユーザーに異なる IP プールを割り当て、パートナーのアクセスを特定のサブネットやサービスに限定。同じゲートウェイ上で信頼レベルの異なるユーザーを安全に共存。</p>
+                <div class="usecase-effect">✨ 外部アクセスのリスクを最小化しながらコラボレーションを促進</div>
+            </div>
+            <div class="usecase-card">
+                <h4>🏦 規制環境でのデータ分離</h4>
+                <p>金融機関や医療機関で、規制対象データにアクセスできるユーザーを IP レベルで分離。コンプライアンス要件を満たすネットワーク分離をシンプルに実装。</p>
+                <div class="usecase-effect">✨ 規制要件に対応したネットワーク分離を複雑なインフラなしで実現</div>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title"><span class="section-title-icon">⚠️</span>制約事項</h2>
+            <div class="limitations-grid">
+                <div class="limitation-item">Basic SKU は非対応 (VpnGw1 以上が必要)</div>
+                <div class="limitation-item">Entra ID 認証は OpenVPN のみ対応</div>
+                <div class="limitation-item">最大 90 グループ / ゲートウェイ</div>
+                <div class="limitation-item">最大 390 ポリシーメンバー合計</div>
+                <div class="limitation-item">IKEv2 は証明書/RADIUS 認証のみ</div>
+                <div class="limitation-item">Default グループは優先度による上書き不可</div>
+            </div>
+            <p style="font-size: 13px; color: var(--ms-text-secondary); margin-top: 16px;">💡 グループに一致しないユーザーは Default グループの IP プールに割り当てられます。Virtual WAN でも同様の機能が利用可能です。</p>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <strong>出典:</strong>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=564460" target="_blank">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/azure/vpn-gateway/point-to-site-about" target="_blank">About Point-to-Site VPN</a></li>
+                <li><a href="https://learn.microsoft.com/azure/vpn-gateway/point-to-site-entra-users-access" target="_blank">Configure P2S VPN access based on users and groups</a></li>
+                <li><a href="https://learn.microsoft.com/azure/virtual-wan/user-groups-about" target="_blank">About user groups and IP address pools (Virtual WAN)</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/vpn-gateway/" target="_blank">Azure VPN Gateway 料金ページ</a></li>
+            </ul>
+            <p style="margin-top: 12px; font-size: 12px; color: var(--ms-text-disabled);">Generated: 2026-05-21 | Azure News Summary Infographic</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#00A651',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#00A651',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

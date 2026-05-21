@@ -5,10 +5,14 @@
 
 ## 2026 年
 
+- [2026-05-21 - Azure Functions: Flex Consumption プランにおける TLS/SSL 証明書サポート](2026/2026-05-21-functions-flex-consumption-tls-ssl.md)
+- [2026-05-21 - VPN Gateway: P2S 接続のユーザーグループと IP アドレスプール (GA)](2026/2026-05-21-vpn-gateway-p2s-user-groups.md)
 - [2026-05-20 - VPN Gateway: サイト間 VPN 接続の証明書認証 (GA)](2026/2026-05-20-vpn-gateway-certificate-authentication.md)
 - [2026-05-20 - Azure Cosmos DB: langchain-azure-cosmosdb Python パッケージの一般提供開始](2026/2026-05-20-cosmosdb-langchain-python-package.md)
+- [2026-05-20 - Azure Database for PostgreSQL: Microsoft Entra ID トークンリフレッシュサポート (Python, .NET, JavaScript)](2026/2026-05-20-postgresql-entra-id-token-refresh.md)
 - [2026-05-20 - Azure Virtual Network: Summarized Advertised Gateway Prefixes for Route Advertisement](2026/2026-05-20-gateway-summarized-route-prefixes.md)
 - [2026-05-20 - Azure Storage Mover: Blob-to-Blob マイグレーションとジョブスケジュール機能](2026/2026-05-20-storage-mover-blob-to-blob-scheduling.md)
+- [2026-05-20 - SQL Server on Azure Virtual Machines: Malaysia West / Indonesia Central リージョン展開](2026/2026-05-20-sql-server-vms-malaysia-indonesia.md)
 - [2026-05-20 - Azure Event Grid: MQTT 機能拡張と Subscription Identifiers](2026/2026-05-20-event-grid-mqtt-subscription-identifiers.md)
 - [2026-05-19 - Azure App Configuration: Scorecards によるフィーチャーロールアウト評価機能のパブリックプレビュー](2026/2026-05-19-app-configuration-scorecards.md)
 - [2026-05-19 - Azure NetApp Files: キャッシュボリューム (Cache Volumes) の一般提供開始](2026/2026-05-19-netapp-files-cache-volumes.md)
