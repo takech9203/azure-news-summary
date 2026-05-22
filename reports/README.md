@@ -6,7 +6,10 @@
 ## 2026 年
 
 - [2026-05-21 - Azure Functions: Flex Consumption プランにおける TLS/SSL 証明書サポート](2026/2026-05-21-functions-flex-consumption-tls-ssl.md)
+- [2026-05-21 - Azure Files: Entra-only identities for SMB access](2026/2026-05-21-azure-files-entra-only-identities.md)
+- [2026-05-21 - Azure App Service / Functions / Logic Apps: TLS 1.0 および TLS 1.1 の廃止](2026/2026-05-21-app-service-functions-tls-retirement.md)
 - [2026-05-21 - VPN Gateway: P2S 接続のユーザーグループと IP アドレスプール (GA)](2026/2026-05-21-vpn-gateway-p2s-user-groups.md)
+- [2026-05-21 - Azure NetApp Files: Object REST API (S3 互換 REST API) の一般提供開始](2026/2026-05-21-netapp-files-object-rest-api.md)
 - [2026-05-20 - VPN Gateway: サイト間 VPN 接続の証明書認証 (GA)](2026/2026-05-20-vpn-gateway-certificate-authentication.md)
 - [2026-05-20 - Azure Cosmos DB: langchain-azure-cosmosdb Python パッケージの一般提供開始](2026/2026-05-20-cosmosdb-langchain-python-package.md)
 - [2026-05-20 - Azure Database for PostgreSQL: Microsoft Entra ID トークンリフレッシュサポート (Python, .NET, JavaScript)](2026/2026-05-20-postgresql-entra-id-token-refresh.md)
