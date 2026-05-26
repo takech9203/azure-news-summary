@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-05-26 - Azure Virtual Network Manager: Virtual WAN 統合 (パブリックプレビュー)](2026/2026-05-26-virtual-network-manager-virtual-wan.md)
+- [2026-05-26 - Network Watcher / Microsoft Sentinel: 仮想ネットワーク フロー ログ コネクタの一般提供開始](2026/2026-05-26-vnet-flow-logs-sentinel-connector.md)
 - [2026-05-21 - Azure Functions: Flex Consumption プランにおける TLS/SSL 証明書サポート](2026/2026-05-21-functions-flex-consumption-tls-ssl.md)
 - [2026-05-21 - Azure Files: Entra-only identities for SMB access](2026/2026-05-21-azure-files-entra-only-identities.md)
 - [2026-05-21 - Azure App Service / Functions / Logic Apps: TLS 1.0 および TLS 1.1 の廃止](2026/2026-05-21-app-service-functions-tls-retirement.md)
