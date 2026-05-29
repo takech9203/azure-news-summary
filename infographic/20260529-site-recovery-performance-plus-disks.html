@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Site Recovery: Performance Plus マネージドディスクのレプリケーションサポート</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 10px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Merits Grid */
+        .merits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .merit-section {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .merit-section h4 {
+            font-size: 15px;
+            color: var(--ms-blue-900);
+            margin-bottom: 12px;
+            padding-bottom: 6px;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .merit-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .merit-section li {
+            font-size: 13px;
+            padding: 4px 0;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Setup Steps */
+        .setup-steps {
+            counter-reset: step;
+        }
+
+        .setup-step {
+            position: relative;
+            padding: 16px 0 16px 48px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .setup-step::before {
+            counter-increment: step;
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 16px;
+            width: 32px;
+            height: 32px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .setup-step h4 {
+            font-size: 15px;
+            color: var(--ms-text-primary);
+            margin-bottom: 4px;
+        }
+
+        .setup-step p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Pricing Note */
+        .pricing-note {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            border-left: 4px solid var(--ms-green);
+        }
+
+        .pricing-note .price-highlight {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--ms-green);
+        }
+
+        .pricing-note p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-top: 8px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .merits-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Site Recovery</span>
+            <h1>Performance Plus マネージドディスクのレプリケーションサポート</h1>
+            <p class="hero-subtitle">高 IOPS/高スループットのディスクでも Azure Site Recovery による DR レプリケーションが可能に</p>
+            <div class="hero-meta">
+                <span class="badge badge-preview">In Preview</span>
+                <span class="badge badge-date">2026-05-29</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Site Recovery (ASR) が Performance Plus 対応マネージドディスクを使用する仮想マシンのレプリケーションをサポートした。Performance Plus は、513 GiB 以上の Premium SSD、Standard SSD、Standard HDD マネージドディスクの IOPS とスループットの上限を追加料金なしで引き上げる機能であり、今回のアップデートにより高性能ディスクを使用する本番ワークロードの DR 保護が実現した。
+            </p>
+
+            <div class="key-points">
+                <h3>要点</h3>
+                <ul>
+                    <li>Performance Plus 対応ディスクを使用する VM の ASR レプリケーションが可能に</li>
+                    <li>Premium SSD、Standard SSD、Standard HDD (513 GiB 以上) に対応</li>
+                    <li>Performance Plus の追加料金なしで IOPS/スループット上限が向上</li>
+                    <li>レプリケーション時は Premium ストレージアカウントの使用が必要</li>
+                    <li>パブリックプレビュー段階</li>
+                </ul>
+            </div>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>Performance Plus ディスクを使用する VM は ASR でレプリケーション不可</li>
+                        <li>高 IOPS ワークロードの DR 保護に制約あり</li>
+                        <li>Performance Plus の利用か DR 保護の二者択一</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li>Performance Plus ディスクのレプリケーションが可能</li>
+                        <li>高性能ワークロードの DR 保護を実現</li>
+                        <li>パフォーマンス向上と DR 保護を同時に両立</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Stats Section -->
+        <section class="section">
+            <h2 class="section-title">数字で見るアップデート</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">513 GiB+</div>
+                    <div class="stat-label">最小ディスクサイズ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">100 MBps</div>
+                    <div class="stat-label">VM あたり最大チャーン</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">追加料金なし</div>
+                    <div class="stat-label">Performance Plus 自体のコスト</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">アーキテクチャ図</h2>
+            <p class="overview-text">Azure Site Recovery が Performance Plus 対応ディスクのデータをキャッシュストレージ経由でターゲットリージョンにレプリケーションし、フェイルオーバー時にディスクのパフォーマンス特性を維持する構成。</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart LR
+    subgraph Source["&#127970; ソースリージョン"]
+        VM["&#128421; 仮想マシン"]
+        PPDisk["&#128190; Performance Plus ディスク\n(Premium SSD / Standard SSD / Standard HDD)\n513 GiB 以上"]
+        Cache["&#128230; キャッシュストレージ\n(Premium ブロック Blob)"]
+        VM --> PPDisk
+        PPDisk --> Cache
+    end
+
+    subgraph ASR["&#128260; Azure Site Recovery"]
+        Replication["レプリケーション\nエンジン"]
+    end
+
+    subgraph Target["&#127970; ターゲットリージョン"]
+        ReplicaVM["&#128421; レプリカ VM"]
+        ReplicaDisk["&#128190; レプリカディスク\n(Performance Plus 維持)"]
+        ReplicaVM --> ReplicaDisk
+    end
+
+    Cache --> Replication
+    Replication --> ReplicaDisk
+                </pre>
+            </div>
+        </section>
+
+        <!-- Features Section -->
+        <section class="section">
+            <h2 class="section-title">主要機能</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">💾</div>
+                    <div class="feature-content">
+                        <h4>Performance Plus ディスクのレプリケーション</h4>
+                        <p>Premium SSD、Standard SSD、Standard HDD の Performance Plus 対応ディスクを使用する VM のレプリケーションが可能。レプリケーション中も Performance Plus のパフォーマンス特性が維持される。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-content">
+                        <h4>高チャーンサポート</h4>
+                        <p>Premium ストレージアカウントの使用により、VM あたり最大 100 MBps のデータ変更に対応。ディスクあたり最大 20 MBps (Premium SSD 512 GiB 以上、16 KB I/O)。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <div class="feature-content">
+                        <h4>フェイルオーバー時のパフォーマンス維持</h4>
+                        <p>フェイルオーバー後もディスクの Performance Plus パフォーマンス特性が維持されるため、DR 発動後も本番同等の性能でサービス継続が可能。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌍</div>
+                    <div class="feature-content">
+                        <h4>グローバル DR 対応</h4>
+                        <p>Azure Site Recovery がサポートされるすべての Azure リージョンで利用可能。任意の 2 つのリージョン間でレプリケーションとリカバリが実行できる。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Specs -->
+        <section class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <table class="specs-table">
+                <tr>
+                    <th>対応ディスクタイプ</th>
+                    <td>Premium SSD、Standard SSD、Standard HDD</td>
+                </tr>
+                <tr>
+                    <th>最小ディスクサイズ</th>
+                    <td>513 GiB (Performance Plus の要件)</td>
+                </tr>
+                <tr>
+                    <th>レプリケーション要件</th>
+                    <td>Premium ストレージアカウントの使用</td>
+                </tr>
+                <tr>
+                    <th>VM あたり最大チャーン</th>
+                    <td>100 MBps (高チャーンサポート利用時)</td>
+                </tr>
+                <tr>
+                    <th>ディスクあたり最大チャーン</th>
+                    <td>20 MBps (Premium SSD 512 GiB 以上、16 KB I/O)</td>
+                </tr>
+                <tr>
+                    <th>Performance Plus 追加料金</th>
+                    <td>なし (ディスク自体の料金のみ)</td>
+                </tr>
+                <tr>
+                    <th>ステータス</th>
+                    <td>パブリックプレビュー</td>
+                </tr>
+            </table>
+        </section>
+
+        <!-- Setup Section -->
+        <section class="section">
+            <h2 class="section-title">設定方法</h2>
+            <p class="overview-text">Azure Portal から Recovery Services コンテナーで Performance Plus ディスクを含む VM のレプリケーションを構成する。</p>
+            <div class="setup-steps">
+                <div class="setup-step">
+                    <h4>前提条件の確認</h4>
+                    <p>513 GiB 以上のマネージドディスクに Performance Plus が有効化されていることを確認。サブスクリプションのディスク数が上限 (3,000) 以内であること。</p>
+                </div>
+                <div class="setup-step">
+                    <h4>Recovery Services コンテナーに移動</h4>
+                    <p>Azure Portal で Recovery Services コンテナーを開き、対象の VM を選択。</p>
+                </div>
+                <div class="setup-step">
+                    <h4>レプリケーションを有効化</h4>
+                    <p>対象の VM に対してレプリケーションを有効化する。</p>
+                </div>
+                <div class="setup-step">
+                    <h4>ストレージ設定で Premium ストレージアカウントを選択</h4>
+                    <p>レプリケーション時に Premium ストレージアカウントを指定。Performance Plus ディスクを含む VM のレプリケーションが開始される。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Merits Section -->
+        <section class="section">
+            <h2 class="section-title">メリット</h2>
+            <div class="merits-grid">
+                <div class="merit-section">
+                    <h4>ビジネス面</h4>
+                    <ul>
+                        <li>高性能データベースワークロードの DR 保護が実現し事業継続性が向上</li>
+                        <li>追加料金なしでパフォーマンス向上と DR 保護を両立</li>
+                        <li>DR 設計のために Performance Plus の利用を断念する必要がなくなった</li>
+                    </ul>
+                </div>
+                <div class="merit-section">
+                    <h4>技術面</h4>
+                    <ul>
+                        <li>IOPS/スループット上限が引き上げられたディスクでも ASR レプリケーション可能</li>
+                        <li>既存の ASR ワークフローと同じ方法で管理でき追加の学習コスト少</li>
+                        <li>フェイルオーバー後もディスクのパフォーマンス特性が維持</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases Section -->
+        <section class="section">
+            <h2 class="section-title">ユースケース</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>ミッションクリティカルなデータベースの DR 保護</h4>
+                    <p class="scenario">SQL Server や Oracle Database など高 IOPS が求められるデータベースワークロードを Azure 上で運用しており、リージョン障害に備えた DR を構成する必要がある。</p>
+                    <p class="effect">効果: Performance Plus により IOPS/スループット上限が向上した状態で DR レプリケーションが可能になり、本番環境のパフォーマンス最適化と DR 保護を両立。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>トランザクション処理系アプリケーション</h4>
+                    <p class="scenario">E コマースや金融系のトランザクション処理で高スループットのディスク I/O が必要なアプリケーションの DR 構成。</p>
+                    <p class="effect">効果: フェイルオーバー先でも Performance Plus の拡張パフォーマンスが維持されるため、DR 発動後も本番同等のパフォーマンスでサービス継続が可能。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Limitations Section -->
+        <section class="section">
+            <h2 class="section-title">制限事項・注意点</h2>
+            <ul class="limitations-list">
+                <li>レプリケーション時には Premium ストレージアカウントの使用が必須</li>
+                <li>パブリックプレビュー段階であり、SLA は適用されない</li>
+                <li>Performance Plus はディスク作成時にのみ有効化でき、既存ディスクへの後付けは不可 (スナップショットから新規ディスクを作成する回避策あり)</li>
+                <li>VM 作成時に作成されるディスクには Performance Plus を有効にできない (個別にディスクを作成してアタッチする必要がある)</li>
+            </ul>
+        </section>
+
+        <!-- Pricing Section -->
+        <section class="section">
+            <h2 class="section-title">料金情報</h2>
+            <div class="pricing-note">
+                <div class="price-highlight">Performance Plus: 追加料金なし</div>
+                <p>Performance Plus 自体にはディスクへの追加料金は発生しない。Azure Site Recovery の料金は公式料金ページを参照。</p>
+            </div>
+        </section>
+
+        <!-- Related Services -->
+        <section class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">💿</div>
+                    <div class="feature-content">
+                        <h4>Azure Managed Disks</h4>
+                        <p>Performance Plus 機能の基盤となるディスクサービス。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <div class="feature-content">
+                        <h4>ASR 高チャーンサポート</h4>
+                        <p>VM あたり最大 100 MBps のデータ変更率に対応するレプリケーション強化機能。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-content">
+                        <h4>Premium SSD v2 / Ultra Disks</h4>
+                        <p>最高性能が必要な場合の選択肢。いずれも ASR でサポート済み。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=564644" target="_blank">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/virtual-machines/disks-enable-performance" target="_blank">Performance Plus ドキュメント - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/site-recovery/azure-to-azure-support-matrix" target="_blank">Azure Site Recovery サポートマトリクス</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/site-recovery/" target="_blank">Azure Site Recovery 料金ページ</a></li>
+            </ul>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-05-29 - Azure AI Metrics Advisor: サービス廃止 (2026 年 5 月 18 日付)](2026/2026-05-29-ai-metrics-advisor-retirement.md)
+- [2026-05-29 - Azure Site Recovery: Performance Plus マネージドディスクのレプリケーションサポート](2026/2026-05-29-site-recovery-performance-plus-disks.md)
 - [2026-05-28 - Application Gateway for Containers: Istio サービスメッシュ統合](2026/2026-05-28-appgw-containers-istio-service-mesh.md)
 - [2026-05-27 - Microsoft Marketplace: Multiparty Private Offers がヨーロッパ 30 カ国に拡大](2026/2026-05-27-marketplace-multiparty-private-offers-europe.md)
 - [2026-05-26 - Network Watcher / Microsoft Sentinel: 仮想ネットワーク フロー ログ コネクタの一般提供開始](2026/2026-05-26-vnet-flow-logs-sentinel-connector.md)
