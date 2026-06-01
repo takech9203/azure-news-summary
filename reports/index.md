@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-06-01 - Azure Functions: Node.js 24 サポートの一般提供開始](2026/2026-06-01-azure-functions-nodejs-24.md)
 - [2026-05-29 - Azure AI Metrics Advisor: サービス廃止 (2026 年 5 月 18 日付)](2026/2026-05-29-ai-metrics-advisor-retirement.md)
 - [2026-05-29 - Azure Site Recovery: Performance Plus マネージドディスクのレプリケーションサポート](2026/2026-05-29-site-recovery-performance-plus-disks.md)
 - [2026-05-28 - Application Gateway for Containers: Istio サービスメッシュ統合](2026/2026-05-28-appgw-containers-istio-service-mesh.md)
