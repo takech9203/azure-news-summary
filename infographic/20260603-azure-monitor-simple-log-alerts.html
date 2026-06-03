@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Monitor: Simple Log Alerts GA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-900));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(ellipse, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .title-area .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 16px;
+            backdrop-filter: blur(4px);
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .title-area .release-date {
+            font-size: 15px;
+            opacity: 0.9;
+        }
+
+        .title-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        /* Section Styles */
+        .section {
+            background: var(--ms-surface);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--ms-border);
+        }
+
+        .section h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--ms-blue-200);
+        }
+
+        .section h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 14px;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .before li::before {
+            content: '\2717';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '\2713';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid Container */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content {
+            flex: 1;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .comparison-table th {
+            background: var(--azure-blue);
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table th:first-child {
+            border-radius: 8px 0 0 0;
+        }
+
+        .comparison-table th:last-child {
+            border-radius: 0 8px 0 0;
+        }
+
+        .comparison-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: var(--ms-blue-100);
+        }
+
+        .comparison-table tr:last-child td:first-child {
+            border-radius: 0 0 0 8px;
+        }
+
+        .comparison-table tr:last-child td:last-child {
+            border-radius: 0 0 8px 0;
+        }
+
+        /* Use Case Cards */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .usecase-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        .usecase-effect {
+            margin-top: 12px;
+            padding: 10px 16px;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        /* Constraints */
+        .constraints-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .constraint-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 16px;
+            background: #FFF8E1;
+            border-radius: 8px;
+            border-left: 3px solid var(--ms-orange);
+        }
+
+        .constraint-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .constraint-text {
+            font-size: 14px;
+            color: var(--ms-text-primary);
+            line-height: 1.5;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--ms-border);
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--ms-blue-800);
+            text-decoration: underline;
+        }
+
+        .footer-meta {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Code blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 12px 0;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 22px;
+            }
+
+            .section {
+                padding: 24px 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+
+            .feature-card {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .constraints-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <span class="service-badge">Azure Monitor</span>
+            <h1>Simple Log Alerts - 一般提供開始 (GA)</h1>
+            <p class="release-date">2026-06-03 | Microsoft Build 2026</p>
+            <div class="title-badges">
+                <span class="badge badge-ga">GA</span>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2>概要</h2>
+            <p style="font-size: 15px; color: var(--ms-text-secondary); margin-bottom: 20px;">
+                Microsoft は Azure Monitor の Simple Log Alerts (シンプルログアラート) の一般提供 (GA) を発表した。従来のログ検索アラートルール (Log Search Alert) に対して、より簡素化された直感的な監視・アラート体験を提供する。各行を個別に評価する仕組みを採用し、エラーや障害が発生した時点で即座にアラートが発火する。Analytics ログと Basic ログの両方のテーブルプランに対応。Microsoft Build 2026 のタイミングでの GA 発表。
+            </p>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">1分</div>
+                    <div class="stat-label">評価頻度</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2種</div>
+                    <div class="stat-label">対応ログプラン<br>(Analytics + Basic)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">5列</div>
+                    <div class="stat-label">通知出力カラム数</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--ms-green), #0A5C0A);">
+                    <div class="stat-value">CAS</div>
+                    <div class="stat-label">Common Alert Schema 準拠</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Before/After Section -->
+        <div class="section">
+            <h2>Before / After 比較</h2>
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>従来のログ検索アラートでは集計期間設定が必要で設定が複雑</li>
+                        <li>行ごとの即時アラートには1分間隔の評価頻度とカスタムKQLクエリの組み合わせが必要</li>
+                        <li>個別イベントごとのアラート発火シナリオの設定が直感的でなかった</li>
+                        <li>Basic ログテーブルに対するアラート設定が限定的</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>クエリ結果の各行を個別に評価し、マッチした行ごとにアラートを発火可能</li>
+                        <li>集約設定 (Measure、Aggregation type、Window size) が不要で設定ステップが大幅に簡素化</li>
+                        <li>Analytics ログと Basic ログの両テーブルプランをサポート</li>
+                        <li>1分ごとの行単位のイベントマッチングでリアルタイム監視を実現</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2>アーキテクチャ図</h2>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 16px;">
+                ログデータが Log Analytics Workspace に取り込まれ、Simple Log Alert ルールが各行を個別に KQL クエリで評価する。条件にマッチした行が検出されると、アクショングループを通じて即座に通知が送信される。
+            </p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart LR
+    subgraph Sources["データソース"]
+        A1[VM / App Service]
+        A2[コンテナー]
+        A3[ネットワーク]
+    end
+
+    subgraph LAW["Log Analytics Workspace"]
+        B1[(Analytics Logs)]
+        B2[(Basic Logs)]
+    end
+
+    subgraph Alert["Simple Log Alert"]
+        C1[KQL クエリ\n行単位評価]
+        C2{条件マッチ?}
+    end
+
+    subgraph Actions["アクショングループ"]
+        D1[メール通知]
+        D2[SMS / Voice]
+        D3[Webhook]
+        D4[Logic App]
+        D5[Azure Function]
+    end
+
+    Sources --> LAW
+    B1 --> C1
+    B2 --> C1
+    C1 --> C2
+    C2 -->|Yes| Actions
+                </pre>
+            </div>
+        </div>
+
+        <!-- Feature Cards Section -->
+        <div class="section">
+            <h2>主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128204;</div>
+                <div class="feature-content">
+                    <h4>行単位の個別評価 (Single Event モード)</h4>
+                    <p>クエリ結果の各行を個別に評価し、条件にマッチした行ごとにアラートを発火。従来の集約ベースの評価とは異なり、個別イベントの検出に最適化されている。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128221;</div>
+                <div class="feature-content">
+                    <h4>簡素化された KQL クエリ</h4>
+                    <p>Transformation KQL 言語に基づくシンプルなクエリ構文。最初の 5 カラムが通知出力に表示される。基本的なフィルタリングと射影に特化した設計。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#9889;</div>
+                <div class="feature-content">
+                    <h4>柔軟なトリガー閾値</h4>
+                    <p>「すべてのマッチ行でアラート」「1分間に1回以上」「1分間にN回以上」から選択可能。シナリオに応じたノイズ制御が可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128202;</div>
+                <div class="feature-content">
+                    <h4>Analytics / Basic ログ両対応</h4>
+                    <p>両テーブルプランをサポートし、Basic ログに対するコスト効率の良い監視が可能。ログプランを問わず統一的なアラート設定を実現。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Comparison Table -->
+        <div class="section">
+            <h2>Simple Log Alert vs 従来のログ検索アラート</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>比較項目</th>
+                        <th>Simple Log Alert</th>
+                        <th>従来の Log Search Alert</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>評価方式</strong></td>
+                        <td>行単位 (Single Event)</td>
+                        <td>集約ベース (Aggregated)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>集約設定</strong></td>
+                        <td>不要</td>
+                        <td>必須</td>
+                    </tr>
+                    <tr>
+                        <td><strong>評価頻度</strong></td>
+                        <td>1分固定</td>
+                        <td>1分 - 24時間</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ディメンション分割</strong></td>
+                        <td>非対応</td>
+                        <td>対応</td>
+                    </tr>
+                    <tr>
+                        <td><strong>設定の複雑さ</strong></td>
+                        <td>低い</td>
+                        <td>高い</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ユースケース</strong></td>
+                        <td>即時検出・個別イベント監視</td>
+                        <td>集計分析・トレンド監視</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Use Cases Section -->
+        <div class="section">
+            <h2>ユースケース</h2>
+
+            <div class="usecase-card">
+                <h4>&#128293; バックアップジョブ失敗の即時検出</h4>
+                <p>企業の DR (災害復旧) 要件として、すべてのバックアップジョブの失敗を即座に検知し、運用チームに通知する。</p>
+                <pre><code class="language-sql">AzureDiagnostics
+| where Category == "BackupJob" and ResultType == "Failed"</code></pre>
+                <div class="usecase-effect">各バックアップ失敗が発生した時点で個別にアラートが発火し、どのジョブがいつ失敗したかを即座に把握可能。</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#128274; セキュリティイベントのリアルタイム監視</h4>
+                <p>セキュリティチームがブルートフォース攻撃の兆候をリアルタイムで検出し、各不正ログイン試行を個別に追跡する。</p>
+                <pre><code class="language-sql">SecurityEvent
+| where EventID == 4625</code></pre>
+                <div class="usecase-effect">認証失敗イベントごとにアラートが発火し、攻撃パターンの即座な可視化と対応が可能。</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#128187; アプリケーションエラーの簡易監視</h4>
+                <p>開発チームが新しくデプロイしたアプリケーションのエラーを簡単に監視。複雑なアラートルールの設計に時間をかけずに即座に監視開始。</p>
+                <pre><code class="language-sql">AppExceptions
+| where SeverityLevel >= 3</code></pre>
+                <div class="usecase-effect">最小限の設定で重大なアプリケーション例外を即座に検出。デプロイ直後から数分で監視体制を構築可能。</div>
+            </div>
+        </div>
+
+        <!-- Constraints Section -->
+        <div class="section">
+            <h2>制約事項</h2>
+            <div class="constraints-grid">
+                <div class="constraint-item">
+                    <span class="constraint-icon">&#9888;&#65039;</span>
+                    <span class="constraint-text">ディメンション分割非対応</span>
+                </div>
+                <div class="constraint-item">
+                    <span class="constraint-icon">&#9888;&#65039;</span>
+                    <span class="constraint-text">ミュートアクション非対応</span>
+                </div>
+                <div class="constraint-item">
+                    <span class="constraint-icon">&#9888;&#65039;</span>
+                    <span class="constraint-text"><code>let</code>, <code>print</code>, <code>datatable</code> 使用不可</span>
+                </div>
+                <div class="constraint-item">
+                    <span class="constraint-icon">&#9888;&#65039;</span>
+                    <span class="constraint-text">動的閾値 (Dynamic Thresholds) 非対応</span>
+                </div>
+                <div class="constraint-item">
+                    <span class="constraint-icon">&#9888;&#65039;</span>
+                    <span class="constraint-text">ステートフルアラート非対応 (自動解決なし)</span>
+                </div>
+                <div class="constraint-item">
+                    <span class="constraint-icon">&#9888;&#65039;</span>
+                    <span class="constraint-text">評価頻度 1分固定 (変更不可)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=561978" target="_blank">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-create-simple-alert" target="_blank">Simple Log Alert の作成 - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-types" target="_blank">Azure Monitor アラートの種類 - Microsoft Learn</a></li>
+            </ul>
+            <div class="footer-meta">
+                <p>Azure Monitor | Simple Log Alerts | GA | 2026-06-03</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mermaid.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                background: '#FFFFFF',
+                primaryColor: '#DEECF9',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#EFF6FC',
+                tertiaryColor: '#F3F2F1'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+
+    <!-- highlight.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

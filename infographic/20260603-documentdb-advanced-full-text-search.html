@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure DocumentDB: 高度なフルテキスト検索 (Public Preview)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .category-badge {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-left: 8px;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-preview {
+            background: #FFB900;
+            color: #323130;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 0 8px 8px 0;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        .feature-content code {
+            background: var(--ms-surface-tertiary);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 12px;
+            color: var(--ms-blue-900);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+
+        .comparison-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            padding: 12px 14px;
+            text-align: left;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .comparison-table td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--ms-border);
+            color: var(--ms-text-primary);
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .comparison-table td:first-child {
+            font-weight: 500;
+            color: var(--ms-blue-900);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.7;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .code-label {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure DocumentDB</span>
+            <span class="category-badge">Database</span>
+            <h1>高度なフルテキスト検索 (Public Preview)</h1>
+            <p class="hero-subtitle">ファジー検索、近接検索、多言語サポート、BM25 ランキングを単一クラスターで実現。ベクトル検索との統合でハイブリッド検索も可能に。</p>
+            <div class="hero-meta">
+                <span class="badge badge-preview">Gated Preview</span>
+                <span class="badge badge-date">2026-06-03</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">Overview</h2>
+            <p class="overview-text">
+                Azure DocumentDB に高度なフルテキスト検索機能が Public Preview として追加された。従来の <code>$text</code> 演算子を置き換える新しい検索エンジンとして、<code>$search</code> アグリゲーションパイプラインステージを通じて BM25 スコアリング、ファジー検索、フレーズ/近接検索を提供する。さらに、ベクトル検索と BM25 を同一コレクション上で統合し、Reciprocal Rank Fusion (RRF) による結果融合を実現する。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>BM25 ランキングによる関連性スコア付きキーワード検索</li>
+                    <li>ファジー検索 (Levenshtein 編集距離) でタイプミスに対応</li>
+                    <li>フレーズ検索 + 近接マッチング (slop パラメータ)</li>
+                    <li>ベクトル検索 + BM25 のハイブリッド検索を RRF で融合</li>
+                    <li>外部検索サービス不要、クラスター料金に含まれる</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>レガシーの <code>$text</code> 演算子のみ、ファジー検索や近接検索に非対応</li>
+                        <li>ベクトル検索との組み合わせには外部検索サービスが必要</li>
+                        <li>タイプミスへの耐性なし、正確なキーワード一致のみ</li>
+                        <li>単語の順序や近接性を考慮した検索不可</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>BM25 ランキングによる関連性スコア付きキーワード検索が可能</li>
+                        <li>ファジー検索 (Levenshtein 編集距離ベース) でタイプミス対応</li>
+                        <li>フレーズ検索と近接マッチング (slop パラメータ)</li>
+                        <li>ベクトル検索 + BM25 を同一コレクションで統合、RRF で結果融合</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Client["アプリケーション"]
+        App["クライアントアプリ"]
+    end
+
+    subgraph DocumentDB["Azure DocumentDB クラスター"]
+        subgraph SearchEngine["検索エンジン"]
+            FTS["BM25 フルテキスト検索\ncreateSearchIndexes"]
+            VS["ベクトル検索\ncosmosSearch (DiskANN/HNSW/IVF)"]
+        end
+
+        subgraph Pipeline["アグリゲーションパイプライン"]
+            Search["$search ステージ"]
+            RRF["Reciprocal Rank Fusion\n(ハイブリッド検索)"]
+        end
+
+        subgraph Data["データレイヤー"]
+            Docs["ドキュメント + ベクトル埋め込み"]
+        end
+    end
+
+    App -->|"$search + text/phrase/fuzzy"| Search
+    App -->|"$search + cosmosSearch"| Search
+    Search --> FTS
+    Search --> VS
+    FTS --> RRF
+    VS --> RRF
+    RRF -->|"融合スコア"| App
+    FTS --> Docs
+    VS --> Docs
+                </pre>
+            </div>
+            <p class="overview-text" style="margin-top: 16px;">
+                Azure DocumentDB は同一クラスター・同一コレクション上に BM25 検索インデックスとベクトルインデックスの両方を保持し、書き込み一度で両方のインデックスが更新される。ハイブリッド検索では RRF アルゴリズムにより両方の結果リストを統合する。
+            </p>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">BM25</div>
+                    <div class="stat-label">スコアリングアルゴリズム</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">16,000</div>
+                    <div class="stat-label">最大ベクトル次元</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">RRF</div>
+                    <div class="stat-label">ハイブリッド融合</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">k=60</div>
+                    <div class="stat-label">RRF デフォルト定数</div>
+                </div>
+            </div>
+
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F50D;</div>
+                    <div class="feature-content">
+                        <h4>BM25 キーワード検索</h4>
+                        <p><code>$search</code> + <code>text</code> オペレーターによるスコア付き関連性検索。<code>{ $meta: "searchScore" }</code> で BM25 スコアを取得可能。レガシー <code>$text</code> 演算子を完全に置き換え。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x2328;</div>
+                    <div class="feature-content">
+                        <h4>ファジー検索 (タイプミス耐性)</h4>
+                        <p>Levenshtein 編集距離に基づくマッチング。<code>fuzzy.maxEdits</code> パラメータで許容する編集距離を制御 (1 または 2)。例: <code>bracXet</code> で <code>bracket</code> にマッチ。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4C4;</div>
+                    <div class="feature-content">
+                        <h4>フレーズ検索と近接マッチング</h4>
+                        <p><code>$search</code> + <code>phrase</code> オペレーターで語順を保持した検索。<code>slop</code> パラメータで許容する介在トークン数を指定。<code>slop: 0</code> で厳密な隣接、<code>slop: 3</code> で 3 トークンまで許容。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F504;</div>
+                    <div class="feature-content">
+                        <h4>ハイブリッド検索 (BM25 + ベクトル)</h4>
+                        <p>同一コレクションで BM25 検索とベクトル類似検索を並行実行。Reciprocal Rank Fusion (RRF) で結果を融合。追加コストなしでクラスター料金に含まれる。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">Technical Specs</h2>
+            <table class="specs-table">
+                <tbody>
+                    <tr><th>検索エンジン</th><td>BM25 スコアリング</td></tr>
+                    <tr><th>インデックス作成</th><td><code>createSearchIndexes</code> コマンド</td></tr>
+                    <tr><th>クエリ構文</th><td><code>$search</code> アグリゲーションパイプラインステージ</td></tr>
+                    <tr><th>ファジー maxEdits</th><td>1 or 2 (Levenshtein 編集距離)</td></tr>
+                    <tr><th>近接検索 slop</th><td>0 以上の整数 (介在トークン数)</td></tr>
+                    <tr><th>ベクトルインデックス</th><td>DiskANN (推奨)、HNSW、IVF</td></tr>
+                    <tr><th>ベクトル次元数</th><td>最大 16,000</td></tr>
+                    <tr><th>類似度メトリクス</th><td>COS (コサイン)、L2 (ユークリッド)、IP (内積)</td></tr>
+                    <tr><th>RRF 定数 (k)</th><td>デフォルト 60 (調整可能)</td></tr>
+                    <tr><th>ステータス</th><td>Gated Preview (mongodb-feedback@microsoft.com への連絡が必要)</td></tr>
+                </tbody>
+            </table>
+
+            <h3 style="font-size: 16px; margin: 28px 0 12px; color: var(--ms-blue-900);">検索インデックスの作成</h3>
+            <pre><code class="language-javascript">// BM25 フルテキスト検索インデックスを作成
+db.runCommand({
+  createSearchIndexes: "products",
+  indexes: [{
+    name: "idx_description_fts",
+    definition: {
+      mappings: {
+        dynamic: false,
+        fields: { description: { type: "string" } }
+      }
+    }
+  }]
+});</code></pre>
+
+            <h3 style="font-size: 16px; margin: 28px 0 12px; color: var(--ms-blue-900);">ファジー検索の実行</h3>
+            <pre><code class="language-javascript">// ファジー検索の実行
+db.products.aggregate([
+  { $search: {
+      index: "idx_description_fts",
+      text: { query: "bracXet", path: "description", fuzzy: { maxEdits: 1 } }
+  }},
+  { $limit: 20 },
+  { $project: { title: 1, score: { $meta: "searchScore" } } }
+]);</code></pre>
+        </section>
+
+        <!-- Comparison Table -->
+        <section class="section">
+            <h2 class="section-title">DocumentDB vs Azure AI Search</h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>観点</th>
+                        <th>DocumentDB</th>
+                        <th>Azure AI Search</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>インフラ管理</td>
+                        <td>単一クラスター</td>
+                        <td>別途プロビジョニング</td>
+                    </tr>
+                    <tr>
+                        <td>データ同期</td>
+                        <td>不要</td>
+                        <td>インデクサー必要</td>
+                    </tr>
+                    <tr>
+                        <td>コスト</td>
+                        <td>クラスター料金に含まれる</td>
+                        <td>追加課金</td>
+                    </tr>
+                    <tr>
+                        <td>ベクトル検索</td>
+                        <td>ネイティブ</td>
+                        <td>ネイティブ</td>
+                    </tr>
+                    <tr>
+                        <td>カスタムアナライザー</td>
+                        <td>Coming Soon</td>
+                        <td>豊富</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: EC サイトの商品検索 (ハイブリッド検索)</h4>
+                    <p class="scenario">ユーザーが自然言語で商品を検索する際、SKU 番号やブランド名の正確なマッチングと、説明文の意味的な類似検索を両立。BM25 が SKU を正確にマッチし、ベクトル検索が「防水」と「ウォータープルーフ」の類義語を捕捉。</p>
+                    <p class="effect">効果: 単独の検索方式より高い再現率と精度を実現</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: ナレッジベース・RAG パイプライン</h4>
+                    <p class="scenario">社内ドキュメントの検索で、パラフレーズされた質問でも正しいパッセージを見つけつつ、固有名詞やエンティティ名は正確にマッチ。ベクトル検索のみでは失われやすい固有名詞を BM25 が補完。</p>
+                    <p class="effect">効果: RAG の回答品質を向上</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC3: 多言語カタログのタイプミス耐性検索</h4>
+                    <p class="scenario">グローバルな EC プラットフォームで、ユーザーのタイプミスや入力ミスに対応。<code>maxEdits: 2</code> により「recieve」で「receive」を含むドキュメントがマッチ。</p>
+                    <p class="effect">効果: ユーザー体験を損なうことなく検索結果を提供</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source URLs</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=563077" target="_blank">Azure Updates - DocumentDB Advanced Full-Text Search</a></li>
+                <li><a href="https://learn.microsoft.com/azure/documentdb/full-text-search-overview" target="_blank">Microsoft Learn - Full-Text Search Overview</a></li>
+                <li><a href="https://learn.microsoft.com/azure/documentdb/full-text-search-fuzzy" target="_blank">Microsoft Learn - Fuzzy Search</a></li>
+                <li><a href="https://learn.microsoft.com/azure/documentdb/full-text-search-phrase-proximity" target="_blank">Microsoft Learn - Phrase Search and Proximity Matching</a></li>
+                <li><a href="https://learn.microsoft.com/azure/documentdb/full-text-search-hybrid" target="_blank">Microsoft Learn - Hybrid Search (BM25 + Vector)</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-06-03 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

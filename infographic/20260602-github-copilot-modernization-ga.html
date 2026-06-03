@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Copilot Modernization: アプリケーション近代化エージェント GA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--ms-surface-secondary);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-900));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(ellipse, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .title-area .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 16px;
+            backdrop-filter: blur(4px);
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .title-area .release-date {
+            font-size: 15px;
+            opacity: 0.9;
+        }
+
+        .title-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        /* Section Styles */
+        .section {
+            background: var(--ms-surface);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .section h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--ms-blue-200);
+        }
+
+        .section h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Key Points */
+        .key-points {
+            display: grid;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .key-point {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+        }
+
+        .key-point-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .key-point-text {
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 14px;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .before li::before {
+            content: '\2717';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '\2713';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid Container */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content {
+            flex: 1;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        .feature-details {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .feature-details ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-details li {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            padding: 3px 0;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .feature-details li::before {
+            content: '\2022';
+            position: absolute;
+            left: 0;
+            color: var(--azure-blue);
+            font-weight: bold;
+        }
+
+        /* Technical Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .specs-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--ms-border);
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Cases */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .usecase-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        .usecase-effect {
+            margin-top: 12px;
+            padding: 10px 16px;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--ms-blue-800);
+            text-decoration: underline;
+        }
+
+        .footer-meta {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Code blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            padding: 16px;
+            overflow-x: auto;
+            margin: 12px 0;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 22px;
+            }
+
+            .section {
+                padding: 24px 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .feature-card {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <span class="service-badge">GitHub Copilot / Azure Migrate</span>
+            <h1>GitHub Copilot Modernization:<br>アプリケーション近代化エージェント GA</h1>
+            <div class="release-date">2026年6月2日 リリース</div>
+            <div class="title-badges">
+                <span class="badge badge-ga">GA (一般提供開始)</span>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2>概要</h2>
+            <p style="font-size: 16px; line-height: 1.8; margin-bottom: 20px;">
+                Azure Migrate の評価機能と GitHub Copilot のコード変換機能を統合した、エンドツーエンドのアプリケーション近代化エージェントが一般提供開始（GA）されました。従来は分離していたアプリケーション評価とコード変換のプロセスを一体化し、近代化タイムラインを数か月から数日に短縮します。
+            </p>
+
+            <!-- Key Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">70%</div>
+                    <div class="stat-label">移行作業時間削減</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">50%</div>
+                    <div class="stat-label">アップグレード工数削減</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">17</div>
+                    <div class="stat-label">課題分類カテゴリ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">.NET + Java</div>
+                    <div class="stat-label">サポート言語</div>
+                </div>
+            </div>
+
+            <!-- Key Points -->
+            <h3>主要ポイント</h3>
+            <div class="key-points">
+                <div class="key-point">
+                    <span class="key-point-icon">&#x1F504;</span>
+                    <span class="key-point-text">Azure Migrate 評価から直接 GitHub Copilot コード変換ワークフローに接続するエンドツーエンド統合</span>
+                </div>
+                <div class="key-point">
+                    <span class="key-point-icon">&#x26A1;</span>
+                    <span class="key-point-text">近代化タイムラインを数か月から数日に短縮（70% 時間削減）</span>
+                </div>
+                <div class="key-point">
+                    <span class="key-point-icon">&#x1F916;</span>
+                    <span class="key-point-text">エージェントがコードベースを分析し、移行計画を自動生成・実行</span>
+                </div>
+                <div class="key-point">
+                    <span class="key-point-icon">&#x1F4CA;</span>
+                    <span class="key-point-text">ポートフォリオ全体のスケーラブルな評価とアップグレードを実現</span>
+                </div>
+            </div>
+
+            <!-- Before/After -->
+            <h3>Before / After 比較</h3>
+            <div class="before-after">
+                <div class="before">
+                    <h4>&#x274C; Before</h4>
+                    <ul>
+                        <li>アプリケーション評価（Azure Migrate）とコード変換が分離</li>
+                        <li>近代化に数か月のタイムライン必要</li>
+                        <li>アプリごとの個別調査・計画・実装が手動</li>
+                        <li>ポートフォリオ全体の一貫したアップグレード戦略実現困難</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>&#x2705; After</h4>
+                    <ul>
+                        <li>Azure Migrate 評価から直接コード変換ワークフローに接続</li>
+                        <li>近代化タイムラインを数か月から数日に短縮（70% 時間削減）</li>
+                        <li>エージェントがコードベース分析し移行計画を自動生成</li>
+                        <li>ポートフォリオ全体のスケーラブルな評価とアップグレード</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2>アーキテクチャ</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart LR
+    subgraph Assessment["Azure Migrate"]
+        A["既存アプリケーション\nポートフォリオ"] --> B["クラウド対応評価\n(Cloud Readiness)"]
+        B --> C["課題分類\n(17 カテゴリ)"]
+    end
+
+    subgraph Agent["GitHub Copilot\nModernization Agent"]
+        D["コードベース分析"] --> E["移行計画生成"]
+        E --> F["自動コード変換"]
+        F --> G["テスト・検証"]
+    end
+
+    subgraph Target["Azure ターゲット"]
+        H["Azure App Service"]
+        I["Azure Container Apps"]
+        J["Azure Kubernetes Service"]
+    end
+
+    C -->|"評価結果連携"| D
+    G -->|"デプロイ"| H
+    G -->|"デプロイ"| I
+    G -->|"デプロイ"| J
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2>主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F50D;</div>
+                <div class="feature-content">
+                    <h4>スケーラブルなアプリケーション評価</h4>
+                    <p>ポートフォリオ全体を一括で評価し、クラウド移行に必要な課題を体系的に分類します。</p>
+                    <div class="feature-details">
+                        <ul>
+                            <li>ポートフォリオ一括評価</li>
+                            <li>17 カテゴリによる課題分類</li>
+                            <li>ソリューションカバレッジの可視化</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F916;</div>
+                <div class="feature-content">
+                    <h4>エージェント駆動のコード変換</h4>
+                    <p>AI エージェントがコードベースを自律的に分析し、移行計画の生成からコード変換まで自動実行します。</p>
+                    <div class="feature-details">
+                        <ul>
+                            <li>自律的コードベース分析</li>
+                            <li>移行計画の自動生成</li>
+                            <li>設定・ライブラリ・依存関係の一括更新</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F527;</div>
+                <div class="feature-content">
+                    <h4>カスタムスキル</h4>
+                    <p>組織固有のビジネスロジックやアーキテクチャパターンに対応するカスタムスキルを定義できます。</p>
+                    <div class="feature-details">
+                        <ul>
+                            <li>組織固有ビジネスロジックの定義</li>
+                            <li>ソフトウェアファクトリーパターンの適用</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F6E1;</div>
+                <div class="feature-content">
+                    <h4>セキュリティ統合</h4>
+                    <p>移行プロセス全体を通じてセキュリティ課題を検出し、ポリシー準拠を確認します。</p>
+                    <div class="feature-details">
+                        <ul>
+                            <li>CVE の早期検出</li>
+                            <li>ポリシー準拠確認</li>
+                            <li>CI/CD パイプラインでの検証</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x2705;</div>
+                <div class="feature-content">
+                    <h4>段階的承認フロー</h4>
+                    <p>各変換ステップで開発者が Allow/Skip を選択でき、制御を維持しながら自動化の恩恵を受けられます。</p>
+                    <div class="feature-details">
+                        <ul>
+                            <li>Allow/Skip の選択による段階的承認</li>
+                            <li>開発者が制御を維持</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2>技術仕様</h2>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>サポート言語</td>
+                        <td>.NET, Java</td>
+                    </tr>
+                    <tr>
+                        <td>.NET アップグレード</td>
+                        <td>.NET Framework → .NET 8</td>
+                    </tr>
+                    <tr>
+                        <td>Java アップグレード</td>
+                        <td>ランタイム・フレームワーク</td>
+                    </tr>
+                    <tr>
+                        <td>ターゲット</td>
+                        <td>App Service, Container Apps, AKS</td>
+                    </tr>
+                    <tr>
+                        <td>評価カテゴリ</td>
+                        <td>Cloud Readiness (17), Java Upgrade (4)</td>
+                    </tr>
+                    <tr>
+                        <td>公称効果</td>
+                        <td>移行時間 70% 削減、工数 50% 削減</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2>ユースケース</h2>
+
+            <div class="usecase-card">
+                <h4>&#x1F4E6; レガシー .NET Framework から .NET 8 への移行</h4>
+                <p>既存の .NET Framework アプリケーションを最新の .NET 8 に移行します。NuGet パッケージの互換性確認、API 変更の自動適用、csproj / web.config の変換を含むフルスタックの移行を実現します。</p>
+                <div class="usecase-effect">
+                    対象: NuGet パッケージ互換性、API 変更、csproj/web.config 変換
+                </div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#x2615; Java EE アプリケーションのクラウド最適化</h4>
+                <p>オンプレミスの Java EE アプリケーションを Azure App Service や Container Apps に最適化して移行します。ランタイムとフレームワークのアップグレードを含みます。</p>
+                <div class="usecase-effect">
+                    対象: Azure App Service / Container Apps への移行
+                </div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#x1F3E2; 大規模ポートフォリオの一括近代化</h4>
+                <p>100 以上のアプリケーション、500,000 行以上のコード変更を数週間で完了します。ポートフォリオ全体の評価から移行計画の生成、コード変換までをスケーラブルに実行します。</p>
+                <div class="usecase-effect">
+                    実績: 100+ アプリ、500,000 行以上のコード変更を数週間で完了
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=564431" target="_blank">Azure Updates - GitHub Copilot Modernization GA</a></li>
+                <li><a href="https://github.com/solutions/use-case/app-modernization" target="_blank">GitHub Solutions - App Modernization</a></li>
+                <li><a href="https://learn.microsoft.com/azure/migrate/" target="_blank">Microsoft Learn - Azure Migrate ドキュメント</a></li>
+            </ul>
+            <div class="footer-meta">
+                公開日: 2026年6月2日 | サービス: GitHub Copilot / Azure Migrate | ステータス: GA (一般提供)
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Files: ファイル共有中心管理モデル GA と macOS Entra ID 認証プレビュー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--ms-blue-800) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 50%;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            line-height: 1.3;
+            position: relative;
+        }
+
+        .header-meta {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            font-size: 14px;
+            opacity: 0.9;
+            position: relative;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--ms-blue-200);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .section-title-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 14px;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.5;
+        }
+
+        .before li::before {
+            content: '✕';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Feature Card */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content {
+            flex: 1;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .comparison-table th {
+            background: var(--azure-blue);
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .comparison-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .comparison-table tr:nth-child(even) td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--ms-blue-100);
+        }
+
+        /* Code */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .code-label {
+            display: inline-block;
+            background: var(--ms-blue-800);
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            padding: 4px 10px;
+            border-radius: 4px 4px 0 0;
+            margin-bottom: -4px;
+        }
+
+        /* Use Cases */
+        .use-case-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .use-case-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border: 1px solid var(--ms-border);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .use-case-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .use-case-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .use-case-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .use-case-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer a {
+            display: block;
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 14px;
+            padding: 4px 0;
+            word-break: break-all;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-date {
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Feature group heading */
+        .feature-group {
+            margin: 24px 0 12px 0;
+        }
+
+        .feature-group-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .section {
+                padding: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .use-case-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-card {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <span class="service-badge">Azure Files</span>
+            <h1>ファイル共有中心管理モデル GA と macOS Entra ID 認証プレビュー</h1>
+            <div class="header-meta">
+                <span>2026-06-02</span>
+                <span class="badge badge-ga">GA</span>
+                <span class="badge badge-preview">Public Preview</span>
+            </div>
+        </header>
+
+        <!-- Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">&#x1F4CB;</span>
+                概要
+            </h2>
+            <p style="font-size: 15px; line-height: 1.8; margin-bottom: 20px;">
+                Azure Files に2つの重要なアップデートが発表されました。ファイル共有をトップレベル ARM リソースとして独立管理できる <strong>Microsoft.FileShares リソースプロバイダー</strong> が GA となり、共有単位の RBAC・ポリシー・タグ適用が可能になりました。また、<strong>macOS からの Entra ID 認証</strong>がパブリックプレビューとして利用可能になり、Windows・Linux・macOS 全プラットフォームで統一的な ID ベース認証が実現します。
+            </p>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">GA</div>
+                    <div class="stat-label">FileShares RP</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">対応 OS</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--ms-green), #0a5e0a);">
+                    <div class="stat-value">NFS 4.1</div>
+                    <div class="stat-label">+ SSD サポート</div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--ms-purple), #5a3d8a);">
+                    <div class="stat-value">Zero Trust</div>
+                    <div class="stat-label">macOS 対応</div>
+                </div>
+            </div>
+
+            <!-- Before/After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>&#x26A0;&#xFE0F; Before</h4>
+                    <ul>
+                        <li>ファイル共有はストレージアカウント配下のサブリソース、個別ARM管理不可</li>
+                        <li>共有ごとの独立RBAC/タグ/ポリシーにはストレージアカウント分割が必要</li>
+                        <li>macOSユーザーはEntra ID認証が使えず、共有キー/SASトークンに依存</li>
+                        <li>macOSだけ認証方法が異なりセキュリティポリシーの統一困難</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>&#x2705; After</h4>
+                    <ul>
+                        <li>ファイル共有がトップレベルARMリソースとなり独立管理可能</li>
+                        <li>個々の共有にRBAC、Azure Policy、タグ、ロックを直接適用</li>
+                        <li>macOSからEntra ID認証でAzure Filesにアクセス可能</li>
+                        <li>Windows、Linux、macOS全主要プラットフォームでEntra ID認証利用可能</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">&#x1F3D7;</span>
+                アーキテクチャ
+            </h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph ARM["Azure Resource Manager"]
+        subgraph Traditional["従来モデル"]
+            SA1["Microsoft.Storage\nstorageAccounts"]
+            FS_Old1["ファイル共有 A\n(サブリソース)"]
+            FS_Old2["ファイル共有 B\n(サブリソース)"]
+            SA1 --> FS_Old1
+            SA1 --> FS_Old2
+        end
+        subgraph New["新モデル (Microsoft.FileShares)"]
+            RP["Microsoft.FileShares\nリソースプロバイダー"]
+            FS_New1["ファイル共有 A\n(トップレベルリソース)"]
+            FS_New2["ファイル共有 B\n(トップレベルリソース)"]
+            RP --> FS_New1
+            RP --> FS_New2
+        end
+    end
+
+    subgraph Management["管理機能"]
+        RBAC["RBAC\n(共有単位)"]
+        Policy["Azure Policy\n(共有単位)"]
+        Tags["タグ\n(共有単位)"]
+        Lock["リソースロック\n(共有単位)"]
+    end
+
+    FS_New1 --> RBAC
+    FS_New1 --> Policy
+    FS_New1 --> Tags
+    FS_New1 --> Lock
+
+    subgraph Clients["クライアントアクセス"]
+        Win["Windows\n(SMB + Entra ID)"]
+        Linux["Linux\n(NFS 4.1)"]
+        Mac["macOS\n(SMB + Entra ID)\n新規プレビュー"]
+    end
+
+    subgraph Auth["認証フロー (macOS Entra ID)"]
+        User["macOS ユーザー"]
+        EntraID["Microsoft Entra ID"]
+        Token["OAuth 2.0 トークン"]
+        Share["Azure Files 共有"]
+    end
+
+    User -->|"1. 認証要求"| EntraID
+    EntraID -->|"2. トークン発行"| Token
+    Token -->|"3. SMB アクセス"| Share
+
+    Win --> FS_New1
+    Linux --> FS_New2
+    Mac --> FS_New1
+                </pre>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">&#x2B50;</span>
+                主要機能
+            </h2>
+
+            <div class="feature-group">
+                <div class="feature-group-title">
+                    <span class="badge badge-ga">GA</span>
+                    Microsoft.FileShares リソースプロバイダー
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4E6;</div>
+                <div class="feature-content">
+                    <h4>トップレベル ARM リソース化</h4>
+                    <p>ファイル共有がストレージアカウントに依存しない独立リソースとして管理可能に。サブスクリプション直下でのリソース管理が実現します。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F512;</div>
+                <div class="feature-content">
+                    <h4>個別 RBAC 適用</h4>
+                    <p>共有単位でロールベースアクセス制御を設定。チームごと・プロジェクトごとの権限分離が容易になります。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4DC;</div>
+                <div class="feature-content">
+                    <h4>Azure Policy 直接適用</h4>
+                    <p>ファイル共有に対してガバナンスポリシーを直接適用。コンプライアンス要件を共有レベルで管理できます。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F6E1;</div>
+                <div class="feature-content">
+                    <h4>独立ライフサイクル管理</h4>
+                    <p>リソースロック、タグによる分類、独立した削除保護を共有単位で実現。NFS 4.1 + SSD が GA 時点でサポートされます。</p>
+                </div>
+            </div>
+
+            <div class="feature-group" style="margin-top: 32px;">
+                <div class="feature-group-title">
+                    <span class="badge badge-preview">Preview</span>
+                    macOS Entra ID 認証
+                </div>
+            </div>
+
+            <div class="feature-card" style="border-left-color: var(--ms-yellow);">
+                <div class="feature-icon" style="background: #FFF8E0;">&#x1F511;</div>
+                <div class="feature-content">
+                    <h4>ID ベースのアクセス制御</h4>
+                    <p>共有キー不要でセキュアなアクセスを実現。Entra ID のアイデンティティベースの認証でファイル共有にアクセスできます。</p>
+                </div>
+            </div>
+
+            <div class="feature-card" style="border-left-color: var(--ms-yellow);">
+                <div class="feature-icon" style="background: #FFF8E0;">&#x1F4C1;</div>
+                <div class="feature-content">
+                    <h4>SMB プロトコル統合</h4>
+                    <p>macOS Finder の標準的な SMB 接続から Azure Files にアクセス。ユーザーにとって透過的な認証体験を提供します。</p>
+                </div>
+            </div>
+
+            <div class="feature-card" style="border-left-color: var(--ms-yellow);">
+                <div class="feature-icon" style="background: #FFF8E0;">&#x1F310;</div>
+                <div class="feature-content">
+                    <h4>クロスプラットフォーム統一認証</h4>
+                    <p>Windows、Linux、macOS すべてのプラットフォームで Entra ID 認証が利用可能に。セキュリティポリシーの統一管理を実現します。</p>
+                </div>
+            </div>
+
+            <div class="feature-card" style="border-left-color: var(--ms-yellow);">
+                <div class="feature-icon" style="background: #FFF8E0;">&#x1F6E1;</div>
+                <div class="feature-content">
+                    <h4>ゼロトラスト対応</h4>
+                    <p>MFA（多要素認証）、条件付きアクセスポリシーを macOS クライアントにも適用可能。ゼロトラストセキュリティモデルを全プラットフォームで統一できます。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Table -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">&#x1F4CA;</span>
+                機能比較
+            </h2>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>観点</th>
+                        <th>Before</th>
+                        <th>After</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>リソース階層</strong></td>
+                        <td>ストレージアカウント > サブリソース</td>
+                        <td>トップレベルリソース</td>
+                    </tr>
+                    <tr>
+                        <td><strong>RBAC粒度</strong></td>
+                        <td>ストレージアカウント単位</td>
+                        <td>ファイル共有単位</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Azure Policy</strong></td>
+                        <td>ストレージアカウントに適用</td>
+                        <td>ファイル共有に直接適用</td>
+                    </tr>
+                    <tr>
+                        <td><strong>削除保護</strong></td>
+                        <td>アカウント単位ロック</td>
+                        <td>共有単位ロック</td>
+                    </tr>
+                    <tr>
+                        <td><strong>macOS認証</strong></td>
+                        <td>共有キー/SAS</td>
+                        <td>Entra ID</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Code Samples -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">&#x1F4BB;</span>
+                コードサンプル
+            </h2>
+
+            <span class="code-label">Azure CLI</span>
+            <pre><code class="language-bash"># Microsoft.FileShares リソースプロバイダーの登録
+az provider register --namespace Microsoft.FileShares
+
+# NFS 4.1 ファイル共有の作成
+az fileshare create \
+  --resource-group myResourceGroup \
+  --name my-nfs-share \
+  --protocol NFS \
+  --storage-type SSD \
+  --quota 1024 \
+  --location eastus</code></pre>
+
+            <span class="code-label">Bicep</span>
+            <pre><code class="language-bicep">resource nfsShare 'Microsoft.FileShares/fileShares@2026-01-01' = {
+  name: 'my-nfs-share'
+  location: 'eastus'
+  properties: {
+    protocol: 'NFS'
+    storageType: 'SSD'
+    quotaInGiB: 1024
+  }
+  tags: {
+    environment: 'production'
+    team: 'platform'
+  }
+}</code></pre>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">&#x1F4A1;</span>
+                ユースケース
+            </h2>
+            <div class="use-case-grid">
+                <div class="use-case-card">
+                    <div class="use-case-number">1</div>
+                    <h4>クロスプラットフォーム開発チームの統一ファイル共有</h4>
+                    <p>Windows、Linux、macOS が混在する開発チームで、Entra ID による統一認証を活用し、全員が同じファイル共有にセキュアにアクセス。プラットフォームごとの認証方法の違いを意識する必要がなくなります。</p>
+                </div>
+                <div class="use-case-card">
+                    <div class="use-case-number">2</div>
+                    <h4>IaC によるファイル共有のライフサイクル管理</h4>
+                    <p>Microsoft.FileShares をトップレベルリソースとして Bicep/Terraform で宣言的に管理。チームごとに独立した RBAC・タグ・ポリシーを適用し、ガバナンスを自動化します。</p>
+                </div>
+                <div class="use-case-card">
+                    <div class="use-case-number">3</div>
+                    <h4>macOS 開発者のゼロトラストアクセス</h4>
+                    <p>macOS を利用する開発者が Entra ID 認証で Azure Files にアクセス。MFA・条件付きアクセスを適用し、共有キーの漏洩リスクを排除したゼロトラスト環境を実現します。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <h3>&#x1F517; 参考リンク</h3>
+            <a href="https://azure.microsoft.com/updates?id=565062" target="_blank" rel="noopener noreferrer">Azure Updates - ファイル共有中心管理モデル GA</a>
+            <a href="https://azure.microsoft.com/updates?id=565073" target="_blank" rel="noopener noreferrer">Azure Updates - macOS Entra ID 認証プレビュー</a>
+            <a href="https://learn.microsoft.com/azure/storage/files/storage-files-introduction" target="_blank" rel="noopener noreferrer">Microsoft Learn - Azure Files の概要</a>
+            <div class="footer-date">
+                公開日: 2026-06-02 | レポート生成日: 2026-06-03
+            </div>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
