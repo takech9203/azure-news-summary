@@ -5,9 +5,15 @@
 
 ## 2026 年
 
+- [2026-06-04 - Microsoft Foundry IQ: GA 到達と Knowledge Source の拡充](2026/2026-06-04-foundry-iq-ga.md)
+- [2026-06-04 - Microsoft Discovery: 一般提供開始 (GA)](2026/2026-06-04-microsoft-discovery-ga.md)
+- [2026-06-04 - Azure HorizonDB: AI Pipelines (Public Preview)](2026/2026-06-04-horizondb-ai-pipelines.md)
+- [2026-06-04 - Azure Monitor: OTLP シグナルの OpenTelemetry Collector 経由インジェストと Service Level Indicators (SLI)](2026/2026-06-04-azure-monitor-otlp-sli.md)
 - [2026-06-03 - Azure Monitor: Simple Log Alerts GA](2026/2026-06-03-azure-monitor-simple-log-alerts.md)
 - [2026-06-03 - Microsoft Foundry: VS Code 拡張機能 GA と Build 2026 Day 2 プラットフォームアップデート](2026/2026-06-03-foundry-build-day2-platform.md)
 - [2026-06-03 - Microsoft Foundry: Custom Voice ポータル GA と PII プレイグラウンド更新](2026/2026-06-03-foundry-custom-voice-pii-playground.md)
+- [2026-06-03 - Azure Confidential Ledger: 監査用台帳ファイルバックアップ・検証ツールの一般提供開始](2026/2026-06-03-confidential-ledger-backup-audit.md)
+- [2026-06-03 - Microsoft Foundry: MAI-Voice-2 パブリックプレビュー](2026/2026-06-03-mai-voice-2-preview.md)
 - [2026-06-03 - Azure Red Hat OpenShift: Belgium Central リージョン GA](2026/2026-06-03-aro-belgium-central.md)
 - [2026-06-03 - Azure Infrastructure Resiliency Manager: 統合レジリエンシー管理サービス](2026/2026-06-03-azure-infrastructure-resiliency-manager.md)
 - [2026-06-03 - Azure DocumentDB: 高度なフルテキスト検索 (Public Preview)](2026/2026-06-03-documentdb-advanced-full-text-search.md)

@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Confidential Ledger: Web Backup/Audit Tool GA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface-secondary);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-900));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(ellipse, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .title-area .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 16px;
+            backdrop-filter: blur(4px);
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1.4;
+            margin-bottom: 12px;
+        }
+
+        .title-area .release-date {
+            font-size: 15px;
+            opacity: 0.9;
+        }
+
+        .title-badges {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        /* Section Styles */
+        .section {
+            background: var(--ms-surface);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .section h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--ms-blue-200);
+        }
+
+        .section h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        /* Key Points */
+        .key-points {
+            list-style: none;
+            padding: 0;
+            margin: 16px 0;
+        }
+
+        .key-points li {
+            font-size: 15px;
+            padding: 8px 0;
+            padding-left: 28px;
+            position: relative;
+            line-height: 1.7;
+            color: var(--ms-text-secondary);
+        }
+
+        .key-points li::before {
+            content: '\2714';
+            position: absolute;
+            left: 0;
+            color: var(--azure-blue);
+            font-weight: bold;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 14px;
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .before li::before {
+            content: '\2717';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '\2713';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid Container */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content {
+            flex: 1;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Tech Specs */
+        .tech-specs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .tech-spec-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .tech-spec-item .spec-label {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            font-weight: 500;
+        }
+
+        .tech-spec-item .spec-value {
+            font-size: 13px;
+            color: var(--ms-text-primary);
+            font-weight: 700;
+        }
+
+        /* Use Cases */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .usecase-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        .usecase-effect {
+            margin-top: 12px;
+            padding: 10px 16px;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        /* Constraints */
+        .constraints-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .constraints-list li {
+            font-size: 14px;
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .constraints-list li:last-child {
+            border-bottom: none;
+        }
+
+        .constraints-list li::before {
+            content: '\26A0';
+            position: absolute;
+            left: 0;
+            color: var(--ms-orange);
+        }
+
+        /* Related Services */
+        .related-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .related-tag {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: var(--ms-blue-800);
+            text-decoration: underline;
+        }
+
+        .footer-meta {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 12px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 22px;
+            }
+
+            .section {
+                padding: 24px 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+
+            .tech-specs {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-card {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <span class="service-badge">Azure Confidential Ledger</span>
+            <h1>Web &#x53F0;&#x5E33;&#x30D0;&#x30C3;&#x30AF;&#x30A2;&#x30C3;&#x30D7;/&#x76E3;&#x67FB;&#x30C4;&#x30FC;&#x30EB; GA</h1>
+            <p class="release-date">2026-06-03 | &#x30ED;&#x30FC;&#x30AB;&#x30EB;&#x30D0;&#x30C3;&#x30AF;&#x30A2;&#x30C3;&#x30D7;&#x3068;&#x6697;&#x53F7;&#x5B66;&#x7684;&#x8A3C;&#x660E;&#x691C;&#x8A3C;&#x306E;&#x305F;&#x3081;&#x306E; Web &#x30D9;&#x30FC;&#x30B9;&#x30C4;&#x30FC;&#x30EB;</p>
+            <div class="title-badges">
+                <span class="badge badge-ga">GA (&#x4E00;&#x822C;&#x63D0;&#x4F9B;)</span>
+            </div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2>&#x6982;&#x8981;</h2>
+            <p style="font-size: 15px; color: var(--ms-text-secondary); margin-bottom: 20px;">
+                Azure Confidential Ledger &#x306E;&#x65B0;&#x3057;&#x3044; Web &#x30D9;&#x30FC;&#x30B9;&#x306E;&#x30D0;&#x30C3;&#x30AF;&#x30A2;&#x30C3;&#x30D7;/&#x76E3;&#x67FB;&#x30C4;&#x30FC;&#x30EB;&#x304C;&#x4E00;&#x822C;&#x63D0;&#x4F9B; (GA) &#x3092;&#x958B;&#x59CB;&#x3057;&#x307E;&#x3057;&#x305F;&#x3002;&#x3053;&#x306E;&#x30C4;&#x30FC;&#x30EB;&#x306B;&#x3088;&#x308A;&#x3001;&#x53F0;&#x5E33;&#x30D5;&#x30A1;&#x30A4;&#x30EB;&#x3092;&#x30ED;&#x30FC;&#x30AB;&#x30EB;&#x306B;&#x30D0;&#x30C3;&#x30AF;&#x30A2;&#x30C3;&#x30D7;&#x3057;&#x3001;&#x6697;&#x53F7;&#x5B66;&#x7684;&#x8A3C;&#x660E;&#x3092;&#x30ED;&#x30FC;&#x30AB;&#x30EB;&#x3067;&#x691C;&#x8A3C;&#x3059;&#x308B;&#x3053;&#x3068;&#x304C;&#x53EF;&#x80FD;&#x306B;&#x306A;&#x308A;&#x307E;&#x3059;&#x3002;&#x76E3;&#x67FB;&#x62C5;&#x5F53;&#x8005;&#x304C; Azure &#x74B0;&#x5883;&#x3078;&#x306E;&#x30A2;&#x30AF;&#x30BB;&#x30B9;&#x306A;&#x3057;&#x3067;&#x53F0;&#x5E33;&#x306E;&#x6574;&#x5408;&#x6027;&#x3092;&#x691C;&#x8A3C;&#x3067;&#x304D;&#x307E;&#x3059;&#x3002;
+            </p>
+
+            <ul class="key-points">
+                <li>&#x53F0;&#x5E33;&#x30D5;&#x30A1;&#x30A4;&#x30EB;&#x3092;&#x30ED;&#x30FC;&#x30AB;&#x30EB;&#x306B;&#x30D0;&#x30C3;&#x30AF;&#x30A2;&#x30C3;&#x30D7;&#x3057;&#x3001;&#x6697;&#x53F7;&#x5B66;&#x7684;&#x8A3C;&#x660E;&#x3092;&#x30ED;&#x30FC;&#x30AB;&#x30EB;&#x3067;&#x691C;&#x8A3C;&#x3059;&#x308B;&#x65B0;&#x3057;&#x3044; Web &#x30D9;&#x30FC;&#x30B9;&#x30C4;&#x30FC;&#x30EB;</li>
+                <li>&#x76E3;&#x67FB;&#x62C5;&#x5F53;&#x8005;&#x304C; Azure &#x74B0;&#x5883;&#x3078;&#x306E;&#x30A2;&#x30AF;&#x30BB;&#x30B9;&#x306A;&#x3057;&#x3067;&#x53F0;&#x5E33;&#x306E;&#x6574;&#x5408;&#x6027;&#x3092;&#x691C;&#x8A3C;&#x53EF;&#x80FD;</li>
+                <li>&#x30D7;&#x30ED;&#x30B0;&#x30E9;&#x30DF;&#x30F3;&#x30B0;&#x4E0D;&#x8981;&#x3067;&#x30D6;&#x30E9;&#x30A6;&#x30B6;&#x30D9;&#x30FC;&#x30B9;&#x3067;&#x52D5;&#x4F5C;&#x3001;&#x30AA;&#x30D5;&#x30E9;&#x30A4;&#x30F3;&#x5BFE;&#x5FDC;</li>
+                <li>&#x5185;&#x90E8;&#x30A2;&#x30CA;&#x30EA;&#x30B9;&#x30C8;&#x3068;&#x5916;&#x90E8;&#x76E3;&#x67FB;&#x59D4;&#x8A17;&#x696D;&#x8005;&#x306E;&#x4E21;&#x65B9;&#x3092;&#x30B5;&#x30DD;&#x30FC;&#x30C8;</li>
+            </ul>
+
+            <!-- Before/After -->
+            <h3>Before / After &#x6BD4;&#x8F03;</h3>
+            <div class="before-after">
+                <div class="before">
+                    <h4>&#x2717; &#x5C0E;&#x5165;&#x524D;&#x306E;&#x8AB2;&#x984C;</h4>
+                    <ul>
+                        <li>&#x76E3;&#x67FB;&#x62C5;&#x5F53;&#x8005;&#x306B; Azure Confidential Ledger &#x30A4;&#x30F3;&#x30B9;&#x30BF;&#x30F3;&#x30B9;&#x3078;&#x306E;&#x76F4;&#x63A5;&#x30A2;&#x30AF;&#x30BB;&#x30B9;&#x304C;&#x5FC5;&#x8981;</li>
+                        <li>&#x6697;&#x53F7;&#x5B66;&#x7684;&#x8A3C;&#x660E;&#x306E;&#x691C;&#x8A3C;&#x306B;&#x30D7;&#x30ED;&#x30B0;&#x30E9;&#x30DF;&#x30F3;&#x30B0;&#x30B9;&#x30AD;&#x30EB;&#x3068; SDK &#x304C;&#x5FC5;&#x8981;</li>
+                        <li>&#x5916;&#x90E8;&#x76E3;&#x67FB;&#x62C5;&#x5F53;&#x8005;&#x306B; Azure &#x30A2;&#x30AF;&#x30BB;&#x30B9;&#x6A29;&#x3092;&#x4ED8;&#x4E0E;&#x3059;&#x308B;&#x5FC5;&#x8981; (&#x30BB;&#x30AD;&#x30E5;&#x30EA;&#x30C6;&#x30A3;&#x30EA;&#x30B9;&#x30AF;)</li>
+                        <li>&#x30AA;&#x30D5;&#x30E9;&#x30A4;&#x30F3;/&#x30A8;&#x30A2;&#x30AE;&#x30E3;&#x30C3;&#x30D7;&#x74B0;&#x5883;&#x3067;&#x306E;&#x76E3;&#x67FB;&#x304C;&#x56F0;&#x96E3;</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>&#x2713; &#x5C0E;&#x5165;&#x5F8C;&#x306E;&#x6539;&#x5584;</h4>
+                    <ul>
+                        <li>Web &#x30D9;&#x30FC;&#x30B9;&#x30C4;&#x30FC;&#x30EB;&#x3067;&#x30ED;&#x30FC;&#x30AB;&#x30EB;&#x30D0;&#x30C3;&#x30AF;&#x30A2;&#x30C3;&#x30D7;&#x3068;&#x691C;&#x8A3C;&#x304C;&#x53EF;&#x80FD;</li>
+                        <li>&#x30D7;&#x30ED;&#x30B0;&#x30E9;&#x30DF;&#x30F3;&#x30B0;&#x4E0D;&#x8981;&#x3067;&#x6697;&#x53F7;&#x5B66;&#x7684;&#x8A3C;&#x660E;&#x3092;&#x691C;&#x8A3C;</li>
+                        <li>Azure &#x30A2;&#x30AF;&#x30BB;&#x30B9;&#x306A;&#x3057;&#x3067;&#x76E3;&#x67FB;&#x62C5;&#x5F53;&#x8005;&#x3068;&#x53F0;&#x5E33;&#x30C7;&#x30FC;&#x30BF;&#x3092;&#x5171;&#x6709;</li>
+                        <li>&#x30AA;&#x30D5;&#x30E9;&#x30A4;&#x30F3;&#x3067;&#x306E;&#x72EC;&#x7ACB;&#x76E3;&#x67FB;/&#x691C;&#x8A3C;&#x30EF;&#x30FC;&#x30AF;&#x30D5;&#x30ED;&#x30FC;&#x3092;&#x5B9F;&#x73FE;</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2>&#x30A2;&#x30FC;&#x30AD;&#x30C6;&#x30AF;&#x30C1;&#x30E3;&#x56F3;</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Azure["&#9729;&#65039; Azure Cloud"]
+        ACL["&#128274; Azure Confidential Ledger&lt;br/&gt;(TEE: Intel SGX Enclaves)"]
+        MT["&#127795; Merkle Tree&lt;br/&gt;(&#26263;&#21495;&#23398;&#30340;&#35388;&#26126;)"]
+        ACL --> MT
+    end
+
+    subgraph Local["&#128187; &#12525;&#12540;&#12459;&#12523;&#29872;&#22659;"]
+        Tool["&#128736;&#65039; Web &#21488;&#24115;&#12496;&#12483;&#12463;&#12450;&#12483;&#12503;/&#30435;&#26619;&#12484;&#12540;&#12523;"]
+        Backup["&#128193; &#12496;&#12483;&#12463;&#12450;&#12483;&#12503;&#12501;&#12449;&#12452;&#12523;&lt;br/&gt;(&#21488;&#24115;&#12487;&#12540;&#12479; + &#12524;&#12471;&#12540;&#12488;)"]
+        Verify["&#9989; &#12525;&#12540;&#12459;&#12523;&#26908;&#35388;&lt;br/&gt;(&#26263;&#21495;&#23398;&#30340;&#35388;&#26126;&#12398;&#26908;&#35388;)"]
+        Tool --> Backup
+        Backup --> Verify
+    end
+
+    subgraph Auditor["&#128100; &#30435;&#26619;&#25285;&#24403;&#32773;"]
+        SA["&#128270; &#12475;&#12461;&#12517;&#12522;&#12486;&#12451;&#12450;&#12490;&#12522;&#12473;&#12488;"]
+        Ext["&#128203; &#22806;&#37096;&#30435;&#26619;&#22996;&#35351;&#26989;&#32773;"]
+    end
+
+    ACL -->|"&#12496;&#12483;&#12463;&#12450;&#12483;&#12503;"| Tool
+    Verify -->|"&#26908;&#35388;&#32080;&#26524;"| SA
+    Verify -->|"&#26908;&#35388;&#32080;&#26524;"| Ext
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features Section -->
+        <div class="section">
+            <h2>&#x4E3B;&#x8981;&#x6A5F;&#x80FD;</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128190;</div>
+                <div class="feature-content">
+                    <h4>&#x30ED;&#x30FC;&#x30AB;&#x30EB;&#x53F0;&#x5E33;&#x30D0;&#x30C3;&#x30AF;&#x30A2;&#x30C3;&#x30D7;</h4>
+                    <p>&#x30C8;&#x30E9;&#x30F3;&#x30B6;&#x30AF;&#x30B7;&#x30E7;&#x30F3;&#x30EC;&#x30B7;&#x30FC;&#x30C8;&#x3092;&#x542B;&#x3080;&#x5B8C;&#x5168;&#x306A;&#x30C7;&#x30FC;&#x30BF;&#x30BB;&#x30C3;&#x30C8;&#x3092;&#x30ED;&#x30FC;&#x30AB;&#x30EB;&#x306B;&#x30D0;&#x30C3;&#x30AF;&#x30A2;&#x30C3;&#x30D7;&#x3002;&#x30AA;&#x30D5;&#x30E9;&#x30A4;&#x30F3;&#x3067;&#x306E;&#x5B8C;&#x5168;&#x306A;&#x30C7;&#x30FC;&#x30BF;&#x30A2;&#x30AF;&#x30BB;&#x30B9;&#x3092;&#x5B9F;&#x73FE;&#x3057;&#x307E;&#x3059;&#x3002;</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128272;</div>
+                <div class="feature-content">
+                    <h4>&#x30ED;&#x30FC;&#x30AB;&#x30EB;&#x6697;&#x53F7;&#x5B66;&#x7684;&#x8A3C;&#x660E;&#x691C;&#x8A3C;</h4>
+                    <p>Merkle Tree &#x30EC;&#x30B7;&#x30FC;&#x30C8;&#x3001;&#x30CE;&#x30FC;&#x30C9;&#x8A3C;&#x660E;&#x66F8;&#x30C1;&#x30A7;&#x30FC;&#x30F3;&#x3001;ECDSA &#x7F72;&#x540D;&#x3092;&#x30ED;&#x30FC;&#x30AB;&#x30EB;&#x3067;&#x691C;&#x8A3C;&#x3002;&#x30CD;&#x30C3;&#x30C8;&#x30EF;&#x30FC;&#x30AF;&#x63A5;&#x7D9A;&#x4E0D;&#x8981;&#x3067;&#x6539;&#x3056;&#x3093;&#x691C;&#x77E5;&#x304C;&#x53EF;&#x80FD;&#x3067;&#x3059;&#x3002;</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#127760;</div>
+                <div class="feature-content">
+                    <h4>Web &#x30D9;&#x30FC;&#x30B9;&#x30A4;&#x30F3;&#x30BF;&#x30FC;&#x30D5;&#x30A7;&#x30FC;&#x30B9;</h4>
+                    <p>&#x30D6;&#x30E9;&#x30A6;&#x30B6;&#x30D9;&#x30FC;&#x30B9;&#x3067;&#x52D5;&#x4F5C;&#x3057;&#x3001;&#x30D7;&#x30ED;&#x30B0;&#x30E9;&#x30DF;&#x30F3;&#x30B0;&#x4E0D;&#x8981;&#x3002;&#x30AA;&#x30D5;&#x30E9;&#x30A4;&#x30F3;&#x5BFE;&#x5FDC;&#x3067;&#x30A8;&#x30A2;&#x30AE;&#x30E3;&#x30C3;&#x30D7;&#x74B0;&#x5883;&#x3067;&#x3082;&#x5229;&#x7528;&#x53EF;&#x80FD;&#x3067;&#x3059;&#x3002;</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128101;</div>
+                <div class="feature-content">
+                    <h4>&#x76E3;&#x67FB;&#x30DA;&#x30EB;&#x30BD;&#x30CA;&#x30B5;&#x30DD;&#x30FC;&#x30C8;</h4>
+                    <p>&#x5185;&#x90E8;&#x30BB;&#x30AD;&#x30E5;&#x30EA;&#x30C6;&#x30A3;&#x30A2;&#x30CA;&#x30EA;&#x30B9;&#x30C8;&#x3068;&#x5916;&#x90E8;&#x76E3;&#x67FB;&#x59D4;&#x8A17;&#x696D;&#x8005;&#x306E;&#x4E21;&#x65B9;&#x306E;&#x30EF;&#x30FC;&#x30AF;&#x30D5;&#x30ED;&#x30FC;&#x306B;&#x5BFE;&#x5FDC;&#x3002;&#x30ED;&#x30FC;&#x30EB;&#x306B;&#x5FDC;&#x3058;&#x305F;&#x30A2;&#x30AF;&#x30BB;&#x30B9;&#x5236;&#x5FA1;&#x304C;&#x53EF;&#x80FD;&#x3067;&#x3059;&#x3002;</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2>&#x6280;&#x8853;&#x4ED5;&#x69D8;</h2>
+            <div class="tech-specs">
+                <div class="tech-spec-item">
+                    <div>
+                        <div class="spec-label">&#x30A4;&#x30F3;&#x30D5;&#x30E9;</div>
+                        <div class="spec-value">Azure Confidential Computing (Intel SGX)</div>
+                    </div>
+                </div>
+                <div class="tech-spec-item">
+                    <div>
+                        <div class="spec-label">&#x30D5;&#x30EC;&#x30FC;&#x30E0;&#x30EF;&#x30FC;&#x30AF;</div>
+                        <div class="spec-value">Confidential Consortium Framework (CCF)</div>
+                    </div>
+                </div>
+                <div class="tech-spec-item">
+                    <div>
+                        <div class="spec-label">&#x8A3C;&#x660E;&#x65B9;&#x5F0F;</div>
+                        <div class="spec-value">Merkle Tree &#x30D9;&#x30FC;&#x30B9;&#x30C8;&#x30E9;&#x30F3;&#x30B6;&#x30AF;&#x30B7;&#x30E7;&#x30F3;&#x30EC;&#x30B7;&#x30FC;&#x30C8;</div>
+                    </div>
+                </div>
+                <div class="tech-spec-item">
+                    <div>
+                        <div class="spec-label">&#x7F72;&#x540D;&#x30A2;&#x30EB;&#x30B4;&#x30EA;&#x30BA;&#x30E0;</div>
+                        <div class="spec-value">ECDSA</div>
+                    </div>
+                </div>
+                <div class="tech-spec-item">
+                    <div>
+                        <div class="spec-label">&#x30D7;&#x30ED;&#x30C8;&#x30B3;&#x30EB;</div>
+                        <div class="spec-value">TLS 1.3</div>
+                    </div>
+                </div>
+                <div class="tech-spec-item">
+                    <div>
+                        <div class="spec-label">&#x8A8D;&#x8A3C;</div>
+                        <div class="spec-value">Microsoft Entra ID / &#x8A3C;&#x660E;&#x66F8;&#x30D9;&#x30FC;&#x30B9;</div>
+                    </div>
+                </div>
+                <div class="tech-spec-item">
+                    <div>
+                        <div class="spec-label">&#x53F0;&#x5E33;&#x30BF;&#x30A4;&#x30D7;</div>
+                        <div class="spec-value">Public (&#x5E73;&#x6587;) / Private (&#x6697;&#x53F7;&#x5316;)</div>
+                    </div>
+                </div>
+                <div class="tech-spec-item">
+                    <div>
+                        <div class="spec-label">&#x30B9;&#x30B1;&#x30FC;&#x30E9;&#x30D3;&#x30EA;&#x30C6;&#x30A3;</div>
+                        <div class="spec-value">3+ &#x53EF;&#x7528;&#x6027;&#x30BE;&#x30FC;&#x30F3;</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Constraints -->
+            <h3 style="margin-top: 24px;">&#x5236;&#x7D04;&#x4E8B;&#x9805;</h3>
+            <ul class="constraints-list">
+                <li>&#x30B5;&#x30D6;&#x30B9;&#x30AF;&#x30EA;&#x30D7;&#x30B7;&#x30E7;&#x30F3;&#x3042;&#x305F;&#x308A;&#x6700;&#x5927; 2 &#x53F0;&#x5E33; (Standard SKU)</li>
+                <li>Collection ID &#x306E;&#x4E0A;&#x9650;: &#x53F0;&#x5E33;&#x3042;&#x305F;&#x308A; 50,000</li>
+                <li>&#x4F5C;&#x6210;&#x5F8C;&#x306E;&#x53F0;&#x5E33;&#x30BF;&#x30A4;&#x30D7;&#x5909;&#x66F4;&#x4E0D;&#x53EF;</li>
+                <li>&#x524A;&#x9664;&#x306F;&#x30CF;&#x30FC;&#x30C9;&#x30C7;&#x30EA;&#x30FC;&#x30C8; (&#x5FA9;&#x65E7;&#x4E0D;&#x53EF;)</li>
+                <li>&#x53F0;&#x5E33;&#x540D;&#x306F;&#x30B0;&#x30ED;&#x30FC;&#x30D0;&#x30EB;&#x306B;&#x4E00;&#x610F;&#x3067;&#x3042;&#x308B;&#x5FC5;&#x8981;&#x304C;&#x3042;&#x308B;</li>
+            </ul>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2>&#x30E6;&#x30FC;&#x30B9;&#x30B1;&#x30FC;&#x30B9;</h2>
+
+            <div class="usecase-card">
+                <h4>&#128737;&#65039; &#x5916;&#x90E8;&#x30BB;&#x30AD;&#x30E5;&#x30EA;&#x30C6;&#x30A3;&#x76E3;&#x67FB;</h4>
+                <p>&#x91D1;&#x878D;&#x6A5F;&#x95A2;&#x306E;&#x5E74;&#x6B21;&#x76E3;&#x67FB;&#x306B;&#x304A;&#x3044;&#x3066;&#x3001;&#x5916;&#x90E8;&#x76E3;&#x67FB;&#x62C5;&#x5F53;&#x8005;&#x306B; Azure &#x30A2;&#x30AF;&#x30BB;&#x30B9;&#x6A29;&#x3092;&#x4ED8;&#x4E0E;&#x3059;&#x308B;&#x3053;&#x3068;&#x306A;&#x304F;&#x3001;&#x53F0;&#x5E33;&#x30C7;&#x30FC;&#x30BF;&#x306E;&#x6574;&#x5408;&#x6027;&#x3092;&#x691C;&#x8A3C;&#x53EF;&#x80FD;&#x3002;</p>
+                <div class="usecase-effect">&#x52B9;&#x679C;: &#x30BB;&#x30AD;&#x30E5;&#x30EA;&#x30C6;&#x30A3;&#x30EA;&#x30B9;&#x30AF;&#x3092;&#x6700;&#x5C0F;&#x5316;&#x3057;&#x3064;&#x3064;&#x3001;&#x900F;&#x660E;&#x6027;&#x306E;&#x9AD8;&#x3044;&#x76E3;&#x67FB;&#x3092;&#x5B9F;&#x73FE;</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#128220; &#x898F;&#x5236;&#x30B3;&#x30F3;&#x30D7;&#x30E9;&#x30A4;&#x30A2;&#x30F3;&#x30B9;</h4>
+                <p>&#x533B;&#x7642;&#x30C7;&#x30FC;&#x30BF;&#x306E;&#x6574;&#x5408;&#x6027;&#x8A3C;&#x660E;&#x3092;&#x898F;&#x5236;&#x5F53;&#x5C40;&#x306B;&#x63D0;&#x51FA;&#x3002;&#x30AA;&#x30D5;&#x30E9;&#x30A4;&#x30F3;&#x3067;&#x306E;&#x6697;&#x53F7;&#x5B66;&#x7684;&#x8A3C;&#x660E;&#x691C;&#x8A3C;&#x306B;&#x3088;&#x308A;&#x3001;&#x898F;&#x5236;&#x8981;&#x4EF6;&#x3092;&#x6E80;&#x305F;&#x3057;&#x307E;&#x3059;&#x3002;</p>
+                <div class="usecase-effect">&#x52B9;&#x679C;: &#x30C7;&#x30FC;&#x30BF;&#x6539;&#x3056;&#x3093;&#x304C;&#x306A;&#x3044;&#x3053;&#x3068;&#x306E;&#x6570;&#x5B66;&#x7684;&#x8A3C;&#x660E;&#x3092;&#x898F;&#x5236;&#x5F53;&#x5C40;&#x306B;&#x63D0;&#x4F9B;</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#128279; &#x30B5;&#x30D7;&#x30E9;&#x30A4;&#x30C1;&#x30A7;&#x30FC;&#x30F3;&#x4FE1;&#x983C;&#x691C;&#x8A3C;</h4>
+                <p>&#x30D3;&#x30B8;&#x30CD;&#x30B9;&#x30D1;&#x30FC;&#x30C8;&#x30CA;&#x30FC;&#x304C;&#x5951;&#x7D04;&#x5C65;&#x6B74;&#x3092;&#x691C;&#x8A3C;&#x3002;&#x53F0;&#x5E33;&#x30D0;&#x30C3;&#x30AF;&#x30A2;&#x30C3;&#x30D7;&#x3092;&#x5171;&#x6709;&#x3057;&#x3001;&#x30D1;&#x30FC;&#x30C8;&#x30CA;&#x30FC;&#x304C;&#x72EC;&#x7ACB;&#x3057;&#x3066;&#x691C;&#x8A3C;&#x3067;&#x304D;&#x307E;&#x3059;&#x3002;</p>
+                <div class="usecase-effect">&#x52B9;&#x679C;: &#x30D3;&#x30B8;&#x30CD;&#x30B9;&#x30D1;&#x30FC;&#x30C8;&#x30CA;&#x30FC;&#x9593;&#x306E;&#x4FE1;&#x983C;&#x3092;&#x6697;&#x53F7;&#x5B66;&#x7684;&#x306B;&#x62C5;&#x4FDD;</div>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2>&#x95A2;&#x9023;&#x30B5;&#x30FC;&#x30D3;&#x30B9;</h2>
+            <div class="related-tags">
+                <span class="related-tag">Azure SQL Database ledger</span>
+                <span class="related-tag">Azure Blob Storage</span>
+                <span class="related-tag">Azure Confidential Computing</span>
+                <span class="related-tag">Microsoft Defender for Cloud</span>
+                <span class="related-tag">Microsoft Entra ID</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>&#x53C2;&#x8003;&#x30EA;&#x30F3;&#x30AF;</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=560810" target="_blank">Azure Updates - Confidential Ledger Backup/Audit Tool</a></li>
+                <li><a href="https://learn.microsoft.com/azure/confidential-ledger/overview" target="_blank">Microsoft Learn - Azure Confidential Ledger Overview</a></li>
+            </ul>
+            <div class="footer-meta">
+                &#x30EC;&#x30DD;&#x30FC;&#x30C8;&#x751F;&#x6210;&#x65E5;: 2026-06-04 | Azure News Summary
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+</body>
+</html>
