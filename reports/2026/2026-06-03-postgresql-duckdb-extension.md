@@ -269,6 +269,7 @@ DuckDB 拡張機能自体に追加料金は発生しない。Azure Database for 
 
 - [インフォグラフィック](https://takech9203.github.io/azure-news-summary/20260603-postgresql-duckdb-extension.html)
 - [公式アップデート情報](https://azure.microsoft.com/updates?id=563766)
+- [Azure Blog - Microsoft Build 2026: Building agentic apps with Microsoft Fabric and Microsoft Databases](https://azure.microsoft.com/en-us/blog/microsoft-build-2026-building-agentic-apps-with-microsoft-fabric-and-microsoft-databases/)
 - [Microsoft Learn - 拡張機能の許可方法](https://learn.microsoft.com/azure/postgresql/extensions/how-to-allow-extensions)
 - [pg_duckdb GitHub リポジトリ](https://github.com/duckdb/pg_duckdb)
 - [Azure Database for PostgreSQL 料金ページ](https://azure.microsoft.com/pricing/details/postgresql/flexible-server/)

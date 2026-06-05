@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Cosmos DB: Agent Kit GA & Azure Backup プレビュー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --category-color: #FFB900;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: #FFFFFF;
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255, 185, 0, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 185, 0, 0.3);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 185, 0, 0.5);
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--category-color);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--category-color);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--category-color);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(255, 185, 0, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-group-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin: 24px 0 16px;
+            padding-left: 12px;
+            border-left: 4px solid var(--category-color);
+        }
+
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: #FFFFFF;
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--azure-blue);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--category-color);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+            padding: 16px;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Cosmos DB</span>
+            <h1>Agent Kit GA &<br>Azure Backup プレビュー</h1>
+            <p class="hero-subtitle">AI コーディングアシスタントに Cosmos DB ベストプラクティスを提供する Agent Kit が GA + Vault バックアップがプレビュー開始</p>
+            <div class="hero-meta">
+                <span class="badge badge-ga">GA (Launched)</span>
+                <span class="badge badge-preview">In Preview</span>
+                <span class="badge badge-date">2026-06-02</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Microsoft Build 2026 において、Azure Cosmos DB に関する 2 つの重要なアップデートが発表された。Azure Cosmos DB Agent Kit が一般提供 (GA) となり、AI コーディングアシスタントに対してエキスパートレベルの Cosmos DB ベストプラクティスを提供するオープンソースのスキルコレクション (111 ルール、12 カテゴリ) が利用可能に。また、Azure Backup for Cosmos DB がパブリックプレビューとして提供開始され、ミッションクリティカルなデータの Vault バックアップによる保護が可能になった。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>Agent Kit GA - 111 のキュレーションされたルールで AI アシスタントが Cosmos DB ベストプラクティスを自動適用</li>
+                    <li>GitHub Copilot、Claude Code、Cursor、Gemini CLI などマルチプラットフォーム対応</li>
+                    <li>Azure Backup for Cosmos DB プレビュー - Vault バックアップによるミッションクリティカルデータ保護</li>
+                    <li>ランサムウェアや悪意のある削除からのサイバーレジリエンシーを実現</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>AI アシスタントが Cosmos DB のベストプラクティス (パーティションキー、RU 最適化) を知らなかった</li>
+                        <li>誤ったパーティションキー設計が本番環境で問題を引き起こしていた</li>
+                        <li>継続バックアップ (PITR) のみ利用可能で、Vault 分離バックアップがなかった</li>
+                        <li>ランサムウェアによる削除からの保護が不十分</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>AI エージェントが 111 ルールを自動適用し、ベストプラクティスに従ったコードを生成</li>
+                        <li>ワンコマンドインストールで主要ツールに即座に導入可能</li>
+                        <li>Azure Backup Vault が分離されたセキュアなバックアップを提供</li>
+                        <li>サイバーレジリエンシーとコンプライアンス要件に対応</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">アーキテクチャ</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph DevEnv["&#128421;&#65039; 開発環境"]
+        Dev["&#128100; 開発者"]
+        AI["&#129302; AI コーディングアシスタント<br/>GitHub Copilot / Claude Code / Gemini CLI"]
+        AgentKit["&#128230; Cosmos DB Agent Kit<br/>111 ルール / 12 カテゴリ"]
+    end
+
+    subgraph Azure["&#9729;&#65039; Azure Cloud"]
+        CosmosDB[("&#128452;&#65039; Azure Cosmos DB<br/>NoSQL / MongoDB API")]
+
+        subgraph Backup["&#128274; Azure Backup"]
+            Vault["&#127963;&#65039; Backup Vault"]
+            Policy["&#128203; バックアップポリシー<br/>週次スケジュール"]
+            RP["&#128204; 復旧ポイント"]
+        end
+    end
+
+    Dev -->|"コードレビュー依頼"| AI
+    AI -->|"ルール参照"| AgentKit
+    AgentKit -->|"最適化されたコード"| AI
+    AI -->|"ベストプラクティス適用"| Dev
+    Dev -->|"アプリケーション接続"| CosmosDB
+    CosmosDB -->|"Vault バックアップ"| Vault
+    Vault --> Policy
+    Policy --> RP
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">主要機能</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">111</div>
+                    <div class="stat-label">ルール数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">カテゴリ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">7 日</div>
+                    <div class="stat-label">RPO (Backup)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2,500</div>
+                    <div class="stat-label">最大パーティション<br/>(~125TB)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">週次</div>
+                    <div class="stat-label">バックアップ頻度</div>
+                </div>
+            </div>
+
+            <h3 class="feature-group-title">Agent Kit</h3>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#128218;</div>
+                    <div class="feature-content">
+                        <h4>111 キュレーションされたルール (12 カテゴリ)</h4>
+                        <p>Data Modeling、Partition Key Design、Query Optimization、SDK Best Practices など 12 カテゴリにわたる包括的なベストプラクティス集。エキスパートレベルの知識を AI に提供。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#9889;</div>
+                    <div class="feature-content">
+                        <h4>ワンコマンドインストール</h4>
+                        <p><code>npx skills add AzureCosmosDB/cosmosdb-agent-kit</code> で即座にインストール完了。複雑なセットアップ不要で、すぐに AI アシスタントが Cosmos DB ベストプラクティスを活用可能。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#127760;</div>
+                    <div class="feature-content">
+                        <h4>マルチプラットフォーム対応</h4>
+                        <p>GitHub Copilot、Claude Code、Cursor、Gemini CLI など主要な AI コーディングアシスタント全てで利用可能。開発チームのツール選択を制限しない。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128269;</div>
+                    <div class="feature-content">
+                        <h4>コードレビューと最適化</h4>
+                        <p>SDK アンチパターン検出、クエリ最適化の提案を自動で実施。本番環境にデプロイする前に潜在的な問題を発見・修正。</p>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="feature-group-title">Azure Backup</h3>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#128274;</div>
+                    <div class="feature-content">
+                        <h4>Vault バックアップ</h4>
+                        <p>Backup Vault にセキュアに分離されたバックアップを保存。ソースデータとは独立した保護レイヤーを提供し、データの完全性を保証。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128203;</div>
+                    <div class="feature-content">
+                        <h4>バックアップポリシー</h4>
+                        <p>週次スケジュールでのバックアップ実行。年次・月次・週次のカスタマイズ可能なリテンション設定でコンプライアンス要件に対応。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128260;</div>
+                    <div class="feature-content">
+                        <h4>復元機能</h4>
+                        <p>クロスサブスクリプション復元をサポート。別のサブスクリプションへのリストアが可能で、災害復旧シナリオに対応。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128737;&#65039;</div>
+                    <div class="feature-content">
+                        <h4>サイバーレジリエンシー</h4>
+                        <p>悪意のある削除やランサムウェアからの保護。Vault 分離により、ソース環境が侵害されてもバックアップデータは安全に保護。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <h3 style="font-size: 16px; color: var(--ms-blue-900); margin-bottom: 12px;">Agent Kit</h3>
+            <table class="specs-table">
+                <tbody>
+                    <tr><th>リポジトリ</th><td>AzureCosmosDB/cosmosdb-agent-kit</td></tr>
+                    <tr><th>フォーマット</th><td>Agent Skills (agentskills.io)</td></tr>
+                    <tr><th>インストール</th><td><code>npx skills add AzureCosmosDB/cosmosdb-agent-kit</code></td></tr>
+                    <tr><th>ライセンス</th><td>Open source, free</td></tr>
+                </tbody>
+            </table>
+
+            <h3 style="font-size: 16px; color: var(--ms-blue-900); margin: 24px 0 12px;">Azure Backup for Cosmos DB</h3>
+            <table class="specs-table">
+                <tbody>
+                    <tr><th>サポート API</th><td>NoSQL, MongoDB (RU-based)</td></tr>
+                    <tr><th>バックアップモード</th><td>Continuous backup (PITR) アカウントのみ</td></tr>
+                    <tr><th>頻度</th><td>Weekly</td></tr>
+                    <tr><th>クロスサブスクリプション復元</th><td>サポート</td></tr>
+                    <tr><th>クロスリージョン復元</th><td>非サポート</td></tr>
+                </tbody>
+            </table>
+
+            <h3 style="font-size: 16px; color: var(--ms-blue-900); margin: 24px 0 12px;">インストールコマンド</h3>
+            <pre><code class="language-bash">npx skills add AzureCosmosDB/cosmosdb-agent-kit</code></pre>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">ユースケース</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: AI アシスタントを活用した Cosmos DB アプリケーション開発</h4>
+                    <p class="scenario">E-commerce アプリケーション開発において、AI コーディングアシスタントが Agent Kit のルールを参照し、パーティションキー設計、RU 最適化、SDK ベストプラクティスを自動的に適用。開発者は Cosmos DB の専門知識がなくても、ベストプラクティスに従ったコードを生成できる。</p>
+                    <p class="effect">-- 開発速度向上とパーティションキー設計ミスの防止、本番パフォーマンス問題の事前回避</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: ミッションクリティカルなデータの Vault バックアップ保護</h4>
+                    <p class="scenario">金融データを扱うアプリケーションで、ランサムウェア攻撃や内部犯行による悪意のある削除からデータを保護。Azure Backup Vault に分離されたバックアップを保存し、ソース環境が侵害されてもデータ復旧が可能。クロスサブスクリプション復元で災害復旧を実現。</p>
+                    <p class="effect">-- サイバーレジリエンシーの確保とコンプライアンス要件への対応</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source URLs</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=563022" target="_blank">Azure Updates - Cosmos DB Agent Kit GA</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=562769" target="_blank">Azure Updates - Azure Backup for Cosmos DB プレビュー</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-06-05 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

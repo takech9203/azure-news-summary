@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft Foundry: エージェント Observability & 評価ツールスイート</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: #FFFFFF;
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-preview {
+            background: var(--ms-purple);
+            color: white;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: #FFFFFF;
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        .feature-content ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 8px;
+        }
+
+        .feature-content li {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            padding: 3px 0;
+            padding-left: 16px;
+            position: relative;
+            line-height: 1.7;
+        }
+
+        .feature-content li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 11px;
+            width: 6px;
+            height: 6px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--azure-blue);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+            background: #1E1E1E;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 22px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Microsoft Foundry</span>
+            <h1>エージェント Observability &<br>評価ツールスイート</h1>
+            <p class="hero-subtitle">AI エージェントの品質測定・改善サイクルを開発者ワークフロー全体に統合し、本番環境での継続的品質保証を実現</p>
+            <div class="hero-meta">
+                <span class="badge badge-preview">Public Preview</span>
+                <span class="badge badge-date">2026-06-02 / 2026-06-03</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Microsoft Build 2026 において、Microsoft Foundry の Observability（可観測性）および評価機能に関する 5 つの新しいパブリックプレビューが発表された。エンドユーザーからのフィードバックをトレースに関連付けて記録する機能、ML パイプラインによるインテリジェントなトレースサンプリング、コンテキスト固有の評価基準を定義できるルブリック評価器、VS Code 内でのコードファースト Observability、Azure Developer CLI（azd）での評価体験の 5 つが含まれる。OpenTelemetry 標準に基づいた分散トレーシング基盤の上に構築され、Azure Monitor Application Insights と統合されている。
+            </p>
+
+            <div class="key-points">
+                <h3>5 つの新機能 (Public Preview)</h3>
+                <ul>
+                    <li><strong>ユーザーフィードバックロギング</strong> - thumbs up/down、レーティング、カスタムアノテーションをトレースに関連付け</li>
+                    <li><strong>インテリジェントトレースサンプリング</strong> - ML パイプラインで代表的サブセットを選択し評価コスト削減</li>
+                    <li><strong>ルブリック評価器</strong> - ドメイン固有のカスタム評価基準をシングルターン/マルチターンに適用</li>
+                    <li><strong>VS Code コードファースト Observability</strong> - Foundry Plugin "observe skill" でエディタ内評価ループ</li>
+                    <li><strong>Azure Developer CLI (azd)</strong> - CLI 内で評価体験、コード→デプロイ→評価→改善の一気通貫</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>AI エージェントの品質評価は手動で、全トレースへの評価はコスト大</li>
+                        <li>エンドユーザーフィードバックを構造化してトレースに紐付ける標準的方法がなかった</li>
+                        <li>評価基準がビルトイン指標に限定、ドメイン固有の基準定義が困難</li>
+                        <li>Observability のセットアップにはポータルへの切り替えが必要で開発者ワークフロー分断</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>インテリジェントサンプリングでコストを抑えつつ品質監視</li>
+                        <li>構造化フィードバック (thumbs up/down、レーティング) をトレースに自動関連付け</li>
+                        <li>ルブリック評価器でドメイン固有の評価基準をカスタム定義</li>
+                        <li>VS Code / azd CLI から直接、評価駆動の最適化ループを実行可能</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph DevTools["開発ツール"]
+        VSCode["VS Code<br/>Foundry Plugin<br/>(observe skill)"]
+        AZD["Azure Developer CLI<br/>(azd)"]
+    end
+
+    subgraph Foundry["Microsoft Foundry"]
+        Agent["AI エージェント"]
+        Tracing["分散トレーシング<br/>(OpenTelemetry)"]
+        Feedback["フィードバック<br/>ロギング"]
+        Sampling["インテリジェント<br/>トレースサンプリング<br/>(ML パイプライン)"]
+        Evaluators["評価器"]
+        Rubric["ルブリック評価器"]
+        BuiltIn["ビルトイン評価器<br/>(Task Adherence,<br/>Coherence, Safety)"]
+    end
+
+    subgraph Monitor["Azure Monitor"]
+        AppInsights["Application Insights"]
+        Dashboard["Agent Monitoring<br/>Dashboard"]
+    end
+
+    subgraph Users["エンドユーザー"]
+        UserApp["AI アプリケーション"]
+    end
+
+    UserApp -->|"リクエスト"| Agent
+    Agent -->|"トレースデータ"| Tracing
+    UserApp -->|"thumbs up/down<br/>ratings"| Feedback
+    Feedback -->|"トレースに関連付け"| Tracing
+    Tracing -->|"全トレース"| Sampling
+    Sampling -->|"代表的サブセット"| Evaluators
+    Evaluators --> Rubric
+    Evaluators --> BuiltIn
+    Evaluators -->|"評価結果"| AppInsights
+    Tracing -->|"テレメトリ"| AppInsights
+    AppInsights --> Dashboard
+    VSCode -->|"observe skill"| Tracing
+    AZD -->|"評価ループ"| Evaluators
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">つの新機能<br>(Public Preview)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">100回/時間</div>
+                    <div class="stat-label">継続的評価<br>最大実行頻度</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">OTel</div>
+                    <div class="stat-label">OpenTelemetry<br>準拠</div>
+                </div>
+            </div>
+
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F44D;</div>
+                    <div class="feature-content">
+                        <h4>1. ユーザーフィードバックロギング</h4>
+                        <p>エンドユーザーからの構造化フィードバックシグナルを自動的にトレースに関連付けて記録する機能。</p>
+                        <ul>
+                            <li>thumbs up/down、レーティング（数値スケール）、カスタムアノテーションに対応</li>
+                            <li>W3C Trace Context による分散トレース相関で元リクエストと紐付け</li>
+                            <li>Azure Monitor Application Insights に統合保存</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F9EA;</div>
+                    <div class="feature-content">
+                        <h4>2. インテリジェントトレースサンプリング</h4>
+                        <p>マルチステージ ML パイプラインで代表的なサブセットを選択し、評価コストを削減しながら品質の全体像を正確に把握。</p>
+                        <ul>
+                            <li>本番トレース全量ではなく代表的サブセットのみ評価</li>
+                            <li>LLM ジャッジモデルのトークン消費を大幅に削減</li>
+                            <li>継続的評価 (Continuous Evaluation) で本番品質を常時監視</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4CB;</div>
+                    <div class="feature-content">
+                        <h4>3. ルブリック評価器</h4>
+                        <p>開発者がコンテキスト固有の評価基準を定義できるカスタム評価器。ビルトイン評価器を補完。</p>
+                        <ul>
+                            <li>シングルターンおよびマルチターンのエージェントフローに対応</li>
+                            <li>ドメイン固有の品質基準を testing_criteria で柔軟に設定</li>
+                            <li>ビルトイン評価器 (Task Adherence, Coherence, Violence 等) と組み合わせ可能</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4BB;</div>
+                    <div class="feature-content">
+                        <h4>4. VS Code コードファースト Observability</h4>
+                        <p>Foundry Plugin for VS Code Copilot Chat 内の "observe skill" として提供。エディタ内で完全な評価ループを実行。</p>
+                        <ul>
+                            <li>トレース確認 → 評価実行 → 改善 → 再評価のサイクルをエディタ内で完結</li>
+                            <li>ポータルへの画面切り替え不要で開発ワークフローを維持</li>
+                            <li>Foundry Agents 開発者向けに最適化</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x2328;&#xFE0F;</div>
+                    <div class="feature-content">
+                        <h4>5. Azure Developer CLI (azd) での Observability 体験</h4>
+                        <p>azd CLI に評価体験を追加し、ホステッドエージェントのライフサイクルに品質計測ループを統合。</p>
+                        <ul>
+                            <li>コード → デプロイ → 評価 → 改善のサイクルを CLI から一気通貫で実行</li>
+                            <li>Microsoft Foundry で作成されたエージェントが対象</li>
+                            <li>CI/CD パイプラインの品質ゲートとして統合可能</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Sample -->
+        <section class="section">
+            <h2 class="section-title">実装例: 継続的評価の設定</h2>
+            <pre><code class="language-python"># SDK のインストール
+# pip install "azure-ai-projects>=2.0.0"
+
+import os
+from azure.identity import DefaultAzureCredential
+from azure.ai.projects import AIProjectClient
+
+endpoint = os.environ["AZURE_AI_PROJECT_ENDPOINT"]
+model_deployment = os.environ["AZURE_AI_MODEL_DEPLOYMENT_NAME"]
+
+credential = DefaultAzureCredential()
+project_client = AIProjectClient(endpoint=endpoint, credential=credential)
+client = project_client.get_openai_client()
+
+# 評価定義の作成
+data_source_config = {"type": "azure_ai_source", "scenario": "responses"}
+testing_criteria = [
+    {
+        "type": "azure_ai_evaluator",
+        "name": "Task Adherence",
+        "evaluator_name": "builtin.task_adherence",
+        "data_mapping": {
+            "query": "{{item.query}}",
+            "response": "{{sample.output_items}}",
+        },
+        "initialization_parameters": {"deployment_name": model_deployment},
+    },
+]
+
+eval_object = client.evals.create(
+    name="Continuous Evaluation",
+    data_source_config=data_source_config,
+    testing_criteria=testing_criteria,
+)</code></pre>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>1. カスタマーサポートエージェントの品質モニタリング</h4>
+                    <p class="scenario">本番デプロイされたカスタマーサポート AI エージェントの応答品質を継続的に監視し、ユーザー満足度と品質スコアの相関を分析する。ルブリック評価器でドメイン固有の品質基準を定義し、継続的評価ルールで常時モニタリング。</p>
+                    <p class="effect">品質スコアの低下をリアルタイムに検知し、Azure Monitor アラートと連携して即座に対応可能。ユーザーフィードバックとの相関分析により改善領域を特定。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>2. CI/CD パイプラインでの評価駆動デプロイ</h4>
+                    <p class="scenario">エージェントの変更をデプロイする前に、azd CLI を使用して自動評価を実行し、品質閾値（例: Task Adherence 85% 以上）を満たさない場合はデプロイをブロックする。</p>
+                    <p class="effect">品質劣化を本番環境にリリースする前に検知し、安全なデプロイサイクルを確立。GitHub Actions との統合により、PR マージ時の品質ゲートとして機能。</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=563431" target="_blank">User feedback logging - Azure Updates</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=563696" target="_blank">Evaluations with Intelligent Trace Sampling - Azure Updates</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=563656" target="_blank">Rubric evaluator - Azure Updates</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=563197" target="_blank">Code-first observability for Foundry Agents in VS Code - Azure Updates</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=563736" target="_blank">Observability developer experience in Azure Developer CLI - Azure Updates</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/ai-foundry/concepts/evaluation-approach-gen-ai" target="_blank">Microsoft Learn - Observability in Generative AI</a></li>
+            </ul>
+            <p class="footer-note">このインフォグラフィックは Azure Updates の公式情報に基づいて作成されています。最新情報は公式ドキュメントをご確認ください。</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                background: '#ffffff',
+                primaryColor: '#DEECF9',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#605E5C',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#EFF6FC'
+            }
+        });
+    </script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft Foundry: VS Code 拡張 GA、ツール検索、ドメインフィルター</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #005a9e;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #deecf9;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #fafafa;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #FFFFFF;
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: #FFFFFF;
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        .feature-content ul {
+            margin-top: 8px;
+            padding-left: 18px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        .feature-content li {
+            padding: 2px 0;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--azure-blue);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .implementation {
+            font-size: 13px;
+            color: var(--ms-text-primary);
+        }
+
+        .usecase-card .implementation ul {
+            margin-top: 4px;
+            padding-left: 20px;
+        }
+
+        .usecase-card .implementation li {
+            padding: 2px 0;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+            padding: 16px;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #D4D4D4;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Microsoft Foundry</span>
+            <h1>VS Code 拡張 GA、ツール検索、<br>ドメインフィルター</h1>
+            <p class="hero-subtitle">Microsoft Build 2026 発表 - 開発者向けツールの 3 つの主要アップデート</p>
+            <div class="hero-meta">
+                <span class="badge badge-ga">GA</span>
+                <span class="badge badge-preview">Public Preview</span>
+                <span class="badge badge-date">2026-06-03 / 2026-06-04</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Microsoft Build 2026 にて、Microsoft Foundry の開発者向けツールに関する 3 つのアップデートが発表された。VS Code 拡張機能の一般提供 (GA)、Foundry Toolbox のツール検索 (パブリックプレビュー)、モデルカタログのドメインフィルター (パブリックプレビュー) により、開発者はより効率的に AI アプリケーションの開発・デプロイが可能になる。
+            </p>
+
+            <div class="key-points">
+                <h3>主要ポイント</h3>
+                <ul>
+                    <li>VS Code 拡張機能の一般提供 (GA) - VS Code 内からフルモデルカタログ、プレイグラウンド、Hosted Agent デプロイが可能</li>
+                    <li>Foundry Toolbox のツール検索 (パブリックプレビュー) - 大規模なマルチチームカタログ内から適切なツールを高速に発見</li>
+                    <li>モデルカタログのドメインフィルター (パブリックプレビュー) - ロボティクス、生物医学、材料科学などの分野に特化したモデルを発見</li>
+                </ul>
+            </div>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">1,900+</div>
+                    <div class="stat-label">対応モデル数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">主要アップデート</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">GA</div>
+                    <div class="stat-label">VS Code 拡張ステータス</div>
+                </div>
+            </div>
+
+            <!-- Before/After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>VS Code 拡張はプレビューでモデルカタログ全体へのアクセスが制限されていた</li>
+                        <li>Toolbox 内のツール数増加で全ツール定義を毎ターン送信するコストが高かった</li>
+                        <li>1,900 以上のモデルから特定の業界に適したモデルを絞り込む手段が限定的だった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>VS Code 内からフルモデルカタログ、モデルプレイグラウンド、Hosted Agent デプロイが利用可能 (GA)</li>
+                        <li>ツール検索により、大規模なマルチチームカタログ内から適切なツールを高速に発見</li>
+                        <li>ドメインフィルターにより特定分野に特化したモデルを効率的に発見</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Section -->
+        <section class="section">
+            <h2 class="section-title">アーキテクチャ</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Developer["&#x1F469;&#x200D;&#x1F4BB; 開発者環境"]
+        VSCode["VS Code<br/>+ Foundry Toolkit 拡張"]
+    end
+
+    subgraph Foundry["&#x2601;&#xFE0F; Microsoft Foundry"]
+        Catalog["&#x1F4DA; モデルカタログ<br/>(1,900+ モデル)"]
+        DomainFilter["&#x1F50D; ドメインフィルター<br/>(ロボティクス, 生物医学, 材料科学)"]
+        Playground["&#x1F3AE; モデルプレイグラウンド"]
+        Toolbox["&#x1F9F0; Foundry Toolbox"]
+        ToolSearch["&#x1F50E; ツール検索"]
+        HostedAgent["&#x1F916; Hosted Agent"]
+    end
+
+    subgraph Deploy["&#x1F680; デプロイ"]
+        Serverless["Serverless API"]
+        ManagedCompute["Managed Compute"]
+    end
+
+    VSCode -->|"モデル探索"| Catalog
+    VSCode -->|"プロンプトテスト"| Playground
+    VSCode -->|"エージェントデプロイ"| HostedAgent
+    Catalog --> DomainFilter
+    Toolbox --> ToolSearch
+    HostedAgent --> Serverless
+    HostedAgent --> ManagedCompute
+                </pre>
+            </div>
+        </section>
+
+        <!-- Key Features Section -->
+        <section class="section">
+            <h2 class="section-title">主要機能</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4BB;</div>
+                    <div class="feature-content">
+                        <h4>Microsoft Foundry for Visual Studio Code <span class="badge badge-ga">GA</span></h4>
+                        <p>VS Code 内から Foundry のフル機能にアクセス可能な拡張機能が一般提供に</p>
+                        <ul>
+                            <li>フルモデルカタログへのアクセス (1,900+ モデル)</li>
+                            <li>モデルプレイグラウンド (対話的チャット、システムプロンプト調整、View Code)</li>
+                            <li>Hosted Agent デプロイ (VS Code から直接デプロイ)</li>
+                            <li>プロジェクト管理 (新規作成、リソースグループ選択)</li>
+                            <li>コード生成 (SDK 選択、認証方式の選択)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F50E;</div>
+                    <div class="feature-content">
+                        <h4>Tool Search in Foundry Toolboxes <span class="badge badge-preview">Public Preview</span></h4>
+                        <p>大規模なマルチチーム環境でのツール管理を効率化</p>
+                        <ul>
+                            <li>大規模マルチチームカタログ内からツールを高速検索</li>
+                            <li>必要なツールのみをエージェントに渡しトークン消費を抑制</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F52C;</div>
+                    <div class="feature-content">
+                        <h4>Domain Filter for Model Catalog <span class="badge badge-preview">Public Preview</span></h4>
+                        <p>特定分野に特化したモデルを効率的に発見</p>
+                        <ul>
+                            <li>対応ドメイン: ロボティクス、生物医学、材料科学など</li>
+                            <li>既存フィルター (Collection, Industry, Capabilities, Inference tasks) との組み合わせ</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Specs Section -->
+        <section class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <table class="specs-table">
+                <tbody>
+                    <tr>
+                        <th>VS Code 拡張名</th>
+                        <td>Microsoft Foundry Toolkit for Visual Studio Code</td>
+                    </tr>
+                    <tr>
+                        <th>認証方式</th>
+                        <td>Azure アカウント (Microsoft Entra 認証)</td>
+                    </tr>
+                    <tr>
+                        <th>対応モデル数</th>
+                        <td>1,900 以上</td>
+                    </tr>
+                    <tr>
+                        <th>デプロイオプション</th>
+                        <td>Serverless API / Managed Compute</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Use Cases Section -->
+        <section class="section">
+            <h2 class="section-title">ユースケース</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>VS Code 内でのエンドツーエンド AI アプリ開発</h4>
+                    <div class="scenario">モデル探索からデプロイ、プロンプトテスト、コード統合まで完結</div>
+                    <div class="implementation">
+                        <ul>
+                            <li>モデルカタログからモデルを選択</li>
+                            <li>プレイグラウンドでプロンプトをテスト</li>
+                            <li>View Code で SDK コードを生成</li>
+                            <li>Hosted Agent として直接デプロイ</li>
+                        </ul>
+                    </div>
+                    <div class="effect">効果: IDE を離れることなくフルサイクルの AI 開発が可能</div>
+                </div>
+                <div class="usecase-card">
+                    <h4>大規模マルチチーム環境でのエージェントツール管理</h4>
+                    <div class="scenario">ツール検索で関連ツールのみを動的に選択</div>
+                    <div class="implementation">
+                        <ul>
+                            <li>Toolbox に多数のツールを登録</li>
+                            <li>ツール検索で必要なツールを自動選択</li>
+                            <li>エージェントに最小限のツール定義のみを送信</li>
+                        </ul>
+                    </div>
+                    <div class="effect">効果: トークン消費の削減とエージェントの応答精度向上</div>
+                </div>
+                <div class="usecase-card">
+                    <h4>専門分野向けモデル選定</h4>
+                    <div class="scenario">生物医学研究チームがドメインフィルターで専門モデルを発見</div>
+                    <div class="implementation">
+                        <ul>
+                            <li>ドメインフィルターで「生物医学」を選択</li>
+                            <li>既存フィルターと組み合わせて絞り込み</li>
+                            <li>専門分野に最適なモデルを迅速に特定</li>
+                        </ul>
+                    </div>
+                    <div class="effect">効果: 1,900+ モデルから分野特化モデルを効率的に発見</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Limitations Section -->
+        <section class="section">
+            <h2 class="section-title">制約事項</h2>
+            <ul class="limitations-list">
+                <li>ツール検索およびドメインフィルターはパブリックプレビュー</li>
+                <li>モデルデプロイにはサブスクリプションのクォータ制限が適用</li>
+                <li>Managed Compute には対応する VM クォータが必要</li>
+                <li>Hugging Face モデルなどにはハブベースプロジェクトが必要</li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=563721" target="_blank">Azure Update - VS Code 拡張 GA</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=563506" target="_blank">Azure Update - ツール検索</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=563731" target="_blank">Azure Update - ドメインフィルター</a></li>
+                <li><a href="https://learn.microsoft.com/azure/ai-foundry/how-to/develop/get-started-projects-vs-code" target="_blank">Microsoft Learn - VS Code での開始方法</a></li>
+                <li><a href="https://aka.ms/foundrytk" target="_blank">Foundry Toolkit</a></li>
+            </ul>
+            <p class="footer-note">
+                このインフォグラフィックは Microsoft Azure の公式発表に基づいて作成されています。最新情報は上記リンクをご確認ください。<br>
+                生成日: 2026-06-05
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.9.0/mermaid.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#deecf9',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#f3f2f1',
+                tertiaryColor: '#ffffff',
+                background: '#ffffff',
+                mainBkg: '#deecf9',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#f9f9f9',
+                clusterBorder: '#0078D4',
+                titleColor: '#004578',
+                edgeLabelBackground: '#ffffff'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+</body>
+</html>

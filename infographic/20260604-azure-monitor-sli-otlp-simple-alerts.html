@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Monitor: SLI/SLO、OTLP ネイティブ取り込み、シンプルログアラート GA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #005a9e;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #deecf9;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #fafafa;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: #FFFFFF;
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 30px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: #FFFFFF;
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        .feature-content ul {
+            list-style: none;
+            padding: 0;
+            margin-top: 8px;
+        }
+
+        .feature-content li {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            padding: 3px 0;
+            padding-left: 16px;
+            position: relative;
+            line-height: 1.7;
+        }
+
+        .feature-content li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 11px;
+            width: 6px;
+            height: 6px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--azure-blue);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .limitations-list li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 16px;
+            height: 16px;
+            background: var(--ms-orange);
+            color: white;
+            border-radius: 50%;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+            background: #1E1E1E;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 22px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Monitor</span>
+            <h1>Azure Monitor: SLI/SLO、OTLP ネイティブ取り込み、<br>シンプルログアラート GA</h1>
+            <p class="hero-subtitle">Microsoft Build 2026 で発表された 3 つの重要なオブザーバビリティ機能が一般提供開始</p>
+            <div class="hero-meta">
+                <span class="badge badge-ga">GA (一般提供)</span>
+                <span class="badge badge-date">2026-06-04</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Microsoft Build 2026 にて、Azure Monitor のオブザーバビリティ機能に関する 3 つの重要なアップデートが一般提供 (GA) として発表された。SLI/SLO によるユーザー体験ベースの監視、OTLP ネイティブインジェストによるベンダーニュートラルなテレメトリパイプライン、Simple Log Alerts による個別ログイベントのリアルタイム監視を実現する。
+            </p>
+
+            <div class="key-points">
+                <h3>3 つの GA 機能</h3>
+                <ul>
+                    <li><strong>SLI/SLO</strong> - 可用性・レイテンシー・スループットの観点からユーザー体験を定量的に測定</li>
+                    <li><strong>OTLP ネイティブインジェスト</strong> - OpenTelemetry Collector 経由で OTLP シグナルを直接 Azure Monitor に送信</li>
+                    <li><strong>Simple Log Alerts</strong> - 個々のログイベントに対するリアルタイムのイベント駆動型アラート</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>インフラメトリクス (CPU、メモリ等) 依存の監視で、実際のユーザー体験を正確に把握できなかった</li>
+                        <li>OpenTelemetry 計装アプリから Azure Monitor へ送信するには Microsoft 固有の SDK やエクスポーターが必要だった</li>
+                        <li>従来のログアラートは集約ベースの評価が必要で、個々のイベントに即座に反応するシンプルな設定が困難だった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>SLI/SLO により可用性・レイテンシー・スループットのターゲットを定義し、SRE プラクティスを Azure 上で実践可能に</li>
+                        <li>OpenTelemetry Collector から直接クラウドインジェストエンドポイントへ送信、ベンダーロックインなしの監視パイプラインを構築可能に</li>
+                        <li>Simple Log Alerts により、各ログ行を個別に評価してイベント駆動型アラートを即座に発火可能に</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph Apps["&#x1F5A5;&#xFE0F; アプリケーション層"]
+        APP1["Web アプリ"]
+        APP2["マイクロサービス"]
+        APP3["コンテナ (AKS)"]
+    end
+
+    subgraph OTel["&#x1F4E1; OpenTelemetry 収集層"]
+        SDK["OTel SDK<br/>(計装)"]
+        COLLECTOR["OpenTelemetry<br/>Collector"]
+    end
+
+    subgraph AzMon["&#x2601;&#xFE0F; Azure Monitor"]
+        OTLP_EP["OTLP インジェスト<br/>エンドポイント"]
+        LAW["Log Analytics<br/>Workspace<br/>(ログ・トレース)"]
+        AMW["Azure Monitor<br/>Workspace<br/>(メトリクス)"]
+        SLI["SLI/SLO<br/>エンジン"]
+        ALERTS["Simple Log<br/>Alerts"]
+        AI["Application<br/>Insights"]
+    end
+
+    subgraph Actions["&#x1F514; アクション"]
+        AG["Action Groups"]
+        DASH["ダッシュボード<br/>/ Grafana"]
+    end
+
+    APP1 & APP2 & APP3 --> SDK
+    SDK --> COLLECTOR
+    COLLECTOR -->|"OTLP/HTTP"| OTLP_EP
+    OTLP_EP --> LAW
+    OTLP_EP --> AMW
+    LAW --> ALERTS
+    AMW --> SLI
+    LAW --> AI
+    SLI --> AG
+    ALERTS --> AG
+    AMW --> DASH
+    LAW --> DASH
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">GA 機能<br>(SLI/SLO, OTLP, Simple Alerts)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0.132.0+</div>
+                    <div class="stat-label">必須 OTel Collector<br>バージョン</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">1 min</div>
+                    <div class="stat-label">Simple Log Alerts<br>評価間隔</div>
+                </div>
+            </div>
+
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F3AF;</div>
+                    <div class="feature-content">
+                        <h4>1. Service Level Indicators (SLI) / Service Level Objectives (SLO)</h4>
+                        <p>アプリケーションのユーザー体験を定量的に測定し、SRE プラクティスを Azure 上で直接実践可能にする機能。</p>
+                        <ul>
+                            <li>可用性 (Availability): サービスが正常に応答している割合</li>
+                            <li>レイテンシー (Latency): リクエスト処理の応答時間目標</li>
+                            <li>スループット (Throughput): 単位時間あたりの処理量目標</li>
+                            <li>エラーバジェットの概念を Azure 上で直接活用</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4E1;</div>
+                    <div class="feature-content">
+                        <h4>2. OTLP ネイティブインジェスト</h4>
+                        <p>OpenTelemetry Collector から直接 Azure Monitor へシグナルを送信するベンダーニュートラルなパイプライン。</p>
+                        <ul>
+                            <li>メトリクス: Azure Monitor Workspace (Prometheus データストア)、PromQL でクエリ可能</li>
+                            <li>ログ: Log Analytics Workspace に OpenTelemetry セマンティック規約で保存</li>
+                            <li>トレース: Log Analytics Workspace に分散トレースとして保存</li>
+                            <li>認証: Microsoft Entra ID (マネージド ID / サービスプリンシパル / ワークロード ID)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F514;</div>
+                    <div class="feature-content">
+                        <h4>3. Simple Log Alerts</h4>
+                        <p>ログアラートの作成・管理を簡素化し、個々のログイベントに対するリアルタイム監視を実現する機能。</p>
+                        <ul>
+                            <li>各ログ行を個別に評価 (非集約型)</li>
+                            <li>Analytics ログと Basic ログの両テーブルプランに対応</li>
+                            <li>Transformation KQL 言語に基づくシンプルなクエリ構文</li>
+                            <li>1 分間あたりの条件一致回数でトリガー閾値を設定可能</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Configuration Example -->
+        <section class="section">
+            <h2 class="section-title">設定例: OTLP Collector YAML</h2>
+            <pre><code class="language-yaml">receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: localhost:4317
+      http:
+        endpoint: localhost:4318
+
+processors:
+  batch:
+
+extensions:
+  azure_auth:
+    managed_identity: {}
+    scopes:
+      - https://monitor.azure.com/.default
+
+exporters:
+  otlphttp/azuremonitor:
+    traces_endpoint: "https://&lt;logs-dce-domain&gt;/dataCollectionRules/&lt;dcr-immutable-id&gt;/streams/Microsoft-OTLP-Traces/otlp/v1/traces"
+    logs_endpoint: "https://&lt;logs-dce-domain&gt;/dataCollectionRules/&lt;dcr-immutable-id&gt;/streams/Microsoft-OTLP-Logs/otlp/v1/logs"
+    metrics_endpoint: "https://&lt;metrics-dce-domain&gt;/dataCollectionRules/&lt;dcr-immutable-id&gt;/streams/Custom-Metrics-Otel/otlp/v1/metrics"
+    auth:
+      authenticator: azure_auth
+
+service:
+  extensions:
+    - azure_auth
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/azuremonitor]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/azuremonitor]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/azuremonitor]</code></pre>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: SRE チームによる SLO ベースの運用</h4>
+                    <p class="scenario">E コマースプラットフォームで可用性 99.9%、P95 レイテンシー 200ms 以下の SLO を定義。エラーバジェットの消費状況をリアルタイムで可視化し、バジェット超過時にデプロイメント凍結を自動実行する。</p>
+                    <p class="effect">-- インフラメトリクスではなく顧客体験に基づいた運用判断が可能に</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: マルチクラウド環境の統一オブザーバビリティ</h4>
+                    <p class="scenario">AWS と Azure のハイブリッド環境で OpenTelemetry SDK で計装。OpenTelemetry Collector を中心としたパイプラインにより、マルチクラウド環境のテレメトリを Azure Monitor に集約。ベンダーロックインなしの統一監視基盤を構築する。</p>
+                    <p class="effect">-- 単一の計装標準 (OpenTelemetry) でマルチクラウド環境を統一的に監視</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC3: バックアップジョブ失敗の即時検知</h4>
+                    <p class="scenario">Azure Backup のジョブ失敗ログを Simple Log Alerts で監視。集約ベースの評価を待たず、各ログイベントを即座に評価してアラートを発火する。1 分間の閾値設定でノイズを制御しつつリアルタイム検知を実現。</p>
+                    <p class="effect">-- 従来の集約型アラートでは検知に遅延が発生していた問題を解消</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">制約事項</h2>
+            <ul class="limitations-list">
+                <li>OTLP インジェストの OpenTelemetry Collector パスのみ GA。AMA および AKS パスはプレビュー</li>
+                <li>OTLP メトリクスは Delta テンポラリティが必須</li>
+                <li>Simple Log Alerts はディメンションによる分割やミュートアクションに非対応</li>
+                <li>OpenTelemetry Collector の OSS コンポーネントに対する Azure サポートはコミュニティチャネル経由のみ</li>
+            </ul>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source URLs</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=565159" target="_blank">Azure Updates - SLI/SLO (id=565159)</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=565090" target="_blank">Azure Updates - OTLP Native Ingestion (id=565090)</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=561978" target="_blank">Azure Updates - Simple Log Alerts (id=561978)</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/containers/opentelemetry-protocol-ingestion" target="_blank">Microsoft Learn - OpenTelemetry Protocol Ingestion</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/alerts/alerts-create-simple-alert" target="_blank">Microsoft Learn - Create Simple Alert</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-06-05 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure AI Language: Text Analytics for Health GA & PII NextGen Playground</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: #FFFFFF;
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: #FFFFFF;
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        .feature-content ul {
+            margin-top: 8px;
+            padding-left: 18px;
+        }
+
+        .feature-content li {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+            padding: 2px 0;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: #FFFFFF;
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--azure-blue);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .usecase-card .implementation {
+            font-size: 13px;
+            color: var(--ms-text-primary);
+        }
+
+        .usecase-card .implementation ul {
+            margin-top: 4px;
+            padding-left: 20px;
+        }
+
+        .usecase-card .implementation li {
+            padding: 2px 0;
+        }
+
+        /* Spec Table */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+
+        .spec-table th {
+            background: var(--ms-blue-200);
+            color: var(--ms-blue-900);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid var(--ms-border);
+        }
+
+        .spec-table td {
+            padding: 10px 16px;
+            border: 1px solid var(--ms-border);
+            color: var(--ms-text-secondary);
+        }
+
+        .spec-table tr:nth-child(even) {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            padding: 20px;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure AI Language</span>
+            <h1>Text Analytics for Health GA &<br>PII NextGen Playground</h1>
+            <p class="hero-subtitle">臨床テキスト解析の本番利用開始と PII 検出プレイグラウンドの大幅拡充</p>
+            <div class="hero-meta">
+                <span class="badge badge-ga">GA</span>
+                <span class="badge badge-preview">Public Preview</span>
+                <span class="badge badge-date">2026-06-03</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Microsoft Build 2026 において、Azure AI Language の NextGen Playground に関する 3 つのアップデートが発表された。Text Analytics for Health の GA、Conversational PII プレイグラウンドのプレビュー、TextPII プレイグラウンドのアップデートにより、臨床データ解析とプライバシー保護の検証体験が大幅に向上。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>Text Analytics for Health (TA4H) NextGen Playground が一般提供開始 - 臨床テキストから構造化医療エンティティを即座に抽出</li>
+                    <li>Conversational PII NextGen Playground がパブリックプレビュー - マルチスピーカー対話データの PII 検出を検証</li>
+                    <li>TextPII NextGen Playground がアップデート - API Configuration Panel 刷新、リダクションモードを直接テスト</li>
+                    <li>すべてのプレイグラウンドが Microsoft Foundry ポータルに統合</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>TA4H のプレイグラウンドはプレビュー段階で SLA 保証なし</li>
+                        <li>PII 検出の検証には API を直接呼び出す必要があり、インタラクティブな UI が限定的</li>
+                        <li>マルチスピーカーの会話データに対する PII 検出を統合前に試す手段が不足</li>
+                        <li>TextPII のプレビュー機能をプレイグラウンドで試せなかった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>TA4H NextGen Playground が GA となり本番利用可能</li>
+                        <li>Conversational PII 用の専用プレイグラウンドでマルチスピーカー対話の PII 検出を視覚的に検証可能</li>
+                        <li>TextPII プレイグラウンドで API Configuration Panel からリダクションモードやエンティティフィルタをインタラクティブに設定</li>
+                        <li>すべてのプレイグラウンドが Microsoft Foundry ポータルに統合</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph User["&#128100; 開発者 / 臨床情報チーム"]
+        Input1["&#128203; 臨床テキスト&lt;br&gt;(退院サマリー等)"]
+        Input2["&#128172; 会話トランスクリプト&lt;br&gt;(マルチスピーカー)"]
+        Input3["&#128221; テキストデータ&lt;br&gt;(ログ、フォーム等)"]
+    end
+
+    subgraph Foundry["&#9729;&#65039; Microsoft Foundry Portal"]
+        subgraph Playground["&#127918; NextGen Playground"]
+            TA4H["&#127973; TA4H Playground&lt;br&gt;(GA)"]
+            ConvPII["&#128274; Conversational PII&lt;br&gt;Playground (Preview)"]
+            TextPII["&#128737;&#65039; TextPII Playground&lt;br&gt;(Preview)"]
+        end
+        ConfigPanel["&#9881;&#65039; API Configuration Panel"]
+    end
+
+    subgraph API["&#128268; Azure AI Language API"]
+        HealthAPI["Text Analytics&lt;br&gt;for Health API"]
+        ConvPIIAPI["Conversation PII API"]
+        TextPIIAPI["Text PII API"]
+    end
+
+    subgraph Output["&#128202; 出力"]
+        Entities["構造化エンティティ&lt;br&gt;(FHIR対応)"]
+        Redacted["リダクト済みテキスト"]
+        Scores["信頼度スコア"]
+    end
+
+    Input1 --> TA4H
+    Input2 --> ConvPII
+    Input3 --> TextPII
+
+    TA4H --> ConfigPanel
+    ConvPII --> ConfigPanel
+    TextPII --> ConfigPanel
+
+    ConfigPanel --> HealthAPI
+    ConfigPanel --> ConvPIIAPI
+    ConfigPanel --> TextPIIAPI
+
+    HealthAPI --> Entities
+    ConvPIIAPI --> Redacted
+    TextPIIAPI --> Redacted
+    HealthAPI --> Scores
+    ConvPIIAPI --> Scores
+    TextPIIAPI --> Scores
+                </pre>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">主要機能</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">つの Playground</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">7</div>
+                    <div class="stat-label">言語対応</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">FHIR</div>
+                    <div class="stat-label">準拠出力</div>
+                </div>
+            </div>
+
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F3E5;</div>
+                    <div class="feature-content">
+                        <h4>TA4H NextGen Playground (GA)</h4>
+                        <p>臨床テキストから構造化された医療エンティティを即座に抽出し、FHIR 準拠で出力。</p>
+                        <ul>
+                            <li>NER、Relation Extraction、Entity Linking、Assertion Detection</li>
+                            <li>FHIR 出力対応で電子カルテとの連携が容易</li>
+                            <li>Social Determinants of Health (SDOH) 対応</li>
+                            <li>7 言語対応 (英語、ドイツ語、フランス語、イタリア語、スペイン語、ポルトガル語、ヘブライ語)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F512;</div>
+                    <div class="feature-content">
+                        <h4>Conversational PII (Preview)</h4>
+                        <p>マルチターン会話構造に対応した PII 検出をプレイグラウンドで視覚的に検証。</p>
+                        <ul>
+                            <li>マルチターン会話構造対応</li>
+                            <li>スピーカー別ターン分離を維持した PII 検出</li>
+                            <li>非同期ジョブ処理でバッチ分析にも対応</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F6E1;</div>
+                    <div class="feature-content">
+                        <h4>TextPII (Preview)</h4>
+                        <p>刷新された API Configuration Panel でリダクションモードやエンティティフィルタをインタラクティブに設定。</p>
+                        <ul>
+                            <li>刷新された API Configuration Panel</li>
+                            <li>定義済み PII カテゴリの選択とテスト</li>
+                            <li>リダクションモードの設定と即時プレビュー</li>
+                            <li>同期型リクエスト/レスポンス統合</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x2699;</div>
+                    <div class="feature-content">
+                        <h4>Microsoft Foundry ポータル統合</h4>
+                        <p>すべての NextGen Playground が Microsoft Foundry ポータルに統合され、統一的な操作体験を提供。</p>
+                        <ul>
+                            <li>統一された UI/UX で全プレイグラウンドにアクセス</li>
+                            <li>API 統合前のインタラクティブな検証ワークフロー</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Technical Specifications -->
+        <section class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>Text Analytics for Health</th>
+                        <th>Conversational PII</th>
+                        <th>TextPII</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ステータス</td>
+                        <td>GA</td>
+                        <td>Public Preview</td>
+                        <td>Public Preview</td>
+                    </tr>
+                    <tr>
+                        <td>処理方式</td>
+                        <td>同期/非同期</td>
+                        <td>非同期</td>
+                        <td>同期</td>
+                    </tr>
+                    <tr>
+                        <td>入力形式</td>
+                        <td>臨床テキスト</td>
+                        <td>ターンベース会話</td>
+                        <td>テキスト文字列</td>
+                    </tr>
+                    <tr>
+                        <td>出力形式</td>
+                        <td>エンティティ + FHIR</td>
+                        <td>リダクト済み会話</td>
+                        <td>リダクト済みテキスト</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">ユースケース</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>臨床データの構造化</h4>
+                    <p class="scenario">退院サマリーから診断名、投薬情報、バイタルサインを自動抽出し FHIR 準拠で電子カルテ連携</p>
+                    <div class="implementation">
+                        <ul>
+                            <li>TA4H NextGen Playground で臨床テキストの解析精度を事前検証</li>
+                            <li>FHIR 出力を活用して電子カルテシステムとシームレスに統合</li>
+                            <li>SDOH 対応で社会的決定要因の情報も構造化</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="usecase-card">
+                    <h4>コールセンター会話のプライバシー保護</h4>
+                    <p class="scenario">通話録音のトランスクリプトから PII を自動リダクトし、コンプライアンス要件を遵守</p>
+                    <div class="implementation">
+                        <ul>
+                            <li>Conversational PII Playground でマルチスピーカー対話の PII 検出を検証</li>
+                            <li>スピーカー別ターン分離を維持したまま個人情報をマスク</li>
+                            <li>非同期処理で大量の通話ログをバッチ処理</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="usecase-card">
+                    <h4>AI ワークフローのプロンプトフィルタリング</h4>
+                    <p class="scenario">LLM に送信するプロンプト/レスポンスの PII をリアルタイムリダクト</p>
+                    <div class="implementation">
+                        <ul>
+                            <li>TextPII Playground でリダクションモードとエンティティフィルタの設定を事前テスト</li>
+                            <li>同期型 API で LLM パイプラインにインラインで組み込み</li>
+                            <li>定義済み PII カテゴリで検出対象を柔軟にカスタマイズ</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=563671" target="_blank">Azure Update - Text Analytics for Health NextGen Playground GA</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=564246" target="_blank">Azure Update - Conversational PII NextGen Playground</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=564241" target="_blank">Azure Update - TextPII NextGen Playground</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/ai-services/language-service/text-analytics-for-health/overview" target="_blank">Microsoft Learn - Text Analytics for Health overview</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/ai-services/language-service/personally-identifiable-information/overview" target="_blank">Microsoft Learn - PII detection overview</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-06-05 | Azure News Summary</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#deecf9',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#f3f2f1',
+                tertiaryColor: '#ffffff',
+                background: '#ffffff',
+                mainBkg: '#deecf9',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#f9f9f9',
+                clusterBorder: '#0078D4',
+                titleColor: '#004578',
+                edgeLabelBackground: '#ffffff'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+    </script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
