@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Monitor: Ingestion Volume Change ダッシュボード</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-800));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.85;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--azure-blue);
+            border-radius: 2px;
+        }
+
+        /* Highlight box */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+            font-size: 15px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 4px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .before li::before {
+            content: '- ';
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '+ ';
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Feature card */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        td {
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use case */
+        .usecase {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 12px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        .usecase-steps {
+            margin-top: 10px;
+            padding-left: 20px;
+        }
+
+        .usecase-steps li {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 4px;
+        }
+
+        /* Pricing */
+        .pricing-highlight {
+            background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+            border: 2px solid var(--ms-green);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin: 16px 0;
+        }
+
+        .pricing-highlight .price-tag {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--ms-green);
+        }
+
+        .pricing-highlight .price-desc {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        /* Region */
+        .region-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .region-item {
+            background: var(--ms-surface-secondary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 14px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .region-item strong {
+            color: var(--azure-blue);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 20px 28px;
+            margin-top: 32px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin-top: 8px;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        /* Code block */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-meta">
+                <span class="service-badge">Azure Monitor</span>
+                <span class="badge badge-preview">In Preview</span>
+            </div>
+            <h1>Ingestion Volume Change ダッシュボード</h1>
+            <div class="header-date">Metrics Usage Insights | リリース日: 2026-06-05</div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2 class="section-title">概要</h2>
+            <div class="highlight-box">
+                Azure Monitor の Metrics Usage Insights に「Ingestion Volume Change」ダッシュボードがパブリックプレビューとして追加。メトリクスのインジェスト量を 2 つの時点間で比較し、タイムシリーズ数やイベントインジェストレートの変化を視覚的に把握可能に。
+            </div>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>&#x274C; Before</h4>
+                    <ul>
+                        <li>インジェスト量の変動調査は手動で実施</li>
+                        <li>請求額増減の原因メトリクス特定に時間がかかる</li>
+                        <li>時系列比較を行う簡便な手段がなかった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>&#x2705; After</h4>
+                    <ul>
+                        <li>2 日付間のインジェスト量を並列比較し変化率を把握</li>
+                        <li>メトリクスごとの差分をテーブルで即座に確認</li>
+                        <li>コスト変動の原因特定が大幅に効率化</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="section">
+            <h2 class="section-title">数字で見るアップデート効果</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">時点間の比較</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">60-90日</div>
+                    <div class="stat-label">長期トレンド分析</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">24h</div>
+                    <div class="stat-label">データ反映時間</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">無料</div>
+                    <div class="stat-label">追加コスト</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="section">
+            <h2 class="section-title">アーキテクチャ図</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart LR
+    subgraph Sources["メトリクスソース"]
+        AKS["Azure Kubernetes Service"]
+        Prometheus["Managed Prometheus"]
+        Other["その他のリソース"]
+    end
+
+    subgraph AMW["Azure Monitor Workspace"]
+        Metrics["メトリクスデータ"]
+        DiagSettings["診断設定"]
+    end
+
+    subgraph LAW["Log Analytics Workspace"]
+        UsageData["使用状況データ"]
+    end
+
+    subgraph Dashboards["Metrics Usage Insights"]
+        IngestionDash["Ingestion Volume Change"]
+        LimitsUsage["Limits & Usage"]
+        WorkspaceExplore["Workspace Exploration"]
+        UnusedMetrics["Unused Metrics"]
+    end
+
+    AKS --> Metrics
+    Prometheus --> Metrics
+    Other --> Metrics
+    Metrics --> DiagSettings
+    DiagSettings --> UsageData
+    UsageData --> IngestionDash
+    UsageData --> LimitsUsage
+    UsageData --> WorkspaceExplore
+    UsageData --> UnusedMetrics
+                </pre>
+            </div>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-top: 12px;">
+                Azure Monitor Workspace に取り込まれたメトリクスデータは、診断設定を通じて Log Analytics Workspace に使用状況データとして送信される。Ingestion Volume Change ダッシュボードは、この使用状況データを基に 2 時点間のインジェスト量比較を提供する。
+            </p>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title">主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4C5;</div>
+                <div class="feature-content">
+                    <h4>時点間比較 (Comparison dates)</h4>
+                    <p>ドロップダウンで開始日と終了日を選択し、比較期間を定義。選択期間の最初の日 (Initial) と最後の日 (Final) のメトリクスデータを比較。60 日や 90 日の長期レンジから短期レンジまで柔軟に分析可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4CA;</div>
+                <div class="feature-content">
+                    <h4>メトリクス比較テーブル</h4>
+                    <p>Namespace、Metric、Dimensions ごとの詳細な比較データ。イベントレートの差分と変化率、タイムシリーズ数の差分と変化率をテーブル形式で即座に確認可能。新規メトリクスは変化率 100 として表示。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x26A1;</div>
+                <div class="feature-content">
+                    <h4>スパイク・ドロップ検出</h4>
+                    <p>タイムシリーズ数やイベントインジェストレートの急激な変動を迅速に検出。コスト変動の原因特定を加速する。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metrics Table Columns -->
+        <div class="section">
+            <h2 class="section-title">比較テーブルのカラム構成</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>カラム名</th>
+                            <th>説明</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Namespace</strong></td>
+                            <td>Azure Monitor Workspace 内の Namespace</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Metric</strong></td>
+                            <td>メトリクス名</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dimensions</strong></td>
+                            <td>ラベル/ディメンション</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Initial / Final Event Rate</strong></td>
+                            <td>開始日・終了日のイベントインジェストレート</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Event Rate Difference</strong></td>
+                            <td>開始日と終了日の差分</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Event Rate Change %</strong></td>
+                            <td>イベントレートの変化率</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Initial / Final Timeseries</strong></td>
+                            <td>開始日・終了日のアクティブなタイムシリーズ数</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Timeseries Difference</strong></td>
+                            <td>タイムシリーズ数の差分</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Timeseries Change %</strong></td>
+                            <td>タイムシリーズ数の変化率</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Setup -->
+        <div class="section">
+            <h2 class="section-title">設定方法</h2>
+            <div class="highlight-box">
+                <strong>前提条件:</strong> Azure Monitor Workspace (AMW) + Log Analytics Workspace (LAW) が作成済みであること
+            </div>
+            <div style="margin-top: 16px;">
+                <div class="feature-card">
+                    <div class="feature-icon">1&#xFE0F;&#x20E3;</div>
+                    <div class="feature-content">
+                        <h4>診断設定を有効化</h4>
+                        <p>Azure Monitor Workspace の診断設定で、使用状況データを Log Analytics Workspace に送信するよう構成</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">2&#xFE0F;&#x20E3;</div>
+                    <div class="feature-content">
+                        <h4>データ流入を待機</h4>
+                        <p>約 24 時間待機してデータが流入するのを確認</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">3&#xFE0F;&#x20E3;</div>
+                    <div class="feature-content">
+                        <h4>ダッシュボードを使用</h4>
+                        <p>Metrics Usage Insights を開き、「Ingestion Volume Change」を選択。比較期間を設定して分析開始</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title">ユースケース</h2>
+
+            <div class="usecase">
+                <h4>&#x1F4B0; 月次コストレビュー</h4>
+                <p>月次の Azure 請求額が前月比で大幅に増加した場合、原因がメトリクスインジェスト量の増加にあるか調査</p>
+                <ol class="usecase-steps">
+                    <li>Comparison dates で前月の初日と末日を選択</li>
+                    <li>Event Rate Difference が大きいメトリクスを特定</li>
+                    <li>該当メトリクスの Namespace と Dimensions から発生元を絞り込む</li>
+                </ol>
+            </div>
+
+            <div class="usecase">
+                <h4>&#x2638;&#xFE0F; AKS クラスタースケール後の影響確認</h4>
+                <p>AKS クラスターのノード数を増加させた後、Prometheus メトリクスのインジェスト量がどの程度増えたか確認</p>
+                <ol class="usecase-steps">
+                    <li>スケールアウト前後の日付を Comparison dates で選択</li>
+                    <li>Timeseries Difference でタイムシリーズ数の増加量を確認</li>
+                    <li>増加率が想定範囲内か評価</li>
+                </ol>
+            </div>
+
+            <div class="usecase">
+                <h4>&#x1F4C8; 長期トレンドの分析</h4>
+                <p>過去 90 日間でメトリクスインジェスト量がどのように変化しているか、長期トレンドを把握</p>
+                <ol class="usecase-steps">
+                    <li>Comparison dates で 90 日間のレンジを設定</li>
+                    <li>Event Rate Change % で増加傾向にあるメトリクスを特定</li>
+                    <li>将来のコスト予測とリソース計画に反映</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="section">
+            <h2 class="section-title">料金</h2>
+            <div class="pricing-highlight">
+                <div class="price-tag">無料</div>
+                <div class="price-desc">Metrics Usage Insights 機能自体は追加コストなしで利用可能</div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>料金</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Log Analytics Workspace への使用状況データ送信</td>
+                            <td>無料</td>
+                        </tr>
+                        <tr>
+                            <td>使用状況データへのクエリ</td>
+                            <td>無料</td>
+                        </tr>
+                        <tr>
+                            <td>使用状況データのストレージ</td>
+                            <td>無料</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p style="font-size: 13px; color: var(--ms-text-secondary); margin-top: 8px;">
+                ※ Azure Monitor Workspace 自体のメトリクスインジェストには通常の料金が適用
+            </p>
+        </div>
+
+        <!-- Regions -->
+        <div class="section">
+            <h2 class="section-title">利用可能リージョン</h2>
+            <div class="region-grid">
+                <div class="region-item"><strong>米国</strong>: Central US, East US, East US 2 ほか</div>
+                <div class="region-item"><strong>ヨーロッパ</strong>: North Europe, West Europe</div>
+                <div class="region-item"><strong>英国</strong>: UK South, UK West</div>
+                <div class="region-item"><strong>日本</strong>: Japan East, Japan West</div>
+                <div class="region-item"><strong>オーストラリア</strong>: Australia East ほか</div>
+                <div class="region-item"><strong>カナダ</strong>: Canada Central ほか</div>
+                <div class="region-item"><strong>ブラジル</strong>: Brazil South</div>
+                <div class="region-item"><strong>インド</strong>: Central India ほか</div>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2 class="section-title">制限事項・注意点</h2>
+            <div class="feature-card">
+                <div class="feature-icon">&#x26A0;&#xFE0F;</div>
+                <div class="feature-content">
+                    <h4>パブリックプレビュー</h4>
+                    <p>GA 前に仕様が変更される可能性がある。本番運用環境での利用は十分なテストの上で判断すること。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x23F0;</div>
+                <div class="feature-content">
+                    <h4>データ反映に約 24 時間</h4>
+                    <p>診断設定を有効化してからデータが反映されるまで約 24 時間かかる。即時分析には事前の準備が必要。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4CB;</div>
+                <div class="feature-content">
+                    <h4>比較対象は 2 時点のみ</h4>
+                    <p>選択期間の最初の日と最後の日のみの比較であり、期間中の日次推移は別途確認が必要。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2 class="section-title">関連サービス</h2>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F3E2;</div>
+                <div class="feature-content">
+                    <h4>Azure Monitor Workspace (AMW)</h4>
+                    <p>メトリクスデータの取り込み元。Ingestion Volume Change ダッシュボードが分析するデータソース。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F5C4;&#xFE0F;</div>
+                <div class="feature-content">
+                    <h4>Log Analytics Workspace (LAW)</h4>
+                    <p>Metrics Usage Insights の使用状況データが保存される先。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4C8;</div>
+                <div class="feature-content">
+                    <h4>Azure Monitor Managed Service for Prometheus</h4>
+                    <p>AMW にメトリクスを送信する一般的なソース。AKS ワークロードのメトリクス収集に使用。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x2638;&#xFE0F;</div>
+                <div class="feature-content">
+                    <h4>Azure Kubernetes Service (AKS)</h4>
+                    <p>Prometheus メトリクスを生成する代表的なワークロード。スケーリングに伴うインジェスト量変化の主要因。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <strong>出典:</strong>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=565286" target="_blank">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/metrics-usage-insights" target="_blank">Microsoft Learn - Metrics Usage Insights</a></li>
+            </ul>
+            <p style="margin-top: 12px; font-size: 12px; color: var(--ms-text-disabled);">
+                Generated: 2026-06-06 | Azure News Summary
+            </p>
+        </div>
+    </div>
+</body>
+</html>

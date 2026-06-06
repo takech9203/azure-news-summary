@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-06-05 - Azure Monitor: Ingestion Volume Change ダッシュボード (Metrics Usage Insights)](2026/2026-06-05-azure-monitor-ingestion-volume-dashboard.md)
 - [2026-06-04 - Microsoft Foundry IQ: Foundry IQ GA & ナレッジソース拡張](2026/2026-06-04-foundry-iq-ga.md)
 - [2026-06-04 - Azure Migrate: ファイル共有アセスメント ワールドワイド GA](2026/2026-06-04-azure-migrate-files-worldwide.md)
 - [2026-06-04 - Microsoft Discovery: Microsoft Discovery GA (科学・エンジニアリング向け AI プラットフォーム)](2026/2026-06-04-microsoft-discovery-ga.md)
@@ -12,6 +13,7 @@
 - [2026-06-04 - Azure HorizonDB: AI Pipelines (Public Preview)](2026/2026-06-04-horizondb-ai-pipelines.md)
 - [2026-06-04 - Azure AI Search: プライベート接続 GA、APIM 統合、Content Understanding チャンキング](2026/2026-06-04-ai-search-private-connectivity-apim-content.md)
 - [2026-06-04 - Azure Monitor: OTLP シグナルの OpenTelemetry Collector 経由インジェストと Service Level Indicators (SLI)](2026/2026-06-04-azure-monitor-otlp-sli.md)
+- [2026-06-04 - Microsoft Foundry: Toolbox におけるツール検索機能 (パブリックプレビュー)](2026/2026-06-04-foundry-toolbox-tool-search.md)
 - [2026-06-04 - Azure Monitor: SLI/SLO、OTLP ネイティブ取り込み、シンプルログアラート GA](2026/2026-06-04-azure-monitor-sli-otlp-simple-alerts.md)
 - [2026-06-03 - Azure Monitor: Simple Log Alerts GA](2026/2026-06-03-azure-monitor-simple-log-alerts.md)
 - [2026-06-03 - Microsoft Foundry: VS Code 拡張機能 GA と Build 2026 Day 2 プラットフォームアップデート](2026/2026-06-03-foundry-build-day2-platform.md)
