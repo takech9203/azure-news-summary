@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Site Recovery: Linux VM の NVMe ディスクコントローラーサポート</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-900));
+            color: white;
+            padding: 40px 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .section h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--ms-blue-200);
+        }
+
+        .section h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin: 16px 0 8px;
+        }
+
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 4px 0;
+            font-size: 14px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .info-table th, .info-table td {
+            padding: 10px 14px;
+            border: 1px solid var(--ms-border);
+            text-align: left;
+        }
+
+        .info-table th {
+            background: var(--ms-blue-100);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .info-table tr:nth-child(even) td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .usecase {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase h4 {
+            color: var(--ms-blue-800);
+            margin-bottom: 8px;
+        }
+
+        .usecase p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        .os-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .os-tag {
+            background: var(--ms-surface-tertiary);
+            border: 1px solid var(--ms-border);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .vm-family-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        .vm-family-card {
+            background: var(--ms-blue-100);
+            border: 1px solid var(--ms-blue-300);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .vm-family-card .name {
+            font-weight: 700;
+            color: var(--azure-blue);
+            font-size: 15px;
+        }
+
+        .vm-family-card .desc {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-top: 24px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        @media (max-width: 768px) {
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-meta">
+                <span class="service-badge">Azure Site Recovery</span>
+                <span class="badge badge-preview">In Preview</span>
+            </div>
+            <h1>Linux VM の NVMe ディスクコントローラーサポート</h1>
+            <div class="header-date">2026-06-08 | ディザスターリカバリー / BCDR</div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2>概要</h2>
+            <div class="highlight-box">
+                Azure Site Recovery が、<strong>NVMe 対応の Gen2 VM ファミリー</strong> (Da/Ea/Fa v6, Ebsv5/Ebdsv5) で稼働する <strong>Linux VM</strong> のレプリケーションおよびディザスターリカバリーをサポート。Azure-to-Azure シナリオでのリージョン間 DR が構成可能に。
+            </div>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>・NVMe Linux VM は ASR レプリケーション非対応</li>
+                        <li>・高性能 v6 シリーズ VM で DR の選択肢が限定的</li>
+                        <li>・NVMe VM 移行時に DR 非対応がブロッカー</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li>・NVMe Gen2 Linux VM で ASR レプリケーション可能</li>
+                        <li>・Da/Ea/Fa v6 で リージョン間 DR を構成</li>
+                        <li>・高性能 + 事業継続性の両立</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="section">
+            <h2>対応環境</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">Gen2</div>
+                    <div class="stat-label">VM 世代</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">NVMe</div>
+                    <div class="stat-label">ディスクコントローラー</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3 種</div>
+                    <div class="stat-label">対応 Linux OS</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">A2A</div>
+                    <div class="stat-label">レプリケーション方式</div>
+                </div>
+            </div>
+
+            <h3>対応 VM ファミリー</h3>
+            <div class="vm-family-grid">
+                <div class="vm-family-card">
+                    <div class="name">Da v6</div>
+                    <div class="desc">汎用</div>
+                </div>
+                <div class="vm-family-card">
+                    <div class="name">Ea v6</div>
+                    <div class="desc">メモリ最適化</div>
+                </div>
+                <div class="vm-family-card">
+                    <div class="name">Fa v6</div>
+                    <div class="desc">コンピューティング</div>
+                </div>
+                <div class="vm-family-card">
+                    <div class="name">Ebsv5</div>
+                    <div class="desc">ストレージ最適化</div>
+                </div>
+                <div class="vm-family-card">
+                    <div class="name">Ebdsv5</div>
+                    <div class="desc">ストレージ最適化</div>
+                </div>
+            </div>
+
+            <h3>対応 Linux ディストリビューション</h3>
+            <div class="os-list">
+                <span class="os-tag">RHEL 9</span>
+                <span class="os-tag">SLES 15</span>
+                <span class="os-tag">Ubuntu 24</span>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="section">
+            <h2>アーキテクチャ図</h2>
+            <p style="font-size:14px; color: var(--ms-text-secondary); margin-bottom: 12px;">Mobility Service Agent がソース VM 上で動作し、NVMe ディスクの変更データをキャッシュストレージ経由でターゲットリージョンにレプリケーション。</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart LR
+    subgraph Source["ソースリージョン"]
+        VM["Linux VM (Gen2)\nNVMe コントローラー\nDa/Ea/Fa v6 / Ebsv5"]
+        NVMe["NVMe マネージドディスク"]
+        Cache["キャッシュストレージ"]
+        VM --> NVMe
+        VM --> Cache
+    end
+
+    subgraph ASR["Azure Site Recovery"]
+        Mobility["Mobility Service\nAgent"]
+        Replication["レプリケーション\nエンジン"]
+        Mobility --> Replication
+    end
+
+    subgraph Target["ターゲットリージョン"]
+        ReplicaVM["レプリカ VM"]
+        ReplicaDisk["レプリカ\nマネージドディスク"]
+        ReplicaVM --> ReplicaDisk
+    end
+
+    VM --> Mobility
+    Cache --> Replication
+    Replication --> ReplicaDisk
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2>主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <div class="feature-content">
+                    <h4>NVMe ディスクコントローラー対応レプリケーション</h4>
+                    <p>NVMe インターフェースを使用する Gen2 Linux VM のディスクレプリケーションをサポート。Azure-to-Azure シナリオでのリージョン間 DR。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🐧</div>
+                <div class="feature-content">
+                    <h4>主要 Linux ディストリビューション対応</h4>
+                    <p>Red Hat Enterprise Linux 9、SUSE Linux Enterprise Server 15、Ubuntu 24 をサポート。企業で広く利用されるディストリビューションをカバー。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-content">
+                    <h4>最新 VM ファミリー対応</h4>
+                    <p>Da/Ea/Fa v6 シリーズ、Ebsv5/Ebdsv5 など NVMe インターフェースを使用する最新の高性能 VM で DR を構成可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <div class="feature-content">
+                    <h4>Azure Boost 連携</h4>
+                    <p>Azure Boost によるストレージ処理のハードウェアオフロードと組み合わせ、ストレージ性能とレジリエンスを両立。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2>ユースケース</h2>
+
+            <div class="usecase">
+                <h4>🔀 v6 シリーズ VM への移行と DR 構成</h4>
+                <p>旧世代 (v5) SCSI ベース VM から高性能 Da/Ea/Fa v6 NVMe VM への移行を計画中。移行後も Azure Site Recovery による DR を維持し、性能向上と事業継続性を両立。</p>
+            </div>
+
+            <div class="usecase">
+                <h4>🗄️ 高 I/O データベースワークロードの保護</h4>
+                <p>RHEL 9 上で稼働する DB サーバーが Ebsv5 VM で NVMe ストレージを活用。リージョン障害時のフェイルオーバーが必要な環境。</p>
+            </div>
+
+            <div class="usecase">
+                <h4>📋 コンプライアンス要件への対応</h4>
+                <p>規制要件により全本番 VM にリージョン間 DR が必須。新規採用した v6 シリーズ VM も含めて DR 要件を満たすことが可能に。</p>
+            </div>
+        </div>
+
+        <!-- 制約事項 -->
+        <div class="section">
+            <h2>制限事項・注意点</h2>
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>サポート状況</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Azure-to-Azure</td>
+                        <td>対応</td>
+                    </tr>
+                    <tr>
+                        <td>オンプレミス → Azure</td>
+                        <td>非対応</td>
+                    </tr>
+                    <tr>
+                        <td>Windows VM</td>
+                        <td>別途確認が必要 (本アップデートは Linux のみ)</td>
+                    </tr>
+                    <tr>
+                        <td>エフェメラル OS ディスク</td>
+                        <td>非対応</td>
+                    </tr>
+                    <tr>
+                        <td>ローカル NVMe ディスク</td>
+                        <td>非対応</td>
+                    </tr>
+                    <tr>
+                        <td>混合コントローラー (SCSI + NVMe)</td>
+                        <td>非対応 (例: Lsv3)</td>
+                    </tr>
+                    <tr>
+                        <td>Gen1 VM</td>
+                        <td>非対応</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="highlight-box" style="margin-top: 16px;">
+                <strong>注意</strong>: パブリックプレビュー段階のため SLA は提供されません。本番環境での使用には十分なテストを推奨します。
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4 style="margin-bottom: 8px; color: var(--ms-text-primary);">出典・参考リンク</h4>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=565103">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/azure/site-recovery/azure-to-azure-support-matrix">Azure Site Recovery サポートマトリックス</a></li>
+                <li><a href="https://learn.microsoft.com/azure/virtual-machines/nvme-overview">NVMe Overview - Azure Virtual Machines</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/site-recovery/">Azure Site Recovery 料金</a></li>
+            </ul>
+            <p style="margin-top: 12px; font-size: 12px;">Generated: 2026-06-08 | Azure News Summary</p>
+        </div>
+    </div>
+</body>
+</html>

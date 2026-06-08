@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Database for PostgreSQL: メンテナンス制御機能の強化</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --db-color: #FFB900;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--db-color), var(--ms-orange));
+            color: white;
+            padding: 40px 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            color: var(--ms-text-primary);
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.8;
+            color: var(--ms-text-primary);
+        }
+
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .section h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--ms-blue-200);
+        }
+
+        .section h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin: 16px 0 8px;
+        }
+
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 4px 0;
+            font-size: 14px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--db-color);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #FFF8E1;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--db-color), var(--ms-orange));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card .stat-value {
+            color: var(--ms-text-primary);
+        }
+
+        .stat-card .stat-label {
+            color: var(--ms-text-primary);
+            opacity: 0.8;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            margin-top: 4px;
+        }
+
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .info-table th, .info-table td {
+            padding: 10px 14px;
+            border: 1px solid var(--ms-border);
+            text-align: left;
+        }
+
+        .info-table th {
+            background: var(--ms-blue-100);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .info-table tr:nth-child(even) td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .usecase {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase h4 {
+            color: var(--ms-blue-800);
+            margin-bottom: 8px;
+        }
+
+        .usecase p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-top: 24px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        @media (max-width: 768px) {
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-meta">
+                <span class="service-badge">Azure Database for PostgreSQL</span>
+                <span class="badge badge-ga">Launched (GA)</span>
+            </div>
+            <h1>メンテナンス制御機能の強化 (リスケジュール / オンデマンド適用 / 履歴表示)</h1>
+            <div class="header-date">2026-06-08 | データベース / 運用管理</div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2>概要</h2>
+            <div class="highlight-box">
+                Azure Database for PostgreSQL Flexible Server で、メンテナンスの<strong>リスケジュール (最大 14 日延期)</strong>、<strong>オンデマンド適用 (即時実行)</strong>、<strong>メンテナンス履歴の表示・CSV ダウンロード</strong>が GA。ビジネス影響の最小化と運用の可視化を実現。
+            </div>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>・スケジュール後に日時変更手段なし</li>
+                        <li>・即時適用したくてもスケジュール待ち</li>
+                        <li>・過去のメンテナンス履歴の確認手段なし</li>
+                        <li>・メンテナンス詳細を一覧で把握しにくい</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li>・最大 14 日間先まで延期可能</li>
+                        <li>・オンデマンドで即時適用可能</li>
+                        <li>・Azure Portal で履歴確認 + CSV エクスポート</li>
+                        <li>・種類、ステータス、リスケジュール可否を事前確認</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="section">
+            <h2>数字で見るアップデート</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">14日</div>
+                    <div class="stat-label">最大延期期間</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">60分</div>
+                    <div class="stat-label">メンテナンス枠</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">5日前</div>
+                    <div class="stat-label">事前通知</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">15分前</div>
+                    <div class="stat-label">ロック期間</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="section">
+            <h2>アーキテクチャ図</h2>
+            <p style="font-size:14px; color: var(--ms-text-secondary); margin-bottom: 12px;">Azure Portal のメンテナンスページからリスケジュール・オンデマンド適用を操作。Azure Service Health 経由で通知を受信。</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Azure["Azure Cloud"]
+        subgraph Portal["Azure Portal"]
+            View["メンテナンス表示\nUpcoming / History"]
+            Reschedule["リスケジュール\n最大14日延期"]
+            ApplyNow["オンデマンド適用\n即時実行"]
+            Export["CSV エクスポート\n履歴ダウンロード"]
+        end
+
+        subgraph PgFlex["PostgreSQL Flexible Server"]
+            CMW["カスタムメンテナンス\nウィンドウ (CMW)"]
+            SMW["システム管理\nウィンドウ (SMW)"]
+            Engine["PostgreSQL エンジン"]
+        end
+
+        subgraph Notifications["通知"]
+            ServiceHealth["Azure Service Health"]
+            Email["メール通知"]
+            SMS["SMS / プッシュ通知"]
+        end
+    end
+
+    View --> PgFlex
+    Reschedule --> CMW
+    ApplyNow --> Engine
+    Export --> View
+    ServiceHealth --> Email
+    ServiceHealth --> SMS
+    PgFlex --> ServiceHealth
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2>主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">📅</div>
+                <div class="feature-content">
+                    <h4>メンテナンスのリスケジュール</h4>
+                    <p>予定されたメンテナンスを最大 14 日間延期可能。ピーク時間、リリースウィンドウ、決算期など、ビジネスクリティカルな期間を回避。複数回の変更も可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-content">
+                    <h4>オンデマンドメンテナンス適用</h4>
+                    <p>スケジュールを待たずにメンテナンスを即時適用。低負荷時間帯を選んで自発的に実行可能。「Scheduled」「Rescheduled」状態の場合に利用可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📋</div>
+                <div class="feature-content">
+                    <h4>今後のメンテナンス表示</h4>
+                    <p>Overview の「Next Maintenance」フィールドで次回予定を確認。メンテナンスページで詳細情報 (種類、ステータス、リスケジュール可否) を表示。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📥</div>
+                <div class="feature-content">
+                    <h4>メンテナンス履歴の表示・ダウンロード</h4>
+                    <p>過去のメンテナンスイベント一覧を表示。種類、開始・終了時間、最終ステータスを確認し、CSV エクスポートで監査対応も可能。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2>技術仕様</h2>
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>対象サービス</td>
+                        <td>Azure Database for PostgreSQL Flexible Server</td>
+                    </tr>
+                    <tr>
+                        <td>リスケジュール最大延期</td>
+                        <td>14 日間 (当初予定日から)</td>
+                    </tr>
+                    <tr>
+                        <td>対応コンピュートティア</td>
+                        <td>General Purpose、Memory Optimized</td>
+                    </tr>
+                    <tr>
+                        <td>非対応ティア</td>
+                        <td>Burstable</td>
+                    </tr>
+                    <tr>
+                        <td>ロック期間</td>
+                        <td>予定時間の 15 分前から変更不可</td>
+                    </tr>
+                    <tr>
+                        <td>メンテナンスウィンドウ</td>
+                        <td>60 分間</td>
+                    </tr>
+                    <tr>
+                        <td>事前通知</td>
+                        <td>5 カレンダー日前</td>
+                    </tr>
+                    <tr>
+                        <td>最小間隔</td>
+                        <td>通常 30 日以上 (緊急時を除く)</td>
+                    </tr>
+                    <tr>
+                        <td>CLI / REST API</td>
+                        <td>開発中 (現時点は Azure Portal のみ)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Code Sample -->
+        <div class="section">
+            <h2>設定例</h2>
+            <h3>カスタムメンテナンスウィンドウの設定 (Azure CLI)</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Bash</span>
+                </div>
+                <pre><code class="language-bash"># カスタムスケジュールの設定 (水曜日 14:29 UTC 開始)
+az postgres flexible-server update \
+  --resource-group &lt;resource_group&gt; \
+  --name &lt;server&gt; \
+  --maintenance-window Wed:14:29
+
+# システム管理スケジュールに戻す
+az postgres flexible-server update \
+  --resource-group &lt;resource_group&gt; \
+  --name &lt;server&gt; \
+  --maintenance-window Disabled</code></pre>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2>ユースケース</h2>
+
+            <div class="usecase">
+                <h4>🛍️ EC サイトの大規模セール期間のメンテナンス回避</h4>
+                <p>年末セール期間中にメンテナンスが予定された場合、Azure Portal からリスケジュールしてセール終了後の低負荷時間帯に変更。売上への影響をゼロに抑える。</p>
+            </div>
+
+            <div class="usecase">
+                <h4>🚀 計画的リリースとの整合性確保</h4>
+                <p>アプリのデプロイ直後にメンテナンスが予定されている場合、デプロイの安定確認後に「Apply now」で即時適用。問題切り分けが容易に。</p>
+            </div>
+
+            <div class="usecase">
+                <h4>📊 監査・コンプライアンス対応</h4>
+                <p>定期監査で DB メンテナンス実績を報告する必要がある場合、「Export to CSV」で履歴をダウンロードし監査レポートに添付。対応工数を削減。</p>
+            </div>
+        </div>
+
+        <!-- 制約事項 -->
+        <div class="section">
+            <h2>制限事項・注意点</h2>
+            <ul style="padding-left: 20px; font-size: 14px; color: var(--ms-text-secondary);">
+                <li style="margin: 8px 0;"><strong>Burstable ティア</strong>はリスケジュール非対応 (開発・テスト環境で多用されるティア)</li>
+                <li style="margin: 8px 0;">現時点では <strong>Azure Portal のみ</strong>対応 (CLI / REST API は開発中)</li>
+                <li style="margin: 8px 0;">リスケジュール上限 <strong>14 日</strong> (無期限延期は不可)</li>
+                <li style="margin: 8px 0;">緊急メンテナンス (重大脆弱性対応等) はリスケジュール不可</li>
+                <li style="margin: 8px 0;">カスタムメンテナンスウィンドウの構成が前提条件</li>
+                <li style="margin: 8px 0;">予定時間の <strong>15 分前</strong>からリスケジュール不可 (ロック期間)</li>
+                <li style="margin: 8px 0;">メンテナンス実行中は設定変更・起動/停止を避ける必要あり</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4 style="margin-bottom: 8px; color: var(--ms-text-primary);">出典・参考リンク</h4>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=563756">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/azure/postgresql/flexible-server/concepts-maintenance">Planned Maintenance - Microsoft Learn</a></li>
+                <li><a href="https://learn.microsoft.com/azure/postgresql/flexible-server/how-to-configure-scheduled-maintenance">Schedule maintenance (How-to)</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/postgresql/flexible-server/">料金ページ</a></li>
+            </ul>
+            <p style="margin-top: 12px; font-size: 12px;">Generated: 2026-06-08 | Azure News Summary</p>
+        </div>
+    </div>
+</body>
+</html>

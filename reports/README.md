@@ -5,6 +5,12 @@
 
 ## 2026 年
 
+- [2026-06-08 - Azure Premium SSD v2: 非ゾーン仮想マシンのサポート開始](2026/2026-06-08-premium-ssd-v2-non-zonal-vms.md)
+- [2026-06-08 - Azure Site Recovery: Linux VM の NVMe ディスクコントローラーサポート](2026/2026-06-08-site-recovery-linux-nvme.md)
+- [2026-06-08 - Azure Virtual Machines: NC RTX PRO 6000 Blackwell Server Edition v6 シリーズの一般提供開始](2026/2026-06-08-nc-rtx-pro-6000-blackwell-v6.md)
+- [2026-06-08 - Azure Managed Redis: Entra ID ベースの RBAC によるデータアクセス制御](2026/2026-06-08-managed-redis-entra-id-rbac.md)
+- [2026-06-08 - Azure Database for PostgreSQL: メンテナンス制御機能の強化 (リスケジュール、オンデマンド適用、履歴表示・ダウンロード)](2026/2026-06-08-postgresql-maintenance-control.md)
+- [2026-06-08 - Microsoft Defender for Cloud: Foundry エージェントセキュリティ機能の Microsoft Agent 365 ライセンスへの移行](2026/2026-06-08-foundry-agent-security-agent-365.md)
 - [2026-06-05 - Azure Monitor: Ingestion Volume Change ダッシュボード (Metrics Usage Insights)](2026/2026-06-05-azure-monitor-ingestion-volume-dashboard.md)
 - [2026-06-04 - Microsoft Foundry IQ: Foundry IQ GA & ナレッジソース拡張](2026/2026-06-04-foundry-iq-ga.md)
 - [2026-06-04 - Azure Migrate: ファイル共有アセスメント ワールドワイド GA](2026/2026-06-04-azure-migrate-files-worldwide.md)

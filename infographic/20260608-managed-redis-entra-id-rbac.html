@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Managed Redis: Entra ID ベースの RBAC によるデータアクセス制御</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--ms-red), var(--ms-orange));
+            color: white;
+            padding: 40px 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .section h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--ms-blue-200);
+        }
+
+        .section h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin: 16px 0 8px;
+        }
+
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 15px;
+            margin-bottom: 8px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 4px 0;
+            font-size: 14px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--ms-red), var(--ms-orange));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .info-table th, .info-table td {
+            padding: 10px 14px;
+            border: 1px solid var(--ms-border);
+            text-align: left;
+        }
+
+        .info-table th {
+            background: var(--ms-blue-100);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .info-table tr:nth-child(even) td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .usecase {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase h4 {
+            color: var(--ms-blue-800);
+            margin-bottom: 8px;
+        }
+
+        .usecase p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-top: 24px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        @media (max-width: 768px) {
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-meta">
+                <span class="service-badge">Azure Managed Redis</span>
+                <span class="badge badge-preview">In Preview</span>
+            </div>
+            <h1>Entra ID ベースの RBAC によるデータアクセス制御</h1>
+            <div class="header-date">2026-06-08 | セキュリティ / アクセス制御</div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2>概要</h2>
+            <div class="highlight-box">
+                Azure Managed Redis において、<strong>Microsoft Entra ID</strong> を使用した<strong>ロールベースアクセス制御 (RBAC)</strong> によるデータアクセス管理機能がパブリックプレビュー開始。Redis ACL 構文を活用したカスタムアクセス文字列により、コマンドレベル・キーパターンレベルでの最小権限アクセスを実現。
+            </div>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>・Entra ID 認証でも全ユーザーがフルアクセス権</li>
+                        <li>・共有アクセスキーの漏洩リスク</li>
+                        <li>・マルチテナント環境でのデータ分離手段なし</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li>・ユーザーごとに Redis ACL ベースの権限設定</li>
+                        <li>・パスワードレス + 最小権限アクセス</li>
+                        <li>・ARM テンプレート / REST API で IaC 対応</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="section">
+            <h2>技術仕様</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">ACL</div>
+                    <div class="stat-label">Redis ACL 構文対応</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">全ティア</div>
+                    <div class="stat-label">対応ティア</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">SSL</div>
+                    <div class="stat-label">接続プロトコル</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">即時</div>
+                    <div class="stat-label">インプレース更新</div>
+                </div>
+            </div>
+
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>必要 API バージョン</td>
+                        <td>2026-05-01-preview 以降</td>
+                    </tr>
+                    <tr>
+                        <td>トークンスコープ</td>
+                        <td>https://redis.azure.com/.default</td>
+                    </tr>
+                    <tr>
+                        <td>デフォルト権限</td>
+                        <td>+@all ~* (全コマンド・全キーアクセス)</td>
+                    </tr>
+                    <tr>
+                        <td>キーパターン</td>
+                        <td>大文字小文字を区別</td>
+                    </tr>
+                    <tr>
+                        <td>対応ティア</td>
+                        <td>Balanced, Memory Optimized, Compute Optimized, Flash Optimized</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Architecture -->
+        <div class="section">
+            <h2>アーキテクチャ図</h2>
+            <p style="font-size:14px; color: var(--ms-text-secondary); margin-bottom: 12px;">Entra ID で認証されたユーザーが Redis に接続する際、割り当てられたカスタムアクセス文字列に基づいて ACL エンジンがコマンドとキーパターンを評価する。</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Client["クライアントアプリケーション"]
+        App[アプリケーション]
+        MSAL[MSAL ライブラリ]
+    end
+
+    subgraph EntraID["Microsoft Entra ID"]
+        Auth[認証サービス]
+        SP[サービスプリンシパル /\nマネージド ID]
+        Token[アクセストークン発行]
+    end
+
+    subgraph AMR["Azure Managed Redis"]
+        EP[エンドポイント]
+        ACL[Redis ACL エンジン]
+        subgraph Data["データ層"]
+            K1["user:* キー"]
+            K2["cache:* キー"]
+            K3["admin:* キー"]
+        end
+    end
+
+    App --> MSAL
+    MSAL -->|"1. トークン要求"| Auth
+    Auth -->|"2. トークン発行"| MSAL
+    App -->|"3. AUTH コマンド"| EP
+    EP -->|"4. アクセス文字列照合"| ACL
+    ACL -->|"許可: +@read ~cache:*"| K2
+    ACL -.->|"拒否"| K3
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2>主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔑</div>
+                <div class="feature-content">
+                    <h4>カスタムアクセス文字列</h4>
+                    <p>Redis ACL 構文 (+@read, +@write, ~cache:* 等) でコマンドカテゴリとキーパターンを制限。ユーザーごとに精密な権限設定が可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🖥️</div>
+                <div class="feature-content">
+                    <h4>Azure Portal からの設定</h4>
+                    <p>Authentication 画面から「Custom data access policy (preview)」を選択し、アクセス文字列を入力してユーザーに割り当て。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <div class="feature-content">
+                    <h4>ARM テンプレート / REST API 対応</h4>
+                    <p>accessPolicyAssignments リソースとして管理。Infrastructure as Code による一貫した権限管理が可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚡</div>
+                <div class="feature-content">
+                    <h4>インプレース権限更新</h4>
+                    <p>ユーザーの接続を切断することなく、アクセス文字列を変更して権限を即時更新可能。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Sample -->
+        <div class="section">
+            <h2>サンプルコード</h2>
+
+            <h3>ARM テンプレートによるアクセスポリシー割り当て</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">JSON</span>
+                </div>
+                <pre><code class="language-json">{
+    "type": "Microsoft.Cache/redisEnterprise/databases/accessPolicyAssignments",
+    "apiVersion": "2026-05-01-preview",
+    "name": "[concat(parameters('cacheName'), '/default/', parameters('assignmentName'))]",
+    "properties": {
+        "accessPolicyName": "default",
+        "accessString": "[parameters('accessString')]",
+        "user": {
+            "objectId": "[parameters('objectId')]"
+        }
+    }
+}</code></pre>
+            </div>
+
+            <h3>アクセス文字列の例</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Redis ACL</span>
+                </div>
+                <pre><code class="language-plaintext"># テナント A: テナント A のキーのみ全操作可能
++@all ~tenantA:*
+
+# 読み取り専用: cache プレフィックスのキーのみ
++@read ~cache:*
+
+# セッション管理: session キーへの読み書きのみ
++@read +@write ~session:*</code></pre>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2>ユースケース</h2>
+
+            <div class="usecase">
+                <h4>🏢 マルチテナント SaaS アプリケーション</h4>
+                <p>複数テナントが同一 Redis インスタンスを共有する SaaS で、テナント間のデータ分離を実現。各テナントは自身のキープレフィックスのみにアクセス可能。</p>
+            </div>
+
+            <div class="usecase">
+                <h4>📖 読み取り専用キャッシュクライアント</h4>
+                <p>レポーティングサービスがキャッシュを読み取るが書き込み・削除は禁止。誤操作やバグによるデータの破壊を防止。</p>
+            </div>
+
+            <div class="usecase">
+                <h4>🔧 マイクロサービスごとの権限分離</h4>
+                <p>セッション管理サービスは session:* のみ、アプリデータサービスは app:* のみにアクセス。サービス間の関心の分離を強制。</p>
+            </div>
+        </div>
+
+        <!-- 制約事項 -->
+        <div class="section">
+            <h2>制限事項・注意点</h2>
+            <ul style="padding-left: 20px; font-size: 14px; color: var(--ms-text-secondary);">
+                <li style="margin: 8px 0;">プレビュー段階のため、GA 時に仕様変更の可能性あり</li>
+                <li style="margin: 8px 0;">API バージョン 2026-05-01-preview 以降が必要 (古い API では常にフルアクセス)</li>
+                <li style="margin: 8px 0;">Microsoft Entra ID グループは非サポート (個々のユーザー/SP 単位)</li>
+                <li style="margin: 8px 0;">SSL 接続のみでの認証サポート</li>
+                <li style="margin: 8px 0;">データベースあたりユーザー 1 つのアクセスポリシー割り当てに限定</li>
+                <li style="margin: 8px 0;">キーパターンは大文字小文字を区別</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4 style="margin-bottom: 8px; color: var(--ms-text-primary);">出典・参考リンク</h4>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=564873">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/azure/redis/entra-for-authentication">Microsoft Entra を使用した Azure Managed Redis の認証</a></li>
+                <li><a href="https://learn.microsoft.com/azure/redis/configure-access-permissions">カスタムデータアクセス権限の構成</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/managed-redis/">料金ページ</a></li>
+            </ul>
+            <p style="margin-top: 12px; font-size: 12px;">Generated: 2026-06-08 | Azure News Summary</p>
+        </div>
+    </div>
+</body>
+</html>
