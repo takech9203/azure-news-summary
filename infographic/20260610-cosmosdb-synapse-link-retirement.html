@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Cosmos DB: Azure Synapse Link for NoSQL のリタイア</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-900));
+            color: white;
+            padding: 40px 32px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-retirement {
+            background: var(--ms-red);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.85;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 28px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: var(--azure-blue);
+            border-radius: 2px;
+        }
+
+        /* Highlight box */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .highlight-box p {
+            margin: 4px 0;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 4px 0;
+            font-size: 14px;
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-card.warning {
+            background: linear-gradient(135deg, var(--ms-red), var(--ms-orange));
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Feature card */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding-left: 32px;
+            margin: 20px 0;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 12px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--ms-blue-300);
+            border-radius: 2px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -26px;
+            top: 16px;
+            width: 12px;
+            height: 12px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+            border: 3px solid var(--ms-blue-200);
+        }
+
+        .timeline-item.danger::before {
+            background: var(--ms-red);
+            border-color: #FFCDD2;
+        }
+
+        .timeline-date {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 4px;
+        }
+
+        .timeline-item.danger .timeline-date {
+            color: var(--ms-red);
+        }
+
+        .timeline-desc {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Migration steps */
+        .step-list {
+            counter-reset: step-counter;
+            list-style: none;
+            padding: 0;
+        }
+
+        .step-list li {
+            counter-increment: step-counter;
+            position: relative;
+            padding: 12px 12px 12px 48px;
+            margin: 8px 0;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .step-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 12px;
+            top: 12px;
+            width: 24px;
+            height: 24px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 20px 28px;
+            margin-top: 24px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+            margin-top: 8px;
+        }
+
+        .footer-links li {
+            padding: 2px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 24px 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-meta">
+                <span class="service-badge">Azure Cosmos DB</span>
+                <span class="service-badge">Azure Synapse Analytics</span>
+                <span class="badge badge-retirement">Retirement</span>
+            </div>
+            <h1>Azure Synapse Link for NoSQL のリタイア</h1>
+            <p class="header-date">2026-06-10 | Microsoft Fabric ミラーリングへの移行推奨</p>
+        </header>
+
+        <!-- Overview -->
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <div class="highlight-box">
+                <p><strong>Azure Synapse Link for Azure Cosmos DB NoSQL</strong> は 2029 年 3 月 31 日に完全廃止される。後継ソリューションとして <strong>Microsoft Fabric の Azure Cosmos DB ミラーリング</strong> への移行が推奨されている。</p>
+            </div>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>Synapse Link で HTAP 実現</li>
+                        <li>列指向分析ストア経由</li>
+                        <li>Synapse Analytics から直接クエリ</li>
+                        <li>新規プロジェクトでも有効化可能</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After (移行先)</h4>
+                    <ul>
+                        <li>Fabric ミラーリングで同等機能</li>
+                        <li>Delta Lake (オープンソース) 形式</li>
+                        <li>Fabric SQL / Spark / Power BI</li>
+                        <li>より広範な分析エコシステム統合</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline Stats -->
+        <section class="section">
+            <h2 class="section-title">重要な日程</h2>
+            <div class="stats-grid">
+                <div class="stat-card warning">
+                    <div class="stat-value">2026/3/31</div>
+                    <div class="stat-label">新規有効化停止済み</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-value">2029/3/31</div>
+                    <div class="stat-label">完全廃止 (EOL)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">~3年</div>
+                    <div class="stat-label">移行猶予期間</div>
+                </div>
+            </div>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-date">2026 年 3 月 31 日</div>
+                    <div class="timeline-desc">新規 Cosmos DB NoSQL アカウントでの Synapse Link 有効化が不可に</div>
+                </div>
+                <div class="timeline-item danger">
+                    <div class="timeline-date">2029 年 3 月 31 日</div>
+                    <div class="timeline-desc">既存ユーザーを含む全ユーザーに対して Synapse Link が完全廃止 (EOL)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture -->
+        <section class="section">
+            <h2 class="section-title">アーキテクチャ比較</h2>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 12px;">従来の Synapse Link と移行先の Fabric ミラーリングのデータフロー比較</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart LR
+    subgraph Before["従来: Azure Synapse Link"]
+        direction LR
+        CosmosDB1["Azure Cosmos DB\nNoSQL"]
+        AS["分析ストア\n(列指向)"]
+        Synapse["Azure Synapse\nAnalytics"]
+        CosmosDB1 --> AS --> Synapse
+    end
+
+    subgraph After["移行先: Microsoft Fabric Mirroring"]
+        direction LR
+        CosmosDB2["Azure Cosmos DB\nNoSQL"]
+        OneLake["Fabric OneLake\n(Delta format)"]
+        Fabric["Microsoft Fabric\nSQL / Spark / Power BI"]
+        CosmosDB2 --> OneLake --> Fabric
+    end
+
+    Before -.->|"移行"| After
+                </pre>
+            </div>
+        </section>
+
+        <!-- Fabric Mirroring Features -->
+        <section class="section">
+            <h2 class="section-title">移行先: Microsoft Fabric ミラーリングの主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <div class="feature-content">
+                    <h4>ゼロ ETL リアルタイムレプリケーション</h4>
+                    <p>Cosmos DB のデータが Fabric OneLake に自動継続レプリケーション。RU を消費せず、トランザクションワークロードに影響なし。Delta Lake 形式で保存。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <div class="feature-content">
+                    <h4>完全なワークロード分離</h4>
+                    <p>トランザクション処理と分析処理が完全に分離。分析クエリが運用ワークロードのパフォーマンスに影響しない。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🧩</div>
+                <div class="feature-content">
+                    <h4>統合された分析エコシステム</h4>
+                    <p>T-SQL による集計、Apache Spark でのデータ探索・ML、Power BI DirectLake モード、Copilot による生成 AI インサイト取得に対応。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📐</div>
+                <div class="feature-content">
+                    <h4>ネストデータのサポート</h4>
+                    <p>JSON ネストデータを OPENJSON、CROSS APPLY で展開可能。スキーマ自動推論によるフラット化もサポート。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Comparison Table -->
+        <section class="section">
+            <h2 class="section-title">技術仕様比較</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>Synapse Link (廃止予定)</th>
+                            <th>Fabric ミラーリング (後継)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>データ形式</td>
+                            <td>列指向分析ストア</td>
+                            <td>Delta Lake (オープンソース)</td>
+                        </tr>
+                        <tr>
+                            <td>分析エンジン</td>
+                            <td>Synapse Spark / Serverless SQL</td>
+                            <td>Fabric SQL / Spark / Power BI</td>
+                        </tr>
+                        <tr>
+                            <td>RU 消費</td>
+                            <td>非消費</td>
+                            <td>非消費</td>
+                        </tr>
+                        <tr>
+                            <td>対応 API</td>
+                            <td>NoSQL, Gremlin, MongoDB</td>
+                            <td>NoSQL のみ (現時点)</td>
+                        </tr>
+                        <tr>
+                            <td>ネットワーク</td>
+                            <td>Private Endpoint</td>
+                            <td>VNet / Private Endpoint</td>
+                        </tr>
+                        <tr>
+                            <td>前提条件</td>
+                            <td>Synapse Link をアカウントで有効化</td>
+                            <td>継続バックアップ (7 日間) を有効化</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Migration Steps -->
+        <section class="section">
+            <h2 class="section-title">移行手順</h2>
+            <div class="highlight-box">
+                <p><strong>前提条件:</strong> Microsoft Fabric 容量が利用可能 / Cosmos DB で継続バックアップ (7 日間) 有効化 / Microsoft Entra ID またはアカウントキー認証</p>
+            </div>
+            <ol class="step-list">
+                <li><strong>Fabric ワークスペースの準備</strong> — Microsoft Fabric でワークスペースを作成</li>
+                <li><strong>ミラーリングの設定</strong> — Fabric からミラーリング対象の Cosmos DB データベースを選択</li>
+                <li><strong>コンテナの選択</strong> — ミラーリングするコンテナを個別に選択</li>
+                <li><strong>レプリケーション開始</strong> — 初期スナップショット取得後、継続的レプリケーション開始</li>
+                <li><strong>分析ワークロードの移行</strong> — Synapse Analytics のクエリを Fabric SQL / Spark に移行</li>
+                <li><strong>検証</strong> — データ整合性とクエリ結果を検証</li>
+                <li><strong>Synapse Link の無効化</strong> — 移行完了後、不要になった Synapse Link を無効化</li>
+            </ol>
+        </section>
+
+        <!-- Pricing -->
+        <section class="section">
+            <h2 class="section-title">料金情報</h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>料金</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Cosmos DB → OneLake レプリケーション</td>
+                            <td><strong>無料</strong></td>
+                        </tr>
+                        <tr>
+                            <td>OneLake ストレージ</td>
+                            <td>Fabric Capacity 無料枠あり</td>
+                        </tr>
+                        <tr>
+                            <td>SQL / Spark / Power BI クエリ</td>
+                            <td>Fabric Capacity に基づく課金</td>
+                        </tr>
+                        <tr>
+                            <td>継続バックアップ (7 日間)</td>
+                            <td><strong>追加費用なし</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">制約事項・注意点</h2>
+            <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                <div class="feature-icon" style="background: #FFF3E0;">⚠️</div>
+                <div class="feature-content">
+                    <h4>API 対応制限</h4>
+                    <p>現時点では NoSQL API のみ対応。Gremlin、MongoDB API は Fabric ミラーリング未対応。</p>
+                </div>
+            </div>
+            <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                <div class="feature-icon" style="background: #FFF3E0;">⚠️</div>
+                <div class="feature-content">
+                    <h4>複数書込リージョン非サポート</h4>
+                    <p>マルチリージョン書込のアカウントは Fabric ミラーリング非サポート。</p>
+                </div>
+            </div>
+            <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                <div class="feature-icon" style="background: #FFF3E0;">⚠️</div>
+                <div class="feature-content">
+                    <h4>追加コスト</h4>
+                    <p>Fabric Capacity が必要で、追加のライセンスコストが発生する可能性がある。</p>
+                </div>
+            </div>
+            <div class="feature-card" style="border-left-color: var(--ms-orange);">
+                <div class="feature-icon" style="background: #FFF3E0;">⚠️</div>
+                <div class="feature-content">
+                    <h4>読み取り専用</h4>
+                    <p>ミラーリングから Cosmos DB への書き戻しは不可 (読み取り専用)。CMK 暗号化は OneLake で非サポート。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recommended Actions -->
+        <section class="section">
+            <h2 class="section-title">推奨アクション</h2>
+            <div class="feature-card">
+                <div class="feature-icon">1️⃣</div>
+                <div class="feature-content">
+                    <h4>新規プロジェクト</h4>
+                    <p>Synapse Link を使用せず、Microsoft Fabric ミラーリングを採用する</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">2️⃣</div>
+                <div class="feature-content">
+                    <h4>移行計画の策定</h4>
+                    <p>既存の Synapse Link 環境について 2028 年内の移行完了を目標に計画を策定する</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">3️⃣</div>
+                <div class="feature-content">
+                    <h4>Fabric 導入の検討</h4>
+                    <p>Fabric の容量・ライセンスを確認し、組織の分析基盤としての導入を検討する</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">4️⃣</div>
+                <div class="feature-content">
+                    <h4>API 制約の確認</h4>
+                    <p>Gremlin / MongoDB API 使用の場合、Fabric ミラーリングは NoSQL のみ対応のため代替手段を検討</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <strong>出典:</strong>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=558560">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/azure/cosmos-db/synapse-link">Azure Synapse Link for Cosmos DB ドキュメント</a></li>
+                <li><a href="https://learn.microsoft.com/fabric/database/mirrored-database/azure-cosmos-db">Microsoft Fabric ミラーリング (Cosmos DB)</a></li>
+                <li><a href="https://learn.microsoft.com/fabric/database/mirrored-database/azure-cosmos-db-tutorial">Fabric ミラーリング チュートリアル</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/microsoft-fabric/">Microsoft Fabric 料金</a></li>
+            </ul>
+            <p style="margin-top: 12px; font-size: 12px; color: var(--ms-text-disabled);">Generated: 2026-06-10 | Azure News Summary</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+</body>
+</html>
