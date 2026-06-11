@@ -5,6 +5,11 @@
 
 ## 2026 年
 
+- [2026-06-11 - Azure Storage: GPv1 および Legacy Blob ストレージアカウントの廃止](2026/2026-06-11-storage-gpv1-legacy-blob-retirement.md)
+- [2026-06-11 - Azure Batch: プール用 VM シリーズの廃止 (D/Ds/Dv2/Dsv2/Ls/Av2/F/Fs/Fsv2/G/Gs/Lsv2)](2026/2026-06-11-batch-vm-series-retirement.md)
+- [2026-06-11 - Azure SQL Database: SQL MCP Server 一般提供開始 (GA)](2026/2026-06-11-sql-mcp-server-ga.md)
+- [2026-06-11 - Azure Load Balancer: Inbound NAT rule version 1 (NAT Pools) の廃止](2026/2026-06-11-load-balancer-inbound-nat-v1-retirement.md)
+- [2026-06-10 - Azure SQL Database: Microsoft Entra サーバープリンシパル (ログイン) の一般提供開始](2026/2026-06-10-sql-database-entra-server-principals.md)
 - [2026-06-10 - Azure VPN Client for Linux (Preview): 2026 年 8 月 31 日に廃止](2026/2026-06-10-vpn-client-linux-retirement.md)
 - [2026-06-10 - Azure Cosmos DB: Azure Synapse Link for NoSQL のリタイア](2026/2026-06-10-cosmosdb-synapse-link-retirement.md)
 - [2026-06-09 - Azure Database for PostgreSQL: PostgreSQL Hub for Azure Developers](2026/2026-06-09-postgresql-hub-azure-developers.md)

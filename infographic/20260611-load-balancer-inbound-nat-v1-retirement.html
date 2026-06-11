@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Load Balancer: Inbound NAT Pools V1 廃止 (スコープ縮小)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --category-color: #00A651;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--category-color) 100%);
+            color: white;
+            padding: 40px 32px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(ellipse, rgba(255,255,255,0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .title-badges {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-retirement {
+            background: var(--ms-orange);
+        }
+
+        .badge-networking {
+            background: var(--category-color);
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .title-area .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 4px;
+        }
+
+        .title-area .date {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+
+        /* Important Notice Box */
+        .important-box {
+            background: #FFF3E0;
+            border: 2px solid var(--ms-orange);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin: 24px 0;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .important-box .icon {
+            font-size: 28px;
+            flex-shrink: 0;
+        }
+
+        .important-box .content h3 {
+            color: var(--ms-orange);
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+
+        .important-box .content p {
+            font-size: 14px;
+            color: var(--ms-text-primary);
+            line-height: 1.6;
+        }
+
+        /* Section */
+        .section {
+            margin: 32px 0;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            border-bottom: 3px solid var(--category-color);
+            padding-bottom: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title .icon {
+            font-size: 24px;
+        }
+
+        /* Scope Change */
+        .scope-change {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 16px;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .scope-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid var(--ms-border);
+        }
+
+        .scope-card.previous {
+            border-color: var(--ms-red);
+            background: #FFEBEE;
+        }
+
+        .scope-card.current {
+            border-color: var(--ms-green);
+            background: #E8F5E9;
+        }
+
+        .scope-card h4 {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .scope-card .scope-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .scope-card .scope-list li {
+            padding: 6px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .scope-arrow {
+            font-size: 32px;
+            color: var(--azure-blue);
+            font-weight: bold;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before ul li, .after ul li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Timeline */
+        .timeline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin: 24px 0;
+            position: relative;
+            border: 1px solid var(--ms-border);
+        }
+
+        .timeline::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 15%;
+            right: 15%;
+            height: 4px;
+            background: linear-gradient(to right, var(--ms-orange), var(--ms-red));
+            border-radius: 2px;
+            z-index: 0;
+        }
+
+        .timeline-item {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+            background: var(--ms-surface-secondary);
+            padding: 0 16px;
+        }
+
+        .timeline-item .date {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+        }
+
+        .timeline-item .label {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 4px;
+        }
+
+        .timeline-item .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin: 8px auto;
+        }
+
+        .timeline-item .dot.orange {
+            background: var(--ms-orange);
+            box-shadow: 0 0 0 4px rgba(255, 140, 0, 0.2);
+        }
+
+        .timeline-item .dot.red {
+            background: var(--ms-red);
+            box-shadow: 0 0 0 4px rgba(216, 59, 1, 0.2);
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th,
+        .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            font-weight: 600;
+            color: var(--azure-dark-blue);
+            white-space: nowrap;
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .specs-table .affected {
+            color: var(--ms-red);
+            font-weight: 500;
+        }
+
+        .specs-table .not-affected {
+            color: var(--ms-green);
+            font-weight: 500;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-card.green {
+            border-left-color: var(--ms-green);
+        }
+
+        .feature-card.orange {
+            border-left-color: var(--ms-orange);
+        }
+
+        .feature-card.networking {
+            border-left-color: var(--category-color);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Code Blocks */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Use Cases */
+        .use-case {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .use-case h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .use-case .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            font-style: italic;
+        }
+
+        /* Constraints Box */
+        .constraints-box {
+            background: #FFF8E1;
+            border: 1px solid var(--ms-yellow);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .constraints-box h4 {
+            color: #F57F17;
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .constraints-box ul {
+            padding-left: 20px;
+        }
+
+        .constraints-box li {
+            font-size: 14px;
+            padding: 4px 0;
+            color: var(--ms-text-primary);
+        }
+
+        /* Prerequisites */
+        .prerequisites {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .prereq-card {
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            padding: 16px;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        .prereq-card h5 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--azure-dark-blue);
+            margin-bottom: 6px;
+        }
+
+        .prereq-card p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            padding: 24px;
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .footer h4 {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .footer ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer ul li {
+            padding: 4px 0;
+        }
+
+        .footer ul li a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer ul li a:hover {
+            text-decoration: underline;
+        }
+
+        .footer .generated {
+            margin-top: 16px;
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .title-area {
+                padding: 24px 20px;
+            }
+
+            .title-area h1 {
+                font-size: 22px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .scope-change {
+                grid-template-columns: 1fr;
+            }
+
+            .scope-arrow {
+                transform: rotate(90deg);
+                text-align: center;
+            }
+
+            .timeline {
+                flex-direction: column;
+                gap: 24px;
+                padding: 24px;
+            }
+
+            .timeline::after {
+                top: 15%;
+                bottom: 15%;
+                left: 50%;
+                right: auto;
+                width: 4px;
+                height: 70%;
+            }
+
+            .prerequisites {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="title-badges">
+                <span class="service-badge">Azure Load Balancer</span>
+                <span class="badge badge-networking">Networking</span>
+                <span class="badge badge-retirement">Retirement</span>
+            </div>
+            <h1>Inbound NAT rule V1 (NAT Pools) 廃止<br>- スコープ縮小のお知らせ -</h1>
+            <p class="subtitle">VMSS 用 NAT Pools のみが廃止対象に。単一 VM 用 NAT rules V1 は引き続きサポート。</p>
+            <p class="date">2026-06-11 | 完全廃止: 2027年9月30日</p>
+        </div>
+
+        <!-- Important Notice -->
+        <div class="important-box">
+            <div class="icon">&#9888;&#65039;</div>
+            <div class="content">
+                <h3>重要: 廃止スコープが縮小されました</h3>
+                <p>以前のアナウンスでは<strong>すべての Inbound NAT rules V1</strong> が廃止対象でしたが、今回の更新により<strong>VMSS 用の Inbound NAT Pools のみ</strong>に限定されました。<br>単一 VM 向けの Inbound NAT rules V1 は引き続きサポートされ、移行の必要はありません。</p>
+            </div>
+        </div>
+
+        <!-- Scope Change Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128269;</span> スコープ変更の比較</h2>
+
+            <div class="scope-change">
+                <div class="scope-card previous">
+                    <h4>&#10060; 以前のアナウンス (広範囲)</h4>
+                    <ul class="scope-list">
+                        <li><span style="color: var(--ms-red);">&#9679;</span> 単一 VM 用 Inbound NAT rules V1</li>
+                        <li><span style="color: var(--ms-red);">&#9679;</span> VMSS 用 Inbound NAT Pools</li>
+                        <li><span style="color: var(--ms-red);">&#9679;</span> すべての V1 リソースが対象</li>
+                    </ul>
+                </div>
+                <div class="scope-arrow">&#10145;&#65039;</div>
+                <div class="scope-card current">
+                    <h4>&#9989; 今回の更新 (縮小)</h4>
+                    <ul class="scope-list">
+                        <li><span style="color: var(--ms-green);">&#9679;</span> 単一 VM 用 NAT rules V1 = <strong>影響なし</strong></li>
+                        <li><span style="color: var(--ms-red);">&#9679;</span> VMSS 用 NAT Pools = <strong>廃止対象</strong></li>
+                        <li><span style="color: var(--ms-green);">&#9679;</span> 対象が大幅に限定された</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview: Before/After -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128260;</span> Before / After 比較</h2>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>&#10060; Before (NAT Pools V1)</h4>
+                    <ul>
+                        <li>&#8226; ロードバランサー + VM NIC の両方を更新が必要</li>
+                        <li>&#8226; ポートマッピング確認に NIC との相関が必要</li>
+                        <li>&#8226; NIC レベルで <code>loadBalancerInboundNatPools</code> を参照</li>
+                        <li>&#8226; VMSS スケール時の設定が複雑</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>&#9989; After (NAT Rules V2)</h4>
+                    <ul>
+                        <li>&#8226; ロードバランサーの設定のみで NAT ルール管理</li>
+                        <li>&#8226; ポートマッピングが LB 設定に直接注入</li>
+                        <li>&#8226; Backend Pool をターゲット指定</li>
+                        <li>&#8226; スケールアップ時にポートマッピング自動作成</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128197;</span> 廃止タイムライン</h2>
+
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="date">2026/06/11</div>
+                    <div class="dot orange"></div>
+                    <div class="label">スコープ縮小発表</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="date">2026/11/15</div>
+                    <div class="dot orange"></div>
+                    <div class="label">新規作成ブロック</div>
+                </div>
+                <div class="timeline-item">
+                    <div class="date">2027/09/30</div>
+                    <div class="dot red"></div>
+                    <div class="label">完全廃止</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128421;</span> アーキテクチャ比較</h2>
+
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Before["Inbound NAT Pools V1 - 廃止対象"]
+        LB1["Azure Load Balancer"]
+        NP["Inbound NAT Pool&lt;br/&gt;frontendPortRange: 50000-50119"]
+        LB1 --> NP
+        NP --> NIC1["VMSS Instance 0&lt;br/&gt;NIC: loadBalancerInboundNatPools"]
+        NP --> NIC2["VMSS Instance 1&lt;br/&gt;NIC: loadBalancerInboundNatPools"]
+        NP --> NIC3["VMSS Instance N&lt;br/&gt;NIC: loadBalancerInboundNatPools"]
+    end
+
+    subgraph After["Inbound NAT Rules V2 - 移行先"]
+        LB2["Azure Load Balancer"]
+        NR["Inbound NAT Rule V2&lt;br/&gt;Target: Backend Pool"]
+        BP["Backend Pool"]
+        LB2 --> NR
+        NR --> BP
+        BP --> VM1["VMSS Instance 0"]
+        BP --> VM2["VMSS Instance 1"]
+        BP --> VM3["VMSS Instance N"]
+    end
+                </pre>
+            </div>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-top: 12px;">
+                V1 (NAT Pools) ではロードバランサーと各 VMSS インスタンスの NIC の双方に設定が必要だったが、V2 ではロードバランサーのバックエンドプールを直接ターゲットとし、NIC への参照が不要になる。
+            </p>
+        </div>
+
+        <!-- Technical Specifications -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128203;</span> 技術仕様</h2>
+
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>廃止対象</td>
+                        <td class="affected">Inbound NAT Pools (VMSS 用の Inbound NAT rules V1)</td>
+                    </tr>
+                    <tr>
+                        <td>非対象</td>
+                        <td class="not-affected">単一 VM 用 Inbound NAT rules V1 (引き続きサポート)</td>
+                    </tr>
+                    <tr>
+                        <td>新規作成停止日</td>
+                        <td>2026年11月15日</td>
+                    </tr>
+                    <tr>
+                        <td>完全廃止日</td>
+                        <td>2027年9月30日</td>
+                    </tr>
+                    <tr>
+                        <td>移行先</td>
+                        <td>Inbound NAT rules V2 (バックエンドプールをターゲット)</td>
+                    </tr>
+                    <tr>
+                        <td>V1 ARM プロパティ</td>
+                        <td><code>inboundNatPools</code> (LB) + <code>loadBalancerInboundNatPools</code> (VMSS NIC)</td>
+                    </tr>
+                    <tr>
+                        <td>V2 ARM プロパティ</td>
+                        <td><code>inboundNatRules</code> + <code>backendAddressPool</code></td>
+                    </tr>
+                    <tr>
+                        <td>必要な LB SKU</td>
+                        <td>Standard (Basic の場合は先にアップグレードが必要)</td>
+                    </tr>
+                    <tr>
+                        <td>VMSS アップグレードポリシー</td>
+                        <td>Manual または Automatic (Rolling は非サポート)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Key Features / Changes -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#9889;</span> 主要な変更点と V2 のメリット</h2>
+
+            <div class="feature-card networking">
+                <div class="feature-icon">&#128269;</div>
+                <div class="feature-content">
+                    <h4>廃止スコープの縮小</h4>
+                    <p>すべての Inbound NAT rules V1 から、VMSS 用の Inbound NAT Pools のみに対象を限定。単一 VM ユーザーは移行不要。</p>
+                </div>
+            </div>
+
+            <div class="feature-card green">
+                <div class="feature-icon">&#128736;</div>
+                <div class="feature-content">
+                    <h4>LB のみで設定完結 (NIC 更新不要)</h4>
+                    <p>V2 ではロードバランサーの設定だけで NAT ルールを管理可能。VMSS インスタンスの NIC を個別に更新する必要がなくなる。</p>
+                </div>
+            </div>
+
+            <div class="feature-card green">
+                <div class="feature-icon">&#128065;</div>
+                <div class="feature-content">
+                    <h4>ポートマッピングの可視性向上</h4>
+                    <p>V2 ではポートマッピングがロードバランサーの設定に直接注入され、NIC との相関なしで確認可能。運用負荷を軽減。</p>
+                </div>
+            </div>
+
+            <div class="feature-card green">
+                <div class="feature-icon">&#128640;</div>
+                <div class="feature-content">
+                    <h4>自動スケール対応の最適化</h4>
+                    <p>スケールアップ時に新しいインスタンスへのポートマッピングが自動作成。デプロイメントの簡素化と更新の最適化を実現。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128230;</div>
+                <div class="feature-content">
+                    <h4>自動移行スクリプト提供</h4>
+                    <p><code>AzureLoadBalancerNATPoolMigration</code> PowerShell モジュールにより、移行作業を自動化可能。移行コストを最小化。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Prerequisites -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#9989;</span> 移行の前提条件</h2>
+
+            <div class="prerequisites">
+                <div class="prereq-card">
+                    <h5>Standard SKU 必須</h5>
+                    <p>ロードバランサーが Standard SKU であること。Basic SKU の場合は先にアップグレードが必要。</p>
+                </div>
+                <div class="prereq-card">
+                    <h5>アップグレードポリシー</h5>
+                    <p>VMSS のアップグレードポリシーが Manual または Automatic であること。Rolling は非サポート。</p>
+                </div>
+                <div class="prereq-card">
+                    <h5>最新ツール</h5>
+                    <p>最新バージョンの Azure CLI または Azure PowerShell モジュールがインストールされていること。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Samples -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128187;</span> 移行手順 (コードサンプル)</h2>
+
+            <h3 style="font-size: 16px; margin: 16px 0 8px; color: var(--azure-dark-blue);">影響確認: NAT Pool の有無をチェック</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Bash (Azure CLI)</span>
+                </div>
+                <pre><code class="language-bash"># Inbound NAT Pool の一覧を確認
+az network lb inbound-nat-pool list \
+  -g MyResourceGroup \
+  --lb-name MyLoadBalancer</code></pre>
+            </div>
+
+            <h3 style="font-size: 16px; margin: 16px 0 8px; color: var(--azure-dark-blue);">手動移行: Azure CLI</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Bash (Azure CLI)</span>
+                </div>
+                <pre><code class="language-bash"># 1. Inbound NAT Pool を削除
+az network lb inbound-nat-pool delete \
+  -g MyResourceGroup \
+  --lb-name MyLoadBalancer \
+  -n MyNatPool
+
+# 2. VMSS から NAT Pool 参照を削除
+az vmss update \
+  -g MyResourceGroup \
+  -n MyVMScaleSet \
+  --remove virtualMachineProfile.networkProfile.networkInterfaceConfigurations[0].ipConfigurations[0].loadBalancerInboundNatPools
+
+# 3. 全 VMSS インスタンスを更新
+az vmss update-instances \
+  --instance-ids '*' \
+  --resource-group MyResourceGroup \
+  --name MyVMScaleSet
+
+# 4. Inbound NAT Rule V2 を作成
+az network lb inbound-nat-rule create \
+  -g MyResourceGroup \
+  --lb-name MyLoadBalancer \
+  -n MyNatRule \
+  --protocol Tcp \
+  --frontend-port-range-start 201 \
+  --frontend-port-range-end 500 \
+  --backend-port 22 \
+  --backend-address-pool MybackendPool</code></pre>
+            </div>
+
+            <h3 style="font-size: 16px; margin: 16px 0 8px; color: var(--azure-dark-blue);">自動移行: PowerShell モジュール</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">PowerShell</span>
+                </div>
+                <pre><code class="language-powershell"># AzureLoadBalancerNATPoolMigration モジュールをインストール
+Install-Module -Name AzureLoadBalancerNATPoolMigration `
+  -Scope CurrentUser -Repository PSGallery -Force
+
+# 移行を実行
+Start-AzNATPoolMigration `
+  -ResourceGroupName &lt;loadBalancerResourceGroupName&gt; `
+  -LoadBalancerName &lt;loadBalancerName&gt;</code></pre>
+            </div>
+        </div>
+
+        <!-- Constraints -->
+        <div class="constraints-box">
+            <h4>&#9888;&#65039; 制約事項・注意点</h4>
+            <ul>
+                <li>移行中は NAT ルールを通過するアクティブなトラフィックに<strong>ダウンタイムが発生</strong> (ロードバランシングルール・アウトバウンドルールのトラフィックは影響なし)</li>
+                <li>VMSS のアップグレードポリシーが <strong>Rolling の場合は自動移行スクリプトが使用不可</strong></li>
+                <li>Basic SKU のロードバランサーは先に <strong>Standard SKU へのアップグレードが必要</strong></li>
+                <li>フロントエンドポート範囲が不十分な場合、バックエンドプールのスケールアップがブロックされる</li>
+                <li>複数の NAT ルールでポート範囲が重複したり、同じバックエンドポートを共有したりできない</li>
+            </ul>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title"><span class="icon">&#128161;</span> ユースケース</h2>
+
+            <div class="use-case">
+                <h4>VMSS への SSH/RDP アクセス</h4>
+                <p class="scenario">VMSS の各インスタンスに対して SSH (ポート 22) アクセスを提供する環境で、現在 Inbound NAT Pools を使用している場合</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">Bash (Azure CLI)</span>
+                    </div>
+                    <pre><code class="language-bash"># V2 NAT ルールで同等の機能を実現
+az network lb inbound-nat-rule create \
+  -g MyResourceGroup \
+  --lb-name MyLoadBalancer \
+  -n SSHNatRule \
+  --protocol Tcp \
+  --frontend-port-range-start 50000 \
+  --frontend-port-range-end 50119 \
+  --backend-port 22 \
+  --backend-address-pool MyVMSSBackendPool</code></pre>
+                </div>
+                <p style="font-size: 13px; color: var(--ms-text-secondary); margin-top: 8px;">スケールセットのスケール操作に応じて、各インスタンスへのポートマッピングが自動的に管理される。</p>
+            </div>
+
+            <div class="use-case">
+                <h4>大規模 VMSS 環境でのポート管理最適化</h4>
+                <p class="scenario">数十〜数百のインスタンスを持つ VMSS で、各インスタンスへの個別接続管理が煩雑な場合</p>
+                <p style="font-size: 14px; color: var(--ms-text-primary); margin-top: 8px;">V2 への移行により、バックエンドプールを通じた一元管理が可能に。NIC レベルの設定変更が不要になり、スケーリング時の運用負荷が大幅に低減される。</p>
+            </div>
+
+            <div class="use-case">
+                <h4>メンテナンスウィンドウ計画</h4>
+                <p class="scenario">本番環境で NAT Pool を使用しており、ダウンタイムを最小化しながら移行を実施する必要がある場合</p>
+                <p style="font-size: 14px; color: var(--ms-text-primary); margin-top: 8px;">NAT ルールのトラフィックのみがダウンタイム対象。ロードバランシングルールやアウトバウンドルールは影響を受けないため、影響範囲を限定した計画的な移行が可能。</p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4>出典・参考リンク</h4>
+            <ul>
+                <li><a href="https://azure.microsoft.com/updates?id=565482" target="_blank">Azure Updates - Inbound NAT rule V1 retirement announcement</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/load-balancer/inbound-nat-rules" target="_blank">Microsoft Learn - Inbound NAT rules</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/load-balancer/load-balancer-nat-pool-migration" target="_blank">Microsoft Learn - NAT Pool to V2 Migration Guide</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/load-balancer/upgrade-basic-standard-with-powershell" target="_blank">Microsoft Learn - Basic to Standard Upgrade</a></li>
+            </ul>
+            <p class="generated">Generated: 2026-06-11 | Azure News Summary Infographic</p>
+        </div>
+    </div>
+
+    <!-- Mermaid.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+
+    <!-- highlight.js -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
