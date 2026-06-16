@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-06-16 - Azure Functions: VS Code 向け新プロジェクトテンプレートとテンプレートギャラリー](2026/2026-06-16-functions-vscode-template-gallery.md)
+- [2026-06-16 - Azure Monitor: Log Analytics サマリールールのポータルエクスペリエンスが一般提供開始](2026/2026-06-16-log-analytics-summary-rules-experience.md)
 - [2026-06-11 - Azure Storage: GPv1 および Legacy Blob ストレージアカウントの廃止](2026/2026-06-11-storage-gpv1-legacy-blob-retirement.md)
 - [2026-06-11 - Azure Batch: プール用 VM シリーズの廃止 (D/Ds/Dv2/Dsv2/Ls/Av2/F/Fs/Fsv2/G/Gs/Lsv2)](2026/2026-06-11-batch-vm-series-retirement.md)
 - [2026-06-11 - Azure SQL Database: SQL MCP Server 一般提供開始 (GA)](2026/2026-06-11-sql-mcp-server-ga.md)
