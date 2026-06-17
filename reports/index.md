@@ -5,6 +5,9 @@
 
 ## 2026 年
 
+- [2026-06-17 - Azure NAT Gateway: StandardV2 NAT Gateway で ICMP サポートが一般提供開始](2026/2026-06-17-nat-gateway-v2-icmp-support.md)
+- [2026-06-17 - Azure Databricks: OneLake ネイティブアクセス (読み取り GA / 書き込みプレビュー)](2026/2026-06-17-databricks-onelake-native-access.md)
+- [2026-06-17 - Azure Migrate: GitHub Copilot Modernization 統合によるスケーラブルなコード評価](2026/2026-06-17-azure-migrate-copilot-modernization.md)
 - [2026-06-16 - Azure Functions: VS Code 向け新プロジェクトテンプレートとテンプレートギャラリー](2026/2026-06-16-functions-vscode-template-gallery.md)
 - [2026-06-16 - Azure Monitor: Log Analytics サマリールールのポータルエクスペリエンスが一般提供開始](2026/2026-06-16-log-analytics-summary-rules-experience.md)
 - [2026-06-11 - Azure Storage: GPv1 および Legacy Blob ストレージアカウントの廃止](2026/2026-06-11-storage-gpv1-legacy-blob-retirement.md)
