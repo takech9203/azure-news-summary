@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure NetApp Files: Migration Assistant の一般提供開始</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        /* Title Area */
+        .title-area {
+            text-align: center;
+            margin-bottom: 48px;
+            padding: 40px 24px;
+            background: linear-gradient(135deg, var(--ms-blue-100) 0%, var(--ms-blue-200) 100%);
+            border-radius: 16px;
+            border: 1px solid var(--ms-blue-300);
+        }
+
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: #00BCF2;
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .title-area h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 8px;
+        }
+
+        .title-area .date {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Section styles */
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 16px;
+            line-height: 1.9;
+            color: var(--ms-text-primary);
+            margin-bottom: 24px;
+            padding: 20px;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h3, .after h3 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .before h3 { color: var(--ms-red); }
+        .after h3 { color: var(--ms-green); }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before ul li, .after ul li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .before ul li::before {
+            content: "\2717";
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after ul li::before {
+            content: "\2713";
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Stats grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Feature cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Tech specs table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th,
+        .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-dark-blue);
+            font-weight: 700;
+        }
+
+        .specs-table tr:hover {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Code blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 16px;
+            overflow-x: auto;
+            border-radius: 8px;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #E8E8E8;
+        }
+
+        /* Use case */
+        .use-case {
+            margin: 24px 0;
+            padding: 20px;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+        }
+
+        .use-case h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 12px;
+        }
+
+        .use-case p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Pricing */
+        .pricing-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .pricing-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-dark-blue);
+            margin-bottom: 12px;
+        }
+
+        .pricing-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--ms-border);
+            font-size: 14px;
+        }
+
+        .pricing-item:last-child {
+            border-bottom: none;
+        }
+
+        .pricing-item .label {
+            color: var(--ms-text-secondary);
+        }
+
+        .pricing-item .value {
+            font-weight: 700;
+            color: var(--ms-text-primary);
+        }
+
+        .pricing-example {
+            margin-top: 16px;
+            padding: 12px;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .pricing-example strong {
+            color: var(--azure-blue);
+        }
+
+        /* Constraints */
+        .constraints-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .constraints-list li {
+            padding: 10px 16px;
+            margin: 8px 0;
+            background: #FFF8E1;
+            border-left: 4px solid var(--ms-yellow);
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Steps */
+        .steps-list {
+            list-style: none;
+            padding: 0;
+            counter-reset: step-counter;
+        }
+
+        .steps-list li {
+            counter-increment: step-counter;
+            padding: 12px 16px 12px 48px;
+            margin: 8px 0;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.6;
+            position: relative;
+        }
+
+        .steps-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 12px;
+            top: 12px;
+            width: 24px;
+            height: 24px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 48px;
+            padding: 24px;
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .footer p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+            word-break: break-all;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .source-links {
+            list-style: none;
+            padding: 0;
+            margin-top: 12px;
+        }
+
+        .source-links li {
+            margin: 4px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .title-area h1 {
+                font-size: 22px;
+            }
+
+            .stat-value {
+                font-size: 24px;
+            }
+
+            .container {
+                padding: 20px 16px;
+            }
+
+            .pricing-item {
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="badges">
+                <span class="service-badge">Azure NetApp Files</span>
+                <span class="badge-ga">GA</span>
+            </div>
+            <h1>Azure NetApp Files: Migration Assistant の一般提供開始</h1>
+            <p class="date">2026-06-23 | Migration Assistant (with SnapMirror)</p>
+        </div>
+
+        <!-- Overview & Stats -->
+        <div class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure NetApp Files の Migration Assistant が一般提供 (GA) として正式リリース。ONTAP の SnapMirror レプリケーションエンジンを活用し、オンプレミスの ONTAP ストレージまたは Cloud Volumes ONTAP から Azure NetApp Files への効率的かつコスト効果の高いデータ移行を実現する。
+            </p>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">Block-Level</div>
+                    <div class="stat-label">レプリケーション効率</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">Minimal</div>
+                    <div class="stat-label">カットオーバーダウンタイム</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">100%</div>
+                    <div class="stat-label">メタデータ保全</div>
+                </div>
+            </div>
+
+            <!-- Before/After -->
+            <div class="before-after">
+                <div class="before">
+                    <h3>Before</h3>
+                    <ul>
+                        <li>サードパーティツールやファイルコピーベースの移行が必要 (低速・高コスト)</li>
+                        <li>大きなネットワーク帯域幅消費、非効率な差分同期</li>
+                        <li>移行中のダウンタイムが長い</li>
+                        <li>スナップショットやファイルメタデータを失うリスク</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h3>After</h3>
+                    <ul>
+                        <li>SnapMirror ブロックレベルレプリケーションで効率的な転送</li>
+                        <li>ストレージ最適化された転送でネットワークコスト削減</li>
+                        <li>最小限のカットオーバーウィンドウでダウンタイム最小化</li>
+                        <li>完全なデータ整合性 (スナップショット + メタデータ保全)</li>
+                        <li>Azure Portal と REST API による統合管理</li>
+                        <li>ドライラン機能でカットオーバー前テスト可能</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title">アーキテクチャ</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart LR
+    subgraph OnPrem["&#127970; オンプレミス / CVO"]
+        SRC["&#128230; ソースボリューム&lt;br&gt;(ONTAP 9.10+)"]
+        ICLIF["&#128268; Intercluster LIF"]
+    end
+
+    subgraph Network["&#127760; ネットワーク接続"]
+        CONN["ExpressRoute / VPN&lt;br&gt;(TCP 11104, 11105, HTTPS)"]
+    end
+
+    subgraph Azure["&#9729;&#65039; Azure"]
+        subgraph ANF["Azure NetApp Files"]
+            MA["&#128260; Migration Assistant"]
+            DST["&#128230; ターゲットボリューム&lt;br&gt;(Migration Type)"]
+        end
+        VNET["&#128279; VNet / Delegated Subnet"]
+    end
+
+    SRC -->|"1. Cluster Peering"| ICLIF
+    ICLIF -->|"2. SnapMirror&lt;br&gt;ベースライン転送"| CONN
+    CONN -->|"3. レプリケーション"| VNET
+    VNET --> MA
+    MA -->|"4. インクリメンタル同期"| DST
+    DST -->|"5. カットオーバー &&lt;br&gt;ファイナライズ"| DST
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title">主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128260;</div>
+                <div class="feature-content">
+                    <h4>SnapMirror ベースのブロックレベルレプリケーション</h4>
+                    <p>変更されたブロックのみを転送。ベースライン転送後はインクリメンタル更新のみ送信し、ネットワーク帯域幅を最適化。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#9889;</div>
+                <div class="feature-content">
+                    <h4>完全なデータ保全</h4>
+                    <p>ディレクトリ、ファイル、ファイルメタデータ、既存のボリュームスナップショットをすべて保持したまま移行。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128203;</div>
+                <div class="feature-content">
+                    <h4>ドライラン機能</h4>
+                    <p>カットオーバー前にボリュームを読み書き可能にし、アプリケーションテストが可能。問題があれば再開して同期を継続。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128421;&#65039;</div>
+                <div class="feature-content">
+                    <h4>Azure Portal 統合管理</h4>
+                    <p>NetApp アカウントの Migration Assistant ビューから一元管理。移行の作成、同期、ドライラン、カットオーバー、ファイナライズを GUI で実行。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128295;</div>
+                <div class="feature-content">
+                    <h4>REST API / PowerShell サポート</h4>
+                    <p>REST API による自動化対応。PowerShell サンプルスクリプトで自動化ワークフロー構築が可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#128197;</div>
+                <div class="feature-content">
+                    <h4>柔軟なレプリケーションスケジュール</h4>
+                    <p>ソースボリュームとターゲットボリューム間の同期頻度を選択可能。ビジネスニーズに合わせた柔軟な設定。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2 class="section-title">技術仕様</h2>
+            <table class="specs-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ソース要件</td>
+                        <td>ONTAP 9.10.0+</td>
+                    </tr>
+                    <tr>
+                        <td>ライセンス</td>
+                        <td>SnapMirror (Azure Technology Specialist が適用)</td>
+                    </tr>
+                    <tr>
+                        <td>ネットワーク</td>
+                        <td>Standard ネットワーク機能が必須</td>
+                    </tr>
+                    <tr>
+                        <td>ファイアウォールルール</td>
+                        <td>ICMP, TCP 11104, TCP 11105, HTTPS</td>
+                    </tr>
+                    <tr>
+                        <td>サブネット空き IP</td>
+                        <td>7 個以上</td>
+                    </tr>
+                    <tr>
+                        <td>ピアリングタイムアウト</td>
+                        <td>60 分</td>
+                    </tr>
+                    <tr>
+                        <td>プロトコル</td>
+                        <td>NFS, SMB, Dual-protocol</td>
+                    </tr>
+                    <tr>
+                        <td>ボリュームタイプ</td>
+                        <td>FlexVol (FlexGroup 非対応)</td>
+                    </tr>
+                    <tr>
+                        <td>ターゲットボリュームサイズ</td>
+                        <td>ソースの 120% 以上</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Setup Steps -->
+        <div class="section">
+            <h2 class="section-title">セットアップ手順 (Portal)</h2>
+            <ol class="steps-list">
+                <li>NetApp アカウントで Migration Assistant を選択</li>
+                <li>New migration でソース情報を入力</li>
+                <li>ターゲットボリュームのプロトコル・エクスポートポリシーを設定</li>
+                <li>Review + Create で作成</li>
+                <li>Configure Peering で Intercluster LIF を設定</li>
+                <li>オンプレミス側で cluster peering を実行</li>
+                <li>オンプレミス側で SVM peering を実行</li>
+                <li>ベースライン転送の完了を待機</li>
+                <li>任意: Dry run でテスト実行</li>
+                <li>Cut over でレプリケーション関係を切断</li>
+                <li>Finalize migration で移行を完了</li>
+            </ol>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title">ユースケース</h2>
+
+            <div class="use-case">
+                <h4>1. オンプレミス ONTAP から Azure への大規模データ移行</h4>
+                <p>エンタープライズ環境でオンプレミスの NetApp ONTAP 上に数十 TB のファイルデータがある場合、SnapMirror のブロックレベルレプリケーションにより、初回のベースライン転送後は差分のみ同期。最終カットオーバー時のダウンタイムを最小化。</p>
+            </div>
+
+            <div class="use-case">
+                <h4>2. Cloud Volumes ONTAP (他クラウド) から Azure への移行</h4>
+                <p>他クラウドプロバイダーで CVO を利用している場合、直接 SnapMirror レプリケーションで移行可能。中間ステップなしでシームレスな移行を実現し、既存のスナップショットやメタデータも保持。</p>
+            </div>
+
+            <div class="use-case">
+                <h4>3. DR/テスト目的でのドライラン検証</h4>
+                <p>本番移行前にドライラン機能でアプリケーション動作を検証。ボリュームが読み書き可能になり、パフォーマンステストや接続確認が可能。問題があれば再開して同期を継続。</p>
+            </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="section">
+            <h2 class="section-title">料金</h2>
+            <div class="pricing-card">
+                <h4>料金モデル</h4>
+                <div class="pricing-item">
+                    <span class="label">Migration Assistant 自体</span>
+                    <span class="value">追加料金なし</span>
+                </div>
+                <div class="pricing-item">
+                    <span class="label">課金対象</span>
+                    <span class="value">標準 ANF 容量プール料金</span>
+                </div>
+                <div class="pricing-item">
+                    <span class="label">パフォーマンスティア</span>
+                    <span class="value">5 種類 (Elastic, Ultra, Premium, Standard, Flexible)</span>
+                </div>
+                <div class="pricing-item">
+                    <span class="label">最小プールサイズ</span>
+                    <span class="value">1 TiB</span>
+                </div>
+                <div class="pricing-item">
+                    <span class="label">最大プールサイズ</span>
+                    <span class="value">2,048 TiB</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Constraints -->
+        <div class="section">
+            <h2 class="section-title">制約事項・注意点</h2>
+            <ul class="constraints-list">
+                <li>FlexGroup ボリュームは Large Volumes 移行に非対応</li>
+                <li>クラスターピアリングは 60 分以内に承認が必要</li>
+                <li>単一ソースクラスター: 一度に 1 つの Azure サブスクリプション</li>
+                <li>移行中はバックアップを有効化しないこと</li>
+                <li>Standard ネットワーク機能のみ対応 (Basic 非対応)</li>
+                <li>SnapMirror ライセンスが必要</li>
+                <li>LDAP/AD 設定はユーザー責任</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Source URLs</p>
+            <ul class="source-links">
+                <li><a href="https://azure.microsoft.com/updates?id=565480" target="_blank">https://azure.microsoft.com/updates?id=565480</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-netapp-files/migrate-volumes" target="_blank">https://learn.microsoft.com/azure/azure-netapp-files/migrate-volumes</a></li>
+            </ul>
+            <p style="margin-top: 16px; font-size: 12px; color: #A19F9D;">Generated on 2026-06-24</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+</body>
+</html>

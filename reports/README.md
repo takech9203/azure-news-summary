@@ -5,7 +5,10 @@
 
 ## 2026 年
 
+- [2026-06-24 - Application Gateway for Containers: Inference Gateway (AI ゲートウェイ機能)](2026/2026-06-24-appgw-containers-inference-gateway.md)
+- [2026-06-23 - Azure NetApp Files: Migration Assistant の一般提供開始](2026/2026-06-23-netapp-files-migration-assistant.md)
 - [2026-06-22 - Azure VMware Solution: AV36 ノードのリタイア日変更 (2028 年 9 月 30 日)](2026/2026-06-22-vmware-solution-av36-retirement-date-update.md)
+- [2026-06-22 - Azure VMware Solution: AV36 ノードのリタイア日前倒し (2027 年 9 月 30 日)](2026/2026-06-22-vmware-solution-av36-retirement-date-change.md)
 - [2026-06-17 - Azure NAT Gateway: StandardV2 NAT Gateway で ICMP サポートが一般提供開始](2026/2026-06-17-nat-gateway-v2-icmp-support.md)
 - [2026-06-17 - Azure Databricks: OneLake ネイティブアクセス (読み取り GA / 書き込みプレビュー)](2026/2026-06-17-databricks-onelake-native-access.md)
 - [2026-06-17 - Azure Migrate: GitHub Copilot Modernization 統合によるスケーラブルなコード評価](2026/2026-06-17-azure-migrate-copilot-modernization.md)
