@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-06-25 - Azure Blueprints: 廃止タイムラインの延長 (2027 年 1 月 31 日まで)](2026/2026-06-25-azure-blueprints-retirement-extension.md)
 - [2026-06-24 - Application Gateway for Containers: Inference Gateway (AI ゲートウェイ機能)](2026/2026-06-24-appgw-containers-inference-gateway.md)
 - [2026-06-23 - Azure NetApp Files: Migration Assistant の一般提供開始](2026/2026-06-23-netapp-files-migration-assistant.md)
 - [2026-06-22 - Azure VMware Solution: AV36 ノードのリタイア日変更 (2028 年 9 月 30 日)](2026/2026-06-22-vmware-solution-av36-retirement-date-update.md)
