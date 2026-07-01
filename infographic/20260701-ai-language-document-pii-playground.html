@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure AI Language: Document PII Playground (Microsoft Foundry NextGen)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 40%, var(--ms-purple) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(135, 100, 184, 0.2) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 30px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: white;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--ms-purple);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--ms-purple);
+        }
+
+        .key-points h3 {
+            color: var(--ms-purple);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--ms-purple);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(135, 100, 184, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--ms-purple);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(135, 100, 184, 0.15);
+            border-color: var(--ms-purple);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #F3EEFB;
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-purple));
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: white;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-top: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Feature Tags */
+        .feature-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 16px 0;
+        }
+
+        .feature-tag {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .feature-tag.ga {
+            background: #E8F5E9;
+            color: var(--ms-green);
+            border: 1px solid var(--ms-green);
+        }
+
+        .feature-tag.preview {
+            background: #FFF8E1;
+            color: #8B6914;
+            border: 1px solid var(--ms-yellow);
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--ms-purple);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.7;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 22px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-tags {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure AI Language</span>
+            <h1>Document PII Playground<br>(Microsoft Foundry NextGen)</h1>
+            <p class="hero-subtitle">ネイティブドキュメントからの個人情報検出・墨消しをコードなしで即座に評価</p>
+            <div class="hero-meta">
+                <span class="badge badge-ga">GA</span>
+                <span class="badge badge-preview">Public Preview</span>
+                <span class="badge badge-date">2026-07-01</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview Section -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure AI Language の Document-based PII（個人情報検出）機能に、Microsoft Foundry NextGen ポータル上で利用可能な Playground エクスペリエンスが追加された。Public Preview と GA が同時発表され、PDF、Word (.docx)、テキスト (.txt) などのネイティブドキュメントファイルから個人情報を検出・墨消しする機能をコードなしで即座に評価可能になった。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>Microsoft Foundry NextGen ポータルに Document PII Playground を統合</li>
+                    <li>プリロードされたサンプルドキュメントにより、準備不要で機能評価を開始可能</li>
+                    <li>PDF、DOCX、TXT のネイティブドキュメントを直接処理し、構造・フォーマットを保持</li>
+                    <li>GA と Preview の同時リリースにより本番環境と先進機能の両方をサポート</li>
+                    <li>墨消し結果のビジュアル表示によりステークホルダーへのデモが容易に</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>Document-based PII 機能を試すには、Azure リソースの作成、ストレージの準備、API リクエストの構築が必要で、初期評価に時間がかかった</li>
+                        <li>サンプルドキュメントが提供されていなかったため、テスト用ドキュメントをユーザー自身で準備する必要があった</li>
+                        <li>非同期 API のワークフローを理解するために開発者向けドキュメントを読み込む必要があった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>Microsoft Foundry NextGen ポータル上で、コードなしで Document PII 機能を即座に試せるようになった</li>
+                        <li>プリロードされたサンプルドキュメントにより、準備不要で機能評価を開始できる</li>
+                        <li>墨消し結果がビジュアルに表示されるため、ステークホルダーへの機能デモが容易になった</li>
+                        <li>GA リリースにより本番環境からの Playground 利用が安定的にサポートされた</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph User["ユーザー"]
+        Browser[ブラウザ]
+    end
+
+    subgraph Foundry["Microsoft Foundry NextGen ポータル"]
+        Playground[Document PII Playground]
+        Sample[サンプルドキュメント]
+        Playground --> Sample
+    end
+
+    subgraph Azure["Azure AI Language"]
+        DPII[Document-based PII API]
+        Detection[エンティティ検出]
+        Redaction[墨消し処理]
+        DPII --> Detection
+        Detection --> Redaction
+    end
+
+    subgraph Output["出力"]
+        RedactedDoc[墨消しドキュメント]
+        JSONResult[JSON メタデータ]
+    end
+
+    Browser --> Playground
+    Playground -->|ドキュメント送信| DPII
+    Redaction --> RedactedDoc
+    Redaction --> JSONResult
+    RedactedDoc --> Playground
+    JSONResult --> Playground
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">対応ファイル形式<br>(PDF / DOCX / TXT)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">40</div>
+                    <div class="stat-label">最大ドキュメント数<br>(1リクエストあたり)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">10 MB</div>
+                    <div class="stat-label">最大コンテンツサイズ<br>(1リクエストあたり)</div>
+                </div>
+            </div>
+
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F3AE;</div>
+                    <div class="feature-content">
+                        <h4>Playground サンプル体験</h4>
+                        <p>Microsoft Foundry NextGen ポータルに統合された Playground で、プリロードされたサンプルドキュメントを使用して即座に Document PII 機能をデモ・評価できる。コーディング不要でインタラクティブな体験を提供。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x2705;</div>
+                    <div class="feature-content">
+                        <h4>リフレッシュされた GA Playground</h4>
+                        <p>キュレーションされたサンプル入出力により、コードなしで PII 検出機能を本番品質で評価可能。GA リリースにより安定した本番環境でのサポートを実現。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4C4;</div>
+                    <div class="feature-content">
+                        <h4>Document-based PII の基盤機能</h4>
+                        <p>ネイティブドキュメント（PDF, DOCX, TXT）の直接処理に対応。ドキュメントの構造・フォーマットを保持したまま PII を検出・墨消し。設定可能なマスキングポリシーによる柔軟な制御。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Technical Specs -->
+            <h3 style="font-size: 18px; color: var(--ms-blue-900); margin: 32px 0 16px;">Technical Specifications</h3>
+            <table class="specs-table">
+                <tr>
+                    <th>対応ファイル形式</th>
+                    <td>PDF (.pdf), Microsoft Word (.docx), テキスト (.txt)</td>
+                </tr>
+                <tr>
+                    <th>処理方式</th>
+                    <td>非同期 API</td>
+                </tr>
+                <tr>
+                    <th>最大ドキュメント数</th>
+                    <td>40 / リクエスト</td>
+                </tr>
+                <tr>
+                    <th>最大コンテンツサイズ</th>
+                    <td>10 MB / リクエスト</td>
+                </tr>
+                <tr>
+                    <th>GA API バージョン</th>
+                    <td><code>2026-05-01</code></td>
+                </tr>
+                <tr>
+                    <th>Preview API バージョン</th>
+                    <td><code>2026-05-15-preview</code></td>
+                </tr>
+            </table>
+
+            <!-- GA / Preview Features -->
+            <h3 style="font-size: 18px; color: var(--ms-blue-900); margin: 32px 0 16px;">GA Features</h3>
+            <div class="feature-tags">
+                <span class="feature-tag ga">出力品質改善</span>
+                <span class="feature-tag ga">画像墨消し (ブラー)</span>
+                <span class="feature-tag ga">PDF サポート</span>
+                <span class="feature-tag ga">Word サポート</span>
+            </div>
+
+            <h3 style="font-size: 18px; color: var(--ms-blue-900); margin: 32px 0 16px;">Preview Features</h3>
+            <div class="feature-tags">
+                <span class="feature-tag preview">ブラックマーカー墨消し</span>
+                <span class="feature-tag preview">匿名化/合成置換</span>
+                <span class="feature-tag preview">エンティティラベルマスキング</span>
+                <span class="feature-tag preview">信頼度スコア閾値</span>
+            </div>
+
+            <!-- Code Sample -->
+            <h3 style="font-size: 18px; color: var(--ms-blue-900); margin: 32px 0 16px;">Code Sample</h3>
+            <pre><code class="language-bash"># ジョブの送信
+curl -X POST "{endpoint}/language/analyze-documents/jobs?api-version=2026-05-01" \
+  -H "Ocp-Apim-Subscription-Key: {key}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "tasks": [{
+      "kind": "PiiEntityRecognition",
+      "parameters": {
+        "sourceContainerUrl": "{source-sas-url}",
+        "targetContainerUrl": "{target-sas-url}"
+      }
+    }]
+  }'</code></pre>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>&#x1F3E6; コンプライアンス部門での評価</h4>
+                    <p class="scenario">金融機関のコンプライアンス部門が顧客ドキュメントの PII 墨消し機能を導入検討する際に、Playground を使用してコードなしで即座に機能を評価。サンプルドキュメントで検出精度を確認し、本番導入の意思決定を加速。</p>
+                    <p class="effect">効果: POC 期間を大幅に短縮し、ステークホルダーへのデモを即日実施可能に</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>&#x2696;&#xFE0F; 法務ドキュメントの自動墨消し</h4>
+                    <p class="scenario">裁判記録や契約書に含まれる個人情報（氏名、住所、電話番号など）を自動検出・墨消し。PDF の構造を保持したまま処理することで、法務部門のワークフローに直接統合可能。</p>
+                    <p class="effect">効果: 手動での墨消し作業を自動化し、人的ミスによる情報漏洩リスクを低減</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>&#x1F916; AI/ML パイプラインの前処理</h4>
+                    <p class="scenario">AI モデルの学習データから事前に PII を除去し、プライバシーに配慮した学習データセットを構築。非同期 API により大量ドキュメントのバッチ処理に対応。</p>
+                    <p class="effect">効果: GDPR/個人情報保護法に準拠した AI モデル開発パイプラインを実現</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=563331" target="_blank">Azure Updates - Document PII Playground (Preview)</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=564382" target="_blank">Azure Updates - Document PII Playground (GA)</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/ai-services/language-service/personally-identifiable-information/overview" target="_blank">Microsoft Learn - PII Detection Overview</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/ai-services/language-service/personally-identifiable-information/document-based-pii-overview" target="_blank">Microsoft Learn - Document-based PII Overview</a></li>
+            </ul>
+            <p class="footer-note">
+                This infographic was generated based on publicly available information from Microsoft Azure official announcements. Date: 2026-07-01.
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        hljs.highlightAll();
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#EFF6FC',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FFFFFF',
+                background: '#FFFFFF'
+            }
+        });
+    </script>
+</body>
+</html>

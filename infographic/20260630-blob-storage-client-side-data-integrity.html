@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Blob Storage: クライアント側データ整合性保護 (CRC64-NVME SDK 統合) - Infographic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/csharp.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <script>document.addEventListener('DOMContentLoaded', () => hljs.highlightAll());</script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --category-storage: #00BCF2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--category-storage) 0%, var(--azure-blue) 50%, var(--azure-dark-blue) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-description {
+            font-size: 16px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+        }
+
+        .release-date {
+            font-size: 14px;
+            opacity: 0.8;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--ms-blue-200);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 26px;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--category-storage);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+            font-size: 15px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before ul li, .after ul li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .before ul li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after ul li::before {
+            content: '\2713';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 188, 242, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .diagram-caption {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            text-align: center;
+            margin-top: 12px;
+            font-style: italic;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--category-storage);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateX(4px);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--category-storage), var(--azure-blue));
+            color: white;
+            padding: 24px 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Spec Table */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .spec-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .spec-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .spec-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Code Block */
+        pre:not(.mermaid) {
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .code-caption {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        /* Use Case */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .usecase-scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .usecase-effect {
+            font-size: 14px;
+            background: var(--ms-blue-100);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 3px solid var(--category-storage);
+        }
+
+        .usecase-effect strong {
+            color: var(--azure-blue);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 24px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-generated {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .header { padding: 32px 24px; }
+            .header h1 { font-size: 22px; }
+            .section { padding: 24px; }
+            .before-after { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-meta">
+                <span class="service-badge">Azure Blob Storage</span>
+                <span class="badge badge-ga">GA</span>
+                <span class="release-date">2026-06-30</span>
+            </div>
+            <h1>クライアント側データ整合性保護<br>(CRC64-NVME SDK 統合)</h1>
+            <p class="header-description">
+                Azure Blob Storage のクライアント側データ整合性保護が GA。CRC64-NVME チェックサムが最新の Azure Blob SDK (.NET、C++、JavaScript) に統合され、アップロードおよびダウンロード操作時のデータ整合性を自動的に検証可能に。
+            </p>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x1F4CB;</span>
+                概要
+            </div>
+            <div class="highlight-box">
+                SDK は Structured Body Format でデータをセグメント化し、各セグメントに CRC64-NVME チェックサムを埋め込むことで、ストリーミング転送中でもインクリメンタルに整合性を検証。開発者は設定を変更するだけで自動的にデータ保護を有効化できる。
+            </div>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>CRC64-NVME チェックサムを利用するには、REST API レベルでヘッダーを明示的に設定する必要があった</li>
+                        <li>MD5 ハッシュは計算コストが高く、大容量データでのパフォーマンスに影響があった</li>
+                        <li>ブロック単位のアップロードでは各ブロックの整合性検証を個別に実装する必要があった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>SDK が自動的に CRC64-NVME チェックサムを計算・検証するため、開発者の実装負担が大幅に軽減</li>
+                        <li>Structured Body Format により、ストリーミング転送中でもセグメント単位で整合性を検証可能</li>
+                        <li>StorageChecksumAlgorithm.Auto 設定で SDK が最適なアルゴリズムを自動選択</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x1F4CA;</span>
+                技術スペック
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">CRC64</div>
+                    <div class="stat-label">チェックサムアルゴリズム</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">4 MiB</div>
+                    <div class="stat-label">デフォルトセグメントサイズ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">65,535</div>
+                    <div class="stat-label">最大セグメント数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3 SDK</div>
+                    <div class="stat-label">.NET / C++ / JS</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x1F3D7;</span>
+                アーキテクチャ図
+            </div>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Client["クライアントアプリケーション"]
+        App[アプリケーションコード]
+        SDK["Azure Blob SDK\n.NET / C++ / JavaScript"]
+        CRC["CRC64-NVME\nチェックサム計算"]
+    end
+
+    subgraph Transfer["データ転送"]
+        SBF["Structured Body Format\nセグメント + チェックサム"]
+    end
+
+    subgraph Azure["Azure Cloud"]
+        BlobSvc["Azure Blob Storage\nサービス"]
+        Validate["サーバー側\nチェックサム検証"]
+        Store[Blob データ格納]
+    end
+
+    App -->|"Upload/Download"| SDK
+    SDK -->|"チェックサム計算"| CRC
+    CRC -->|"セグメント化 + CRC64 埋め込み"| SBF
+    SBF -->|"HTTPS"| BlobSvc
+    BlobSvc -->|"整合性検証"| Validate
+    Validate -->|"一致"| Store
+    Validate -->|"不一致: 400 エラー"| SDK
+                </pre>
+            </div>
+            <p class="diagram-caption">クライアント SDK が CRC64-NVME チェックサムを計算し、Structured Body Format で転送。サーバー側で検証し不一致の場合は 400 エラーを返却。</p>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x2B50;</span>
+                主要機能
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F6E1;</div>
+                <div class="feature-content">
+                    <h4>自動チェックサム計算と検証</h4>
+                    <p>SDK がアップロード・ダウンロード時に自動的に CRC64-NVME チェックサムを計算。サーバー側でも検証し、不一致の場合は 400 エラーを返却してデータ破損を即座に検出。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4E6;</div>
+                <div class="feature-content">
+                    <h4>Structured Body Format</h4>
+                    <p>データを 4MiB セグメントに分割し、各セグメントにチェックサムを付与。大容量ファイルでもインクリメンタルに整合性を確認でき、転送途中の破損も即座に検出可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F527;</div>
+                <div class="feature-content">
+                    <h4>柔軟なアルゴリズム選択</h4>
+                    <p>Auto / StorageCrc64 / MD5 / None から選択可能。Auto 設定では SDK がデータサイズや環境に応じて最適なアルゴリズムを自動選択。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x2699;</div>
+                <div class="feature-content">
+                    <h4>クライアント・メソッドレベルでの設定</h4>
+                    <p>BlobClientOptions でクライアント全体にデフォルト設定を適用し、個別のメソッド呼び出しでオーバーライド可能。きめ細かな制御を実現。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x2699;</span>
+                技術仕様
+            </div>
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>値</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>チェックサムアルゴリズム</td>
+                        <td>CRC64-NVME (Rocksoft variant)</td>
+                    </tr>
+                    <tr>
+                        <td>多項式</td>
+                        <td><code>0xad93d23594c93659</code></td>
+                    </tr>
+                    <tr>
+                        <td>セグメントサイズ (デフォルト)</td>
+                        <td>4 MiB</td>
+                    </tr>
+                    <tr>
+                        <td>最大セグメント数</td>
+                        <td>65,535</td>
+                    </tr>
+                    <tr>
+                        <td>サポート SDK (.NET)</td>
+                        <td>Azure.Storage.Blobs v12.28.0 以降</td>
+                    </tr>
+                    <tr>
+                        <td>REST API バージョン</td>
+                        <td>2025-01-05 以降</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Code Sample -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x1F4BB;</span>
+                コードサンプル
+            </div>
+            <p class="code-caption">C# - CRC64-NVME チェックサムによるアップロード</p>
+            <pre><code class="language-csharp">var validationOptions = new UploadTransferValidationOptions
+{
+    ChecksumAlgorithm = StorageChecksumAlgorithm.Auto
+};
+
+var uploadOptions = new BlobUploadOptions()
+{
+    TransferValidation = validationOptions
+};
+
+BlobClient blobClient = containerClient.GetBlobClient("myblob.dat");
+await blobClient.UploadAsync(fileStream, uploadOptions);</code></pre>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x1F4A1;</span>
+                ユースケース
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#x1F3AC; 大容量メディアファイルのアップロード</h4>
+                <p class="usecase-scenario">
+                    映像制作会社が数 GB のメディアファイルをクラウドストレージにアップロードする際、ネットワーク経路上でのビット反転やパケットロスによるデータ破損を確実に検出する必要がある。
+                </p>
+                <div class="usecase-effect">
+                    <strong>効果:</strong> CRC64-NVME によるセグメント単位の整合性検証で、大容量ファイルでも転送中のデータ破損を即座に検出・リトライ可能。MD5 より高速で計算コストを削減。
+                </div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#x1F4F1; IoT/エッジデバイスからのデータ収集</h4>
+                <p class="usecase-scenario">
+                    工場の IoT センサーやエッジデバイスから Azure Blob Storage にデータを送信する際、不安定なネットワーク環境でのデータ完全性を保証する必要がある。
+                </p>
+                <div class="usecase-effect">
+                    <strong>効果:</strong> SDK の自動チェックサム機能により、不安定なネットワーク環境でもデータの完全性を透過的に保証。開発者は整合性検証のロジックを個別実装する必要がなくなる。
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4>参考リンク</h4>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=566895" target="_blank">Azure Updates - Blob Storage client-side data integrity protection</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/storage/blobs/storage-blob-upload" target="_blank">Microsoft Learn - Upload a blob with .NET</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/rest/api/storageservices/structured-body-format" target="_blank">Microsoft Learn - Structured Body Format</a></li>
+            </ul>
+            <p class="footer-generated">Generated on 2026-06-30 | Azure News Summary Infographic</p>
+        </div>
+    </div>
+</body>
+</html>

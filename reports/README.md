@@ -5,6 +5,12 @@
 
 ## 2026 年
 
+- [2026-07-01 - Azure Storage Mover: Google Cloud Storage (GCS) からの移行サポート (パブリックプレビュー)](2026/2026-07-01-storage-mover-gcs-migration.md)
+- [2026-07-01 - Azure AI Language: Document PII Playground (Microsoft Foundry NextGen)](2026/2026-07-01-ai-language-document-pii-playground.md)
+- [2026-07-01 - Azure VM Restore Points: Instant Access (パブリックプレビュー)](2026/2026-07-01-vm-restore-points-instant-access.md)
+- [2026-07-01 - Azure Database for PostgreSQL: 新しい PowerShell モジュール Az.PostgreSQLFlexibleServer が一般提供開始](2026/2026-07-01-postgresql-flexible-server-powershell-module.md)
+- [2026-06-30 - Microsoft Foundry: Toolboxes の一般提供開始 (GA)](2026/2026-06-30-foundry-toolboxes-ga.md)
+- [2026-06-30 - Azure Blob Storage: クライアント側データ整合性保護 (CRC64-NVME SDK 統合)](2026/2026-06-30-blob-storage-client-side-data-integrity.md)
 - [2026-06-25 - Azure Blueprints: 廃止タイムラインの延長 (2027 年 1 月 31 日まで)](2026/2026-06-25-azure-blueprints-retirement-extension.md)
 - [2026-06-24 - Application Gateway for Containers: Inference Gateway (AI ゲートウェイ機能)](2026/2026-06-24-appgw-containers-inference-gateway.md)
 - [2026-06-23 - Azure NetApp Files: Migration Assistant の一般提供開始](2026/2026-06-23-netapp-files-migration-assistant.md)
