@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-07-02 - Azure Databricks: Anthropic Claude Sonnet 5 の一般提供開始](2026/2026-07-02-databricks-claude-sonnet-5.md)
 - [2026-07-01 - Azure Storage Mover: Google Cloud Storage (GCS) からの移行サポート (パブリックプレビュー)](2026/2026-07-01-storage-mover-gcs-migration.md)
 - [2026-07-01 - Azure AI Language: Document PII Playground (Microsoft Foundry NextGen)](2026/2026-07-01-ai-language-document-pii-playground.md)
 - [2026-07-01 - Azure VM Restore Points: Instant Access (パブリックプレビュー)](2026/2026-07-01-vm-restore-points-instant-access.md)
