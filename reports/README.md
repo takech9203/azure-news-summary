@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-07-06 - Azure Blob Storage: SFTP における Microsoft Entra ID ベースのアクセス (一般提供開始)](2026/2026-07-06-blob-storage-sftp-entra-id-ga.md)
+- [2026-07-06 - Azure Site Recovery: 5 倍チャーンサポート (500 MB/s per VM)](2026/2026-07-06-site-recovery-5x-churn.md)
 - [2026-07-02 - Azure Databricks: Anthropic Claude Sonnet 5 の一般提供開始](2026/2026-07-02-databricks-claude-sonnet-5.md)
 - [2026-07-01 - Azure Storage Mover: Google Cloud Storage (GCS) からの移行サポート (パブリックプレビュー)](2026/2026-07-01-storage-mover-gcs-migration.md)
 - [2026-07-01 - Azure AI Language: Document PII Playground (Microsoft Foundry NextGen)](2026/2026-07-01-ai-language-document-pii-playground.md)

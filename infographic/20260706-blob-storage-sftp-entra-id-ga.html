@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Blob Storage: SFTP における Microsoft Entra ID ベースのアクセス (一般提供開始) - Infographic</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --category-storage: #00BCF2;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--category-storage) 0%, var(--azure-blue) 50%, var(--azure-dark-blue) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header-description {
+            font-size: 16px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+        }
+
+        .release-date {
+            font-size: 14px;
+            opacity: 0.8;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 3px solid var(--ms-blue-200);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 26px;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--category-storage);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+            font-size: 15px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before ul li, .after ul li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .before ul li::before {
+            content: '!';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after ul li::before {
+            content: '\2713';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .diagram-caption {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            text-align: center;
+            margin-top: 12px;
+            font-style: italic;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateX(4px);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--category-storage), var(--azure-blue));
+            color: white;
+            padding: 24px 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 900;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Spec Table */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .spec-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 700;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .spec-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .spec-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Case */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .usecase-scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .usecase-effect {
+            font-size: 14px;
+            background: var(--ms-blue-100);
+            padding: 12px 16px;
+            border-radius: 8px;
+            border-left: 3px solid var(--category-storage);
+        }
+
+        .usecase-effect strong {
+            color: var(--azure-blue);
+        }
+
+        /* Limitations */
+        .limitation-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitation-list li {
+            padding: 10px 16px;
+            font-size: 14px;
+            line-height: 1.5;
+            border-bottom: 1px solid var(--ms-border);
+            padding-left: 32px;
+            position: relative;
+        }
+
+        .limitation-list li:last-child {
+            border-bottom: none;
+        }
+
+        .limitation-list li::before {
+            content: '\26A0';
+            position: absolute;
+            left: 8px;
+            color: var(--ms-orange);
+            font-size: 16px;
+        }
+
+        /* Pricing */
+        .pricing-box {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .pricing-box strong {
+            color: var(--azure-blue);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 24px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-generated {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container { padding: 16px; }
+            .header { padding: 32px 24px; }
+            .header h1 { font-size: 22px; }
+            .section { padding: 24px; }
+            .before-after { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-meta">
+                <span class="service-badge">Azure Blob Storage</span>
+                <span class="badge badge-ga">Launched (GA)</span>
+                <span class="release-date">2026-07-06</span>
+            </div>
+            <h1>SFTP における Microsoft Entra ID ベースのアクセス<br>(一般提供開始)</h1>
+            <p class="header-description">
+                Azure Blob Storage の SFTP エンドポイントにおける Microsoft Entra ID ベースのアクセスが全リージョンで GA。従来のローカルユーザー (パスワード/SSH 鍵) に加え、Entra ID の ID (ユーザー、サービスプリンシパル、ゲストユーザー) で SFTP 接続が可能に。
+            </p>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x1F4CB;</span>
+                概要
+            </div>
+            <div class="highlight-box">
+                Azure Blob Storage の SFTP エンドポイントが Microsoft Entra ID による認証に対応。Azure RBAC / ABAC / ACL による統一的なアクセス制御、多要素認証 (MFA) によるセキュリティ強化、Entra External Identities によるゲストユーザーアクセスが可能になり、企業レベルのセキュリティと運用効率を両立。
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">65分</div>
+                    <div class="stat-label">証明書有効期限</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">GA</div>
+                    <div class="stat-label">SLA 適用開始</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">全リージョン</div>
+                    <div class="stat-label">利用可能範囲</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">Port 22</div>
+                    <div class="stat-label">SFTP ポート</div>
+                </div>
+            </div>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>ストレージアカウントごとにローカルユーザーの作成・管理が必要</li>
+                        <li>パスワードや SSH 鍵の配布・ローテーションの運用負荷が高い</li>
+                        <li>ローカルユーザーは Azure RBAC や ABAC と相互運用できない</li>
+                        <li>外部ユーザーへの SFTP アクセス付与にローカルユーザー管理が必要</li>
+                        <li>プレビュー段階では本番ワークロード非推奨</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>Entra ID の既存 ID をそのまま SFTP 認証に利用可能</li>
+                        <li>Azure RBAC、ABAC、ACL による統一的なアクセス制御</li>
+                        <li>多要素認証 (MFA) によるセキュリティ強化</li>
+                        <li>Entra External Identities によるゲストユーザーアクセス</li>
+                        <li>GA により SLA 適用、本番ワークロード正式サポート</li>
+                        <li>全リージョンで利用可能</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x1F3D7;</span>
+                アーキテクチャ図
+            </div>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph EntraID["Microsoft Entra ID"]
+        User["ユーザー / サービスプリンシパル"]
+        Guest["ゲストユーザー\n(External Identities)"]
+        MFA["多要素認証 (MFA)"]
+        RBAC["Azure RBAC / ABAC / ACL"]
+    end
+
+    subgraph Client["SFTP クライアント"]
+        CLI["Azure CLI / PowerShell / .NET SDK"]
+        SFTPClient["SFTP クライアント\n(WinSCP 6.0+, OpenSSH 等)"]
+    end
+
+    subgraph Azure["Azure Cloud"]
+        Cert["OpenSSH 証明書\n(有効期限: 65分)"]
+        StorageAccount["Azure Storage Account\n(階層型名前空間有効)"]
+        SFTP["SFTP エンドポイント\n(ポート 22)"]
+        BlobStorage["Azure Blob Storage\nコンテナ / ディレクトリ"]
+    end
+
+    User --> MFA
+    Guest --> MFA
+    MFA --> CLI
+    CLI -->|"1. Entra ID 認証 + 公開鍵送信"| Cert
+    Cert -->|"2. OpenSSH 証明書取得"| SFTPClient
+    SFTPClient -->|"3. 証明書で SFTP 接続"| SFTP
+    SFTP --> RBAC
+    RBAC -->|"認可"| BlobStorage
+    StorageAccount --- SFTP
+    StorageAccount --- BlobStorage
+                </pre>
+            </div>
+            <p class="diagram-caption">Entra ID で認証後、OpenSSH 証明書を取得し SFTP 接続。Azure RBAC / ABAC / ACL で認可を行い Blob Storage にアクセス。</p>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x2B50;</span>
+                主要機能
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F512;</div>
+                <div class="feature-content">
+                    <h4>Microsoft Entra ID 認証の統合</h4>
+                    <p>ユーザー、サービスプリンシパル、ゲストユーザーが Entra ID で SFTP 接続可能。既存のディレクトリサービスの ID をそのまま活用し、ローカルユーザーの個別管理が不要に。マネージド ID は非サポート。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4DC;</div>
+                <div class="feature-content">
+                    <h4>OpenSSH 証明書ベースの認証</h4>
+                    <p>Entra ID 認証後、65 分間有効な OpenSSH 証明書が発行される。RSA 鍵のみサポート。証明書の有効期限により、長期間有効なクレデンシャルの漏洩リスクを低減。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F6E1;</div>
+                <div class="feature-content">
+                    <h4>Azure RBAC / ABAC / ACL との統合</h4>
+                    <p>Storage Blob Data Contributor 等の既存ロールが SFTP にも適用。属性ベースのアクセス制御 (ABAC) やコンテナレベルの ACL を組み合わせたきめ細かな認可が可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F91D;</div>
+                <div class="feature-content">
+                    <h4>外部コラボレーション (Entra External Identities)</h4>
+                    <p>ゲストユーザーを招待し SFTP アクセスを付与。外部パートナーや委託先との安全なファイル共有を、ローカルユーザーの個別作成なしに実現。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x2699;</span>
+                技術仕様
+            </div>
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>認証方式</td>
+                        <td>OpenSSH 証明書 (RSA のみ)</td>
+                    </tr>
+                    <tr>
+                        <td>証明書の有効期限</td>
+                        <td>65 分</td>
+                    </tr>
+                    <tr>
+                        <td>サポートされる ID</td>
+                        <td>ユーザー、サービスプリンシパル、ゲストユーザー</td>
+                    </tr>
+                    <tr>
+                        <td>非サポートの ID</td>
+                        <td>マネージド ID</td>
+                    </tr>
+                    <tr>
+                        <td>前提条件</td>
+                        <td>階層型名前空間 (HNS) の有効化</td>
+                    </tr>
+                    <tr>
+                        <td>アクセス制御</td>
+                        <td>Azure RBAC、ABAC、ACL</td>
+                    </tr>
+                    <tr>
+                        <td>SFTP ポート</td>
+                        <td>22</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x1F4A1;</span>
+                ユースケース
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#x1F3ED; レガシーシステムとの統合</h4>
+                <p class="usecase-scenario">
+                    既存の SFTP ベースのバッチ処理やファイル転送システムをクラウドに移行する際、サービスプリンシパルで認証し自動化パイプラインを構築。ローカルユーザーの管理が不要になり、Azure RBAC による統一的な権限管理が実現。
+                </p>
+                <div class="usecase-effect">
+                    <strong>効果:</strong> サービスプリンシパルによる認証で、パスワードや SSH 鍵のローテーション運用を排除。証明書の短い有効期限 (65分) によりクレデンシャル漏洩のリスクを最小化。
+                </div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#x1F310; 外部パートナーとのセキュアなファイル共有</h4>
+                <p class="usecase-scenario">
+                    取引先やサプライヤーとの定期的なデータ交換で、Entra External Identities を活用してゲストユーザーに SFTP アクセスを付与。個別のローカルユーザー作成や鍵配布が不要に。
+                </p>
+                <div class="usecase-effect">
+                    <strong>効果:</strong> MFA による追加認証で外部アクセスのセキュリティを確保しつつ、ABAC で特定コンテナ・ディレクトリのみへのアクセスを制限。オンボーディング/オフボーディングが Entra ID 上で完結。
+                </div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#x1F3E2; マルチテナント環境での統一的なアクセス管理</h4>
+                <p class="usecase-scenario">
+                    複数のストレージアカウントを持つ大規模組織で、各テナントのユーザーに一貫したアクセスポリシーを適用。Entra ID の条件付きアクセスや RBAC により、全環境を統一的に管理。
+                </p>
+                <div class="usecase-effect">
+                    <strong>効果:</strong> ストレージアカウントごとのローカルユーザー管理が不要になり、組織全体で一貫したセキュリティポリシーの適用とコンプライアンス監査が容易に。
+                </div>
+            </div>
+        </div>
+
+        <!-- Pricing -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x1F4B0;</span>
+                料金
+            </div>
+            <div class="pricing-box">
+                <strong>SFTP エンドポイントの有効化</strong>には時間単位のコストが発生します。<br>
+                <strong>Entra ID ベースのアクセス自体に追加料金は発生しません。</strong><br><br>
+                従来のローカルユーザー認証と比較して、Entra ID 認証による追加コストはないため、セキュリティ強化のための追加投資なしに移行可能です。
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <div class="section-title">
+                <span class="section-title-icon">&#x26A0;</span>
+                制約事項・制限
+            </div>
+            <ul class="limitation-list">
+                <li>パスワード認証は非サポート (証明書ベースのみ)</li>
+                <li>RSA 鍵のみサポート、ECDSA は利用不可</li>
+                <li>マネージド ID は非サポート</li>
+                <li>ホームディレクトリ設定は非サポート</li>
+                <li>証明書の有効期限が 65 分のため、長時間のファイル転送には証明書の更新が必要</li>
+                <li>階層型名前空間 (HNS) の有効化が必須前提条件</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4>参考リンク</h4>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=567085" target="_blank">Azure Updates - SFTP support for Microsoft Entra ID-based access</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/storage/blobs/secure-file-transfer-protocol-support-entra-id-based-access" target="_blank">Microsoft Learn - Entra ID-based access for SFTP</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/storage/blobs/secure-file-transfer-protocol-support" target="_blank">Microsoft Learn - SFTP support for Azure Blob Storage</a></li>
+            </ul>
+            <p class="footer-generated">Generated on 2026-07-06 | Azure News Summary Infographic</p>
+        </div>
+    </div>
+</body>
+</html>
