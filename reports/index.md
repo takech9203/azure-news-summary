@@ -5,6 +5,12 @@
 
 ## 2026 年
 
+- [2026-07-07 - Azure Event Hubs: Confidential Computing サポート (Dedicated tier)](2026/2026-07-07-event-hubs-confidential-computing.md)
+- [2026-07-07 - Azure Chaos Studio: Workspaces and Scenarios (パブリックプレビュー)](2026/2026-07-07-chaos-studio-workspaces-scenarios.md)
+- [2026-07-07 - Azure Monitor: Log Analytics Export Jobs (Public Preview)](2026/2026-07-07-log-analytics-export-jobs.md)
+- [2026-07-07 - Azure Web Application Firewall: Exceptions 機能のパブリックプレビュー (Application Gateway / Front Door)](2026/2026-07-07-waf-exceptions-app-gateway-front-door.md)
+- [2026-07-07 - Azure Event Hubs: Network Security Perimeter サポートの一般提供開始](2026/2026-07-07-event-hubs-network-security-perimeter.md)
+- [2026-07-07 - Azure Red Hat OpenShift: Chile Central リージョンで一般提供開始](2026/2026-07-07-aro-chile-central.md)
 - [2026-07-06 - Azure Blob Storage: SFTP における Microsoft Entra ID ベースのアクセス (一般提供開始)](2026/2026-07-06-blob-storage-sftp-entra-id-ga.md)
 - [2026-07-06 - Azure Site Recovery: 5 倍チャーンサポート (500 MB/s per VM)](2026/2026-07-06-site-recovery-5x-churn.md)
 - [2026-07-02 - Azure Databricks: Anthropic Claude Sonnet 5 の一般提供開始](2026/2026-07-02-databricks-claude-sonnet-5.md)

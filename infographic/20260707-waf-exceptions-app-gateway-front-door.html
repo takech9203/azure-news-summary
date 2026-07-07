@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure WAF: Exceptions 機能のパブリックプレビュー</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --service-color: #0078D4;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: var(--service-color);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+            border-left-color: var(--azure-blue);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            font-size: 14px;
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .comparison-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        .comparison-table th:first-child {
+            width: 100px;
+        }
+
+        .comparison-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .comparison-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .comparison-table .col-existing {
+            background: #FFF8E1;
+        }
+
+        .comparison-table .col-new {
+            background: #E8F5E9;
+        }
+
+        .comparison-table th.col-existing {
+            background: #FFF3E0;
+            color: var(--ms-orange);
+        }
+
+        .comparison-table th.col-new {
+            background: #C8E6C9;
+            color: var(--ms-green);
+        }
+
+        .new-badge {
+            background: var(--ms-green);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.7;
+        }
+
+        .usecase-card .effect {
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+            margin-top: 12px;
+        }
+
+        /* Code Blocks */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-table {
+                font-size: 12px;
+            }
+
+            .comparison-table th, .comparison-table td {
+                padding: 8px 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .feature-card {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Azure Web Application Firewall (WAF)</span>
+            <h1>Exceptions 機能のパブリックプレビュー</h1>
+            <p class="hero-subtitle">Application Gateway / Front Door 対応 -- より精密な条件ベースの誤検知制御を実現</p>
+            <div class="hero-meta">
+                <span class="badge badge-preview">In Preview</span>
+                <span class="badge badge-date">2026-07-07</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview + Before/After -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Azure Web Application Firewall (WAF) に新しい「Exceptions (例外)」機能がパブリックプレビューとして追加された。従来の「Exclusions (除外)」を発展させ、より精密で条件に基づいた誤検知の制御を可能にする。セキュリティ保護レベルを維持しながらアプリケーションの可用性を向上させる機能であり、Azure Application Gateway と Azure Front Door の両方で統一的に利用可能。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>従来の Exclusions よりも精密な条件ベースの誤検知制御が可能</li>
+                    <li>Exclusions を置き換えるのではなく補完する新機能</li>
+                    <li>Azure Application Gateway と Azure Front Door の両方で統一的に利用可能</li>
+                    <li>セキュリティ保護品質を維持しながら正当なリクエストを柔軟に許可</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before (課題)</h4>
+                    <ul>
+                        <li>Exclusions はリクエスト属性 (ヘッダー、Cookie、クエリ文字列、ボディ) 単位の除外のみ</li>
+                        <li>適用範囲の細かい制御に限界があった</li>
+                        <li>誤検知回避のために広範な除外を設定するとセキュリティの隙間が生じるリスク</li>
+                        <li>条件付きの例外処理には非対応</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After (改善)</h4>
+                    <ul>
+                        <li>Exceptions により既存の Exclusions よりも精密な誤検知制御が可能</li>
+                        <li>Application Gateway と Front Door の両方で統一的に利用可能</li>
+                        <li>セキュリティ保護品質を維持しながら正当なリクエストを柔軟に許可</li>
+                        <li>条件ベースの例外処理で必要最小限のスコープに限定</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram (Mermaid) -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Internet["Internet"]
+        Client["クライアント"]
+    end
+
+    subgraph Azure["Azure Cloud"]
+        subgraph FrontDoor["Azure Front Door"]
+            WAFFD["WAF ポリシー"]
+        end
+
+        subgraph AppGW["Azure Application Gateway"]
+            WAFAG["WAF ポリシー"]
+        end
+
+        subgraph WAFEngine["WAF エンジン処理"]
+            ManagedRules["マネージドルール評価"]
+            Exclusions["Exclusions\n(属性ベースの除外)"]
+            Exceptions["Exceptions\n(条件ベースの例外)\n--- NEW ---"]
+            Decision{"判定"}
+        end
+
+        WebApp["Web アプリケーション"]
+    end
+
+    Client -->|"HTTPS リクエスト"| FrontDoor
+    Client -->|"HTTPS リクエスト"| AppGW
+    WAFFD --> WAFEngine
+    WAFAG --> WAFEngine
+    ManagedRules --> Exclusions
+    Exclusions --> Exceptions
+    Exceptions --> Decision
+    Decision -->|"許可"| WebApp
+    Decision -->|"ブロック"| Client
+
+    style Exceptions fill:#e6f3ff,stroke:#0078d4,stroke-width:2px
+    style WAFEngine fill:#f9f9f9,stroke:#666
+                </pre>
+            </div>
+            <p style="font-size: 13px; color: var(--ms-text-secondary); margin-top: 8px;">WAF エンジン内でマネージドルール評価後、Exclusions と Exceptions が順に適用される。Exceptions は条件ベースでより精密な例外処理を提供。</p>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <!-- Feature Cards -->
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F6E1;</div>
+                    <div class="feature-content">
+                        <h4>Exceptions (例外) 機能 <span class="new-badge">NEW</span></h4>
+                        <p>既存 Exclusions とは異なる新しい誤検知軽減メカニズム。属性ベースではなく、より精密な条件ベースの例外処理を実現。誤検知を最小限のスコープで解消しながら、WAF のセキュリティ保護レベルを維持する。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F517;</div>
+                    <div class="feature-content">
+                        <h4>既存 Exclusions との共存</h4>
+                        <p>Exclusions を置き換えるのではなく補完する機能として設計。既存の Exclusions 設定はそのまま継続利用可能で、必要に応じて Exceptions を追加することで段階的にセキュリティ精度を向上できる。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F310;</div>
+                    <div class="feature-content">
+                        <h4>Application Gateway & Front Door 両対応</h4>
+                        <p>Azure Application Gateway と Azure Front Door の両方の WAF ポリシーで統一的に利用可能。デプロイ先に関わらず同一の Exceptions 機能を活用でき、マルチアーキテクチャ環境でも一貫した誤検知対策が可能。</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Exclusions vs Exceptions Comparison -->
+            <h3 style="font-size: 18px; color: var(--ms-blue-900); margin-top: 32px; margin-bottom: 16px;">Exclusions vs Exceptions 比較</h3>
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th class="col-existing">Exclusions (既存)</th>
+                        <th class="col-new">Exceptions (NEW)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>方式</strong></td>
+                        <td class="col-existing">属性ベースの除外</td>
+                        <td class="col-new">条件ベースの例外</td>
+                    </tr>
+                    <tr>
+                        <td><strong>対象</strong></td>
+                        <td class="col-existing">ヘッダー / Cookie / クエリ / ボディ</td>
+                        <td class="col-new">より精密な条件指定</td>
+                    </tr>
+                    <tr>
+                        <td><strong>精度</strong></td>
+                        <td class="col-existing">広範囲</td>
+                        <td class="col-new">ピンポイント</td>
+                    </tr>
+                    <tr>
+                        <td><strong>リスク</strong></td>
+                        <td class="col-existing">除外範囲が広いとセキュリティ低下</td>
+                        <td class="col-new">セキュリティ維持しつつ誤検知軽減</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>UC1: API リクエストの誤検知対応</h4>
+                    <p class="scenario">REST API のリクエストボディに含まれる SQL ライクな文字列 (例: フィルター条件やクエリパラメータ) が WAF の SQL インジェクションルールにマッチし、正当なリクエストがブロックされるケース。</p>
+                    <p class="effect">-- Exceptions を使用して、特定の API エンドポイントと特定のルール ID に対してのみ精密な例外を定義。広範な Exclusion を設定する必要がなくなり、他のエンドポイントのセキュリティは維持される。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>UC2: 認証トークンの誤検知対応</h4>
+                    <p class="scenario">Azure AD 認証トークンに含まれる特殊文字 (Base64 エンコードされた JWT など) が WAF のクロスサイトスクリプティングやインジェクション検出ルールにマッチし、認証フローが中断されるケース。</p>
+                    <p class="effect">-- Exceptions により認証ヘッダーに対する条件付き例外を定義。トークン固有のパターンに限定した例外処理で、認証フローを維持しつつ他のヘッダーに対するセキュリティ検査は継続。</p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=567218" target="_blank" rel="noopener noreferrer">Azure Updates - WAF Exceptions Public Preview</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/web-application-firewall/ag/application-gateway-waf-configuration" target="_blank" rel="noopener noreferrer">Microsoft Learn - Application Gateway WAF Configuration</a></li>
+            </ul>
+            <p class="footer-note">Generated on 2026-07-07 -- This infographic is based on publicly available information at the time of generation.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+</body>
+</html>
