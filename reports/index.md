@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-07-09 - Azure Chaos Studio: Azure CLI による管理 (パブリックプレビュー)](2026/2026-07-09-chaos-studio-azure-cli.md)
+- [2026-07-09 - Azure Databricks: OpenAI GPT-5.6 一般提供開始](2026/2026-07-09-databricks-openai-gpt-56.md)
 - [2026-07-07 - Azure Event Hubs: Confidential Computing サポート (Dedicated tier)](2026/2026-07-07-event-hubs-confidential-computing.md)
 - [2026-07-07 - Azure Chaos Studio: Workspaces and Scenarios (パブリックプレビュー)](2026/2026-07-07-chaos-studio-workspaces-scenarios.md)
 - [2026-07-07 - Azure Monitor: Log Analytics Export Jobs (Public Preview)](2026/2026-07-07-log-analytics-export-jobs.md)

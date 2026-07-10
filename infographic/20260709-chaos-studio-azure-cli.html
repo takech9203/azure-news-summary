@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Chaos Studio: Azure CLI による管理 (パブリックプレビュー)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/languages/bash.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-900));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Section */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--ms-blue-200);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 24px;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .highlight-box p {
+            margin: 0;
+            font-size: 15px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before ul li, .after ul li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-left: 8px;
+            border-left: 2px solid transparent;
+        }
+
+        .before ul li {
+            border-left-color: var(--ms-red);
+        }
+
+        .after ul li {
+            border-left-color: var(--ms-green);
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Table */
+        .table-container {
+            overflow-x: auto;
+            margin: 16px 0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Use Cases */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 12px 0;
+        }
+
+        .usecase-card h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Limitations */
+        .limitation-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitation-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        .limitation-list li::before {
+            content: '⚠️';
+            position: absolute;
+            left: 0;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--ms-text-primary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            .header {
+                padding: 32px 24px;
+            }
+            .header h1 {
+                font-size: 22px;
+            }
+            .section {
+                padding: 20px;
+            }
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-meta">
+                <span class="service-badge">Azure Chaos Studio</span>
+                <span class="badge badge-preview">In Preview</span>
+            </div>
+            <h1>Azure CLI による Chaos Studio 管理<br>— az chaos 拡張のパブリックプレビュー</h1>
+            <p class="header-date">📅 2026年7月9日 リリース</p>
+        </header>
+
+        <!-- Overview -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">📋</span>
+                概要
+            </h2>
+            <p class="overview-text">
+                Azure Chaos Studio が Azure CLI からの管理に対応。新しい <code>az chaos</code> 拡張機能を使用することで、REST API の直接呼び出しや JSON ファイルの手動作成が不要になり、コマンドラインから直接レジリエンステストの Workspace 作成、Scenario の構成・実行が可能になる。
+            </p>
+            <div class="highlight-box">
+                <p><strong>最大の特徴</strong>: <code>az chaos setup</code> コマンドによるワンステップセットアップ。リソースグループの作成、Workspace のデプロイ、マネージド ID の割り当て、RBAC 権限の付与、リソースの検出、Scenario の推奨評価までを一括で実行。</p>
+            </div>
+        </section>
+
+        <!-- Before/After -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">🔄</span>
+                Before / After
+            </h2>
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>REST API を直接呼び出す必要があり、JSON ペイロードの構築が煩雑</li>
+                        <li>複数の API エンドポイントを順番に呼び出す必要</li>
+                        <li>CI/CD パイプラインへの組み込みが困難</li>
+                        <li>セットアップ手順が多段階で、手動での権限設定が必要</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li><code>az chaos setup</code> でワンステップのセットアップが可能</li>
+                        <li>CLI コマンドによる直感的な操作</li>
+                        <li>スクリプトによる自動化が容易</li>
+                        <li>CI/CD パイプラインとのネイティブな統合</li>
+                        <li>RBAC 権限の自動付与機能</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">🏗️</span>
+                アーキテクチャ図
+            </h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+graph TB
+    subgraph "ユーザー環境"
+        CLI[Azure CLI<br/>az chaos 拡張]
+        CICD[CI/CD パイプライン]
+    end
+
+    subgraph "Azure Chaos Studio"
+        Setup[az chaos setup<br/>ワンステップセットアップ]
+        WS[Workspace]
+        SC[Scenario]
+        SCConfig[Scenario Configuration]
+        Run[Scenario Run]
+        Report[Scenario Report]
+    end
+
+    subgraph "ターゲットリソース"
+        VM[Virtual Machines]
+        DB[Databases]
+        AKS[AKS Clusters]
+        NET[Networking]
+    end
+
+    subgraph "ID / 権限"
+        MI[Managed Identity]
+        RBAC[RBAC Role Assignment]
+    end
+
+    CLI --> Setup
+    CICD --> CLI
+    Setup --> WS
+    WS --> MI
+    MI --> RBAC
+    RBAC --> VM
+    RBAC --> DB
+    RBAC --> AKS
+    RBAC --> NET
+    WS --> SC
+    SC --> SCConfig
+    SCConfig --> Run
+    Run --> Report
+    Run --> VM
+    Run --> DB
+    Run --> AKS
+    Run --> NET
+                </pre>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">📊</span>
+                数字で見るアップデート
+            </h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">1</div>
+                    <div class="stat-label">コマンドでセットアップ完了</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">ステップを自動化 (setup)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">8+</div>
+                    <div class="stat-label">コマンドグループ</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">6</div>
+                    <div class="stat-label">出力形式に対応</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">⚡</span>
+                主要機能
+            </h2>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <div class="feature-content">
+                    <h4>ワンステップセットアップ (az chaos setup)</h4>
+                    <p>リソースグループ作成 → Workspace デプロイ → マネージド ID 割り当て → RBAC 付与 → リソース検出 → Scenario 推奨まで一括実行。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📦</div>
+                <div class="feature-content">
+                    <h4>Workspace 管理 (az chaos workspace)</h4>
+                    <p>Workspace の作成、表示、更新、削除をコマンドラインから実行。システム割り当て / ユーザー割り当てマネージド ID に対応。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-content">
+                    <h4>Scenario 管理 (az chaos scenario)</h4>
+                    <p>Scenario の一覧取得、Configuration の作成・検証、実行・キャンセル、レポート取得まで一連のワークフローを CLI で完結。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔑</div>
+                <div class="feature-content">
+                    <h4>権限修復 (fix-permissions)</h4>
+                    <p>Scenario Configuration に必要な権限を検証し、不足している場合は自動修復。手動での RBAC 設定が不要に。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <div class="feature-content">
+                    <h4>リソース検出 (discovered-resource)</h4>
+                    <p>スコープ内の対象リソースを自動検出し、適用可能な Scenario を推奨。テスト設計の出発点として活用可能。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Command Reference Table -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">📑</span>
+                コマンドリファレンス
+            </h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>機能</th>
+                            <th>コマンド</th>
+                            <th>ステータス</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ワンステップセットアップ</td>
+                            <td><code>az chaos setup</code></td>
+                            <td><span class="badge badge-ga">GA</span></td>
+                        </tr>
+                        <tr>
+                            <td>Workspace 管理</td>
+                            <td><code>az chaos workspace</code></td>
+                            <td><span class="badge badge-ga">GA</span></td>
+                        </tr>
+                        <tr>
+                            <td>Scenario 管理</td>
+                            <td><code>az chaos scenario</code></td>
+                            <td><span class="badge badge-preview">Preview</span></td>
+                        </tr>
+                        <tr>
+                            <td>Scenario Configuration</td>
+                            <td><code>az chaos scenario config</code></td>
+                            <td><span class="badge badge-preview">Preview</span></td>
+                        </tr>
+                        <tr>
+                            <td>Scenario 実行</td>
+                            <td><code>az chaos scenario run</code></td>
+                            <td><span class="badge badge-preview">Preview</span></td>
+                        </tr>
+                        <tr>
+                            <td>リソース検出</td>
+                            <td><code>az chaos discovered-resource</code></td>
+                            <td><span class="badge badge-preview">Preview</span></td>
+                        </tr>
+                        <tr>
+                            <td>権限修復</td>
+                            <td><code>az chaos scenario config fix-permissions</code></td>
+                            <td><span class="badge badge-preview">Preview</span></td>
+                        </tr>
+                        <tr>
+                            <td>検証</td>
+                            <td><code>az chaos scenario config validate</code></td>
+                            <td><span class="badge badge-preview">Preview</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Setup Process -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">⚙️</span>
+                az chaos setup の処理フロー
+            </h2>
+            <div class="highlight-box">
+                <p><strong>az chaos setup</strong> が自動実行する 5 つのステップ:</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">1️⃣</div>
+                <div class="feature-content">
+                    <h4>リソースグループの作成</h4>
+                    <p>指定されたリソースグループが存在しない場合、自動作成する。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">2️⃣</div>
+                <div class="feature-content">
+                    <h4>Workspace の作成</h4>
+                    <p>マネージド ID を持つ Workspace をデプロイ。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">3️⃣</div>
+                <div class="feature-content">
+                    <h4>Reader ロール付与</h4>
+                    <p>ターゲットスコープに対する Reader ロールを自動で割り当て。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">4️⃣</div>
+                <div class="feature-content">
+                    <h4>リソース検出</h4>
+                    <p>スコープ内のリソースを検出し、Scenario 推奨の評価を実行。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">5️⃣</div>
+                <div class="feature-content">
+                    <h4>結果の表示</h4>
+                    <p>検出された Scenario と次のステップをターミナルに表示。</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Code Examples -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">💻</span>
+                コード例
+            </h2>
+            <h3 style="font-size: 16px; margin-bottom: 12px; color: var(--ms-text-primary);">基本的なセットアップ</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Bash</span>
+                </div>
+                <pre><code class="language-bash"># 基本的なセットアップ (システム割り当てマネージド ID)
+az chaos setup \
+  --name MyWorkspace \
+  --resource-group MyRG \
+  --location westus2 \
+  --scopes "/subscriptions/&lt;sub-id&gt;/resourceGroups/MyRG"</code></pre>
+            </div>
+
+            <h3 style="font-size: 16px; margin: 20px 0 12px; color: var(--ms-text-primary);">Scenario の管理と実行</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Bash</span>
+                </div>
+                <pre><code class="language-bash"># Scenario 一覧の取得
+az chaos scenario list \
+  --workspace-name MyWorkspace \
+  --resource-group MyRG
+
+# Scenario Configuration の検証
+az chaos scenario config validate \
+  --workspace-name MyWorkspace \
+  --resource-group MyRG ...
+
+# Scenario の実行
+az chaos scenario config execute \
+  --workspace-name MyWorkspace \
+  --resource-group MyRG ...</code></pre>
+            </div>
+
+            <h3 style="font-size: 16px; margin: 20px 0 12px; color: var(--ms-text-primary);">CI/CD パイプラインでの使用</h3>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">Bash</span>
+                </div>
+                <pre><code class="language-bash"># CI/CD 向けオプション: 評価の待機をスキップ
+az chaos setup \
+  --name MyWorkspace \
+  --resource-group MyRG \
+  --location westus2 \
+  --scopes "/subscriptions/&lt;sub-id&gt;/resourceGroups/MyRG" \
+  --skip-evaluation-wait</code></pre>
+            </div>
+        </section>
+
+        <!-- Technical Specs -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">🔧</span>
+                技術仕様
+            </h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>項目</th>
+                            <th>仕様</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>必要な Azure CLI バージョン</td>
+                            <td>2.75.0 以上</td>
+                        </tr>
+                        <tr>
+                            <td>拡張機能名</td>
+                            <td>chaos</td>
+                        </tr>
+                        <tr>
+                            <td>インストール方法</td>
+                            <td>初回コマンド実行時に自動</td>
+                        </tr>
+                        <tr>
+                            <td>ID サポート</td>
+                            <td>システム割り当て / ユーザー割り当てマネージド ID</td>
+                        </tr>
+                        <tr>
+                            <td>スコープ対象</td>
+                            <td>リソースグループ / サブスクリプション / サービスグループ</td>
+                        </tr>
+                        <tr>
+                            <td>出力形式</td>
+                            <td>JSON, JSONC, table, TSV, YAML</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">💡</span>
+                ユースケース
+            </h2>
+            <div class="usecase-card">
+                <h4>🚦 デプロイメントゲート</h4>
+                <p>CI/CD パイプラインにレジリエンステストを組み込み、デプロイ前に障害耐性を自動検証する。テストに合格した場合のみデプロイを進行。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>📅 定期的なゲームデイ</h4>
+                <p>cron ジョブやスケジュールパイプラインで月次・四半期ごとのレジリエンステストを自動実行。Scenario Report をコンプライアンスエビデンスとして活用。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>🌐 マルチ環境管理</h4>
+                <p>開発、ステージング、本番の各環境に対して一貫したレジリエンステスト構成をスクリプトで管理し、環境ごとの差異を排除。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>🔥 インシデント再現</h4>
+                <p>障害発生後に CLI で素早く Scenario を構成し、修正の有効性を検証。再発防止策の確認に活用。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>📝 コンプライアンスエビデンス収集</h4>
+                <p>定期的なテスト実行と結果レポートの自動収集。DORA などの運用レジリエンスフレームワークへのエビデンスとして活用可能。</p>
+            </div>
+        </section>
+
+        <!-- Limitations -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">⚠️</span>
+                制約事項・注意点
+            </h2>
+            <ul class="limitation-list">
+                <li>パブリックプレビュー段階であり、GA までにコマンド体系が変更される可能性がある</li>
+                <li><code>az chaos setup</code> は GA だが、Scenario 関連コマンドの多くは Preview ステータス</li>
+                <li><code>--scopes</code> パラメータが必須であり、デフォルトスコープは存在しない (安全のため意図的な設計)</li>
+                <li>Chaos Studio 自体のリージョン制限があり、全リージョンで利用可能ではない</li>
+                <li>Azure Resource Graph の伝搬に時間がかかる場合がある (新規 Reader ロール割り当て後)</li>
+                <li>クラシックな Experiment モデルの CLI 管理は含まれていない (Workspace/Scenario モデルのみ)</li>
+            </ul>
+        </section>
+
+        <!-- Related Services -->
+        <section class="section">
+            <h2 class="section-title">
+                <span class="section-title-icon">🔗</span>
+                関連サービス
+            </h2>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>サービス / 機能</th>
+                            <th>関連内容</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Azure Monitor</td>
+                            <td>Scenario 実行時のメトリクスとログの相関分析</td>
+                        </tr>
+                        <tr>
+                            <td>Azure Resource Graph</td>
+                            <td>リソース検出に使用</td>
+                        </tr>
+                        <tr>
+                            <td>Azure Managed Identity</td>
+                            <td>Workspace の認証・認可</td>
+                        </tr>
+                        <tr>
+                            <td>Azure RBAC</td>
+                            <td>ターゲットリソースへのアクセス制御</td>
+                        </tr>
+                        <tr>
+                            <td>Chaos Studio AI Plugin</td>
+                            <td>GitHub Copilot CLI / MCP サーバーとの統合</td>
+                        </tr>
+                        <tr>
+                            <td>Azure Kubernetes Service</td>
+                            <td>コンテナ環境でのカオスエンジニアリング対象</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <h4>📚 出典・参考リンク</h4>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=567225" target="_blank">公式アップデート情報 - Azure Updates</a></li>
+                <li><a href="https://learn.microsoft.com/azure/chaos-studio/" target="_blank">Microsoft Learn - Azure Chaos Studio ドキュメント</a></li>
+                <li><a href="https://learn.microsoft.com/cli/azure/chaos" target="_blank">az chaos CLI リファレンス</a></li>
+                <li><a href="https://learn.microsoft.com/azure/chaos-studio/chaos-studio-overview" target="_blank">Azure Chaos Studio 概要</a></li>
+                <li><a href="https://learn.microsoft.com/azure/chaos-studio/chaos-studio-region-availability" target="_blank">リージョン別利用可能状況</a></li>
+            </ul>
+            <p style="margin-top: 16px; font-size: 12px; color: var(--ms-text-disabled);">
+                Generated: 2026-07-10 | Azure News Summary
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
