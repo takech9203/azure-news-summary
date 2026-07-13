@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-07-13 - Azure Databricks: SQL Serverless が UK West リージョンで一般提供開始](2026/2026-07-13-databricks-sql-serverless-uk-west.md)
 - [2026-07-10 - Azure Automation: Python 2.7/3.8 および PowerShell 7.1/7.2 ランタイムの廃止](2026/2026-07-10-automation-python-powershell-retirement.md)
 - [2026-07-09 - Azure Chaos Studio: Azure CLI による管理 (パブリックプレビュー)](2026/2026-07-09-chaos-studio-azure-cli.md)
 - [2026-07-09 - Azure Databricks: OpenAI GPT-5.6 一般提供開始](2026/2026-07-09-databricks-openai-gpt-56.md)
