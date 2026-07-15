@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Monitor: Advanced Platform Metrics (Public Preview)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            /* Azure Brand Colors */
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+
+            /* Microsoft Fluent Colors */
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+
+            /* Status Colors */
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+
+            /* Text Colors */
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+
+            /* Surface Colors */
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--ms-blue-800) 50%, var(--azure-dark-blue) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(ellipse, rgba(80, 230, 255, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .title-area .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 16px;
+            backdrop-filter: blur(4px);
+        }
+
+        .title-area h1 {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .title-area .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .title-meta {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .badge-development {
+            background: var(--ms-blue-400);
+        }
+
+        .title-date {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Section Headers */
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            margin-top: 40px;
+        }
+
+        .section-header .icon {
+            width: 40px;
+            height: 40px;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .section-header h2 {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+        }
+
+        /* Overview */
+        .overview-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px 24px;
+            border-radius: 0 12px 12px 0;
+            margin: 20px 0;
+            font-size: 15px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .before li::before {
+            content: '\2716';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+        }
+
+        .after li::before {
+            content: '\2714';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 24px 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 900;
+            line-height: 1.2;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Architecture Diagram */
+        .architecture-section {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin: 16px 0;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.12);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Use Cases */
+        .usecase-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .usecase-card .usecase-number {
+            width: 28px;
+            height: 28px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .usecase-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--ms-text-primary);
+        }
+
+        .usecase-card p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Technical Specs Table */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+
+        .spec-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-text-primary);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--azure-blue);
+        }
+
+        .spec-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .spec-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Limitations Section */
+        .limitations {
+            background: #FFF8E1;
+            border: 1px solid #FFE082;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .limitations h4 {
+            color: var(--ms-orange);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .limitations ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations li {
+            padding: 6px 0;
+            font-size: 14px;
+            padding-left: 24px;
+            position: relative;
+            color: var(--ms-text-secondary);
+        }
+
+        .limitations li::before {
+            content: '\26A0';
+            position: absolute;
+            left: 0;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 48px;
+            padding: 24px;
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer h4 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--ms-text-primary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer li {
+            padding: 4px 0;
+        }
+
+        .footer .generated-info {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .usecase-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <span class="service-badge">Azure Monitor</span>
+            <h1>Advanced Platform Metrics</h1>
+            <p class="subtitle">プラットフォームパフォーマンス、リソースヘルス、運用トレンドに対する高度な可視性を提供する新しいテレメトリ機能</p>
+            <div class="title-meta">
+                <span class="badge badge-preview">Public Preview</span>
+                <span class="title-date">2026-07-15</span>
+            </div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section-header">
+            <div class="icon">&#128202;</div>
+            <h2>概要</h2>
+        </div>
+
+        <div class="overview-box">
+            Azure Monitor の Advanced Platform Metrics がパブリックプレビューとして利用可能になった。従来のプラットフォームメトリクスでは取得できなかった、より深いレベルのテレメトリデータにアクセス可能となり、Azure サービスのパフォーマンスとヘルスの可視性が大幅に強化される。データ収集ルール (DCR) を活用したメトリクスエクスポートとの組み合わせにより、柔軟かつ高精度な監視基盤を構築できる。
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">~3 min</div>
+                <div class="stat-label">DCR エクスポート<br>レイテンシ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5</div>
+                <div class="stat-label">最大 DCR 関連付け<br>(リソースあたり)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3+</div>
+                <div class="stat-label">対応<br>エクスポート先</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">V2</div>
+                <div class="stat-label">AzureMetrics<br>テーブル</div>
+            </div>
+        </div>
+
+        <!-- Before/After -->
+        <div class="section-header">
+            <div class="icon">&#128260;</div>
+            <h2>Before / After</h2>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>Before</h4>
+                <ul>
+                    <li>リソースの深い内部動作を把握する情報が限定的</li>
+                    <li>リソースヘルスの詳細な変化を早期検知する手段が不十分</li>
+                    <li>複数サービスにまたがる運用トレンドの横断分析が困難</li>
+                    <li>ディメンション付きメトリクスのエクスポートが制限</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>After</h4>
+                <ul>
+                    <li>プラットフォームレベルの詳細テレメトリにアクセス可能</li>
+                    <li>リソースヘルスと運用トレンドの可視性が強化</li>
+                    <li>対応サービス全体で一貫した高度なメトリクスを提供</li>
+                    <li>DCR でディメンション付きエクスポートとフィルタリングが可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section-header">
+            <div class="icon">&#127959;</div>
+            <h2>アーキテクチャ図</h2>
+        </div>
+
+        <div class="architecture-section">
+            <pre class="mermaid">
+flowchart TB
+    subgraph Resources["Azure Resources"]
+        BlobStorage["Azure Blob Storage"]
+        StorageAcct["Storage Accounts"]
+        OtherSvc["Other Supported Services"]
+    end
+
+    subgraph AzureMonitor["Azure Monitor"]
+        direction TB
+        StandardMetrics["Standard Platform\nMetrics"]
+        AdvancedMetrics["Advanced Platform\nMetrics (Preview)"]
+        MetricsDB["Azure Monitor\nMetrics Database"]
+    end
+
+    subgraph Export["Export Methods"]
+        DCR["Data Collection Rules\n(DCR)"]
+        DiagSettings["Diagnostic Settings"]
+        RESTAPI["Metrics REST API"]
+    end
+
+    subgraph Destinations["Destinations"]
+        LAW["Log Analytics\nWorkspace\n(AzureMetricsV2)"]
+        Storage["Azure Storage\nAccounts"]
+        EventHubs["Event Hubs"]
+    end
+
+    subgraph Analysis["Analysis & Actions"]
+        Alerts["Alert Rules"]
+        Dashboards["Dashboards"]
+        Workbooks["Workbooks"]
+        Autoscale["Autoscale"]
+    end
+
+    Resources -->|"Auto Collection"| StandardMetrics
+    Resources -->|"Enhanced Telemetry"| AdvancedMetrics
+    StandardMetrics --> MetricsDB
+    AdvancedMetrics --> MetricsDB
+
+    MetricsDB --> DCR
+    MetricsDB --> DiagSettings
+    MetricsDB --> RESTAPI
+
+    DCR -->|"~3 min latency"| LAW
+    DCR --> Storage
+    DCR --> EventHubs
+    DiagSettings -->|"6-10 min latency"| LAW
+
+    MetricsDB --> Alerts
+    MetricsDB --> Dashboards
+    MetricsDB --> Workbooks
+    MetricsDB --> Autoscale
+            </pre>
+            <p style="font-size: 13px; color: var(--ms-text-secondary); margin-top: 12px; text-align: center;">
+                Azure リソースから拡張テレメトリが収集され、DCR を経由して各送信先に約 3 分のレイテンシで配信される
+            </p>
+        </div>
+
+        <!-- Feature Cards -->
+        <div class="section-header">
+            <div class="icon">&#9889;</div>
+            <h2>主要機能</h2>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">&#128200;</div>
+            <div class="feature-content">
+                <h4>拡張テレメトリデータ</h4>
+                <p>従来のプラットフォームメトリクスでは利用できなかった、より深いレベルのパフォーマンス指標やリソースヘルス情報を提供。リソースの内部動作を詳細に理解できる。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">&#128153;</div>
+            <div class="feature-content">
+                <h4>リソースヘルス監視の強化</h4>
+                <p>リソースの健全性に関するより細かい粒度の情報を収集し、問題の予兆を早期に検知。プロアクティブな障害対応を支援する。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">&#128202;</div>
+            <div class="feature-content">
+                <h4>運用トレンド分析</h4>
+                <p>対応する Azure サービス全体にわたる運用傾向を横断的に分析。長期的なパフォーマンス変化やキャパシティ傾向を把握できる。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">&#128640;</div>
+            <div class="feature-content">
+                <h4>DCR メトリクスエクスポート</h4>
+                <p>データ収集ルールにより、ディメンション付きメトリクスのエクスポートとフィルタリングが可能。約 3 分の低レイテンシで Log Analytics、Storage、Event Hubs に配信。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">&#127760;</div>
+            <div class="feature-content">
+                <h4>複数サービス対応</h4>
+                <p>Azure Blob Storage、Storage Accounts をはじめとする対応サービスで利用可能。一貫した高度なメトリクスをプラットフォーム全体で提供。</p>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section-header">
+            <div class="icon">&#128295;</div>
+            <h2>技術仕様</h2>
+        </div>
+
+        <table class="spec-table">
+            <thead>
+                <tr>
+                    <th>項目</th>
+                    <th>詳細</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>ステータス</td>
+                    <td><span class="badge badge-preview">Public Preview</span></td>
+                </tr>
+                <tr>
+                    <td>開始日</td>
+                    <td>2026 年 7 月 15 日</td>
+                </tr>
+                <tr>
+                    <td>関連サービス</td>
+                    <td>Azure Monitor, Azure Blob Storage, Storage Accounts</td>
+                </tr>
+                <tr>
+                    <td>カテゴリ</td>
+                    <td>Storage, DevOps, Management and Governance</td>
+                </tr>
+                <tr>
+                    <td>メトリクスエクスポート方式</td>
+                    <td>データ収集ルール (DCR)、診断設定、REST API</td>
+                </tr>
+                <tr>
+                    <td>DCR エクスポートレイテンシ</td>
+                    <td>約 3 分</td>
+                </tr>
+                <tr>
+                    <td>エクスポート先</td>
+                    <td>Log Analytics Workspace, Azure Storage, Event Hubs</td>
+                </tr>
+                <tr>
+                    <td>データ保存テーブル</td>
+                    <td>AzureMetricsV2 (Log Analytics)</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Code Example -->
+        <div class="section-header">
+            <div class="icon">&#128187;</div>
+            <h2>設定例 (Azure CLI)</h2>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">bash</span>
+                <span style="color: #6A9955;">Azure CLI</span>
+            </div>
+            <pre><code class="language-bash"># データ収集ルールの作成
+az monitor data-collection rule create \
+  --name "myAdvancedMetricsDCR" \
+  --resource-group "myResourceGroup" \
+  --location "eastus" \
+  --kind PlatformTelemetry \
+  --identity "{type:'SystemAssigned'}" \
+  --rule-file "./dcr-config.json"
+
+# データ収集ルールの関連付け
+az monitor data-collection rule association create \
+  --name "myAssociation" \
+  --rule-id "/subscriptions/{subId}/resourceGroups/{rg}/providers/Microsoft.Insights/dataCollectionRules/myAdvancedMetricsDCR" \
+  --resource "/subscriptions/{subId}/resourceGroups/{rg}/providers/Microsoft.Storage/storageAccounts/{name}"</code></pre>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section-header">
+            <div class="icon">&#128161;</div>
+            <h2>ユースケース</h2>
+        </div>
+
+        <div class="usecase-grid">
+            <div class="usecase-card">
+                <div class="usecase-number">1</div>
+                <h4>ストレージパフォーマンスの詳細監視</h4>
+                <p>Azure Blob Storage や Storage Accounts のプラットフォームレベルのパフォーマンス指標を深く分析し、ボトルネックを特定する。</p>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-number">2</div>
+                <h4>プロアクティブなリソースヘルス管理</h4>
+                <p>リソースの健全性に関する詳細なメトリクスを活用して、障害の予兆を早期に検知しアラートを設定する。</p>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-number">3</div>
+                <h4>運用トレンドに基づくキャパシティプランニング</h4>
+                <p>長期的な運用トレンドを分析し、将来のリソース増強計画やコスト最適化に活用する。</p>
+            </div>
+            <div class="usecase-card">
+                <div class="usecase-number">4</div>
+                <h4>クロスサービスの相関分析</h4>
+                <p>複数の Azure サービスにまたがる Advanced Platform Metrics を Log Analytics に集約し、サービス間の影響を分析する。</p>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="limitations">
+            <h4>&#9888; 制限事項・注意点</h4>
+            <ul>
+                <li>パブリックプレビュー段階のため SLA は提供されない</li>
+                <li>プレビュー中に仕様が変更される可能性がある</li>
+                <li>1 リソースあたり最大 5 つの DCR まで関連付け可能</li>
+                <li>DCR による時間粒度 (hourly grain) メトリクスのエクスポートは非対応</li>
+                <li>1 つの DCR につき 1 つの送信先タイプのみ指定可能</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4>参考リンク</h4>
+            <ul>
+                <li><a href="https://azure.microsoft.com/updates?id=567726" target="_blank">公式アップデート情報 - Azure Monitor Advanced Platform Metrics</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/reference/metrics-index" target="_blank">Azure Monitor サポートされるメトリクス</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/azure/azure-monitor/data-collection/metrics-export-create" target="_blank">データ収集ルールによるメトリクスエクスポート</a></li>
+            </ul>
+            <div class="generated-info">
+                Generated on 2026-07-15 | Azure News Summary Infographic
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                background: '#FFFFFF',
+                primaryColor: '#EFF6FC',
+                primaryBorderColor: '#0078D4',
+                primaryTextColor: '#323130',
+                secondaryColor: '#DEECF9',
+                secondaryBorderColor: '#71AFE5',
+                tertiaryColor: '#F3F2F1',
+                lineColor: '#605E5C',
+                fontFamily: 'Noto Sans JP, Segoe UI, sans-serif',
+                fontSize: '13px'
+            },
+            flowchart: {
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+</body>
+</html>

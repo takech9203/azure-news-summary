@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevUI Agent Inspector - Microsoft Agent Framework</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--ms-blue-900) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .badge-development {
+            background: var(--ms-blue-400);
+        }
+
+        .title-area h1 {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+            line-height: 1.3;
+        }
+
+        .title-area .subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-date {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--ms-blue-200);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 24px;
+        }
+
+        /* Overview Section */
+        .overview-text {
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--ms-text-secondary);
+            margin-bottom: 20px;
+            padding: 16px 20px;
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 0 8px 8px 0;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-left: 8px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .before li:last-child, .after li:last-child {
+            border-bottom: none;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Architecture Diagram */
+        .architecture-section {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+
+        /* Use Case Cards */
+        .usecase-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .usecase-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .usecase-card .usecase-effect {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 13px;
+            color: var(--ms-green);
+            font-weight: 500;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th,
+        .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--azure-blue);
+            font-weight: 700;
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-secondary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: 40px;
+            padding: 24px;
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .footer h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .footer ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer li {
+            margin-bottom: 8px;
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer .generated {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .feature-card {
+                flex-direction: column;
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="title-meta">
+                <span class="service-badge">Microsoft Agent Framework</span>
+                <span class="badge badge-preview">Public Preview</span>
+            </div>
+            <h1>DevUI Agent Inspector</h1>
+            <p class="subtitle">エージェント実行をナビゲート可能なツリー構造で可視化するローカルデバッグサーフェス</p>
+            <p class="title-date">2026-07-15 | Microsoft Foundry</p>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4CB;</span> 概要</h2>
+            <p class="overview-text">
+                Microsoft Agent Framework の DevUI に新機能「Agent Inspector」がパブリックプレビューとして追加された。Agent Inspector は、エージェントの実行をモデル呼び出し、ツール呼び出し、中間状態を含むツリー構造として可視化するローカルデバッグサーフェスである。一時停止 (Pause)、リプレイ (Replay)、プロンプト編集 (Edit Prompts Mid-Run) 機能により、エージェント開発のイテレーション速度を大幅に向上させる。
+            </p>
+
+            <!-- Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">対応言語 (Python/C#/Go)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">:8080</div>
+                    <div class="stat-label">デフォルトポート</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">0</div>
+                    <div class="stat-label">ツール利用料金 (円)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">OTel</div>
+                    <div class="stat-label">トレーシング標準</div>
+                </div>
+            </div>
+
+            <!-- Before/After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>エージェント実行フローの可視化手段が限定的</li>
+                        <li>中間状態確認にはログ出力を手動追加</li>
+                        <li>プロンプト編集にコード変更と再起動が必要</li>
+                        <li>マルチステップ実行の問題箇所特定に時間がかかる</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>ツリー構造で階層的に実行を可視化</li>
+                        <li>一時停止/リプレイで特定ステップを詳細分析</li>
+                        <li>実行中のプロンプトをその場で編集・再実行</li>
+                        <li>OpenTelemetry でエンドツーエンドの可観測性</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F3D7;</span> アーキテクチャ</h2>
+            <div class="architecture-section">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Developer["開発者環境 (ローカル)"]
+        IDE["IDE / エディタ"]
+        AgentCode["エージェントコード\n(Python / C#)"]
+    end
+
+    subgraph DevUI["DevUI (localhost:8080)"]
+        WebUI["Web インターフェース"]
+        Inspector["Agent Inspector"]
+        API["OpenAI 互換 API"]
+        Tracing["OpenTelemetry\nトレーシング"]
+    end
+
+    subgraph InspectorView["Agent Inspector ツリービュー"]
+        RunRoot["エージェント実行 (Root)"]
+        ModelCall1["モデル呼び出し #1"]
+        ToolCall1["ツール呼び出し #1"]
+        IntState1["中間状態"]
+        ModelCall2["モデル呼び出し #2"]
+        ToolCall2["ツール呼び出し #2"]
+        FinalState["最終レスポンス"]
+    end
+
+    subgraph Controls["デバッグコントロール"]
+        Pause["一時停止"]
+        Replay["リプレイ"]
+        EditPrompt["プロンプト編集"]
+    end
+
+    subgraph External["外部サービス"]
+        LLM["LLM プロバイダー\n(Foundry / OpenAI / Anthropic)"]
+        Tools["ツール / MCP サーバー"]
+    end
+
+    IDE --> AgentCode
+    AgentCode --> API
+    API --> WebUI
+    WebUI --> Inspector
+    Inspector --> InspectorView
+    Inspector --> Controls
+    Controls --> RunRoot
+    RunRoot --> ModelCall1
+    ModelCall1 --> ToolCall1
+    ToolCall1 --> IntState1
+    IntState1 --> ModelCall2
+    ModelCall2 --> ToolCall2
+    ToolCall2 --> FinalState
+    Inspector --> Tracing
+    API --> LLM
+    API --> Tools
+                </pre>
+                <p style="font-size: 13px; color: var(--ms-text-secondary); margin-top: 12px; text-align: center;">
+                    Agent Inspector は DevUI の Web インターフェース上で動作し、エージェント実行をツリー構造として可視化する
+                </p>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x2B50;</span> 主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F333;</div>
+                <div class="feature-content">
+                    <h4>ナビゲート可能なツリービュー</h4>
+                    <p>エージェントの実行をモデル呼び出し、ツール呼び出し、中間状態のツリー構造として表示。各ノードをクリックして詳細な入出力データを確認し、マルチエージェントワークフローの実行パスを視覚的に追跡可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x23F8;</div>
+                <div class="feature-content">
+                    <h4>一時停止 (Pause) 機能</h4>
+                    <p>エージェントの実行を任意のポイントで一時停止し、中間状態やコンテキストの内容を詳細に検査。ステップバイステップでの実行制御が可能。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F501;</div>
+                <div class="feature-content">
+                    <h4>リプレイ (Replay) 機能</h4>
+                    <p>過去の実行を再生して動作を確認。特定のステップから再実行を開始し、異なるパスを探索可能。問題の再現と修正の検証に活用。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x270F;</div>
+                <div class="feature-content">
+                    <h4>プロンプト編集 (Edit Prompts Mid-Run)</h4>
+                    <p>実行中のプロンプトをその場で編集して即座に再実行。システムプロンプト、ユーザープロンプトの両方を編集可能。コード変更なしでプロンプトエンジニアリングのイテレーションを高速化。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4E1;</div>
+                <div class="feature-content">
+                    <h4>OpenTelemetry トレーシング統合</h4>
+                    <p>実行のトレースデータを OpenTelemetry 形式で記録。レイテンシ、トークン使用量などのメトリクスを可視化し、Grafana や Jaeger など既存の可観測性スタックと統合可能。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Setup Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F6E0;</span> セットアップ</h2>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <span style="color: #808080;">インストールと起動</span>
+                </div>
+                <pre><code class="language-bash"># DevUI のインストール (プレリリース版)
+pip install agent-framework-devui --pre
+
+# CLI による起動 (トレーシング有効)
+devui ./agents --port 8080 --tracing</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">python</span>
+                    <span style="color: #808080;">プログラムによる起動</span>
+                </div>
+                <pre><code class="language-python">from agent_framework import Agent
+from agent_framework.openai import OpenAIChatClient
+from agent_framework.devui import serve
+
+agent = Agent(
+    name='MyAgent',
+    client=OpenAIChatClient(),
+    tools=[]
+)
+
+serve(entities=[agent], auto_open=True)</code></pre>
+            </div>
+
+            <!-- Tech Specs Table -->
+            <table class="specs-table">
+                <tr>
+                    <th>ステータス</th>
+                    <td>パブリックプレビュー</td>
+                </tr>
+                <tr>
+                    <th>対応言語</th>
+                    <td>Python (C# 近日対応予定、Go 開発中)</td>
+                </tr>
+                <tr>
+                    <th>インストール</th>
+                    <td><code>pip install agent-framework-devui --pre</code></td>
+                </tr>
+                <tr>
+                    <th>デフォルトポート</th>
+                    <td>8080</td>
+                </tr>
+                <tr>
+                    <th>API 互換性</th>
+                    <td>OpenAI Responses API 互換</td>
+                </tr>
+                <tr>
+                    <th>トレーシング</th>
+                    <td>OpenTelemetry 対応</td>
+                </tr>
+                <tr>
+                    <th>動作要件</th>
+                    <td>ローカル開発環境 (本番利用非推奨)</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Use Cases Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4A1;</span> ユースケース</h2>
+
+            <div class="usecase-card">
+                <h4>&#x1F50D; マルチツールエージェントのデバッグ</h4>
+                <p>複数のツール (データベースクエリ、API 呼び出し、ファイル操作) を組み合わせたエージェントが期待通りの順序でツールを呼び出しているか検証する。</p>
+                <div class="usecase-effect">ツリービューでツール呼び出しの順序と各ステップの入出力を確認し、一時停止して中間状態を検査可能</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#x1F4DD; プロンプト最適化</h4>
+                <p>エージェントのシステムプロンプトを調整し、回答の品質や一貫性を向上させたい場合に活用。</p>
+                <div class="usecase-effect">プロンプト編集機能により、コード変更・再起動なしで複数のプロンプトバリエーションを迅速に試行可能</div>
+            </div>
+
+            <div class="usecase-card">
+                <h4>&#x1F500; ワークフロー実行パスの検証</h4>
+                <p>グラフベースのマルチエージェントワークフローにおいて、条件分岐が正しく動作しているか確認する。</p>
+                <div class="usecase-effect">ツリービューで実行パスを可視化し、リプレイ機能で特定の分岐条件を変更した場合の動作を探索可能</div>
+            </div>
+        </div>
+
+        <!-- Limitations Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x26A0;</span> 制限事項・注意点</h2>
+            <div style="background: var(--ms-surface-secondary); border-radius: 8px; padding: 16px; border: 1px solid var(--ms-border);">
+                <ul style="list-style: none; padding: 0;">
+                    <li style="padding: 8px 0; border-bottom: 1px solid var(--ms-border); font-size: 14px; color: var(--ms-text-secondary);">
+                        <strong style="color: var(--ms-orange);">Preview:</strong> パブリックプレビュー段階であり、本番環境での利用は非推奨
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid var(--ms-border); font-size: 14px; color: var(--ms-text-secondary);">
+                        <strong style="color: var(--ms-orange);">Python のみ:</strong> 現時点では Python のみ完全サポート (C# 準備中、Go 開発中)
+                    </li>
+                    <li style="padding: 8px 0; border-bottom: 1px solid var(--ms-border); font-size: 14px; color: var(--ms-text-secondary);">
+                        <strong style="color: var(--ms-orange);">ローカル限定:</strong> ローカル開発環境での使用を前提、リモートデバッグには追加構成が必要
+                    </li>
+                    <li style="padding: 8px 0; font-size: 14px; color: var(--ms-text-secondary);">
+                        <strong style="color: var(--ms-orange);">仕様変更の可能性:</strong> プレビュー期間中に機能仕様が変更される可能性あり
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4>参考リンク</h4>
+            <ul>
+                <li><a href="https://azure.microsoft.com/updates?id=563551" target="_blank">公式アップデート情報 - Azure Updates</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/agent-framework/devui/" target="_blank">Microsoft Learn - DevUI Overview</a></li>
+                <li><a href="https://learn.microsoft.com/en-us/agent-framework/overview/" target="_blank">Microsoft Learn - Microsoft Agent Framework Overview</a></li>
+                <li><a href="https://github.com/microsoft/agent-framework" target="_blank">Microsoft Agent Framework GitHub リポジトリ</a></li>
+            </ul>
+            <p class="generated">Generated on 2026-07-15 | Azure News Summary</p>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#EFF6FC',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#DEECF9',
+                tertiaryColor: '#FAF9F8',
+                background: '#FFFFFF',
+                mainBkg: '#EFF6FC',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#F3F2F1',
+                clusterBorder: '#EDEBE9',
+                titleColor: '#323130',
+                edgeLabelBackground: '#FFFFFF'
+            },
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+</body>
+</html>
