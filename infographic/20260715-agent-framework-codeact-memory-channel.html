@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft Agent Framework: CodeAct / Episodic Memory / Agent Channel (Public Preview)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', sans-serif;
+            background: var(--ms-surface);
+            color: var(--ms-text-primary);
+            line-height: 1.8;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* Title Area */
+        .hero {
+            background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 50%, var(--ms-blue-500) 100%);
+            color: white;
+            padding: 48px 0 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .hero .container {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: var(--azure-blue);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        .hero h1 {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 16px 0 12px;
+            line-height: 1.4;
+        }
+
+        .hero-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-bottom: 16px;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: #323130;
+        }
+
+        .badge-date {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* Section Styles */
+        .section {
+            padding: 40px 0;
+        }
+
+        .section + .section {
+            border-top: 1px solid var(--ms-border);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ms-blue-900);
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--azure-blue);
+            display: inline-block;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 15px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 24px;
+            line-height: 1.9;
+        }
+
+        .key-points {
+            background: var(--ms-blue-100);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .key-points h3 {
+            color: var(--azure-blue);
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .key-points ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .key-points li {
+            padding: 6px 0;
+            padding-left: 20px;
+            position: relative;
+            font-size: 14px;
+        }
+
+        .key-points li::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 14px;
+            width: 8px;
+            height: 8px;
+            background: var(--azure-blue);
+            border-radius: 50%;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            font-size: 13px;
+            padding: 4px 0;
+            line-height: 1.7;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-left: 4px solid var(--azure-blue);
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s, border-color 0.2s;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+            border-color: var(--ms-blue-400);
+            border-left-color: var(--azure-blue);
+        }
+
+        .feature-icon {
+            font-size: 28px;
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 6px;
+        }
+
+        .feature-content p {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Code Blocks */
+        .code-section {
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            color: #9CDCFE;
+            padding: 8px 16px;
+            border-radius: 8px 8px 0 0;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 0 0 8px 8px;
+            margin: 0 0 16px 0;
+            padding: 16px;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        /* Use Case Cards */
+        .usecase-cards {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 4px solid var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            color: var(--ms-blue-900);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.7;
+        }
+
+        .usecase-card .pattern-tag {
+            display: inline-block;
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-800);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid var(--ms-blue-300);
+            margin-right: 8px;
+            margin-bottom: 4px;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th, .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table th {
+            background: var(--ms-blue-100);
+            color: var(--ms-blue-900);
+            font-weight: 500;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-primary);
+        }
+
+        .specs-table tr:hover td {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            padding: 32px 0;
+            margin-top: 0;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 16px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 24px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Title Area -->
+    <header class="hero">
+        <div class="container">
+            <span class="service-badge">Microsoft Agent Framework</span>
+            <h1>CodeAct / Episodic Memory / Agent Channel (Public Preview)</h1>
+            <p class="hero-subtitle">Microsoft Agent Framework に 5 つのパブリックプレビュー機能が追加 -- 実行効率・記憶・通信・可観測性を強化</p>
+            <div class="hero-meta">
+                <span class="badge badge-preview">In Preview</span>
+                <span class="badge badge-date">2026-07-15</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Overview + Before/After -->
+    <div class="container">
+        <section class="section">
+            <h2 class="section-title">概要</h2>
+            <p class="overview-text">
+                Microsoft Agent Framework (Microsoft Foundry) に 5 つのパブリックプレビュー機能が追加された。CodeAct パターンは複数ステップのプランを単一の実行可能なコードブロックに集約しレイテンシを削減。Hyperlight コンテナは CodeAct が生成するコードのセキュアなサンドボックス実行環境を提供。エピソード手続き記憶はエージェントが成功したタスクパターンを記憶・再利用するための組み込みストアを実現。Agent Channel はカスタムルーティングコード不要でエージェント間の型付きメッセージ通信を可能にする。Tracing は OpenTelemetry ベースの可観測性をエージェントの推論とツール呼び出しに提供する。
+            </p>
+
+            <div class="key-points">
+                <h3>Key Points</h3>
+                <ul>
+                    <li>CodeAct パターン: マルチステッププランを単一コードブロックに集約し、ツール呼び出しのレイテンシを大幅に削減</li>
+                    <li>Hyperlight コンテナ: CodeAct 生成コードを安全に実行するセキュアサンドボックス</li>
+                    <li>エピソード手続き記憶: 成功したタスクパターンを自動記録し、次回以降の実行を高速化</li>
+                    <li>Agent Channel: エージェント間の構造化メッセージ通信を組み込みで提供 (Request/Response, Fire-and-forget)</li>
+                    <li>Tracing (Python/.NET): OpenTelemetry ベースのトレーシングで推論・ツール呼び出しを可視化</li>
+                </ul>
+            </div>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>ツールを 1 つずつ呼び出すため、往復のレイテンシが累積していた</li>
+                        <li>エージェントが過去の成功パターンを記憶できず、毎回ゼロから推論していた</li>
+                        <li>マルチエージェント通信にカスタムルーティングコードの実装が必要だった</li>
+                        <li>エージェントの推論やツール呼び出しの可観測性が限定的だった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>CodeAct が複数ステップを単一コードブロックに集約し、レイテンシを削減</li>
+                        <li>エピソード手続き記憶が成功パターンを学習し、繰り返しタスクを高速化</li>
+                        <li>Agent Channel が組み込みの型付きメッセージ通信を提供</li>
+                        <li>OpenTelemetry トレーシングで推論・ツール呼び出しを完全に可視化</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Diagram (Mermaid) -->
+        <section class="section">
+            <h2 class="section-title">Architecture</h2>
+            <div class="mermaid-container">
+                <div class="mermaid">
+flowchart TD
+    subgraph AgentFramework["&#x1F916; Microsoft Agent Framework"]
+        subgraph Execution["&#x26A1; 実行レイヤー"]
+            CodeAct["&#x1F4DD; CodeAct パターン&lt;br/&gt;複数ステップを単一コードブロックに集約"]
+            Hyperlight["&#x1F512; Hyperlight コンテナ&lt;br/&gt;セキュアなサンドボックス実行"]
+        end
+
+        subgraph Memory["&#x1F9E0; 記憶レイヤー"]
+            Episodic["&#x1F4BE; エピソード手続き記憶&lt;br/&gt;成功パターンの記録・リプレイ"]
+        end
+
+        subgraph Communication["&#x1F4E1; 通信レイヤー"]
+            Channel["&#x1F517; Agent Channel&lt;br/&gt;型付きメッセージ通信"]
+        end
+
+        subgraph Observability["&#x1F441; 可観測性レイヤー"]
+            Tracing["&#x1F4CA; トレーシング&lt;br/&gt;Python / .NET 対応"]
+        end
+    end
+
+    subgraph Foundry["&#x2601;&#xFE0F; Microsoft Foundry"]
+        AppInsights["&#x1F4C8; Application Insights"]
+        Models["&#x1F9E9; Foundry Models"]
+    end
+
+    CodeAct --> Hyperlight
+    Episodic --> CodeAct
+    Channel --> CodeAct
+    Tracing --> AppInsights
+    CodeAct --> Models
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Features -->
+        <section class="section">
+            <h2 class="section-title">Key Features</h2>
+
+            <!-- Stats Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">Preview Features</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">Languages (Python, .NET)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">90</div>
+                    <div class="stat-label">Trace Retention (Days)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">Channel Patterns</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">OTel</div>
+                    <div class="stat-label">Tracing Standard</div>
+                </div>
+            </div>
+
+            <!-- Feature Cards -->
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4DD;</div>
+                    <div class="feature-content">
+                        <h4>CodeAct パターン</h4>
+                        <p>複数ステップのプランを単一の実行可能コードブロックに集約。ツール呼び出しの往復回数を削減し、レイテンシを大幅に改善。Python および .NET で利用可能。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F512;</div>
+                    <div class="feature-content">
+                        <h4>Hyperlight コンテナ</h4>
+                        <p>CodeAct が生成したコードをセキュアに実行するためのサンドボックス環境。隔離された実行空間でコードを安全に実行し、ホスト環境を保護する。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F9E0;</div>
+                    <div class="feature-content">
+                        <h4>エピソード手続き記憶</h4>
+                        <p>エージェントが成功したタスクパターンを自動的に記録・保存する組み込みストア。繰り返し実行されるタスクでは記憶されたパターンを再利用し、推論コストとレイテンシを削減。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F517;</div>
+                    <div class="feature-content">
+                        <h4>Agent Channel</h4>
+                        <p>エージェント間の構造化されたメッセージ通信を実現。Request/Response および Fire-and-forget パターンをサポートし、カスタムルーティングコード不要で型付きメッセージ通信を提供。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4CA;</div>
+                    <div class="feature-content">
+                        <h4>Tracing (Python/.NET)</h4>
+                        <p>OpenTelemetry ベースの可観測性をエージェントの推論とツール呼び出しに提供。Azure Monitor Application Insights にトレースデータを送信し、90 日間保持。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Specs -->
+        <section class="section">
+            <h2 class="section-title">Tech Specs</h2>
+            <table class="specs-table">
+                <tbody>
+                    <tr>
+                        <th>Framework</th>
+                        <td>Microsoft Agent Framework (Semantic Kernel + AutoGen successor)</td>
+                    </tr>
+                    <tr>
+                        <th>Languages</th>
+                        <td>Python, C# (.NET), Go (partial)</td>
+                    </tr>
+                    <tr>
+                        <th>CodeAct</th>
+                        <td>Python, .NET only</td>
+                    </tr>
+                    <tr>
+                        <th>Tracing</th>
+                        <td>OpenTelemetry &rarr; Azure Monitor Application Insights</td>
+                    </tr>
+                    <tr>
+                        <th>Trace Retention</th>
+                        <td>90 days</td>
+                    </tr>
+                    <tr>
+                        <th>Agent Channel Patterns</th>
+                        <td>Request/Response, Fire-and-forget</td>
+                    </tr>
+                    <tr>
+                        <th>Hosting</th>
+                        <td>Microsoft Foundry Agent Service</td>
+                    </tr>
+                    <tr>
+                        <th>Status</th>
+                        <td>Public Preview</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Use Cases -->
+        <section class="section">
+            <h2 class="section-title">Use Cases</h2>
+            <div class="usecase-cards">
+                <div class="usecase-card">
+                    <h4>複雑なデータ分析タスク</h4>
+                    <p class="scenario">CodeAct パターンにより複数のデータ処理ステップを単一コードブロックに集約し、ツール呼び出しの往復レイテンシを削減。エピソード手続き記憶が過去の成功パターンを記録し、繰り返し実行される分析タスクの処理時間を短縮する。</p>
+                    <span class="pattern-tag">CodeAct</span>
+                    <span class="pattern-tag">Episodic Memory</span>
+                </div>
+                <div class="usecase-card">
+                    <h4>マルチエージェントによる業務自動化</h4>
+                    <p class="scenario">Agent Channel が構造化されたエージェント間通信を提供し、カスタムルーティングコードなしで複数エージェントの協調動作を実現。Request/Response パターンで同期的な委任、Fire-and-forget パターンで非同期的な通知を使い分け可能。</p>
+                    <span class="pattern-tag">Agent Channel</span>
+                    <span class="pattern-tag">Tracing</span>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <h3>Source</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=563566" target="_blank">Azure Updates - CodeAct Pattern &amp; Hyperlight Container</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=563561" target="_blank">Azure Updates - Episodic Procedural Memory</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=563556" target="_blank">Azure Updates - Agent Channel</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=564071" target="_blank">Azure Updates - Tracing (Python/.NET)</a></li>
+                <li><a href="https://learn.microsoft.com/agent-framework/" target="_blank">Microsoft Learn - Agent Framework Documentation</a></li>
+                <li><a href="https://github.com/microsoft/agent-framework" target="_blank">GitHub - microsoft/agent-framework</a></li>
+            </ul>
+            <p class="footer-note">このインフォグラフィックは Azure Updates の公開情報を基に自動生成されています。最新情報は公式ドキュメントをご確認ください。</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                background: '#FFFFFF',
+                mainBkg: '#FFFFFF',
+                nodeBorder: '#0078D4',
+                lineColor: '#605E5C',
+                fontFamily: 'Noto Sans JP, Segoe UI, sans-serif'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+</body>
+</html>

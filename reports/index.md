@@ -6,8 +6,10 @@
 ## 2026 年
 
 - [2026-07-15 - Azure SQL Database: 2026 年 7 月中旬アップデート - Shortcuts Configuration、Results Grid 改善](2026/2026-07-15-sql-database-mid-july-updates.md)
+- [2026-07-15 - Microsoft Agent Framework: CodeAct パターン、エピソード記憶、Agent Channel、トレーシング](2026/2026-07-15-agent-framework-codeact-memory-channel.md)
 - [2026-07-15 - Azure Monitor: Advanced Platform Metrics (パブリックプレビュー)](2026/2026-07-15-azure-monitor-advanced-platform-metrics.md)
 - [2026-07-15 - Microsoft Agent Framework: DevUI Agent Inspector がパブリックプレビューとして提供開始](2026/2026-07-15-foundry-devui-agent-inspector.md)
+- [2026-07-15 - Microsoft Agent Framework: マルチエージェントオーケストレーション SDK が GA](2026/2026-07-15-agent-framework-multi-agent-sdk-ga.md)
 - [2026-07-15 - Azure Arc SQL Server: SQL Server on Azure Virtual Machines へのマイグレーション対応が一般提供開始](2026/2026-07-15-arc-sql-migration-azure-vm.md)
 - [2026-07-14 - Azure Front Door: Edge Actions (サーバーレスエッジコンピューティング)](2026/2026-07-14-front-door-edge-actions.md)
 - [2026-07-13 - Azure Databricks: SQL Serverless が UK West リージョンで一般提供開始](2026/2026-07-13-databricks-sql-serverless-uk-west.md)
