@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKS: Azure Files NFS 共有の転送中暗号化 一般提供開始</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--ms-blue-900) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(80, 230, 255, 0.15) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .title-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+            color: #FFFFFF;
+        }
+
+        .title-area h1 {
+            font-size: 36px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+            line-height: 1.3;
+        }
+
+        .title-area .subtitle {
+            font-size: 18px;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+            font-weight: 300;
+        }
+
+        .title-date {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section Styles */
+        .section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 8px;
+            border-bottom: 3px solid var(--ms-blue-300);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 28px;
+        }
+
+        /* Overview */
+        .overview-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px 24px;
+            border-radius: 0 12px 12px 0;
+            margin-bottom: 24px;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4 {
+            color: var(--ms-red);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after h4 {
+            color: var(--ms-green);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.6;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .before li::before {
+            content: '\2716';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+        }
+
+        .after li::before {
+            content: '\2714';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .feature-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.12);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Architecture Diagram */
+        .architecture-container {
+            background: white;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            overflow-x: auto;
+        }
+
+        .architecture-container .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        .architecture-description {
+            margin-top: 16px;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            text-align: center;
+            font-style: italic;
+        }
+
+        /* Use Case Cards */
+        .usecase-card {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .usecase-card h4 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            background: var(--ms-surface-tertiary);
+            border-radius: 6px;
+        }
+
+        .usecase-card .effect {
+            font-size: 14px;
+            color: var(--ms-text-primary);
+            padding: 10px 14px;
+            background: var(--ms-blue-100);
+            border-radius: 6px;
+            border-left: 3px solid var(--azure-blue);
+        }
+
+        /* Spec Table */
+        .spec-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .spec-table th {
+            background: var(--azure-blue);
+            color: white;
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .spec-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .spec-table tr:nth-child(even) td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .spec-table tr:hover td {
+            background: var(--ms-blue-100);
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 10px 16px;
+            margin: 6px 0;
+            background: #FFF8E1;
+            border-left: 3px solid var(--ms-yellow);
+            border-radius: 0 6px 6px 0;
+            font-size: 14px;
+            color: var(--ms-text-primary);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 40px;
+        }
+
+        .footer h3 {
+            font-size: 16px;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin: 8px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--ms-blue-800);
+            text-decoration: underline;
+        }
+
+        .footer-meta {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 26px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-card {
+                flex-direction: column;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .title-area h1 {
+                font-size: 22px;
+            }
+
+            .title-meta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="title-meta">
+                <span class="service-badge">Azure Kubernetes Service (AKS)</span>
+                <span class="service-badge">Azure Files</span>
+                <span class="badge badge-ga">GA</span>
+            </div>
+            <h1>NFS v4.1 転送中暗号化 (Encryption in Transit)</h1>
+            <p class="subtitle">Azure Files NFS 共有の通信を TLS で透過的に暗号化し、コンプライアンス要件を容易に達成</p>
+            <p class="title-date">2026-07-17</p>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4CB;</span> 概要</h2>
+            <div class="overview-box">
+                Azure Kubernetes Service (AKS) において、Azure Files NFS v4.1 ボリュームの転送中暗号化 (Encryption in Transit: EiT) が一般提供 (GA) となった。Azure File CSI ドライバーを通じて、AKS ワークロードと Azure Files NFS 共有間で転送されるデータが TLS を使用して暗号化される。アプリケーションレベルの変更を必要とせず、データの機密性が確保される。
+            </div>
+            <p style="font-size: 15px; color: var(--ms-text-secondary); margin-bottom: 20px; line-height: 1.8;">
+                従来、Azure Files の NFS プロトコルでの接続は暗号化されておらず、仮想ネットワーク内のトラフィックは平文で送受信されていた。StorageClass パラメータに <code style="background: var(--ms-surface-tertiary); padding: 2px 6px; border-radius: 4px; font-family: 'Cascadia Code', 'Consolas', monospace;">encryptInTransit: "true"</code> を設定するだけで、NFS 通信が TLS で暗号化されるようになった。
+            </p>
+
+            <!-- Before / After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>Azure Files NFS 共有への通信が暗号化されず平文で転送</li>
+                        <li>転送中のデータ暗号化にはアプリケーション側で独自実装が必要</li>
+                        <li>コンプライアンス要件を満たすために SMB を選択せざるを得ないケースがあった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li><code style="font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 13px;">encryptInTransit: "true"</code> を設定するだけで TLS 暗号化が有効</li>
+                        <li>アプリケーションコードの変更不要で透過的に暗号化</li>
+                        <li>NFS v4.1 のパフォーマンス特性を維持しつつセキュリティ要件を満たす</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F3D7;</span> アーキテクチャ</h2>
+            <div class="architecture-container">
+                <pre class="mermaid">
+flowchart LR
+    subgraph AKS["&#x1F680; AKS Cluster"]
+        Pod1["&#x1F4E6; Pod"]
+        Pod2["&#x1F4E6; Pod"]
+        CSI["&#x1F50C; Azure File CSI Driver&lt;br/&gt;encryptInTransit: true"]
+    end
+
+    subgraph Network["&#x1F512; TLS Encrypted Channel"]
+        TLS["&#x1F510; TLS 暗号化"]
+    end
+
+    subgraph Storage["&#x1F4BE; Azure Storage"]
+        NFS["&#x1F4C1; Azure Files&lt;br/&gt;NFS v4.1 Share&lt;br/&gt;(Premium)"]
+    end
+
+    Pod1 --> CSI
+    Pod2 --> CSI
+    CSI --> TLS
+    TLS --> NFS
+                </pre>
+                <p class="architecture-description">AKS Pod から Azure Files NFS v4.1 共有への通信が CSI ドライバーにより透過的に TLS 暗号化される</p>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x2B50;</span> 主要機能</h2>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F510;</div>
+                <div class="feature-content">
+                    <h4>透過的な TLS 暗号化</h4>
+                    <p>Azure File CSI ドライバーが NFS v4.1 通信を自動的に TLS で暗号化。アプリケーション側での対応は一切不要で、既存のワークロードをそのまま暗号化通信に移行可能。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x2699;</div>
+                <div class="feature-content">
+                    <h4>StorageClass パラメータによる簡易設定</h4>
+                    <p><code style="font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 13px; background: var(--ms-surface-tertiary); padding: 2px 6px; border-radius: 4px;">encryptInTransit: "true"</code> を設定するだけで有効化。複雑なネットワーク設定やサイドカーの追加は不要。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">&#x1F4BE;</div>
+                <div class="feature-content">
+                    <h4>既存 PV への適用</h4>
+                    <p>既存の PersistentVolume にも volumeAttributes で暗号化を有効化可能。新規作成だけでなく、運用中のボリュームにも適用できる。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specifications -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4D0;</span> 技術仕様</h2>
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>プロトコル</td>
+                        <td>NFS v4.1</td>
+                    </tr>
+                    <tr>
+                        <td>暗号化方式</td>
+                        <td>TLS</td>
+                    </tr>
+                    <tr>
+                        <td>CSI ドライバー</td>
+                        <td>file.csi.azure.com</td>
+                    </tr>
+                    <tr>
+                        <td>最低 AKS バージョン</td>
+                        <td>1.33 以降</td>
+                    </tr>
+                    <tr>
+                        <td>サポート OS</td>
+                        <td>Linux (Ubuntu 22.04 以降)</td>
+                    </tr>
+                    <tr>
+                        <td>非サポート OS</td>
+                        <td>Ubuntu 20.04、Windows ノード</td>
+                    </tr>
+                    <tr>
+                        <td>ストレージ SKU</td>
+                        <td>SSD (PremiumV2_LRS, PremiumV2_ZRS, Premium_LRS, Premium_ZRS)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Configuration -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4DD;</span> 設定方法 (StorageClass)</h2>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">YAML</span>
+                    <span style="color: #888;">StorageClass definition</span>
+                </div>
+                <pre><code class="language-yaml">apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azurefile-csi-premiumv2-eit
+provisioner: file.csi.azure.com
+allowVolumeExpansion: true
+parameters:
+  protocol: nfs
+  skuName: PremiumV2_LRS
+  encryptInTransit: "true"
+mountOptions:
+  - nconnect=4
+  - noresvport
+  - actimeo=30</code></pre>
+            </div>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x1F4A1;</span> ユースケース</h2>
+            <div class="usecase-card">
+                <h4>&#x1F3E5; 医療データ処理パイプライン</h4>
+                <div class="scenario">
+                    <strong>シナリオ:</strong> HIPAA 準拠のデータ処理で患者データを複数の処理 Pod 間で共有
+                </div>
+                <div class="effect">
+                    <strong>効果:</strong> NFS の高パフォーマンスを活かしつつ、TLS 暗号化により患者データの機密性を確保。コンプライアンス監査に対応可能な暗号化通信を実現。
+                </div>
+            </div>
+            <div class="usecase-card">
+                <h4>&#x1F3E6; 金融機関の共有ストレージ</h4>
+                <div class="scenario">
+                    <strong>シナリオ:</strong> 複数マイクロサービスが取引ログや市場データを読み書き、PCI-DSS 要件に対応
+                </div>
+                <div class="effect">
+                    <strong>効果:</strong> アプリケーション変更なしで転送中暗号化を実現し、PCI-DSS の転送中データ暗号化要件を満たす。NFS v4.1 の並列アクセス性能を維持。
+                </div>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">&#x26A0;</span> 制約事項</h2>
+            <ul class="limitations-list">
+                <li>Ubuntu 20.04 ノードは非サポート</li>
+                <li>Windows ノードは非サポート</li>
+                <li>AKS バージョン 1.33 以降が必要</li>
+                <li>NFS ファイル共有には SSD (Premium) が必須</li>
+                <li>TLS のオーバーヘッドによるわずかなレイテンシ増加の可能性</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3>参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=567787" target="_blank">公式アップデート情報 - Azure Updates</a></li>
+                <li><a href="https://learn.microsoft.com/azure/aks/azure-csi-files-storage-provision" target="_blank">Microsoft Learn - Azure CSI Files Storage Provision</a></li>
+            </ul>
+            <div class="footer-meta">
+                Generated on 2026-07-17 | Azure News Summary
+            </div>
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+</body>
+</html>

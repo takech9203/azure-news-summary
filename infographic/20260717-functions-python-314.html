@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Functions: Python 3.14 サポート GA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+        hljs.highlightAll();
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Title Area */
+        .title-area {
+            background: linear-gradient(135deg, var(--azure-blue) 0%, var(--ms-blue-900) 100%);
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .title-area::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(80, 230, 255, 0.08);
+            border-radius: 50%;
+        }
+
+        .title-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            backdrop-filter: blur(4px);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .title-area h1 {
+            font-size: 32px;
+            font-weight: 900;
+            line-height: 1.3;
+            margin-bottom: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .title-date {
+            font-size: 15px;
+            opacity: 0.85;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Section Styles */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--ms-blue-200);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 24px;
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--ms-text-primary);
+            margin-bottom: 24px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-left: 8px;
+            border-left: 3px solid transparent;
+        }
+
+        .before li {
+            border-left-color: var(--ms-red);
+        }
+
+        .after li {
+            border-left-color: var(--ms-green);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 24px 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 900;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            line-height: 1.3;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.12);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .specs-table th {
+            background: var(--ms-surface-tertiary);
+            padding: 10px 16px;
+            text-align: left;
+            font-weight: 600;
+            width: 40%;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table td {
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .specs-table tr:hover {
+            background: var(--ms-surface-secondary);
+        }
+
+        /* Use Cases */
+        .usecase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 10px;
+            padding: 20px;
+            transition: border-color 0.2s;
+        }
+
+        .usecase-card:hover {
+            border-color: var(--azure-blue);
+        }
+
+        .usecase-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .usecase-card p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Warning Box */
+        .warning-box {
+            background: #FFF8E1;
+            border-left: 4px solid var(--ms-orange);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .warning-box h4 {
+            color: var(--ms-orange);
+            font-size: 15px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .warning-box ul {
+            padding-left: 20px;
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        .warning-box li {
+            margin-bottom: 6px;
+            line-height: 1.5;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 32px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer h4 {
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer li {
+            padding: 4px 0;
+        }
+
+        .footer-note {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .title-area {
+                padding: 32px 24px;
+            }
+
+            .title-area h1 {
+                font-size: 24px;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .usecase-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Title Area -->
+        <div class="title-area">
+            <div class="title-meta">
+                <span class="service-badge">Azure Functions</span>
+                <span class="badge badge-ga">Launched (GA)</span>
+            </div>
+            <h1>Python 3.14 サポート一般提供開始</h1>
+            <div class="title-date">2026年7月17日 | Compute | サーバーレス</div>
+        </div>
+
+        <!-- Overview Section -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">📋</span>概要</h2>
+            <p class="overview-text">
+                Azure Functions で Python 3.14 のサポートが一般提供 (GA) として開始されました。開発者はローカル環境で Python 3.14 を使用して関数を開発し、Linux 上の Azure Functions プランにデプロイできるようになりました。Python 3.14 は Azure Functions でサポートされる最新の Python バージョンであり、2030 年 10 月までのサポートが予定されています。
+            </p>
+            <p class="overview-text">
+                Python 3.14 のサポートは Azure Functions ランタイム v4.x 上で動作します。Python 3.13 以降で導入された依存関係の完全分離、ランタイムバージョン制御、HTTP ストリーミングの簡素化といった改善が Python 3.14 でも継続して利用可能です。なお、Python 3.12 が Linux Consumption プランでサポートされる最後の Python バージョンであるため、Python 3.14 を利用するには Flex Consumption プラン、Premium プラン、または Dedicated (App Service) プランが必要となります。
+            </p>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">3.14</div>
+                    <div class="stat-label">Python バージョン</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">v4.x</div>
+                    <div class="stat-label">Functions ランタイム</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2030/10</div>
+                    <div class="stat-label">サポート終了予定</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">Linux</div>
+                    <div class="stat-label">対応 OS</div>
+                </div>
+            </div>
+
+            <!-- Before/After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>&#x274C; Before</h4>
+                    <ul>
+                        <li>Azure Functions でサポートされる Python の最新バージョンが 3.13 までに限定されていた</li>
+                        <li>Python 3.13 のサポート終了は 2029 年 10 月であり、長期運用プロジェクトではサポート期間の制約があった</li>
+                        <li>Python 3.14 の新機能やパフォーマンス改善を Azure Functions で活用できなかった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>&#x2705; After</h4>
+                    <ul>
+                        <li>Python 3.14 をローカル開発環境および Azure 上のプロダクション環境で利用可能になった</li>
+                        <li>サポート期間が 2030 年 10 月まで延長され、長期運用プロジェクトに適した選択肢が追加された</li>
+                        <li>Python 3.14 のセキュリティ強化と言語機能改善を Azure Functions 上で活用できるようになった</li>
+                        <li>依存関係の完全分離が標準で有効化されており、パッケージ競合のリスクが低減されている</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">🏗️</span>アーキテクチャ図</h2>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph Dev["ローカル開発環境"]
+        PY314["Python 3.14"]
+        CT["Azure Functions Core Tools"]
+        CODE["function_app.py"]
+    end
+
+    subgraph Azure["Azure (Linux)"]
+        subgraph Runtime["Azure Functions Runtime v4.x"]
+            WORKER["Python 3.14 Worker"]
+            HOST["Functions Host"]
+        end
+
+        subgraph Plans["ホスティングプラン"]
+            FLEX["Flex Consumption"]
+            PREM["Premium"]
+            DED["Dedicated (App Service)"]
+        end
+
+        subgraph Triggers["トリガー / バインディング"]
+            HTTP["HTTP Trigger"]
+            TIMER["Timer Trigger"]
+            BLOB["Blob Storage"]
+            QUEUE["Queue Storage"]
+            COSMOS["Cosmos DB"]
+            EH["Event Hubs"]
+        end
+    end
+
+    Dev -->|"func azure functionapp publish"| Azure
+    CODE --> CT
+    CT --> PY314
+    HOST --> WORKER
+    WORKER --> Triggers
+    Runtime --> Plans
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">⚡</span>主要機能</h2>
+
+            <div class="feature-card">
+                <div class="feature-icon">🐍</div>
+                <div class="feature-content">
+                    <h4>Python 3.14 ランタイムサポート</h4>
+                    <p>Linux 上の Azure Functions プランで Python 3.14 を使用した関数の実行が可能。最新の Python バージョンをサーバーレス環境で活用できます。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🖥️</div>
+                <div class="feature-content">
+                    <h4>ローカル開発対応</h4>
+                    <p>Azure Functions Core Tools を使用して Python 3.14 でのローカル開発・テストが可能。開発からデプロイまでシームレスなワークフローを実現します。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">📦</div>
+                <div class="feature-content">
+                    <h4>依存関係の完全分離</h4>
+                    <p>アプリケーションの依存関係がワーカーの依存関係から完全に分離されます。パッケージ競合のリスクが大幅に低減されています。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">⚙️</div>
+                <div class="feature-content">
+                    <h4>ランタイムバージョン制御</h4>
+                    <p><code>azure-functions-runtime</code> パッケージを requirements.txt に追加することで、Python ランタイムバージョンのピン留めや最新版への追従が選択可能です。</p>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🌊</div>
+                <div class="feature-content">
+                    <h4>HTTP ストリーミング簡素化</h4>
+                    <p>特別なアプリ設定なしで HTTP ストリーミングが利用可能。レスポンスのストリーミング配信を簡単に実装できます。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specs -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">📐</span>技術仕様</h2>
+            <table class="specs-table">
+                <tbody>
+                    <tr>
+                        <th>サポートバージョン</th>
+                        <td>Python 3.14</td>
+                    </tr>
+                    <tr>
+                        <th>サポートレベル</th>
+                        <td>GA (一般提供)</td>
+                    </tr>
+                    <tr>
+                        <th>サポート終了予定</th>
+                        <td>2030 年 10 月</td>
+                    </tr>
+                    <tr>
+                        <th>Functions ランタイム</th>
+                        <td>v4.x</td>
+                    </tr>
+                    <tr>
+                        <th>対応 OS</th>
+                        <td>Linux</td>
+                    </tr>
+                    <tr>
+                        <th>対応ホスティングプラン</th>
+                        <td>Flex Consumption, Premium, Dedicated (App Service)</td>
+                    </tr>
+                    <tr>
+                        <th>Linux Consumption プラン</th>
+                        <td>非対応</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">💡</span>ユースケース</h2>
+            <div class="usecase-grid">
+                <div class="usecase-card">
+                    <h4>🌐 長期運用の API バックエンド</h4>
+                    <p>2030 年 10 月までのサポート期間を活かし、長期的に安定した API サービスを構築。セキュリティパッチの継続提供を受けながら運用可能です。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>📡 IoT データ処理パイプライン</h4>
+                    <p>Event Hubs や IoT Hub からのデータストリームをリアルタイムに処理。Python 3.14 のパフォーマンス改善を活かした高速処理が可能です。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>🤖 機械学習推論エンドポイント</h4>
+                    <p>Python エコシステムの ML ライブラリを活用した推論サービスを HTTP トリガーで公開。依存関係の分離により安定した環境を確保できます。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>⚡ イベント駆動型データ処理</h4>
+                    <p>Blob Storage、Queue Storage、Cosmos DB のイベントをトリガーとして非同期データ処理パイプラインを構築します。</p>
+                </div>
+                <div class="usecase-card">
+                    <h4>🔧 マイクロサービスアーキテクチャ</h4>
+                    <p>個別にスケーリング可能な小さなサービスを Python 3.14 で構築し、疎結合なアーキテクチャを実現します。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Constraints -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">⚠️</span>制約事項</h2>
+            <div class="warning-box">
+                <h4>⚠️ 利用上の注意点</h4>
+                <ul>
+                    <li>Linux Consumption プランでは非対応 (Python 3.12 が最後のサポートバージョン)</li>
+                    <li>既存アプリケーションは Python 3.14 への移行時に再ビルドが必要</li>
+                    <li>一部の依存パッケージが Python 3.14 と互換性がない可能性がある</li>
+                    <li>Worker Extensions は非サポート</li>
+                    <li>Windows 環境は非対応 (Linux のみ)</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4>参考リンク</h4>
+            <ul>
+                <li><a href="https://azure.microsoft.com/updates?id=567646" target="_blank">公式アップデート情報: Azure Updates</a></li>
+                <li><a href="https://learn.microsoft.com/azure/azure-functions/functions-reference-python" target="_blank">Microsoft Learn: Azure Functions Python 開発者ガイド</a></li>
+            </ul>
+            <div class="footer-note">
+                このインフォグラフィックは Azure Updates の情報を基に自動生成されています。最新の情報は公式ドキュメントをご確認ください。
+            </div>
+        </div>
+    </div>
+</body>
+</html>

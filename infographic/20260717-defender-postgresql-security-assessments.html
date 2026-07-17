@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft Defender for Cloud: Azure Database for PostgreSQL Flexible Server セキュリティ評価 GA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <style>
+        :root {
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+            --security-accent: #D83B01;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--security-accent), var(--azure-dark-blue));
+            color: white;
+            padding: 40px 32px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .header-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .header-date {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Sections */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 8px;
+            padding: 24px;
+            margin: 16px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .section h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--security-accent);
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #FFCDD2;
+        }
+
+        .section h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin: 16px 0 8px;
+        }
+
+        /* Highlight Box */
+        .highlight-box {
+            background: #FFF3E0;
+            border-left: 4px solid var(--security-accent);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+            font-size: 15px;
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 15px;
+            margin-bottom: 8px;
+            font-weight: 700;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 4px 0;
+            font-size: 14px;
+        }
+
+        /* Feature Cards */
+        .feature-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--security-accent);
+            padding: 16px;
+            margin: 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #FFF3E0;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Table */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 14px;
+        }
+
+        .info-table th, .info-table td {
+            padding: 10px 14px;
+            border: 1px solid var(--ms-border);
+            text-align: left;
+        }
+
+        .info-table th {
+            background: var(--ms-blue-100);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .info-table tr:nth-child(even) td {
+            background: var(--ms-surface-secondary);
+        }
+
+        .severity-high {
+            color: var(--ms-red);
+            font-weight: 700;
+        }
+
+        .severity-medium {
+            color: var(--ms-orange);
+            font-weight: 600;
+        }
+
+        .severity-low {
+            color: var(--ms-green);
+            font-weight: 600;
+        }
+
+        /* Use Case */
+        .usecase {
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 12px 0;
+            border: 1px solid var(--ms-border);
+        }
+
+        .usecase h4 {
+            color: var(--ms-blue-800);
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+
+        .usecase p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+        }
+
+        /* Code Block */
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            color: #D4D4D4;
+            padding: 16px 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+            margin: 16px 0;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+        }
+
+        .code-comment {
+            color: #6A9955;
+        }
+
+        .code-command {
+            color: #DCDCAA;
+        }
+
+        .code-flag {
+            color: #9CDCFE;
+        }
+
+        .code-string {
+            color: #CE9178;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--security-accent), var(--azure-dark-blue));
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Constraints */
+        .constraint-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .constraint-list li {
+            padding: 8px 0 8px 24px;
+            position: relative;
+            font-size: 14px;
+            border-bottom: 1px solid var(--ms-border);
+        }
+
+        .constraint-list li:last-child {
+            border-bottom: none;
+        }
+
+        .constraint-list li::before {
+            content: "!";
+            position: absolute;
+            left: 0;
+            top: 8px;
+            width: 18px;
+            height: 18px;
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 8px;
+            padding: 20px 24px;
+            margin-top: 24px;
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+        }
+
+        .footer a {
+            color: var(--azure-blue);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            padding: 4px 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .container {
+                padding: 16px;
+            }
+            .info-table {
+                font-size: 12px;
+            }
+            .info-table th, .info-table td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-meta">
+                <span class="service-badge">Microsoft Defender for Cloud</span>
+                <span class="service-badge">Azure Database for PostgreSQL</span>
+                <span class="badge badge-ga">GA</span>
+            </div>
+            <h1>Azure Database for PostgreSQL Flexible Server セキュリティ評価 一般提供開始</h1>
+            <div class="header-date">2026-07-17 | CSPM セキュリティ評価</div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2>概要</h2>
+            <div class="highlight-box">
+                Microsoft Defender for Cloud の <strong>Cloud Security Posture Management (CSPM)</strong> による Azure Database for PostgreSQL Flexible Server 向けセキュリティ評価機能が<strong>一般提供 (GA)</strong> となった。PostgreSQL Flexible Server インスタンスのセキュリティ態勢を継続的に評価し、構成ミスの特定と優先度付きの推奨事項を受け取ることが可能。
+            </div>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin: 12px 0;">
+                CSPM は Defender for Cloud のコア機能であり、Microsoft Cloud Security Benchmark (MCSB) に基づくセキュリティ推奨事項を提供し、Secure Score と連携してセキュリティ態勢の改善を定量的に追跡できる。
+            </p>
+
+            <div class="before-after">
+                <div class="before">
+                    <h4>Before</h4>
+                    <ul>
+                        <li>- PostgreSQL Flexible Server のセキュリティ構成を手動で確認する必要があり見落としが発生</li>
+                        <li>- セキュリティ評価が体系化されていない</li>
+                        <li>- 継続的なセキュリティ態勢の監視が標準化されていない</li>
+                        <li>- コンプライアンス要件への適合状況を一元的に確認する手段が限られていた</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>After</h4>
+                    <ul>
+                        <li>- セキュリティ態勢が自動的かつ継続的に評価</li>
+                        <li>- 優先度付きの推奨事項で最もリスクの高い構成ミスから対処可能</li>
+                        <li>- Secure Score との連動でセキュリティ改善の進捗を定量的に把握</li>
+                        <li>- Azure Policy との統合で組織全体にセキュリティポリシーを一貫して適用</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture -->
+        <div class="section">
+            <h2>アーキテクチャ図</h2>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 12px;">Defender for Cloud CSPM が MCSB に基づき PostgreSQL Flexible Server を継続的に評価し、推奨事項・Secure Score・修復ガイダンスを出力するフロー。</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph DefenderCloud["Microsoft Defender for Cloud"]
+        CSPM["Cloud Security Posture<br/>Management (CSPM)"]
+        Assessments["セキュリティ評価エンジン"]
+        Recommendations["推奨事項"]
+        SecureScore["Secure Score"]
+    end
+
+    subgraph MCSB["Microsoft Cloud Security Benchmark"]
+        Baseline["セキュリティベースライン"]
+        Policies["Azure Policy 定義"]
+    end
+
+    subgraph PostgreSQL["Azure Database for PostgreSQL<br/>Flexible Server"]
+        Config["サーバー構成"]
+        Network["ネットワーク設定"]
+        Auth["認証設定"]
+        Encryption["暗号化設定"]
+        Audit["監査ログ設定"]
+    end
+
+    subgraph Output["セキュリティ出力"]
+        Dashboard["セキュリティダッシュボード"]
+        Alerts["アラート通知"]
+        Remediation["修復ガイダンス"]
+    end
+
+    CSPM --> Assessments
+    MCSB --> Assessments
+    Assessments -- "継続的評価" --> PostgreSQL
+    Assessments --> Recommendations
+    Recommendations --> SecureScore
+    Recommendations --> Dashboard
+    Recommendations --> Alerts
+    Recommendations --> Remediation
+    Policies -- "ポリシー準拠チェック" --> Config
+    Policies -- "ポリシー準拠チェック" --> Network
+    Policies -- "ポリシー準拠チェック" --> Auth
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features / Assessment Categories -->
+        <div class="section">
+            <h2>評価対象の主要カテゴリ</h2>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 12px;">PostgreSQL Flexible Server に対して評価される主要なセキュリティ推奨事項と重要度。</p>
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>カテゴリ</th>
+                        <th>推奨事項</th>
+                        <th>重要度</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>認証</td>
+                        <td>Microsoft Entra 管理者のプロビジョニング</td>
+                        <td class="severity-medium">Medium</td>
+                    </tr>
+                    <tr>
+                        <td>認証</td>
+                        <td>Microsoft Entra のみの認証の有効化</td>
+                        <td class="severity-medium">Medium</td>
+                    </tr>
+                    <tr>
+                        <td>暗号化 (転送中)</td>
+                        <td>require_secure_transport = on</td>
+                        <td class="severity-high">High</td>
+                    </tr>
+                    <tr>
+                        <td>ネットワーク</td>
+                        <td>Private Endpoint の有効化</td>
+                        <td class="severity-high">High</td>
+                    </tr>
+                    <tr>
+                        <td>ネットワーク</td>
+                        <td>パブリックネットワークアクセスの無効化</td>
+                        <td class="severity-medium">Medium</td>
+                    </tr>
+                    <tr>
+                        <td>ネットワーク</td>
+                        <td>「Azure サービスへのアクセスを許可」の無効化</td>
+                        <td class="severity-high">High</td>
+                    </tr>
+                    <tr>
+                        <td>監査</td>
+                        <td>pgaudit.log に role, ddl, misc を含める</td>
+                        <td class="severity-high">High</td>
+                    </tr>
+                    <tr>
+                        <td>監査</td>
+                        <td>pgaudit.log_level = log</td>
+                        <td class="severity-medium">Medium</td>
+                    </tr>
+                    <tr>
+                        <td>バックアップ</td>
+                        <td>geo 冗長バックアップの有効化</td>
+                        <td class="severity-low">Low</td>
+                    </tr>
+                    <tr>
+                        <td>DoS 対策</td>
+                        <td>connection_throttle = on</td>
+                        <td class="severity-medium">Medium</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Feature Cards -->
+        <div class="section">
+            <h2>主要機能</h2>
+            <div class="feature-cards">
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F6E1;</div>
+                    <div class="feature-content">
+                        <h4>継続的セキュリティ評価</h4>
+                        <p>PostgreSQL Flexible Server のセキュリティ構成を自動的に評価。認証、暗号化、ネットワーク、監査などの領域を包括的にカバー。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4CA;</div>
+                    <div class="feature-content">
+                        <h4>Secure Score 連携</h4>
+                        <p>推奨事項の対応状況が Secure Score に反映され、セキュリティ態勢の改善を定量的に追跡できる。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4CB;</div>
+                    <div class="feature-content">
+                        <h4>優先度付き推奨事項</h4>
+                        <p>リスクに基づく優先順位で推奨事項を提示。最も重大な構成ミスから効率的に対処が可能。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F4DC;</div>
+                    <div class="feature-content">
+                        <h4>Azure Policy 統合</h4>
+                        <p>Microsoft Cloud Security Benchmark (MCSB) に基づくポリシー定義で組織全体に一貫したセキュリティポリシーを適用。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#x1F527;</div>
+                    <div class="feature-content">
+                        <h4>修復ガイダンス</h4>
+                        <p>各推奨事項に具体的な修復手順を提供。構成ミスの検出から修正までのワークフローを効率化。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Plans -->
+        <div class="section">
+            <h2>対応プラン</h2>
+            <table class="info-table">
+                <thead>
+                    <tr>
+                        <th>プラン</th>
+                        <th>セキュリティ評価</th>
+                        <th>追加機能</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Foundational CSPM (無料)</strong></td>
+                        <td>基本的な推奨事項、Secure Score</td>
+                        <td>Asset Inventory</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Defender CSPM (有料)</strong></td>
+                        <td>全推奨事項 + 攻撃パス分析、リスク優先順位付け</td>
+                        <td>Security Explorer、規制コンプライアンス</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2>ユースケース</h2>
+            <div class="usecase">
+                <h4>1. 金融業界のコンプライアンス対応</h4>
+                <p>PCI DSS 要件に基づくデータベースセキュリティの継続的な準拠確認。暗号化設定やネットワーク分離の評価を自動化し、監査対応コストを削減。</p>
+            </div>
+            <div class="usecase">
+                <h4>2. 医療機関のデータ保護</h4>
+                <p>HIPAA 要件に基づく PHI を格納する PostgreSQL の暗号化設定確認。転送中・保存時の暗号化、アクセス制御の適正性を継続的に検証。</p>
+            </div>
+            <div class="usecase">
+                <h4>3. SaaS プロバイダーのマルチテナント環境</h4>
+                <p>複数 PostgreSQL インスタンスへのセキュリティポリシーの一貫した適用。Azure Policy との統合で全テナントに統一されたセキュリティベースラインを確保。</p>
+            </div>
+            <div class="usecase">
+                <h4>4. DevSecOps パイプライン統合</h4>
+                <p>インフラデプロイ後のセキュリティ評価自動チェック。CI/CD パイプラインにセキュリティゲートを組み込み、構成ドリフトを早期検出。</p>
+            </div>
+        </div>
+
+        <!-- Setup -->
+        <div class="section">
+            <h2>設定方法</h2>
+            <pre><code><span class="code-comment"># Defender for Cloud の CSPM プラン状態を確認</span>
+<span class="code-command">az security pricing show</span> <span class="code-flag">--name</span> <span class="code-string">CloudPosture</span>
+
+<span class="code-comment"># セキュリティ評価の一覧を取得</span>
+<span class="code-command">az security assessment list</span> \
+  <span class="code-flag">--query</span> <span class="code-string">"[?contains(resourceDetails.id, 'Microsoft.DBforPostgreSQL')]"</span>
+
+<span class="code-comment"># Defender CSPM を有効化</span>
+<span class="code-command">az security pricing create</span> \
+  <span class="code-flag">--name</span> <span class="code-string">CloudPosture</span> \
+  <span class="code-flag">--tier</span> <span class="code-string">Standard</span></code></pre>
+        </div>
+
+        <!-- Constraints -->
+        <div class="section">
+            <h2>制約事項</h2>
+            <ul class="constraint-list">
+                <li>Foundational CSPM (無料) では基本的な推奨事項のみ</li>
+                <li>実行時の脅威検出には別途 Defender for Open-Source Relational Databases プランが必要</li>
+                <li>評価結果の反映にはタイムラグあり (数時間以内)</li>
+                <li>Single Server は対象外 (Flexible Server のみ)</li>
+            </ul>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h3 style="font-size: 14px; font-weight: 700; margin-bottom: 8px;">参考リンク</h3>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=567527" target="_blank">公式アップデート情報</a></li>
+                <li><a href="https://learn.microsoft.com/azure/defender-for-cloud/defender-for-databases-introduction" target="_blank">Microsoft Learn: Defender for Databases</a></li>
+                <li><a href="https://learn.microsoft.com/azure/defender-for-cloud/concept-cloud-security-posture-management" target="_blank">Microsoft Learn: Cloud Security Posture Management (CSPM)</a></li>
+            </ul>
+            <p style="margin-top: 12px; font-size: 12px; color: var(--ms-text-disabled);">Generated: 2026-07-17 | Microsoft Defender for Cloud - CSPM Security Assessments for PostgreSQL Flexible Server</p>
+        </div>
+    </div>
+</body>
+</html>

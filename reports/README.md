@@ -5,6 +5,10 @@
 
 ## 2026 年
 
+- [2026-07-17 - Azure Functions: PowerShell 7.6 サポート (パブリックプレビュー)](2026/2026-07-17-functions-powershell-76.md)
+- [2026-07-17 - Azure Kubernetes Service: Azure Files NFS 共有の転送中暗号化 一般提供開始](2026/2026-07-17-aks-azure-files-nfs-encryption-in-transit.md)
+- [2026-07-17 - Azure Functions: Python 3.14 サポート一般提供開始](2026/2026-07-17-functions-python-314.md)
+- [2026-07-17 - Microsoft Defender for Cloud: Azure Database for PostgreSQL Flexible Server セキュリティ評価 一般提供開始](2026/2026-07-17-defender-postgresql-security-assessments.md)
 - [2026-07-15 - Azure SQL Database: 2026 年 7 月中旬アップデート - Shortcuts Configuration、Results Grid 改善](2026/2026-07-15-sql-database-mid-july-updates.md)
 - [2026-07-15 - Microsoft Agent Framework: CodeAct パターン、エピソード記憶、Agent Channel、トレーシング](2026/2026-07-15-agent-framework-codeact-memory-channel.md)
 - [2026-07-15 - Azure Monitor: Advanced Platform Metrics (パブリックプレビュー)](2026/2026-07-15-azure-monitor-advanced-platform-metrics.md)
