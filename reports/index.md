@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-07-20 - Azure Monitor Application Insights: 生成 AI テレメトリのセンシティブデータ保護](2026/2026-07-20-application-insights-genai-telemetry-protection.md)
+- [2026-07-20 - Azure VPN Gateway: IPv6 デュアルスタックサポートの一般提供 (GA)](2026/2026-07-20-vpn-gateway-ipv6-support.md)
 - [2026-07-17 - Azure Functions: PowerShell 7.6 サポート (パブリックプレビュー)](2026/2026-07-17-functions-powershell-76.md)
 - [2026-07-17 - Azure Kubernetes Service: Azure Files NFS 共有の転送中暗号化 一般提供開始](2026/2026-07-17-aks-azure-files-nfs-encryption-in-transit.md)
 - [2026-07-17 - Azure Functions: Python 3.14 サポート一般提供開始](2026/2026-07-17-functions-python-314.md)
