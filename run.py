@@ -51,9 +51,9 @@ DEFAULT_PROMPT_TEMPLATE = (
     "and delegate report creation to subagents."
 )
 
-# モデル設定: 品質重視で Opus を使用、スロットリング時は Sonnet にフォールバック。
-PRIMARY_MODEL = "global.anthropic.claude-opus-4-6-v1"
-FALLBACK_MODEL = "global.anthropic.claude-sonnet-4-5-20250929-v1:0"
+# モデル設定: 品質重視で Fable を使用、スロットリング時は Opus にフォールバック。
+PRIMARY_MODEL = "global.anthropic.claude-fable-5"
+FALLBACK_MODEL = "global.anthropic.claude-opus-5"
 
 # オーケストレーターと report-generator サブエージェントが使用するツール。
 # Claude Code 組み込みのファイル操作・Web アクセス用ツール。
