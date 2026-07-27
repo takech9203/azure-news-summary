@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure API Management: AI Gateway tier - インフォグラフィック</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            /* Azure Brand Colors */
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+
+            /* Microsoft Fluent Colors */
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+
+            /* Status Colors */
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+
+            /* Text Colors */
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+
+            /* Surface Colors */
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-800));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 50%;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 16px;
+            backdrop-filter: blur(4px);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .header-meta {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .meta-item {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Sections */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--ms-blue-200);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 24px;
+        }
+
+        .subsection-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin: 24px 0 12px;
+            padding-left: 10px;
+            border-left: 4px solid var(--ms-blue-400);
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--ms-text-primary);
+            margin-bottom: 24px;
+        }
+
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .highlight-box p {
+            font-size: 15px;
+            color: var(--ms-text-primary);
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .before li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 900;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* Provider Chips */
+        .provider-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .provider-chip {
+            background: var(--ms-blue-100);
+            border: 1px solid var(--ms-blue-300);
+            border-radius: 10px;
+            padding: 14px 12px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ms-blue-800);
+        }
+
+        .provider-chip .provider-icon {
+            display: block;
+            font-size: 22px;
+            margin-bottom: 6px;
+        }
+
+        /* Use Case Cards */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .usecase-card .effect {
+            font-size: 14px;
+            color: var(--ms-green);
+            font-weight: 500;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        .specs-table th,
+        .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+            font-size: 14px;
+        }
+
+        .specs-table th {
+            background: var(--ms-surface-tertiary);
+            font-weight: 600;
+            color: var(--ms-text-primary);
+            width: 35%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-secondary);
+        }
+
+        /* Legacy capability table */
+        .cap-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        .cap-table th,
+        .cap-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+            font-size: 14px;
+        }
+
+        .cap-table thead th {
+            background: var(--ms-blue-100);
+            font-weight: 600;
+            color: var(--ms-text-primary);
+        }
+
+        .cap-table code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            background: var(--ms-surface-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--ms-blue-800);
+        }
+
+        .pricing-note {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: var(--ms-surface-tertiary);
+            border-radius: 8px;
+        }
+
+        /* Benefits */
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .benefit-col {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .benefit-col h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--ms-blue-800);
+        }
+
+        .benefit-col ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .benefit-col li {
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 6px 0 6px 22px;
+            position: relative;
+            color: var(--ms-text-secondary);
+        }
+
+        .benefit-col li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 10px 16px;
+            margin: 8px 0;
+            background: #FFF8E1;
+            border-left: 3px solid var(--ms-yellow);
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Related Services */
+        .related-services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .related-service-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .related-service-item .service-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .related-service-item .service-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ms-text-primary);
+        }
+
+        .related-service-item .service-desc {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Setup Steps */
+        .setup-steps {
+            counter-reset: step;
+            list-style: none;
+            padding: 0;
+        }
+
+        .setup-steps li {
+            counter-increment: step;
+            padding: 12px 16px 12px 56px;
+            margin: 8px 0;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .setup-steps li::before {
+            content: counter(step);
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .setup-steps li a {
+            color: var(--azure-blue);
+        }
+
+        /* Summary */
+        .summary-box {
+            background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+            border: 1px solid var(--ms-blue-300);
+            border-radius: 12px;
+            padding: 24px;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 24px;
+        }
+
+        .footer h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin: 6px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-meta {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Tags */
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .tag {
+            background: var(--ms-blue-200);
+            color: var(--ms-blue-800);
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .before-after,
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .related-services {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Code Block Styles */
+        .code-block,
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <span class="service-badge">Azure API Management</span>
+                <h1>AI Gateway tier (Public Preview)</h1>
+                <p style="font-size: 16px; opacity: 0.9; margin-top: 8px;">AI ワークロード専用に最適化された新しいサービス tier — モデル・MCP サーバー・ツールを一元統制</p>
+                <div class="header-meta">
+                    <span class="badge badge-preview">In Preview</span>
+                    <span class="meta-item">リリース日: 2026-07-27</span>
+                    <span class="meta-item">カテゴリ: Integration / AI</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">📋</span>概要</h2>
+            <p class="overview-text">
+                Azure API Management に、AI ワークロード専用に最適化された新しいサービス tier「<strong>AI Gateway</strong>」がパブリックプレビューとして登場した。既存の API Management 各 tier で利用可能だった AI gateway 機能 (トークン制限ポリシー、セマンティックキャッシュ、コンテンツセーフティなど) を基盤としつつ、AI 資産の管理に特化した専用の体験を提供する。
+            </p>
+            <p class="overview-text">
+                組織が AI を本番運用へ移行する中で、プラットフォームチームには AI モデル、MCP サーバー、ツールといった AI 資産を安全に公開する一貫した方法が求められている。新しい AI Gateway tier は、一貫したセキュリティ、ポリシー、認証、可観測性、運用管理を AI ワークロード全体に適用することを目的としている。
+            </p>
+            <div class="highlight-box">
+                <p><strong>ポイント:</strong> Microsoft Foundry でホストされるモデルに加え、AWS Bedrock、Google Vertex AI、OpenAI、Anthropic といったマルチプロバイダーのモデルを管理でき、既存の MCP バックエンド、OpenAPI 定義、コネクタから MCP サーバーを作成することも可能。エンタープライズグレードの Azure API Management プラットフォーム上に構築され、専用ポータル (ai.gateway.azure.com) と API の両方から利用できる。</p>
+            </div>
+
+            <!-- Before/After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>AI gateway 機能は API Management の汎用 tier の一機能として提供</li>
+                        <li>AI ワークロード専用に最適化された tier は存在しなかった</li>
+                        <li>モデル・MCP サーバー・ツールの発見・公開・保護・監視を、汎用の API 管理体験の中で個別に構成する必要があった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li>AI 中心 (AI-centric) の専用体験で AI 資産の発見・公開・保護・監視が容易に</li>
+                        <li>ポリシー適用・OpenTelemetry 可観測性・エンタープライズ認証が組み込み</li>
+                        <li>Foundry / Bedrock / Vertex AI / OpenAI / Anthropic のマルチプロバイダーモデルを一貫した方法で管理</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">📊</span>数字で見るアップデート</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">5</div>
+                    <div class="stat-label">対応モデルプロバイダー</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">MCP サーバー作成元</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">OTel</div>
+                    <div class="stat-label">可観測性の基盤</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">利用方法 (Portal / API)</div>
+                </div>
+            </div>
+            <div class="subsection-title">対応モデルプロバイダー</div>
+            <div class="provider-grid">
+                <div class="provider-chip"><span class="provider-icon">🧠</span>Microsoft Foundry</div>
+                <div class="provider-chip"><span class="provider-icon">☁️</span>AWS Bedrock</div>
+                <div class="provider-chip"><span class="provider-icon">🔷</span>Google Vertex AI</div>
+                <div class="provider-chip"><span class="provider-icon">🤖</span>OpenAI</div>
+                <div class="provider-chip"><span class="provider-icon">✳️</span>Anthropic</div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">🏗️</span>アーキテクチャ図</h2>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 16px;">AI アプリやエージェントからのトラフィックは AI Gateway tier を経由し、ポリシー適用・認証・可観測性が一元的に適用されたうえで、Microsoft Foundry のモデル、MCP サーバー、外部プロバイダーのモデルへルーティングされる。</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    APP([🤖 AI アプリ / エージェント])
+
+    subgraph Azure["☁️ Azure"]
+        GW["🚪 AI Gateway tier<br/>(Azure API Management)"]
+        POL["📜 ポリシー適用・認証"]
+        OBS["📊 OpenTelemetry 可観測性"]
+        MCP["🔧 MCP サーバー<br/>(既存バックエンド / OpenAPI / コネクタ)"]
+        FOUNDRY["🧠 Microsoft Foundry モデル"]
+    end
+
+    EXT["🌐 外部プロバイダー<br/>(AWS Bedrock / Google Vertex AI /<br/>OpenAI / Anthropic)"]
+
+    APP --> GW
+    GW --- POL
+    GW --- OBS
+    GW --> FOUNDRY
+    GW --> MCP
+    GW --> EXT
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">⚡</span>主要機能</h2>
+            <div class="feature-card">
+                <div class="feature-icon">🎯</div>
+                <div class="feature-content">
+                    <h4>AI 中心の専用体験</h4>
+                    <p>モデル、MCP サーバー、ツールを中心とした設計で、AI 資産の発見・公開・保護・監視が容易。汎用 API 管理の体験ではなく、AI 資産に最適化された専用の管理体験を利用できる。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <div class="feature-content">
+                    <h4>マルチプロバイダーモデル対応</h4>
+                    <p>Microsoft Foundry でホストされるモデルに加え、AWS Bedrock、Google Vertex AI、OpenAI、Anthropic のモデルを管理可能。単一のゲートウェイでマルチプロバイダーを統制できる。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔧</div>
+                <div class="feature-content">
+                    <h4>MCP サーバーのサポート</h4>
+                    <p>既存の MCP バックエンド、OpenAPI 定義、コネクタから MCP サーバーを作成可能。社内 API をエージェント向けツールとして公開できる。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <div class="feature-content">
+                    <h4>組み込みのガバナンス機能</h4>
+                    <p>ポリシー適用 (policy enforcement)、OpenTelemetry ベースの可観測性、エンタープライズ認証が組み込みで提供される。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🖥️</div>
+                <div class="feature-content">
+                    <h4>ポータルとプログラマティックの両対応</h4>
+                    <p>専用ポータル (https://ai.gateway.azure.com/) と API 経由の両方で利用可能。GUI での評価から IaC / 自動化への展開まで対応する。</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specifications -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">🔧</span>技術仕様</h2>
+            <table class="specs-table">
+                <tr>
+                    <th>ステータス</th>
+                    <td>Public Preview (GA 時期は未発表)</td>
+                </tr>
+                <tr>
+                    <th>基盤</th>
+                    <td>エンタープライズグレードの Azure API Management プラットフォーム</td>
+                </tr>
+                <tr>
+                    <th>対応モデルプロバイダー</th>
+                    <td>Microsoft Foundry、AWS Bedrock、Google Vertex AI、OpenAI、Anthropic</td>
+                </tr>
+                <tr>
+                    <th>MCP サーバー作成元</th>
+                    <td>既存 MCP バックエンド、OpenAPI 定義、コネクタ</td>
+                </tr>
+                <tr>
+                    <th>可観測性</th>
+                    <td>OpenTelemetry ベース</td>
+                </tr>
+                <tr>
+                    <th>利用方法</th>
+                    <td>ポータル (ai.gateway.azure.com) / プログラマティック (API)</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Setup -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">🚀</span>設定方法</h2>
+            <h4 style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 16px;">前提条件: Azure サブスクリプション</h4>
+            <ol class="setup-steps">
+                <li>専用ポータル <a href="https://ai.gateway.azure.com/" target="_blank">https://ai.gateway.azure.com/</a> にアクセス</li>
+                <li>最初の AI Gateway リソースを作成</li>
+                <li>ドキュメント <a href="https://ai.gateway.azure.com/docs" target="_blank">https://ai.gateway.azure.com/docs</a> を参照して、モデル・MCP サーバー・ツールを登録</li>
+            </ol>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">💡</span>ユースケース</h2>
+            <div class="usecase-card">
+                <h4>ユースケース 1: マルチプロバイダー AI モデルの統合ガバナンス</h4>
+                <p class="scenario"><strong>シナリオ:</strong> 複数のチームが Microsoft Foundry、OpenAI、AWS Bedrock など異なるプロバイダーのモデルを利用しており、認証・ポリシー・監視の統制がバラバラになっている。</p>
+                <p class="effect">効果: AI Gateway tier を単一の入口とすることで、一貫したセキュリティ、認証、ポリシー、可観測性をすべての AI トラフィックに適用できる。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>ユースケース 2: MCP サーバーによる社内ツールのエージェント公開</h4>
+                <p class="scenario"><strong>シナリオ:</strong> 既存の REST API (OpenAPI 定義) や社内バックエンドを AI エージェントから利用可能なツールとして公開したい。</p>
+                <p class="effect">効果: 既存の MCP バックエンド、OpenAPI 定義、コネクタから MCP サーバーを作成し、ゲートウェイ経由でガバナンスを適用した状態でエージェントに公開できる。</p>
+            </div>
+        </div>
+
+        <!-- Benefits -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">✨</span>メリット</h2>
+            <div class="benefits-grid">
+                <div class="benefit-col">
+                    <h4>💼 ビジネス面</h4>
+                    <ul>
+                        <li>AI モデル、MCP サーバー、ツールを安全に公開する一貫した方法が得られ、組織の AI 運用化 (operationalization) を加速できる</li>
+                        <li>セキュリティ、ポリシー、認証、可観測性、運用管理を AI ワークロード全体に一元適用でき、ガバナンスを強化できる</li>
+                    </ul>
+                </div>
+                <div class="benefit-col">
+                    <h4>⚙️ 技術面</h4>
+                    <ul>
+                        <li>汎用 API 管理の体験ではなく、AI 資産に最適化された専用の管理体験を利用できる</li>
+                        <li>OpenTelemetry ベースの可観測性が組み込みで提供される</li>
+                        <li>マルチプロバイダー (Foundry / Bedrock / Vertex AI / OpenAI / Anthropic) のモデルを単一のゲートウェイで統制できる</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">⚠️</span>デメリット・制約事項</h2>
+            <ul class="limitations-list">
+                <li>パブリックプレビュー段階のため、本番環境での利用は推奨されない (プレビューは非本番用途・テスト向け)</li>
+                <li>GA (一般提供) の時期は未発表</li>
+                <li>利用可能リージョンの情報は現時点で確認できていない</li>
+            </ul>
+        </div>
+
+        <!-- Pricing -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">💰</span>料金</h2>
+            <p style="font-size: 14px; line-height: 1.8;">API Management の料金ページには、現時点で <strong>AI Gateway tier 専用の料金表は掲載されていない</strong>。なお、v2 tier の注記として「Azure AI Foundry で AI Gateway として作成した場合、<strong>100,000 リクエストまで無料</strong>」という記載がある。</p>
+            <div class="pricing-note">
+                最新の料金情報は公式料金ページを参照: <a href="https://azure.microsoft.com/pricing/details/api-management/" target="_blank" style="color: var(--azure-blue);">https://azure.microsoft.com/pricing/details/api-management/</a>
+            </div>
+        </div>
+
+        <!-- Regions -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">🌏</span>利用可能リージョン</h2>
+            <div class="highlight-box">
+                <p>公式情報でリージョンの記載は確認できなかった。最新情報は公式ドキュメント (<a href="https://ai.gateway.azure.com/docs" target="_blank" style="color: var(--azure-blue);">https://ai.gateway.azure.com/docs</a>) を参照。</p>
+            </div>
+        </div>
+
+        <!-- Legacy AI gateway capabilities -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">🔄</span>従来の AI gateway 機能との関係</h2>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 8px;">従来から Azure API Management の全 tier では、AI gateway 機能として以下が提供されている (これらは既存 tier の機能であり、引き続き利用可能)。</p>
+            <table class="cap-table">
+                <thead>
+                    <tr>
+                        <th>機能</th>
+                        <th>内容</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>トークン制限ポリシー</strong><br><code>llm-token-limit</code></td>
+                        <td>サブスクリプションキーや IP アドレスなどの単位で TPM 制限やトークンクォータを適用</td>
+                    </tr>
+                    <tr>
+                        <td><strong>セマンティックキャッシュ</strong><br><code>llm-semantic-cache-store / lookup</code></td>
+                        <td>プロンプトのベクトル近接性に基づき応答を再利用し、トークン消費とレイテンシを削減</td>
+                    </tr>
+                    <tr>
+                        <td><strong>コンテンツセーフティポリシー</strong><br><code>llm-content-safety</code></td>
+                        <td>Azure AI Content Safety によるプロンプトの自動モデレーション</td>
+                    </tr>
+                    <tr>
+                        <td><strong>ロードバランサー / サーキットブレーカー</strong></td>
+                        <td>複数 AI エンドポイント間の負荷分散と障害時の遮断</td>
+                    </tr>
+                    <tr>
+                        <td><strong>トークンメトリック</strong><br><code>llm-emit-token-metric</code></td>
+                        <td>Azure Monitor / Application Insights へのトークン使用量の記録</td>
+                    </tr>
+                    <tr>
+                        <td><strong>統合モデル API (プレビュー)</strong></td>
+                        <td>複数の LLM バックエンドを単一の OpenAI 互換エンドポイントで公開</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="highlight-box">
+                <p>新しい <strong>AI Gateway tier</strong> は、これらの AI gateway 機能を基盤としつつ、AI ワークロードに最適化された専用の tier として提供されるものである。</p>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">🔗</span>関連サービス・機能</h2>
+            <div class="related-services">
+                <div class="related-service-item">
+                    <span class="service-icon">🧠</span>
+                    <div>
+                        <div class="service-name">Microsoft Foundry (Azure AI Foundry)</div>
+                        <div class="service-desc">Foundry でホストされるモデルを AI Gateway 経由で管理可能。Foundry 環境内から AI gateway を統合し、モデル・エージェント・ツールを統制する機能 (プレビュー) も提供</div>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <span class="service-icon">🚧</span>
+                    <div>
+                        <div class="service-name">Azure AI Content Safety</div>
+                        <div class="service-desc">LLM プロンプトの自動モデレーションポリシーで連携</div>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <span class="service-icon">📈</span>
+                    <div>
+                        <div class="service-name">Azure Monitor / Application Insights</div>
+                        <div class="service-desc">トークン使用量メトリックやプロンプト・応答ログの分析に利用</div>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <span class="service-icon">📚</span>
+                    <div>
+                        <div class="service-name">Azure API Center</div>
+                        <div class="service-desc">API、MCP サーバーなどの組織カタログへの登録・発見に利用</div>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <span class="service-icon">⚡</span>
+                    <div>
+                        <div class="service-name">Azure Managed Redis</div>
+                        <div class="service-desc">セマンティックキャッシュの外部キャッシュとして利用</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">📝</span>まとめ</h2>
+            <div class="summary-box">
+                Azure API Management の <strong>AI Gateway tier</strong> は、AI ワークロード専用に最適化された新しいサービス tier のパブリックプレビューである。マルチプロバイダーモデル (Foundry / Bedrock / Vertex AI / OpenAI / Anthropic) と MCP サーバーを、一貫したセキュリティ・ポリシー・認証・可観測性のもとで統制できる点が特徴で、AI の本番運用を進める組織のプラットフォームチームにとって重要なアップデートといえる。現時点ではプレビュー段階のため、まずは非本番環境で専用ポータル (ai.gateway.azure.com) から評価を開始し、既存 tier の AI gateway 機能との使い分けを検討することを推奨する。
+            </div>
+            <div class="tag-list">
+                <span class="tag">Azure API Management</span>
+                <span class="tag">AI Gateway</span>
+                <span class="tag">Public Preview</span>
+                <span class="tag">MCP</span>
+                <span class="tag">Microsoft Foundry</span>
+                <span class="tag">LLM</span>
+                <span class="tag">Integration</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4>出典・参考リンク</h4>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=568184" target="_blank">公式アップデート情報 - AI Gateway tier of API Management</a></li>
+                <li><a href="https://techcommunity.microsoft.com/blog/integrationsonazureblog/ai-gateway-tier-of-api-management-now-in-public-preview/4540170" target="_blank">発表ブログ (Tech Community) - AI Gateway tier of API Management now in public preview</a></li>
+                <li><a href="https://ai.gateway.azure.com/docs" target="_blank">AI Gateway ドキュメント</a></li>
+                <li><a href="https://ai.gateway.azure.com/" target="_blank">AI Gateway ポータル</a></li>
+                <li><a href="https://learn.microsoft.com/azure/api-management/genai-gateway-capabilities" target="_blank">Microsoft Learn - AI gateway capabilities in Azure API Management</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/api-management/" target="_blank">Azure API Management 料金ページ</a></li>
+            </ul>
+            <div class="footer-meta">
+                生成日: 2026-07-27 | ソース: Azure News Summary レポート
+            </div>
+        </div>
+    </div>
+
+    <!-- Mermaid.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <!-- highlight.js -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-07-27 - Azure API Management: AI Gateway tier (Public Preview)](2026/2026-07-27-api-management-ai-gateway-tier.md)
+- [2026-07-27 - Azure Firewall: HTTP ヘッダー挿入 (HTTP Header Insertion) が一般提供開始 (GA)](2026/2026-07-27-azure-firewall-http-header-insertion.md)
 - [2026-07-23 - Azure DDoS Protection: カスタムポリシー (Custom Policy)](2026/2026-07-23-ddos-protection-custom-policy.md)
 - [2026-07-22 - Azure Private Link: Standard Service Endpoint (パブリックプレビュー)](2026/2026-07-22-standard-service-endpoint.md)
 - [2026-07-20 - Azure VPN Gateway: IPv6 デュアルスタックサポートの一般提供 (GA)](2026/2026-07-20-vpn-gateway-ipv6-support.md)

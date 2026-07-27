@@ -1,0 +1,1213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Firewall: HTTP ヘッダー挿入 (GA) - インフォグラフィック</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+    <style>
+        :root {
+            /* Azure Brand Colors */
+            --azure-blue: #0078D4;
+            --azure-dark-blue: #003D69;
+            --azure-light-blue: #50E6FF;
+
+            /* Microsoft Fluent Colors */
+            --ms-blue-900: #004578;
+            --ms-blue-800: #005A9E;
+            --ms-blue-700: #106EBE;
+            --ms-blue-600: #0078D4;
+            --ms-blue-500: #2B88D8;
+            --ms-blue-400: #71AFE5;
+            --ms-blue-300: #C7E0F4;
+            --ms-blue-200: #DEECF9;
+            --ms-blue-100: #EFF6FC;
+
+            /* Status Colors */
+            --ms-green: #107C10;
+            --ms-yellow: #FFB900;
+            --ms-orange: #FF8C00;
+            --ms-red: #D83B01;
+            --ms-purple: #8764B8;
+
+            /* Text Colors */
+            --ms-text-primary: #323130;
+            --ms-text-secondary: #605E5C;
+            --ms-text-disabled: #A19F9D;
+
+            /* Surface Colors */
+            --ms-surface: #FFFFFF;
+            --ms-surface-secondary: #FAF9F8;
+            --ms-surface-tertiary: #F3F2F1;
+            --ms-border: #EDEBE9;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+            color: var(--ms-text-primary);
+            background: var(--ms-surface-secondary);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-800));
+            color: white;
+            padding: 48px 40px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 50%;
+        }
+
+        .header::after {
+            content: '';
+            position: absolute;
+            bottom: -30%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 50%;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .service-badge {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 16px;
+            backdrop-filter: blur(4px);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 900;
+            margin-bottom: 12px;
+            line-height: 1.3;
+        }
+
+        .header-meta {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #FFFFFF;
+        }
+
+        .badge-ga {
+            background: var(--ms-green);
+        }
+
+        .badge-preview {
+            background: var(--ms-yellow);
+            color: var(--ms-text-primary);
+        }
+
+        .meta-item {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Sections */
+        .section {
+            background: var(--ms-surface);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--ms-blue-200);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title-icon {
+            font-size: 24px;
+        }
+
+        .subsection-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin: 24px 0 12px;
+            padding-left: 10px;
+            border-left: 4px solid var(--ms-blue-400);
+        }
+
+        /* Overview */
+        .overview-text {
+            font-size: 16px;
+            line-height: 1.8;
+            color: var(--ms-text-primary);
+            margin-bottom: 20px;
+        }
+
+        .highlight-box {
+            background: var(--ms-blue-100);
+            border-left: 4px solid var(--azure-blue);
+            padding: 16px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 16px 0;
+        }
+
+        .highlight-box p {
+            font-size: 15px;
+            color: var(--ms-text-primary);
+        }
+
+        code.inline {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            background: var(--ms-surface-tertiary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--ms-blue-800);
+        }
+
+        /* Before/After */
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .before {
+            background: #FFEBEE;
+            border: 2px solid var(--ms-red);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .after {
+            background: #E8F5E9;
+            border: 2px solid var(--ms-green);
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .before h4, .after h4 {
+            font-size: 16px;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .before ul, .after ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .before li, .after li {
+            padding: 6px 0;
+            font-size: 14px;
+            line-height: 1.5;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .before li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--ms-red);
+            font-weight: bold;
+        }
+
+        .after li::before {
+            content: '>';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Mermaid */
+        .mermaid-container {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 2px solid rgba(0, 120, 212, 0.3);
+            overflow-x: auto;
+        }
+
+        .mermaid {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Feature Cards */
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            background: var(--ms-surface);
+            border-left: 4px solid var(--azure-blue);
+            padding: 20px;
+            margin: 12px 0;
+            border-radius: 0 8px 8px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .feature-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 24px;
+            width: 48px;
+            height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--ms-blue-100);
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-content h4 {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: var(--ms-text-primary);
+        }
+
+        .feature-content p {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        .feature-content ul {
+            margin: 6px 0 0 18px;
+        }
+
+        .feature-content li {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 900;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        /* SKU Grid */
+        .sku-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+
+        .sku-card {
+            border: 2px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 18px;
+            background: var(--ms-surface-secondary);
+        }
+
+        .sku-card.premium {
+            border-color: var(--azure-blue);
+            background: var(--ms-blue-100);
+        }
+
+        .sku-card h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--ms-blue-800);
+        }
+
+        .sku-card .proto {
+            font-size: 13px;
+            color: var(--ms-text-secondary);
+            line-height: 1.7;
+        }
+
+        .proto-ok {
+            color: var(--ms-green);
+            font-weight: 700;
+        }
+
+        .proto-ng {
+            color: var(--ms-red);
+            font-weight: 700;
+        }
+
+        /* Use Case Cards */
+        .usecase-card {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 16px 0;
+        }
+
+        .usecase-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--azure-blue);
+            margin-bottom: 8px;
+        }
+
+        .usecase-card .scenario {
+            font-size: 14px;
+            color: var(--ms-text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .usecase-card .effect {
+            font-size: 14px;
+            color: var(--ms-green);
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        /* Tech Specs Table */
+        .specs-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+        }
+
+        .specs-table th,
+        .specs-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--ms-border);
+            font-size: 14px;
+        }
+
+        .specs-table th {
+            background: var(--ms-surface-tertiary);
+            font-weight: 600;
+            color: var(--ms-text-primary);
+            width: 38%;
+        }
+
+        .specs-table td {
+            color: var(--ms-text-secondary);
+        }
+
+        .specs-table td code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 12px;
+            background: var(--ms-surface-tertiary);
+            padding: 2px 5px;
+            border-radius: 4px;
+            color: var(--ms-blue-800);
+        }
+
+        /* Reserved headers */
+        .reserved-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .reserved-cat {
+            background: #FFEBEE;
+            border: 1px solid #F5C6C0;
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        .reserved-cat h5 {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--ms-red);
+            margin-bottom: 8px;
+        }
+
+        .reserved-cat code {
+            display: inline-block;
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 12px;
+            background: #FFFFFF;
+            border: 1px solid #F5C6C0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin: 2px;
+            color: var(--ms-red);
+        }
+
+        /* Benefits */
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 16px 0;
+        }
+
+        .benefit-col {
+            background: var(--ms-surface-secondary);
+            border: 1px solid var(--ms-border);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .benefit-col h4 {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: var(--ms-blue-800);
+        }
+
+        .benefit-col ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .benefit-col li {
+            font-size: 14px;
+            line-height: 1.6;
+            padding: 6px 0 6px 22px;
+            position: relative;
+            color: var(--ms-text-secondary);
+        }
+
+        .benefit-col li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--ms-green);
+            font-weight: bold;
+        }
+
+        /* Limitations */
+        .limitations-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .limitations-list li {
+            padding: 10px 16px;
+            margin: 8px 0;
+            background: #FFF8E1;
+            border-left: 3px solid var(--ms-yellow);
+            border-radius: 0 8px 8px 0;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* Related Services */
+        .related-services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 12px;
+            margin: 16px 0;
+        }
+
+        .related-service-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            border: 1px solid var(--ms-border);
+        }
+
+        .related-service-item .service-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .related-service-item .service-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ms-text-primary);
+        }
+
+        .related-service-item .service-desc {
+            font-size: 12px;
+            color: var(--ms-text-secondary);
+            margin-top: 2px;
+        }
+
+        /* Setup Steps */
+        .setup-steps {
+            counter-reset: step;
+            list-style: none;
+            padding: 0;
+        }
+
+        .setup-steps li {
+            counter-increment: step;
+            padding: 12px 16px 12px 56px;
+            margin: 8px 0;
+            background: var(--ms-surface-secondary);
+            border-radius: 8px;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .setup-steps li::before {
+            content: counter(step);
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 28px;
+            height: 28px;
+            background: var(--azure-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+        }
+
+        .prereq-list {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        .prereq-list li {
+            font-size: 14px;
+            padding: 8px 12px 8px 32px;
+            background: var(--ms-blue-100);
+            border-radius: 8px;
+            margin: 6px 0;
+            position: relative;
+            color: var(--ms-text-primary);
+        }
+
+        .prereq-list li::before {
+            content: '📌';
+            position: absolute;
+            left: 10px;
+        }
+
+        /* Summary */
+        .summary-box {
+            background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+            border: 1px solid var(--ms-blue-300);
+            border-radius: 12px;
+            padding: 24px;
+            font-size: 15px;
+            line-height: 1.8;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ms-surface-tertiary);
+            border-radius: 12px;
+            padding: 24px 32px;
+            margin-top: 24px;
+        }
+
+        .footer h4 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--ms-text-primary);
+            margin-bottom: 12px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin: 6px 0;
+        }
+
+        .footer-links a {
+            color: var(--azure-blue);
+            text-decoration: none;
+            font-size: 13px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-meta {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--ms-border);
+            font-size: 12px;
+            color: var(--ms-text-disabled);
+        }
+
+        /* Tags */
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .tag {
+            background: var(--ms-blue-200);
+            color: var(--ms-blue-800);
+            font-size: 12px;
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+
+            .header {
+                padding: 32px 24px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .section {
+                padding: 20px;
+            }
+
+            .before-after,
+            .benefits-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .related-services {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Code Block Styles */
+        .code-block,
+        pre:not(.mermaid) {
+            background: #1E1E1E;
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .code-header {
+            background: #2D2D2D;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+
+        .code-lang {
+            color: #9CDCFE;
+            font-weight: bold;
+        }
+
+        .code-title {
+            color: #A19F9D;
+        }
+
+        pre:not(.mermaid) code {
+            font-family: 'Cascadia Code', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            padding: 16px !important;
+            color: #E8E8E8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-content">
+                <span class="service-badge">Azure Firewall</span>
+                <h1>HTTP ヘッダー挿入 (HTTP Header Insertion) が GA</h1>
+                <p style="font-size: 16px; opacity: 0.9; margin-top: 8px;">アプリケーションルールから HTTP/HTTPS リクエストヘッダーを追加・上書き — Entra ID テナント制限を専用プロキシなしで実現</p>
+                <div class="header-meta">
+                    <span class="badge badge-ga">Launched (GA)</span>
+                    <span class="meta-item">リリース日: 2026-07-27</span>
+                    <span class="meta-item">カテゴリ: Networking / Security</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">📋</span>概要</h2>
+            <p class="overview-text">
+                Azure Firewall で <strong>HTTP ヘッダー挿入機能が一般提供 (GA)</strong> になりました。Azure Firewall のアプリケーションルールから、HTTP/HTTPS リクエストヘッダーを直接追加または上書きできるようになります。
+            </p>
+            <p class="overview-text">
+                この機能により、組織はセキュリティポリシーの適用、認証トークンの埋め込み、バックエンドサービスとの統合をファイアウォールレイヤーで実現できます。代表的なユースケースが Microsoft Entra ID のテナント制限 (tenant restrictions) で、<code class="inline">Restrict-Access-To-Tenants</code> / <code class="inline">Restrict-Access-Context</code> ヘッダーを Azure Firewall が挿入することで、ユーザーが組織の許可したテナントにのみサインインできるよう制御できます。
+            </p>
+            <div class="highlight-box">
+                <p><strong>ポイント:</strong> ヘッダー挿入はアプリケーションルール単位で構成し、トラフィックがそのルールにマッチした際に Azure Firewall が構成済みのヘッダーを挿入します。Premium SKU では TLS inspection と組み合わせることで HTTPS トラフィックにも対応します。</p>
+            </div>
+
+            <!-- Before/After -->
+            <div class="before-after">
+                <div class="before">
+                    <h4>❌ Before</h4>
+                    <ul>
+                        <li>Azure Firewall はヘッダー挿入に対応しておらず、Entra ID テナント制限のようなシナリオでは TLS インスペクション + ヘッダー挿入が可能なプロキシインフラ (オンプレミス / サードパーティ) を別途用意する必要があった</li>
+                        <li>クライアント情報の伝達などでヘッダー付与が必要な場合、Application Gateway や Front Door で接続を終端して転送する構成が回避策だった</li>
+                    </ul>
+                </div>
+                <div class="after">
+                    <h4>✅ After</h4>
+                    <ul>
+                        <li>アプリケーションルールで HTTP/HTTPS リクエストヘッダーの追加・上書きを直接構成できる</li>
+                        <li>追加のプロキシアプライアンスなしで、テナント制限などのヘッダーベースのセキュリティ制御をファイアウォールに集約できる</li>
+                        <li>Azure Portal / CLI / PowerShell から構成でき、Firewall Policy の Draft + Deployment にも対応</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">📊</span>数字で見るアップデート</h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">100</div>
+                    <div class="stat-label">ヘッダー名の最大文字数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">16,000</div>
+                    <div class="stat-label">ヘッダー値の最大文字数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">16 KB</div>
+                    <div class="stat-label">1 ルールあたり合計上限</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">3</div>
+                    <div class="stat-label">構成手段 (Portal/CLI/PS)</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">🏗️</span>アーキテクチャ図</h2>
+            <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 16px;">クライアントからの HTTP/HTTPS トラフィックがアプリケーションルールにマッチすると、Azure Firewall が構成済みのヘッダーを挿入して宛先へ転送します。HTTPS の場合は Premium SKU の TLS inspection で復号したうえでヘッダーを挿入します。</p>
+            <div class="mermaid-container">
+                <pre class="mermaid">
+flowchart TD
+    subgraph VNet["🏢 Azure Virtual Network"]
+        Client([🧑‍💻 クライアント / ワークロード])
+    end
+    subgraph FW["🛡️ Azure Firewall (セキュリティ境界)"]
+        Rule["📋 アプリケーションルール"]
+        TLS["🔐 TLS Inspection (Premium・HTTPS 時)"]
+        Insert["➕ HTTP ヘッダー挿入<br/>Restrict-Access-To-Tenants など"]
+    end
+    Entra["🔑 Microsoft Entra ID<br/>(login.microsoftonline.com)"]
+    Web["🌐 外部 Web サービス"]
+
+    Client -->|"HTTP/HTTPS リクエスト"| Rule
+    Rule --> TLS
+    TLS --> Insert
+    Insert -->|"許可テナントのみ<br/>トークン発行"| Entra
+    Insert --> Web
+                </pre>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">⚡</span>主要機能</h2>
+            <div class="feature-card">
+                <div class="feature-icon">➕</div>
+                <div class="feature-content">
+                    <h4>アプリケーションルールでのヘッダー追加・上書き</h4>
+                    <p>HTTP/HTTPS リクエストヘッダーの名前と値をアプリケーションルール単位で構成。ルールにマッチしたトラフィックにヘッダーが挿入される。クライアントが独自に付与したヘッダーを<strong>上書き</strong>できるため、ユーザーによる制御のバイパスを防止できる。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏷️</div>
+                <div class="feature-content">
+                    <h4>SKU ごとの対応プロトコル</h4>
+                    <div class="sku-grid">
+                        <div class="sku-card premium">
+                            <h4>Premium SKU</h4>
+                            <div class="proto">
+                                HTTP <span class="proto-ok">✔ 対応</span><br>
+                                HTTPS <span class="proto-ok">✔ 対応</span> (TLS inspection で復号)
+                            </div>
+                        </div>
+                        <div class="sku-card">
+                            <h4>Standard / Basic SKU</h4>
+                            <div class="proto">
+                                HTTP <span class="proto-ok">✔ 対応</span><br>
+                                HTTPS <span class="proto-ng">✘ 非対応</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛠️</div>
+                <div class="feature-content">
+                    <h4>複数の構成手段</h4>
+                    <ul>
+                        <li>Azure Portal</li>
+                        <li>Azure CLI (<code class="inline">--http-headers-to-insert</code>)</li>
+                        <li>Azure PowerShell (<code class="inline">New-AzFirewallPolicyApplicationRuleCustomHttpHeader</code>)</li>
+                        <li>Azure Firewall Policy の Draft + Deployment にも対応</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Specifications -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">🔧</span>技術仕様</h2>
+            <table class="specs-table">
+                <tr>
+                    <th>構成単位</th>
+                    <td>Firewall Policy のアプリケーションルール</td>
+                </tr>
+                <tr>
+                    <th>対応トラフィック</th>
+                    <td>HTTP (全 SKU)、HTTPS (Premium + TLS inspection)</td>
+                </tr>
+                <tr>
+                    <th>ヘッダー名の最大長</th>
+                    <td>100 文字</td>
+                </tr>
+                <tr>
+                    <th>ヘッダー値の最大長</th>
+                    <td>16,000 文字</td>
+                </tr>
+                <tr>
+                    <th>1 アプリケーションルールあたりの<br>ヘッダー合計サイズ上限</th>
+                    <td>16 KB (16,384 バイト、名前 + 値の合計)</td>
+                </tr>
+            </table>
+            <div class="subsection-title">挿入不可の予約ヘッダー</div>
+            <div class="reserved-grid">
+                <div class="reserved-cat">
+                    <h5>一般 / 接続系</h5>
+                    <code>host</code><code>connection</code><code>content-length</code>
+                </div>
+                <div class="reserved-cat">
+                    <h5>認証系</h5>
+                    <code>authorization</code><code>cookie</code>
+                </div>
+                <div class="reserved-cat">
+                    <h5>セキュリティ系</h5>
+                    <code>content-security-policy</code>
+                </div>
+                <div class="reserved-cat">
+                    <h5>転送系 / その他</h5>
+                    <code>x-forwarded-for</code><code>metadata</code>
+                </div>
+            </div>
+        </div>
+
+        <!-- Setup -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">🚀</span>設定方法</h2>
+            <div class="subsection-title">前提条件</div>
+            <ul class="prereq-list">
+                <li>Azure Firewall Policy が構成済みであること</li>
+                <li>HTTPS トラフィックにヘッダーを挿入する場合は、Premium SKU で TLS inspection が有効であること</li>
+            </ul>
+
+            <div class="subsection-title">Azure CLI</div>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <span class="code-title">ルールコレクショングループ + ヘッダー挿入付きアプリケーションルール</span>
+                </div>
+                <pre><code class="language-bash"># ルールコレクショングループを作成
+az network firewall policy rule-collection-group create \
+    --name rcg-c \
+    --policy-name fw-policy \
+    --resource-group test-rg \
+    --priority 10000
+
+# ヘッダー挿入付きのアプリケーションルールを追加
+az network firewall policy rule-collection-group collection add-filter-collection \
+    --policy-name "fw-policy" \
+    --resource-group "test-rg" \
+    --rcg-name "rcg-c" \
+    --name "app_collection_1" \
+    --collection-priority 10003 \
+    --action Allow \
+    --rule-name "app_rule_1" \
+    --rule-type ApplicationRule \
+    --target-fqdns "*.microsoft.com" "*.azure.com" \
+    --source-addresses "10.0.0.5" "10.0.0.6" \
+    --protocols Http=80 \
+    --http-headers-to-insert "Restrict-Access-To-Tenants=contoso.com,fabrikam.onmicrosoft.com" "Restrict-Access-Context=aaaabbbb-0000-cccc-1111-dddd2222eeee"</code></pre>
+            </div>
+
+            <div class="subsection-title">Azure Portal</div>
+            <ol class="setup-steps">
+                <li>既存の Firewall Policy を開く (または新規作成)</li>
+                <li><strong>Rules</strong> &gt; <strong>Application rules</strong> を選択</li>
+                <li>アプリケーションルールを新規作成または編集</li>
+                <li>ルール構成ペインの <strong>HTTP Header Insertion</strong> セクションでヘッダー名と値を追加 (複数追加可)</li>
+                <li>ルールを保存し、再度開いてヘッダーが構成されていることを確認</li>
+            </ol>
+        </div>
+
+        <!-- Use Cases -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">💡</span>ユースケース</h2>
+            <div class="usecase-card">
+                <h4>ユースケース 1: Microsoft Entra ID テナント制限の適用</h4>
+                <p class="scenario"><strong>シナリオ:</strong> 企業ネットワークから Microsoft 365 へのアクセスを許可しつつ、個人テナントや他組織テナントへのサインインをブロックしたい。Entra ID のテナント制限は、<code class="inline">login.microsoftonline.com</code> などへのトラフィックに <code class="inline">Restrict-Access-To-Tenants</code> / <code class="inline">Restrict-Access-Context</code> ヘッダーを挿入することで実現するが、従来は TLS インスペクション対応のプロキシインフラが必要だった。</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <span class="code-title">実装例: テナント制限ヘッダーの挿入</span>
+                    </div>
+                    <pre><code class="language-bash">az network firewall policy rule-collection-group collection add-filter-collection \
+    --policy-name "fw-policy" \
+    --resource-group "test-rg" \
+    --rcg-name "rcg-c" \
+    --name "tenant_restrictions" \
+    --collection-priority 10003 \
+    --action Allow \
+    --rule-name "entra_login" \
+    --rule-type ApplicationRule \
+    --target-fqdns "login.microsoftonline.com" "login.microsoft.com" "login.windows.net" \
+    --source-addresses "10.0.0.0/24" \
+    --protocols Https=443 \
+    --http-headers-to-insert \
+        "Restrict-Access-To-Tenants=contoso.com" \
+        "Restrict-Access-Context=&lt;自組織のテナント ID&gt;"</code></pre>
+                </div>
+                <p class="effect">効果: 許可テナント以外へのトークン発行が Entra ID 側で拒否され、未承認テナントへのサインインを防止できる。ブロックされたサインインは Entra 管理センターのレポートで確認できる (要 Entra ID P1/P2 ライセンス)。なお HTTPS への挿入のため Premium SKU + TLS inspection が必要。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>ユースケース 2: バックエンドサービス向けの識別ヘッダー付与</h4>
+                <p class="scenario"><strong>シナリオ:</strong> 特定のヘッダーによるアクセス制御や識別を要求するアプリケーション・バックエンドサービスに対し、ファイアウォール通過時に認証トークンや識別子をヘッダーとして埋め込む。</p>
+                <p class="effect">効果: アプリケーション側の改修なしで、ネットワーク経路上で一貫したヘッダー付与を実施できる。</p>
+            </div>
+        </div>
+
+        <!-- Benefits -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">✨</span>メリット</h2>
+            <div class="benefits-grid">
+                <div class="benefit-col">
+                    <h4>💼 ビジネス面</h4>
+                    <ul>
+                        <li>テナント制限用の専用プロキシインフラが不要になり、運用コストと構成の複雑さを削減できる</li>
+                        <li>許可テナント以外へのサインインをネットワークレイヤーで遮断し、データ漏えいリスク (未承認テナントへのアクセス) を低減できる</li>
+                    </ul>
+                </div>
+                <div class="benefit-col">
+                    <h4>⚙️ 技術面</h4>
+                    <ul>
+                        <li>ヘッダーベースのセキュリティ制御を Azure Firewall に集約でき、ポリシー管理を一元化できる</li>
+                        <li>クライアントが付与した既存ヘッダーを上書きできるため、エンドユーザーによるポリシーバイパスを防げる</li>
+                        <li>Portal / CLI / PowerShell / Policy Draft + Deployment に対応し、IaC・運用フローに組み込みやすい</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Limitations -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">⚠️</span>デメリット・制約事項</h2>
+            <ul class="limitations-list">
+                <li>HTTPS トラフィックへのヘッダー挿入は <strong>Premium SKU + TLS inspection が必要</strong> (Standard / Basic は HTTP のみ)</li>
+                <li><code class="inline">x-forwarded-for</code> や <code class="inline">authorization</code>、<code class="inline">cookie</code> などの予約ヘッダーは挿入できない</li>
+                <li>ヘッダー挿入を使うとルールの JSON サイズが増え、ルールコレクショングループに格納できるルール数が減る場合がある。上限に達した場合は新しいルールコレクショングループを作成する必要がある</li>
+                <li>ヘッダー名は最大 100 文字、値は最大 16,000 文字、ルールあたりの合計は 16 KB まで</li>
+            </ul>
+        </div>
+
+        <!-- Pricing -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">💰</span>料金</h2>
+            <p style="font-size: 14px; line-height: 1.8;">HTTP ヘッダー挿入自体の追加料金に関する記載は確認できませんでした。Azure Firewall の料金は SKU (Basic / Standard / Premium) ごとの<strong>固定時間課金 (デプロイあたり)</strong> と<strong>データ処理量 (GB あたり) の従量課金</strong>の組み合わせです。具体的な金額は料金ページを参照してください。</p>
+            <div class="highlight-box">
+                <p>📎 <a href="https://azure.microsoft.com/pricing/details/azure-firewall/" target="_blank" style="color: var(--azure-blue);">Azure Firewall 料金ページ</a></p>
+            </div>
+        </div>
+
+        <!-- Related Services -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">🔗</span>関連サービス・機能</h2>
+            <div class="related-services">
+                <div class="related-service-item">
+                    <span class="service-icon">🔑</span>
+                    <div>
+                        <div class="service-name">Microsoft Entra ID テナント制限</div>
+                        <div class="service-desc">本機能の代表的ユースケース。Restrict-Access-To-Tenants / Restrict-Access-Context ヘッダーの挿入により許可テナントのみへのサインインを強制する (Entra ID P1/P2 が必要)</div>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <span class="service-icon">🔐</span>
+                    <div>
+                        <div class="service-name">Azure Firewall Premium (TLS inspection)</div>
+                        <div class="service-desc">HTTPS トラフィックへのヘッダー挿入に必要。アウトバウンド TLS の復号・再暗号化を行う</div>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <span class="service-icon">🗂️</span>
+                    <div>
+                        <div class="service-name">Azure Firewall Manager / Firewall Policy</div>
+                        <div class="service-desc">ヘッダー挿入はアプリケーションルールとして Firewall Policy で一元管理。Draft + Deployment にも対応</div>
+                    </div>
+                </div>
+                <div class="related-service-item">
+                    <span class="service-icon">🌐</span>
+                    <div>
+                        <div class="service-name">Azure Application Gateway / Azure Front Door</div>
+                        <div class="service-desc">従来ヘッダー書き換えが必要な場合の回避策とされてきたリバースプロキシサービス。インバウンド側のヘッダー操作では引き続きこれらを利用</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary -->
+        <div class="section">
+            <h2 class="section-title"><span class="section-title-icon">📝</span>まとめ</h2>
+            <div class="summary-box">
+                Azure Firewall の <strong>HTTP ヘッダー挿入が GA</strong> となり、アプリケーションルールから HTTP/HTTPS リクエストヘッダーの追加・上書きが可能になりました。特に Entra ID テナント制限を専用プロキシなしで実現できる点は、Microsoft 365 を利用する企業のセキュリティアーキテクチャを簡素化します。HTTPS への挿入には Premium SKU + TLS inspection が必要なため、テナント制限用途を検討する場合は Premium SKU の採用とヘッダーサイズ・予約ヘッダーの制約を確認したうえで、Firewall Policy への組み込みを進めることを推奨します。
+            </div>
+            <div class="tag-list">
+                <span class="tag">Azure Firewall</span>
+                <span class="tag">Networking</span>
+                <span class="tag">Security</span>
+                <span class="tag">HTTP Header Insertion</span>
+                <span class="tag">Tenant Restrictions</span>
+                <span class="tag">Microsoft Entra ID</span>
+                <span class="tag">TLS Inspection</span>
+                <span class="tag">GA</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <h4>出典・参考リンク</h4>
+            <ul class="footer-links">
+                <li><a href="https://azure.microsoft.com/updates?id=568115" target="_blank">公式アップデート情報 - Azure Firewall HTTP Header Insertion (GA)</a></li>
+                <li><a href="https://learn.microsoft.com/azure/firewall/configure-http-header-insertion" target="_blank">Microsoft Learn - Azure Firewall HTTP Header Insertion Configuration</a></li>
+                <li><a href="https://learn.microsoft.com/azure/firewall/features-by-sku" target="_blank">Microsoft Learn - Azure Firewall features by SKU</a></li>
+                <li><a href="https://learn.microsoft.com/entra/identity/enterprise-apps/tenant-restrictions" target="_blank">Microsoft Learn - Microsoft Entra ID テナント制限</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/azure-firewall/" target="_blank">Azure Firewall 料金ページ</a></li>
+            </ul>
+            <div class="footer-meta">
+                生成日: 2026-07-27 | ソース: Azure News Summary レポート
+            </div>
+        </div>
+    </div>
+
+    <!-- Mermaid.js -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'base',
+            themeVariables: {
+                primaryColor: '#0078D4',
+                primaryTextColor: '#323130',
+                primaryBorderColor: '#0078D4',
+                lineColor: '#0078D4',
+                secondaryColor: '#F3F2F1',
+                tertiaryColor: '#FAFAFA',
+                background: '#FFFFFF',
+                mainBkg: '#E6F2FF',
+                nodeBorder: '#0078D4',
+                clusterBkg: '#E6F2FF',
+                clusterBorder: '#0078D4',
+                edgeLabelBackground: '#FFFFFF',
+                textColor: '#323130'
+            }
+        });
+    </script>
+    <!-- highlight.js -->
+    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+    <script>hljs.highlightAll();</script>
+</body>
+</html>
