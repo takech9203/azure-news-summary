@@ -5,8 +5,14 @@
 
 ## 2026 年
 
+- [2026-07-28 - Azure Kubernetes Fleet Manager: update run の Maximum allowed failures (許容失敗数) がパブリックプレビュー](2026/2026-07-28-fleet-manager-max-allowed-failures.md)
+- [2026-07-28 - Azure Kubernetes Fleet Manager: リソース配置 (Resource placement) が一般提供開始](2026/2026-07-28-fleet-manager-resource-placement-ga.md)
+- [2026-07-28 - Azure Kubernetes Service (AKS): Application Routing with Gateway API が一般提供開始](2026/2026-07-28-aks-application-routing-gateway-api.md)
+- [2026-07-28 - Azure Regions & Datacenters: インド 4 番目のリージョン India South Central (ハイデラバード) が一般提供開始](2026/2026-07-28-azure-india-south-central-region.md)
+- [2026-07-28 - Azure Kubernetes Service (AKS): Prepared Image Specification (PIS) のパブリックプレビュー](2026/2026-07-28-aks-prepared-image-specification.md)
 - [2026-07-27 - Azure API Management: AI Gateway tier (Public Preview)](2026/2026-07-27-api-management-ai-gateway-tier.md)
 - [2026-07-27 - Azure Firewall: HTTP ヘッダー挿入 (HTTP Header Insertion) が一般提供開始 (GA)](2026/2026-07-27-azure-firewall-http-header-insertion.md)
+- [2026-07-27 - Azure Databricks: Anthropic Claude Opus 5 の一般提供開始](2026/2026-07-27-databricks-claude-opus-5.md)
 - [2026-07-23 - Azure DDoS Protection: カスタムポリシー (Custom Policy)](2026/2026-07-23-ddos-protection-custom-policy.md)
 - [2026-07-22 - Azure Private Link: Standard Service Endpoint (パブリックプレビュー)](2026/2026-07-22-standard-service-endpoint.md)
 - [2026-07-20 - Azure VPN Gateway: IPv6 デュアルスタックサポートの一般提供 (GA)](2026/2026-07-20-vpn-gateway-ipv6-support.md)

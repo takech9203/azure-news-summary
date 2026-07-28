@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS: Application Routing with Gateway API が GA | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "🚢";
+    position: absolute;
+    font-size: 160px;
+    right: -20px;
+    bottom: -50px;
+    opacity: 0.12;
+}
+
+.header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.date-badge {
+    background: rgba(255, 255, 255, 0.18);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+}
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.92;
+    max-width: 780px;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 26px; }
+
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ===== Highlight box ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Timeline ===== */
+.timeline {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 20px 0;
+}
+
+.timeline-item {
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    color: white;
+}
+
+.timeline-item .tl-date { font-size: 20px; font-weight: 900; }
+.timeline-item .tl-label { font-size: 13px; opacity: 0.95; margin-top: 4px; }
+.tl-red { background: linear-gradient(135deg, var(--ms-red), #A22C00); }
+.tl-orange { background: linear-gradient(135deg, var(--ms-orange), #CC7000); }
+.tl-green { background: linear-gradient(135deg, var(--ms-green), #0B5C0B); }
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Tables ===== */
+.table-wrapper { overflow-x: auto; margin: 16px 0; }
+
+table.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    background: var(--ms-surface);
+}
+
+table.info-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+table.info-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+table.info-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+table.info-table td:first-child { font-weight: 500; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    background: #1E1E1E;
+}
+
+code.inline {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    font-size: 16px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-tag {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* ===== Pros / Cons ===== */
+.pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.pros-card, .cons-card {
+    border-radius: 12px;
+    padding: 18px;
+}
+
+.pros-card { background: #E8F5E9; border: 1px solid #A5D6A7; }
+.cons-card { background: #FFF4E5; border: 1px solid #FFCC80; }
+.pros-card h4 { color: var(--ms-green); margin-bottom: 10px; }
+.cons-card h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.pros-card ul, .cons-card ul { padding-left: 20px; font-size: 13.5px; }
+.pros-card li, .cons-card li { margin-bottom: 8px; }
+
+/* ===== Lists ===== */
+ul.check-list { list-style: none; padding-left: 0; }
+ul.check-list li {
+    padding-left: 28px;
+    position: relative;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+ul.check-list li::before {
+    content: "✅";
+    position: absolute;
+    left: 0;
+}
+
+ol.step-list { padding-left: 22px; font-size: 14px; }
+ol.step-list li { margin-bottom: 10px; }
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+}
+
+.related-card h5 {
+    font-size: 14px;
+    color: var(--azure-blue);
+    margin-bottom: 6px;
+}
+
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { list-style: none; padding-left: 0; font-size: 14px; }
+.link-list li {
+    padding: 8px 0 8px 26px;
+    border-bottom: 1px dashed var(--ms-border);
+    position: relative;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+
+/* ===== Summary steps ===== */
+.next-steps {
+    counter-reset: step;
+    display: grid;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.next-step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.next-step .num {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: white;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* ===== Footer ===== */
+.footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    font-size: 13px;
+}
+
+.footer h3 { font-size: 15px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 8px; }
+.footer ul { list-style: none; }
+.footer li { margin-bottom: 6px; }
+.footer a { color: var(--azure-light-blue); }
+.footer .credit { margin-top: 16px; opacity: 0.75; font-size: 12px; }
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .pros-cons { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="header">
+        <div class="header-meta">
+            <span class="service-badge">☁️ Azure Kubernetes Service (AKS)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="date-badge">📅 リリース日: 2026-07-28</span>
+        </div>
+        <h1>Application Routing with Gateway API が一般提供開始</h1>
+        <p class="subtitle">
+            AKS の application routing アドオンに <strong>Kubernetes Gateway API</strong> ベースの Ingress トラフィック管理が追加。
+            「サービスメッシュを必要とせずに Kubernetes Gateway API を Ingress 管理にもたらす」— 廃止が決まった ingress-nginx の後継となる、AKS の長期的な Ingress 標準。
+        </p>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>
+            AKS の <strong>Application Routing with Gateway API</strong> が一般提供 (GA) となった。application routing アドオンに Kubernetes Gateway API ベースの Ingress トラフィック管理機能を追加するもので、
+            <strong>サービスメッシュを導入せずに</strong> 標準化・role-oriented・拡張可能な Gateway API (<code class="inline">Gateway</code> / <code class="inline">HTTPRoute</code> / <code class="inline">GRPCRoute</code>) で HTTP/HTTPS Ingress を構成できる。
+        </p>
+        <div class="highlight-box">
+            <strong>🧠 実装のポイント</strong>: Gateway API リソースのインフラ管理のために <strong>Istio コントロールプレーン</strong> をデプロイするが、Istio サービスメッシュアドオンとは異なり <strong>サイドカーインジェクションや Istio CRD は非サポート</strong>。GatewayClass 名は <code class="inline">approuting-istio</code>。
+            <strong>AKS 1.36 以降の新規 AKS Automatic クラスターではデフォルトで有効</strong> になり、本番ワークロードの推奨デフォルト Ingress モデルとなる。
+        </div>
+
+        <h3 class="subsection-title">⏳ なぜ今移行が必要か: Ingress NGINX 廃止のタイムライン</h3>
+        <p style="font-size:14px;">Kubernetes SIG Network / Security Response Committee が <a href="https://www.kubernetes.dev/blog/2025/11/12/ingress-nginx-retirement/">Ingress NGINX プロジェクトの廃止</a> を発表。AKS は <strong>Gateway API を Ingress および L7 トラフィック管理の長期的な標準</strong> と位置づけている。</p>
+        <div class="timeline">
+            <div class="timeline-item tl-green">
+                <div class="tl-date">2026 年 7 月</div>
+                <div class="tl-label">Application Routing with Gateway API が GA<br>(移行先が確保される)</div>
+            </div>
+            <div class="timeline-item tl-orange">
+                <div class="tl-date">〜 2026 年 3 月</div>
+                <div class="tl-label">アップストリーム Ingress NGINX の<br>メンテナンス終了</div>
+            </div>
+            <div class="timeline-item tl-red">
+                <div class="tl-date">〜 2026 年 11 月</div>
+                <div class="tl-label">NGINX ベース application routing への<br>Azure 公式サポート (セキュリティパッチ) 終了</div>
+            </div>
+        </div>
+
+        <h3 class="subsection-title">🔄 Before / After</h3>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>application routing アドオンは <strong>Ingress API</strong> ベースの NGINX Ingress コントローラーで、高度なルーティングの統一的・プロバイダー非依存な仕組みが欠如</li>
+                    <li>NGINX 固有アノテーション依存でポータビリティが低い。しかも <code class="inline">load_module</code>、<code class="inline">_by_lua</code>、<code class="inline">proxy_pass</code> 等のスニペットはブロック、ingress-nginx <code class="inline">ConfigMap</code> の編集も非サポート</li>
+                    <li>Ingress API はクラスター運用者とアプリ開発者の <strong>ロール分離を表現しづらい</strong></li>
+                    <li>アップストリーム Ingress NGINX が 2026 年 3 月にメンテナンス終了予定で、長期的な選択肢にならない</li>
+                    <li>マネージドな Gateway API を使うには <strong>Istio サービスメッシュアドオンの導入</strong> か自前運用が必要だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>サービスメッシュなしで、標準化・role-oriented・拡張可能な <strong>Gateway API で HTTP/HTTPS Ingress</strong> を構成可能</li>
+                    <li>Gateway ごとに <strong>HPA (最小 2 レプリカ) + PDB (最小可用性 1)</strong> が自動デプロイされる運用ガードレール</li>
+                    <li>Istio コントロールプレーンのアップグレードは AKS バージョンに追随して <strong>インプレースで自動実施</strong></li>
+                    <li><strong>Envoy アクセスログがデフォルト有効</strong>。追加設定なしで <code class="inline">kubectl logs</code> で確認可能</li>
+                    <li>Azure DNS / Key Vault 統合が Gateway API に適用され、<code class="inline">SecretProviderClass</code> や <code class="inline">external-dns</code> の手動管理が不要</li>
+                    <li>既存 Ingress からは OSS の <strong>ingress2gateway</strong> で段階的に移行可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure"]
+        DNS["🌐 Azure DNS ゾーン"]
+        KV["🔐 Azure Key Vault<br/>TLS 証明書"]
+        LB["⚖️ Azure Load Balancer"]
+    end
+
+    subgraph AKS["🚢 AKS クラスター"]
+        CRD["📋 Managed Gateway API CRDs<br/>--enable-gateway-api"]
+        ISTIOD["🧠 istiod (aks-istio-system)<br/>GatewayClass: approuting-istio"]
+        OP["🤖 Application Routing<br/>オペレーター"]
+        GW["🚪 Gateway プロキシ Pod<br/>HPA(min 2) + PDB(min 1)"]
+        ROUTE["🧭 HTTPRoute / GRPCRoute"]
+        APP["🚀 アプリケーション Pod"]
+    end
+
+    USER(["👤 クライアント"]) --> DNS
+    DNS --> LB
+    LB --> GW
+    CRD --> ISTIOD
+    ISTIOD -->|Gateway をプロビジョニング| GW
+    OP -->|証明書同期 / DNS レコード公開| GW
+    KV --> OP
+    OP --> DNS
+    ROUTE --> GW
+    GW --> APP
+            </pre>
+        </div>
+        <p class="diagram-caption">
+            Managed Gateway API CRD 上で <code class="inline">istiod</code> が <code class="inline">approuting-istio</code> GatewayClass の Gateway プロキシをプロビジョニングし、Application Routing オペレーターが Azure Key Vault の証明書同期と Azure DNS へのレコード公開を自動化。トラフィックは Azure DNS → Load Balancer → Gateway プロキシ → HTTPRoute の宛先アプリ Pod へ流れる。
+        </p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧭</div>
+            <div class="feature-content">
+                <h4>1. Kubernetes Gateway API ネイティブな HTTP/HTTPS Ingress</h4>
+                <p><code class="inline">gatewayClassName: approuting-istio</code> を指定した <code class="inline">Gateway</code> と <code class="inline">HTTPRoute</code> / <code class="inline">GRPCRoute</code> でルーティングを定義。Gateway API は Ingress API の後継として設計された、標準化・role-oriented・拡張可能なトラフィック管理フレームワーク。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛠️</div>
+            <div class="feature-content">
+                <h4>2. マネージドな Gateway インフラのプロビジョニング</h4>
+                <p><code class="inline">Gateway</code> を作成すると AKS が <code class="inline">Deployment</code>、<code class="inline">Service</code> (LoadBalancer)、<code class="inline">HorizontalPodAutoscaler</code>、<code class="inline">PodDisruptionBudget</code> を自動生成。生成リソース名には GatewayClass 名が付加される (例: <code class="inline">httpbin-gateway-approuting-istio</code>)。<code class="inline">gateway.istio.io/name-override</code> アノテーションで上書き可能 (63 文字未満の有効な DNS 名)。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🕸️</div>
+            <div class="feature-content">
+                <h4>3. サービスメッシュ不要 (Istio CRD / サイドカー非依存)</h4>
+                <p>Istio コントロールプレーンは Gateway API リソースのインフラ管理にのみ使用。サイドカーインジェクションと Istio CRD は非サポート。Istio サービスメッシュアドオンとの同時有効化は不可。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>4. Envoy アクセスログのデフォルト有効化</h4>
+                <p>全マネージド Gateway プロキシ Pod で Envoy アクセスログが標準出力に既定形式で出力。<code class="inline">kubectl logs deployment/&lt;gateway-name&gt;-approuting-istio</code> で HTTP メソッド、パス、レスポンスコード、上流サービス、リクエスト/レスポンスサイズを確認できる。形式・スコープ・プロバイダーは Istio <code class="inline">Telemetry</code> API でカスタマイズ不可。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>5. Azure Key Vault による TLS 終端の自動化</h4>
+                <p>リスナー TLS オプションに <code class="inline">kubernetes.azure.com/tls-cert-keyvault-uri</code> と <code class="inline">tls-cert-service-account</code> を指定すると、オペレーターが <code class="inline">SecretProviderClass</code> を作成し Secrets Store CSI Driver 経由で TLS Secret を同期、<code class="inline">tls.certificateRefs</code> に自動パッチ。unversioned URI なら証明書ローテーションも自動反映。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>6. Azure DNS レコードの自動公開 (external-dns 統合)</h4>
+                <p><code class="inline">ClusterExternalDNS</code> (クラスタースコープ) / <code class="inline">ExternalDNS</code> (namespace スコープ) CR でマネージド external-dns を宣言的に構成し、Gateway / HTTPRoute / GRPCRoute のホスト名の A レコードを Azure DNS ゾーンへ公開。<code class="inline">filters.gatewayLabels</code> 等でスコープ制御。認証は Microsoft Entra Workload Identity。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>7. AKS バージョンに追随した Istio バージョン管理</h4>
+                <p>Istio バージョンは AKS バージョンに対しサポートされる最大マイナーバージョン (例: AKS 1.34 → Istio 1.28、2026 年 3 月時点)。リビジョニングなしのインプレースアップグレードで、パッチは AKS リリースの一部として自動適用。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>8. AKS Automatic のデフォルト Ingress モデル</h4>
+                <p>AKS 1.36 以降の新規 AKS Automatic クラスターではデフォルト有効。本番ワークロードにおける推奨デフォルト Ingress モデル。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <div class="feature-content">
+                <h4>9. istiod HPA のカスタマイズ</h4>
+                <p><code class="inline">istiod</code> の HPA は既定で最小 2 / 最大 5 レプリカ、CPU 使用率 80%。パッチや直接編集で変更可能 (ただし <code class="inline">minReplicas</code> は 2 未満にできない)。</p>
+            </div>
+        </div>
+
+        <h3 class="subsection-title">⚔️ NGINX ベース application routing との比較</h3>
+        <div class="table-wrapper">
+            <table class="info-table">
+                <tr><th>項目</th><th>application routing (NGINX)</th><th>application routing Gateway API</th></tr>
+                <tr><td>API</td><td>Kubernetes Ingress API</td><td>Kubernetes Gateway API</td></tr>
+                <tr><td>データプレーン</td><td>ingress-nginx</td><td>Envoy (Istio 管理の Gateway プロキシ)</td></tr>
+                <tr><td>識別子</td><td>IngressClass <code class="inline">webapprouting.kubernetes.azure.com</code></td><td>GatewayClass <code class="inline">approuting-istio</code></td></tr>
+                <tr><td>有効化フラグ</td><td><code class="inline">--enable-app-routing</code></td><td><code class="inline">--enable-app-routing-istio</code></td></tr>
+                <tr><td>Azure サポート期限</td><td>重要なセキュリティパッチを 2026 年 11 月まで</td><td>長期的な標準として継続</td></tr>
+                <tr><td>DNS/証明書の認証方式</td><td>アドオンのユーザー割り当てマネージド ID (<code class="inline">--attach-kv</code> / <code class="inline">--attach-zones</code>)</td><td>Microsoft Entra Workload Identity (<code class="inline">ExternalDNS</code> / TLS オプション)</td></tr>
+                <tr><td>アクセスログ</td><td>-</td><td>Envoy アクセスログがデフォルト有効</td></tr>
+                <tr><td>Gateway ごとの可用性設定</td><td>-</td><td>HPA (min 2) + PDB (min 1) を自動デプロイ</td></tr>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">🔀 Istio サービスメッシュアドオンとの比較</h3>
+        <div class="table-wrapper">
+            <table class="info-table">
+                <tr><th>機能</th><th>application routing Gateway API</th><th>Istio サービスメッシュアドオン</th></tr>
+                <tr><td>GatewayClass 名</td><td><code class="inline">approuting-istio</code></td><td><code class="inline">istio</code></td></tr>
+                <tr><td>サイドカーインジェクション / Istio CRD</td><td>非サポート (Gateway API リソースのインフラ管理のみ)</td><td>サポート</td></tr>
+                <tr><td>リビジョニングとアップグレード</td><td>非リビジョン。マイナー/パッチともインプレース</td><td>リビジョン管理。マイナーは canary アップグレード、パッチはインプレース</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">approuting-istio</div>
+                <div class="stat-label">GatewayClass 名</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">HPA 2+ / PDB 1</div>
+                <div class="stat-label">Gateway ごとの可用性既定値</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2.86.0+</div>
+                <div class="stat-label">必要な Azure CLI バージョン</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">AKS 1.36+</div>
+                <div class="stat-label">AKS Automatic で既定有効</div>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table class="info-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>ステータス</td><td>一般提供 (GA)</td></tr>
+                <tr><td>GatewayClass 名</td><td><code class="inline">approuting-istio</code></td></tr>
+                <tr><td>コントロールプレーン namespace</td><td><code class="inline">aks-istio-system</code> (<code class="inline">istiod</code> Deployment)</td></tr>
+                <tr><td>有効化フラグ</td><td><code class="inline">--enable-app-routing-istio</code> (無効化は <code class="inline">--disable-app-routing-istio</code>)</td></tr>
+                <tr><td>必要な Azure CLI バージョン</td><td>2.86.0 以降</td></tr>
+                <tr><td>必須の前提機能</td><td>Managed Gateway API インストール (<code class="inline">--enable-gateway-api</code>)</td></tr>
+                <tr><td>サポートされる Gateway API リソース</td><td><code class="inline">Gateway</code>、<code class="inline">HTTPRoute</code>、<code class="inline">GRPCRoute</code> (CRD には <code class="inline">GatewayClass</code>、<code class="inline">ReferenceGrant</code> を含む)</td></tr>
+                <tr><td>Gateway API CRD チャネル</td><td><code class="inline">standard</code> のみ (<code class="inline">experimental</code> は不可)</td></tr>
+                <tr><td>Gateway API バンドルバージョン</td><td>v1.2.1 (K8s v1.26.0–v1.33.x) / v1.3.0 (v1.34.x) / v1.4.1 (v1.35.x) / v1.5.1 (v1.36.0+)</td></tr>
+                <tr><td>Gateway ごとの生成リソース</td><td><code class="inline">Deployment</code>、<code class="inline">Service</code>、<code class="inline">HorizontalPodAutoscaler</code>、<code class="inline">PodDisruptionBudget</code></td></tr>
+                <tr><td>Gateway HPA/PDB 既定値</td><td>HPA 最小 2 レプリカ、PDB 最小可用性 1</td></tr>
+                <tr><td>istiod HPA 既定値</td><td>最小 2 / 最大 5 レプリカ、CPU 80%</td></tr>
+                <tr><td>Istio バージョン</td><td>AKS クラスターバージョンに対応する最大サポート Istio マイナーバージョン</td></tr>
+                <tr><td>アクセスログ</td><td>Envoy アクセスログをデフォルト有効 (テキスト形式、標準出力)</td></tr>
+                <tr><td>TLS 統合</td><td>Azure Key Vault + Secrets Store CSI Driver + Workload Identity</td></tr>
+                <tr><td>DNS 統合</td><td><code class="inline">ClusterExternalDNS</code> / <code class="inline">ExternalDNS</code> (<code class="inline">approuting.kubernetes.azure.com/v1alpha1</code>)</td></tr>
+                <tr><td>DNS ゾーン上限</td><td>1 つの CR あたり最大 7 ゾーン (同一サブスクリプション・同一リソースグループ・同一種別)</td></tr>
+                <tr><td>AKS Automatic デフォルト</td><td>AKS 1.36 以降の新規 AKS Automatic クラスターで既定有効</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 class="subsection-title">📌 前提条件</h3>
+        <ol class="step-list">
+            <li>サポートされる Kubernetes バージョンの AKS クラスター (AKS Standard または AKS Automatic)</li>
+            <li>Azure CLI 2.86.0 以降 (<code class="inline">az --version</code> で確認、<code class="inline">az upgrade</code> で更新)</li>
+            <li>Managed Gateway API インストールの有効化 (<code class="inline">--enable-gateway-api</code>)。自己管理の Gateway API CRD との併用は非サポート。既存 CRD がある場合は <code class="inline">standard</code> チャネルかつクラスターの Kubernetes バージョンに対応したバンドルバージョンであること</li>
+            <li>Istio サービスメッシュアドオンが有効な場合は先に無効化し、Istio CRD と <code class="inline">istio</code> GatewayClass を削除しておくこと</li>
+            <li>(Azure DNS / TLS 統合を使う場合) application routing アドオン本体 (<code class="inline">--enable-app-routing</code>)、Microsoft Entra Workload Identity と OIDC issuer、Azure Key Vault provider for Secrets Store CSI Driver アドオン、およびロール割り当て・フェデレーション ID 資格情報を作成できる Azure RBAC 権限 (<code class="inline">Owner</code>、または <code class="inline">Role Based Access Control Administrator</code> + <code class="inline">Managed Identity Contributor</code>)</li>
+        </ol>
+
+        <h3 class="subsection-title">💻 有効化 (Azure CLI)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">機能の有効化</span></div>
+            <pre><code class="language-bash"># 環境変数の設定
+export CLUSTER=&lt;cluster-name&gt;
+export RESOURCE_GROUP=&lt;resource-group-name&gt;
+
+# 前提: Managed Gateway API CRD を有効化 (既存クラスター)
+az aks update --resource-group ${RESOURCE_GROUP} --name ${CLUSTER} --enable-gateway-api
+
+# 新規 AKS Standard クラスター作成時に有効化
+az aks create --resource-group ${RESOURCE_GROUP} --name ${CLUSTER} --enable-app-routing-istio
+
+# 既存クラスターで有効化
+az aks update --resource-group ${RESOURCE_GROUP} --name ${CLUSTER} --enable-app-routing-istio</code></pre>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">有効化の確認</span></div>
+            <pre><code class="language-bash"># 有効化の確認: istiod Pod と GatewayClass 用 ConfigMap
+kubectl get pods -n aks-istio-system
+kubectl get cm -n aks-istio-system        # istio-gateway-class-defaults が存在
+kubectl get validatingwebhookconfiguration # azure-service-mesh-ccp-validating-webhook
+
+# インストールされた Gateway API CRD の確認
+kubectl get crds | grep "gateway.networking.k8s.io"
+
+# バンドルバージョンの確認
+kubectl get crd gateways.gateway.networking.k8s.io -ojsonpath={.metadata.annotations} | jq</code></pre>
+        </div>
+
+        <h3 class="subsection-title">🚪 Gateway と HTTPRoute のデプロイ</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash / yaml</span><span class="code-desc">Gateway + HTTPRoute の作成と疎通確認</span></div>
+            <pre><code class="language-bash"># Gateway と HTTPRoute のデプロイ
+kubectl apply -f - &lt;&lt;EOF
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: httpbin-gateway
+spec:
+  gatewayClassName: approuting-istio
+  listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Same
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: httpbin
+spec:
+  parentRefs:
+  - name: httpbin-gateway
+  hostnames: ["httpbin.example.com"]
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /get
+    backendRefs:
+    - name: httpbin
+      port: 8000
+EOF
+
+# Gateway が Programmed になるまで待ち、疎通確認
+kubectl wait --for=condition=programmed gateways.gateway.networking.k8s.io httpbin-gateway
+export INGRESS_HOST=$(kubectl get gateways.gateway.networking.k8s.io httpbin-gateway \
+  -ojsonpath='{.status.addresses[0].value}')
+curl -s -I -HHost:httpbin.example.com "http://$INGRESS_HOST/get"</code></pre>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">無効化</span></div>
+            <pre><code class="language-bash">az aks update --resource-group ${RESOURCE_GROUP} --name ${CLUSTER} --disable-app-routing-istio</code></pre>
+        </div>
+
+        <h3 class="subsection-title">🔁 Istio サービスメッシュアドオンから移行する場合</h3>
+        <div class="warning-box">
+            Istio アドオンを無効化しても Istio CRD は残るため、そのままでは application routing Gateway API の Istio コントロールプレーンが起動に失敗する。無効化後に以下を実行する (<strong>既存の VirtualService / DestinationRule などのカスタムリソースも削除される</strong>点に注意)。
+        </div>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">Istio CRD と GatewayClass の削除</span></div>
+            <pre><code class="language-bash">kubectl delete crd $(kubectl get crd -o name | grep -E 'istio\.io')
+kubectl delete gatewayclass istio</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== メリット / 制約 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚖️</span>メリットと制約事項</h2>
+        <div class="pros-cons">
+            <div class="pros-card">
+                <h4>👍 メリット (ビジネス面)</h4>
+                <ul>
+                    <li>廃止が決まった Ingress NGINX への依存を解消し、Kubernetes 標準の Gateway API に沿った長期サポートされる Ingress 基盤へ移行できる</li>
+                    <li>NGINX ベース実装のサポート期限 (2026 年 11 月) までの移行先が、<strong>追加のサービスメッシュ導入コストなし</strong>で確保される</li>
+                    <li>HPA/PDB、インプレースアップグレード、デフォルト有効のアクセスログといった運用ガードレールが AKS 側で提供され、運用負荷と要員コストを抑えられる</li>
+                    <li>ベンダー固有アノテーションから標準 API へ寄せることでポータビリティが高まり、ロックインリスクが下がる</li>
+                </ul>
+                <h4 style="margin-top:16px;">👍 メリット (技術面)</h4>
+                <ul>
+                    <li><code class="inline">Gateway</code> (インフラ担当) と <code class="inline">HTTPRoute</code> (アプリ開発担当) の分離で、role-oriented なマルチテナント運用を API レベルで表現できる</li>
+                    <li><code class="inline">GRPCRoute</code> を含む Gateway API リソースをサポートし、Ingress API では表現しにくかったルーティングを標準リソースで記述できる</li>
+                    <li>サイドカーなしで Envoy ベースの Gateway を利用でき、メッシュのオーバーヘッドや運用複雑性を持ち込まない</li>
+                    <li>Key Vault 証明書を unversioned URI で参照すればローテーションが自動反映</li>
+                    <li><code class="inline">ClusterExternalDNS</code> / <code class="inline">ExternalDNS</code> で DNS レコード公開を宣言的に管理、ラベルセレクターでスコープ制御</li>
+                    <li>Managed Gateway API により CRD バンドルバージョンが AKS アップグレードに合わせ自動更新</li>
+                </ul>
+            </div>
+            <div class="cons-card">
+                <h4>⚠️ デメリット・制約事項</h4>
+                <ul>
+                    <li><strong>Istio サービスメッシュアドオンとの同時有効化は不可</strong>。切り替えは別オペレーションで、Istio → 本実装では Istio CRD と <code class="inline">istio</code> GatewayClass の削除が必須 (既存 Istio カスタムリソースも失われる)</li>
+                    <li><strong><code class="inline">TLSRoute</code> による SNI パススルーは現時点で非サポート</strong>。AKS が Istio 1.30 をサポートした時点で対応予定</li>
+                    <li><strong>Egress トラフィック管理は非サポート</strong></li>
+                    <li><code class="inline">Gateway</code> の ConfigMap カスタマイズは Istio アドオンと同じ許可リストに従い、リスト外は Webhook でブロック</li>
+                    <li><strong>Envoy アクセスログの形式・スコープ・プロバイダーはカスタマイズ不可</strong>。必要なら Istio アドオンの Gateway API Ingress を使う</li>
+                    <li>Microsoft 管理外サイドカーの Gateway プロキシ Pod へのインジェクトは公式サポート外 (ベストエフォート)</li>
+                    <li>コントロールプレーンは<strong>インプレースアップグレード</strong>のため、アップグレード中にトラフィック中断が発生し得る (HPA/PDB で最小化)</li>
+                    <li>フル Istio メッシュの挙動 (サイドカー、広範な Istio CRD) が必要な場合は不適</li>
+                    <li>自己管理 Gateway API CRD / BYO プロキシとの併用は非サポート。<code class="inline">experimental</code> チャネル CRD は事前アンインストール必須</li>
+                    <li>DNS 統合: 1 CR あたり最大 7 ゾーン、同一サブスクリプション・リソースグループ・種別のみ。CR 削除時に DNS レコードは自動削除されない。<code class="inline">TLSRoute</code> の DNS 調整も非サポート</li>
+                    <li>TLS 統合は <code class="inline">approuting-istio</code> の Gateway のみ対象</li>
+                    <li>旧 NGINX 体験向け <code class="inline">--attach-kv</code> / <code class="inline">--attach-zones</code> / <code class="inline">az aks approuting zone</code> は使われない。Workload Identity ベースの構成を自分で用意する必要がある</li>
+                    <li><code class="inline">externalTrafficPolicy: Local</code> では、Azure Load Balancer のヘルスプローブ用アノテーションを GatewayClass または Gateway ごとの ConfigMap で明示的に解除する必要あり</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💼</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <span class="usecase-tag">ユースケース 1</span>
+            <h4>🔁 NGINX ベース application routing からの移行 (2026 年 11 月サポート期限対応)</h4>
+            <p style="font-size:14px;"><strong>シナリオ</strong>: 既存 AKS クラスターで application routing アドオン (IngressClass <code class="inline">webapprouting.kubernetes.azure.com</code>) を使って Ingress を運用中。Azure の公式サポートが 2026 年 11 月で終了するため、期限までに Gateway API ベースへ移行したい。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">段階的な移行</span></div>
+                <pre><code class="language-bash"># 1. Managed Gateway API CRD と Gateway API 実装を有効化
+az aks update --resource-group ${RESOURCE_GROUP} --name ${CLUSTER} --enable-gateway-api
+az aks update --resource-group ${RESOURCE_GROUP} --name ${CLUSTER} --enable-app-routing-istio
+
+# 2. 既存 Ingress を Gateway API リソースへ変換 (OSS: ingress2gateway)
+#    公式アップデートで段階的な移行手段として案内されているツール
+
+# 3. 変換後の Gateway / HTTPRoute を適用し、Programmed 状態を確認
+kubectl wait --for=condition=programmed gateways.gateway.networking.k8s.io &lt;gateway-name&gt;</code></pre>
+            </div>
+            <div class="usecase-effect">
+                <strong>✨ 効果</strong>: NGINX ベースの Ingress と Gateway API ベースの Gateway を並行稼働させながら、ルートごとに段階的にトラフィックを切り替えられる。移行完了後は廃止予定の ingress-nginx への依存がなくなる。
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <span class="usecase-tag">ユースケース 2</span>
+            <h4>👥 マルチテナントクラスターでのロール分離された Ingress 運用</h4>
+            <p style="font-size:14px;"><strong>シナリオ</strong>: プラットフォームチームが Ingress 基盤を所有し、複数のアプリチームがそれぞれの namespace でルーティングを定義する。従来の Ingress API では両者の責務境界を API レベルで表現しづらかった。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">yaml</span><span class="code-desc">プラットフォームチームが所有する共有 Gateway</span></div>
+                <pre><code class="language-yaml"># プラットフォームチーム: Gateway とリスナー、許可するルートの範囲を定義
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: shared-gateway
+  namespace: platform
+spec:
+  gatewayClassName: approuting-istio
+  listeners:
+  - name: https
+    port: 443
+    protocol: HTTPS
+    tls:
+      mode: Terminate
+      options:
+        kubernetes.azure.com/tls-cert-keyvault-uri: &lt;unversioned-cert-uri&gt;
+        kubernetes.azure.com/tls-cert-service-account: &lt;service-account&gt;
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchLabels:
+            tenant: "true"
+
+# アプリチーム: 自 namespace で HTTPRoute のみを管理し Gateway に紐づける</code></pre>
+            </div>
+            <div class="usecase-effect">
+                <strong>✨ 効果</strong>: Gateway (インフラ) と HTTPRoute (アプリ) の所有権が分離され、<code class="inline">allowedRoutes</code> によってどの namespace のルートを受け付けるかをプラットフォーム側で制御できる。TLS 証明書は Key Vault で集中管理される。
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <span class="usecase-tag">ユースケース 3</span>
+            <h4>🤖 AKS Automatic での本番 Ingress デフォルト構成</h4>
+            <p style="font-size:14px;"><strong>シナリオ</strong>: 本番ワークロードを AKS Automatic で運用し、Ingress 基盤の運用オーバーヘッドを最小化したい。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">AKS Automatic (1.36+) では既定で有効</span></div>
+                <pre><code class="language-bash"># AKS 1.36 以降の新規 AKS Automatic クラスターでは既定で有効なため、
+# 追加の有効化コマンドは通常不要。Gateway を作るだけで利用開始できる。
+kubectl get gatewayclass approuting-istio
+
+# 生成される可用性リソースの確認
+kubectl get hpa,pdb &lt;gateway-name&gt;-approuting-istio</code></pre>
+            </div>
+            <div class="usecase-effect">
+                <strong>✨ 効果</strong>: Gateway ごとに HPA (最小 2 レプリカ) と PDB (最小可用性 1) が自動構成され、Istio コントロールプレーンのパッチ適用も AKS リリースの一部として自動化されるため、Ingress の可用性維持とパッチ運用の手作業を削減できる。
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p style="font-size:14px;">
+            application routing Gateway API 実装そのものの追加課金についての明示的な記載は、公式ドキュメントおよびアップデートでは確認できなかった。以下は AKS の一般的な課金モデル (料金ページで確認できた範囲)。実際の金額はリージョン・通貨によって動的に表示されるため、<a href="https://azure.microsoft.com/pricing/details/kubernetes-service/">料金ページ</a>または料金計算ツールで確認が必要。
+        </p>
+        <div class="table-wrapper">
+            <table class="info-table">
+                <tr><th>項目</th><th>料金</th></tr>
+                <tr><td>AKS Free レベル</td><td>コントロールプレーンは無償 (SLA なし)。基盤リソースのみ課金</td></tr>
+                <tr><td>AKS Standard レベル</td><td>クラスターあたりの時間課金 (API サーバー稼働時間 SLA 付き、最大 5,000 ノード)</td></tr>
+                <tr><td>AKS Premium レベル</td><td>Standard に加えて Long-Term Support (LTS) を提供するクラスター単位課金</td></tr>
+                <tr><td>ノード (VM)</td><td>AKS が起動・管理する VM の種類と稼働時間に応じて課金</td></tr>
+                <tr><td>Load Balancer / パブリック IP</td><td>ロードバランサー VIP、予約 IP、インスタンスレベルのパブリック IP は別途課金</td></tr>
+            </table>
+        </div>
+        <div class="warning-box">
+            💡 この機能を使うと <code class="inline">Gateway</code> ごとに Azure Load Balancer の Service とプロキシ Pod (既定で最小 2 レプリカ) が作成されるため、ロードバランサー/パブリック IP の課金とノードのコンピューティング消費が発生する点に注意。Azure DNS ゾーンや Azure Key Vault を統合する場合は、それぞれのサービスの料金も別途発生する。
+        </div>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p style="font-size:14px;">公式アップデートおよび Microsoft Learn ドキュメントでは、この機能に固有のリージョン制限は確認できなかった。リージョン別の提供状況は以下で確認する。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/explore/global-infrastructure/products-by-region/">Azure リージョン別の提供状況</a></li>
+            <li><a href="https://learn.microsoft.com/azure/aks/release-tracker">AKS リリーストラッカー</a> (Istio 新バージョンのリージョン展開状況の確認にも利用)</li>
+        </ul>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>📋 Managed Gateway API installation (AKS)</h5>
+                <p>Gateway API CRD (<code class="inline">standard</code> チャネル) を AKS 管理でインストール。本実装の必須前提で、K8s バージョンに応じてバンドルバージョンが自動更新される。</p>
+            </div>
+            <div class="related-card">
+                <h5>🕸️ application routing アドオン (NGINX)</h5>
+                <p>本機能の前身となる Ingress API ベースの実装。Azure の公式サポート (重要なセキュリティパッチ) は 2026 年 11 月まで。移行元となる。</p>
+            </div>
+            <div class="related-card">
+                <h5>🔀 Istio サービスメッシュアドオン (AKS)</h5>
+                <p>同じ Istio ベースだがサイドカーと Istio CRD をサポートし、リビジョン管理付き canary アップグレードを提供。フルメッシュ機能やアクセスログのカスタマイズが必要な場合の代替。同時有効化は不可。</p>
+            </div>
+            <div class="related-card">
+                <h5>🚦 Application Gateway for Containers</h5>
+                <p>Ingress API と Gateway API の両方をサポートする Azure マネージドのもう一つの選択肢。ingress-nginx からの移行先候補として公式ドキュメントに挙げられている。</p>
+            </div>
+            <div class="related-card">
+                <h5>🔐 Azure Key Vault + Secrets Store CSI Driver</h5>
+                <p>TLS 証明書の格納と Kubernetes Secret への同期。TLS 統合の必須コンポーネント。</p>
+            </div>
+            <div class="related-card">
+                <h5>🌐 Azure DNS</h5>
+                <p><code class="inline">ClusterExternalDNS</code> / <code class="inline">ExternalDNS</code> 経由でマネージド external-dns が A レコードを公開する先 (public / private ゾーン)。</p>
+            </div>
+            <div class="related-card">
+                <h5>🪪 Microsoft Entra Workload Identity / OIDC issuer</h5>
+                <p>Gateway API 統合における Azure DNS / Key Vault へのアクセス認証方式。旧 NGINX 体験のアドオンマネージド ID 方式を置き換える。</p>
+            </div>
+            <div class="related-card">
+                <h5>🤖 AKS Automatic</h5>
+                <p>AKS 1.36 以降の新規クラスターで本実装がデフォルト有効になる本番向けの運用モード。</p>
+            </div>
+            <div class="related-card">
+                <h5>🔧 ingress2gateway (OSS)</h5>
+                <p>既存 Ingress リソースを Gateway API リソースへ変換する移行支援ツール。公式アップデートで段階的移行の手段として案内されている。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="highlight-box">
+            <strong>Application Routing with Gateway API の GA は、単なる新機能追加ではなく「AKS における Ingress 管理の標準の切り替え」を意味する。</strong>
+        </div>
+        <p style="font-size:14px; margin-bottom:12px;">
+            アップストリームの Ingress NGINX が 2026 年 3 月にメンテナンス終了し、AKS の NGINX ベース application routing に対する Azure の公式サポートも 2026 年 11 月で終わるため、現在 application routing アドオン (NGINX) や OSS ingress-nginx を使っている環境は、<strong>期限を持った移行プロジェクト</strong>として扱う必要がある。
+        </p>
+        <p style="font-size:14px; margin-bottom:12px;">
+            技術的な要点は「サービスメッシュを導入せずに Gateway API ネイティブな Ingress を得られる」こと。内部的には Istio コントロールプレーンを利用するが、サイドカーや Istio CRD は関与せず、Gateway ごとに HPA (最小 2) と PDB (最小可用性 1) が自動構成され、Envoy アクセスログもデフォルト有効。Azure DNS / Key Vault 統合も Workload Identity ベースに刷新され、証明書と DNS レコードを宣言的に扱える。
+        </p>
+        <p style="font-size:14px; margin-bottom:12px;">
+            一方で制約も明確: Istio サービスメッシュアドオンとの同時有効化は不可、<code class="inline">TLSRoute</code> による SNI パススルーは Istio 1.30 対応まで未サポート、Egress 管理は対象外、アクセスログのカスタマイズも不可。フルメッシュ機能やログ形式の制御が必要なら Istio アドオン、Ingress API と Gateway API の併存が必要なら Application Gateway for Containers も検討対象になる。
+        </p>
+
+        <h3 class="subsection-title">🚀 推奨される次のアクション</h3>
+        <div class="next-steps">
+            <div class="next-step"><span class="num">1</span><span>Azure CLI を 2.86.0 以降に更新し、検証クラスターで <code class="inline">--enable-gateway-api</code> と <code class="inline">--enable-app-routing-istio</code> を有効化する</span></div>
+            <div class="next-step"><span class="num">2</span><span><code class="inline">ingress2gateway</code> で既存 Ingress の変換結果を確認し、NGINX 固有アノテーションに依存した設定を洗い出す</span></div>
+            <div class="next-step"><span class="num">3</span><span><code class="inline">TLSRoute</code> や Istio CRD への依存があれば、代替実装を含めた移行先を早めに判断する</span></div>
+            <div class="next-step"><span class="num">4</span><span>新規の本番クラスターは AKS Automatic (1.36 以降) を前提に、本実装をデフォルト Ingress として設計する</span></div>
+        </div>
+    </section>
+
+    <!-- ===== フッター ===== -->
+    <footer class="footer">
+        <h3>📚 出典・参考リンク</h3>
+        <ul>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=567944">公式アップデート情報: Generally Available: Application Routing with Gateway API</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/aks/app-routing-gateway-api">Microsoft Learn: AKS Application Routing Add-On with the Kubernetes Gateway API</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/aks/app-routing-gateway-api-dns-tls">Microsoft Learn: Configure Azure DNS and TLS with the Application Routing Gateway API Implementation</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/aks/app-routing">Microsoft Learn: AKS managed NGINX ingress with the application routing add-on</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/aks/managed-gateway-api">Microsoft Learn: AKS Managed Gateway API Installation</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/aks/istio-about">Microsoft Learn: Istio-based service mesh add-on for AKS</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/aks/istio-support-policy">Microsoft Learn: Service mesh add-on release calendar (サポート Istio バージョン)</a></li>
+            <li>🔗 <a href="https://www.kubernetes.dev/blog/2025/11/12/ingress-nginx-retirement/">Kubernetes: Ingress NGINX retirement のアナウンス</a></li>
+            <li>🔗 <a href="https://gateway-api.sigs.k8s.io/">Kubernetes Gateway API 公式サイト</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/kubernetes-service/">料金ページ: Azure Kubernetes Service</a></li>
+        </ul>
+        <p class="credit">
+            本インフォグラフィックは Azure News Summary レポート (2026-07-28) を基に生成されました。<br>
+            タグ: Azure Kubernetes Service / AKS / Application Routing / Gateway API / HTTPRoute / GRPCRoute / Istio / ingress-nginx / GA / AKS Automatic / Azure DNS / Azure Key Vault / Workload Identity / ingress2gateway
+        </p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
