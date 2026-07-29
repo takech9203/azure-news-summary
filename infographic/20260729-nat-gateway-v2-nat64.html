@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure NAT Gateway: StandardV2 NAT Gateway で NAT64 が一般提供開始</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Networking category color */
+    --networking-green: #00A651;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 220px;
+    height: 220px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+}
+
+.header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.95;
+    position: relative;
+    z-index: 1;
+}
+
+.header .meta {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    font-size: 14px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+p.lead {
+    font-size: 15px;
+    margin-bottom: 14px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14.5px;
+}
+
+.warning-box {
+    background: #FFF8E7;
+    border-left: 4px solid var(--ms-yellow);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14.5px;
+}
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.92em;
+    color: var(--ms-blue-800);
+}
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 18px;
+    margin: 14px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content ul {
+    padding-left: 20px;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content li { margin-bottom: 4px; }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table.spec {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+table.spec th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+table.spec td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+
+table.spec tr:nth-child(even) { background: var(--ms-blue-100); }
+
+td.no { color: var(--ms-red); font-weight: 700; }
+td.yes { color: var(--ms-green); font-weight: 700; }
+
+/* ===== Steps ===== */
+.steps {
+    counter-reset: step;
+    margin: 16px 0;
+}
+
+.step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.step-num {
+    counter-increment: step;
+    min-width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.step-body { font-size: 14.5px; padding-top: 4px; }
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 10px;
+    padding: 18px 20px;
+    border: 1px solid var(--ms-border);
+}
+
+.merit-card.business { background: var(--ms-blue-100); border-top: 4px solid var(--azure-blue); }
+.merit-card.tech { background: #F0F7F0; border-top: 4px solid var(--ms-green); }
+
+.merit-card h4 { margin-bottom: 10px; font-size: 16px; }
+.merit-card.business h4 { color: var(--ms-blue-800); }
+.merit-card.tech h4 { color: var(--ms-green); }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin-bottom: 8px; }
+
+.constraint-list { list-style: none; }
+
+.constraint-list li {
+    background: #FFF4F0;
+    border-left: 4px solid var(--ms-red);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.constraint-list li strong { color: var(--ms-red); }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--networking-green);
+    border-radius: 10px;
+    padding: 20px 22px;
+    margin: 18px 0;
+    background: var(--ms-surface);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.usecase-card h4 {
+    font-size: 16.5px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-label {
+    display: inline-block;
+    background: var(--networking-green);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 2px 12px;
+    margin-right: 4px;
+}
+
+.usecase-card p { font-size: 14px; margin-bottom: 10px; }
+
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+    margin-top: 12px;
+}
+
+.usecase-card ol {
+    padding-left: 22px;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+.usecase-card ol li { margin-bottom: 6px; }
+
+/* ===== Region / Related ===== */
+.region-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 12px 0;
+}
+
+.region-chip {
+    background: #FFEBEE;
+    border: 1px solid var(--ms-red);
+    color: var(--ms-red);
+    border-radius: 16px;
+    padding: 5px 14px;
+    font-size: 13.5px;
+    font-weight: 500;
+}
+
+.related-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 12px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+}
+
+.related-card h5 {
+    color: var(--azure-blue);
+    font-size: 14.5px;
+    margin-bottom: 6px;
+}
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), #FFFFFF);
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin: 16px 0;
+    font-size: 14.5px;
+}
+
+.summary-box p { margin-bottom: 12px; }
+.summary-box p:last-child { margin-bottom: 0; }
+
+.action-box {
+    background: var(--azure-dark-blue);
+    color: white;
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin: 16px 0;
+}
+
+.action-box h4 {
+    font-size: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-box ul { padding-left: 20px; font-size: 14px; }
+.action-box li { margin-bottom: 8px; }
+
+/* ===== Links & tags ===== */
+.link-list { list-style: none; font-size: 14px; }
+
+.link-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--ms-border);
+}
+
+.link-list a {
+    color: var(--azure-blue);
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.link-list a:hover { text-decoration: underline; }
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 24px 12px 40px;
+}
+
+.footer a { color: var(--azure-blue); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .merit-grid, .related-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="header">
+        <div class="header-badges">
+            <span class="service-badge">🌐 Azure NAT Gateway</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>StandardV2 NAT Gateway で NAT64 が一般提供開始</h1>
+        <div class="subtitle">IPv6 ワークロードから IPv4 のみのインターネット宛先へ — マネージドな IPv6 → IPv4 アドレス・プロトコル変換</div>
+        <div class="meta">
+            <span>📅 リリース日: 2026-07-28</span>
+            <span>🧩 機能: NAT64 (IPv6 → IPv4 変換)</span>
+            <span>🏷️ 対象 SKU: StandardV2 のみ</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p class="lead">Azure StandardV2 NAT Gateway が <strong>NAT64</strong> をサポートし、一般提供が開始された。NAT64 は、IPv6 ワークロードが IPv4 のみのインターネット宛先と通信できるようにする変換機能である。Well-Known Prefix <code class="inline">64:ff9b::/96</code> (RFC 6052 で定義) 宛のアウトバウンド IPv6 トラフィックを NAT Gateway が検出し、埋め込まれた IPv4 アドレスを抽出して IPv4 トラフィックへ変換する。</p>
+        <p class="lead">NAT64 は <strong>StandardV2 SKU 専用</strong>の機能であり、従来の Standard NAT Gateway では利用できない。また、NAT64 単体では完結せず、<strong>DNS64 対応のリゾルバーが別途必要</strong>である。DNS64 は A (IPv4) レコードのみを持つドメインに対して AAAA (IPv6) レコードを合成する役割を担い、この合成アドレスが <code class="inline">64:ff9b::/96</code> プレフィックスを持つことで NAT Gateway による変換が発動する。Microsoft Learn のドキュメントでは、DNS64 についてはサードパーティ製ソリューションのデプロイが必要である旨が明記されている。</p>
+        <p class="lead">この機能により、IPv6 のみで構成されたワークロードが、デュアルスタック構成やカスタムの変換アプライアンスを用意せずに IPv4 のみのインターネット宛先に到達できるようになる。有効化は Azure Portal の <strong>Configuration</strong> で <strong>NAT64</strong> を <strong>Enabled</strong> に設定するか、ARM / REST API でリソースの <code class="inline">nat64</code> プロパティを <code class="inline">Enabled</code> に設定する。変換後のアウトバウンド通信に使用するため、NAT Gateway には少なくとも 1 つの StandardV2 IPv4 パブリック IP アドレスがアタッチされている必要がある。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">100 Gbps</div>
+                <div class="stat-label">NAT Gateway あたりの帯域幅</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1,000 万 pps</div>
+                <div class="stat-label">パケット処理性能</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">64,512</div>
+                <div class="stat-label">パブリック IP あたりの SNAT ポート</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">ゾーン冗長</div>
+                <div class="stat-label">可用性ゾーン対応</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>IPv6 のみのワークロードから IPv4 のみのインターネット宛先 (IPv6 未対応の外部 API、SaaS エンドポイント、パッケージリポジトリなど) に到達できなかった</li>
+                    <li>IPv4 宛先への到達性を確保するにはデュアルスタック構成が必要で、IPv4 アドレス空間の設計・管理コストが残り続けた</li>
+                    <li>デュアルスタックを避ける場合は、独自の NAT64 変換アプライアンスを VM 上に構築・運用する必要があり、可用性・スケーラビリティ・保守の負担が発生していた</li>
+                    <li>Standard NAT Gateway は IPv6 パブリック IP をサポートしておらず、IPv6 アウトバウンドの選択肢自体が限られていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>StandardV2 NAT Gateway のマネージド機能として NAT64 変換が提供され、独自の変換アプライアンスが不要に</li>
+                    <li>IPv6 のみのワークロードのまま IPv4 のみの宛先と通信でき、デュアルスタック構成を必須としない</li>
+                    <li>有効化は Portal のトグル操作または <code>nat64</code> プロパティの設定のみ。ルートテーブルの構成変更は不要</li>
+                    <li>StandardV2 のゾーン冗長性・最大 100 Gbps のスループットといった基盤特性を、そのまま NAT64 変換にも適用できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph VNet["🔒 仮想ネットワーク"]
+        subgraph Subnet["サブネット"]
+            VM(["🖥️ IPv6 ワークロード"])
+        end
+        DNS64["🔎 DNS64 リゾルバー&lt;br/&gt;(サードパーティ製)"]
+    end
+
+    subgraph NATGW["🌐 StandardV2 NAT Gateway"]
+        NAT64["🔀 NAT64 変換&lt;br/&gt;64:ff9b::/96 を検出&lt;br/&gt;下位 32bit から IPv4 を抽出"]
+        PIP["📮 StandardV2&lt;br/&gt;IPv4 パブリック IP"]
+    end
+
+    IPv4NET["🌍 IPv4 のみの&lt;br/&gt;インターネット宛先"]
+
+    VM --&gt;|"① 名前解決&lt;br/&gt;A レコードのみ"| DNS64
+    DNS64 --&gt;|"② AAAA を合成&lt;br/&gt;64:ff9b::203.0.113.10"| VM
+    VM --&gt;|"③ IPv6 パケット送信"| NAT64
+    NAT64 --&gt;|"④ IPv6 → IPv4 変換 + SNAT"| PIP
+    PIP --&gt;|"⑤ IPv4 通信"| IPv4NET
+    IPv4NET -.-&gt;|"⑥ IPv4 応答を IPv6 に戻して返送"| NAT64
+            </pre>
+        </div>
+        <div class="highlight-box">
+            この図は、IPv6 ワークロードが DNS64 リゾルバーで合成された <code class="inline">64:ff9b::/96</code> 宛の AAAA レコードを取得し、そのアドレスへ IPv6 パケットを送信すると、StandardV2 NAT Gateway が NAT64 変換と SNAT を行って IPv4 宛先に到達する流れを示している。IPv4 の応答パケットは NAT Gateway で IPv6 に再変換されてワークロードに返される。
+        </div>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>1. Well-Known Prefix <code class="inline">64:ff9b::/96</code> による IPv6 から IPv4 への変換</h4>
+                <ul>
+                    <li>RFC 6052 で定義された Well-Known Prefix 宛のアウトバウンド IPv6 トラフィックを NAT Gateway が識別</li>
+                    <li>アドレスの下位 32 ビットに埋め込まれた IPv4 アドレスを抽出し、IPv4 パケットへ変換</li>
+                    <li>変換時には NAT Gateway に構成された StandardV2 IPv4 パブリック IP による SNAT が適用される</li>
+                    <li>IPv4 の応答パケットは IPv6 に再変換され、元のクライアントに返される</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>2. StandardV2 SKU 限定のマネージド機能</h4>
+                <ul>
+                    <li>NAT64 は StandardV2 NAT Gateway でのみ利用可能な変換機能で、Standard SKU では非サポート</li>
+                    <li>デュアルスタック構成やカスタムの変換アプライアンスを用意する必要がない</li>
+                    <li>StandardV2 のゾーン冗長性、最大 100 Gbps のスループット、フローログといった機能と併用できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎛️</div>
+            <div class="feature-content">
+                <h4>3. 簡潔な有効化オペレーション</h4>
+                <ul>
+                    <li>Azure Portal: StandardV2 NAT Gateway リソースの <strong>Configuration</strong> で <strong>NAT64</strong> を <strong>Enabled</strong> に設定して保存</li>
+                    <li>ARM / REST API: NAT Gateway リソースの <code class="inline">nat64</code> プロパティを <code class="inline">Enabled</code> に設定</li>
+                    <li>サブネットのルートテーブルへの追加設定は不要</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔎</div>
+            <div class="feature-content">
+                <h4>4. DNS64 との組み合わせによる動作</h4>
+                <ul>
+                    <li>NAT64 は DNS64 が合成した AAAA レコードを前提とする</li>
+                    <li>DNS64 は A レコードのみを持つドメインに対して、IPv4 アドレスを <code class="inline">64:ff9b::/96</code> に埋め込んだ AAAA レコードを合成する</li>
+                    <li>DNS64 が存在しない場合、IPv6 クライアントは IPv4 のみの宛先を NAT64 Well-Known Prefix に解決できず、NAT64 は機能しない</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table class="spec">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>対象 SKU</td><td>StandardV2 NAT Gateway のみ (Standard は非サポート)</td></tr>
+                <tr><td>変換方式</td><td>アウトバウンド IPv6 から IPv4 への変換 (NAT64)</td></tr>
+                <tr><td>使用プレフィックス</td><td>Well-Known Prefix <code class="inline">64:ff9b::/96</code> (RFC 6052)</td></tr>
+                <tr><td>IPv4 アドレスの埋め込み位置</td><td>IPv6 アドレスの下位 32 ビット</td></tr>
+                <tr><td>有効化方法</td><td>Portal の <strong>Configuration</strong> &gt; <strong>NAT64</strong> = <strong>Enabled</strong>、または ARM / REST の <code class="inline">nat64</code> プロパティ = <code class="inline">Enabled</code></td></tr>
+                <tr><td>必須要件</td><td>StandardV2 IPv4 パブリック IP を 1 つ以上アタッチ</td></tr>
+                <tr><td>DNS64</td><td>必須。サードパーティ製 DNS64 ソリューションのデプロイが必要</td></tr>
+                <tr><td>ルーティング構成</td><td>追加のルートテーブル設定は不要</td></tr>
+                <tr><td>インバウンド通信</td><td>非サポート (アウトバウンド起点の応答のみ変換して返送)</td></tr>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">📊 StandardV2 / Standard SKU 比較 (NAT64 関連の主な差分)</h3>
+        <div class="table-wrap">
+            <table class="spec">
+                <tr><th>項目</th><th>Standard</th><th>StandardV2</th></tr>
+                <tr><td>NAT64</td><td class="no">非サポート</td><td class="yes">サポート</td></tr>
+                <tr><td>パブリック IP のバージョン</td><td>IPv4 のみ</td><td>IPv4 / IPv6</td></tr>
+                <tr><td>パブリック IP アドレス数</td><td>IPv4 16 個</td><td>IPv4 16 個、IPv6 16 個</td></tr>
+                <tr><td>パブリック IP プレフィックス</td><td>IPv4 /28</td><td>IPv4 /28、IPv6 /124</td></tr>
+                <tr><td>対応プロトコル</td><td>TCP、UDP</td><td>TCP、UDP、ICMP Echo Request / Reply</td></tr>
+                <tr><td>可用性ゾーン</td><td class="no">非サポート (ゾーンリソース)</td><td class="yes">サポート (ゾーン冗長)</td></tr>
+                <tr><td>帯域幅</td><td>NAT Gateway あたり 50 Gbps</td><td>NAT Gateway あたり 100 Gbps、接続あたり 1 Gbps</td></tr>
+                <tr><td>パケット処理性能</td><td>500 万 pps</td><td>1,000 万 pps、接続あたり 10 万 pps</td></tr>
+                <tr><td>宛先ごと / IP ごとの接続数</td><td>50,000</td><td>50,000</td></tr>
+                <tr><td>合計接続数</td><td>200 万</td><td>200 万</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 class="subsection-title">✅ 前提条件</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-body">StandardV2 SKU の NAT Gateway が作成済みであること (Standard SKU からのアップグレードは不可)</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-body">StandardV2 SKU の IPv4 パブリック IP アドレス (またはプレフィックス) が 1 つ以上 NAT Gateway にアタッチされていること</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-body">NAT Gateway をデプロイするリージョンが StandardV2 SKU をサポートしていること</div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-body">IPv6 のみの宛先解決を IPv4 宛先へ橋渡しするための DNS64 対応リゾルバー (サードパーティ製ソリューション) がデプロイされ、ワークロードから利用可能であること</div></div>
+        </div>
+
+        <h3 class="subsection-title">🖱️ Azure Portal</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-body">Azure Portal で対象の StandardV2 NAT Gateway リソースを開く</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Configuration</strong> を選択する</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-body"><strong>NAT64</strong> を <strong>Enabled</strong> に設定する</div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-body"><strong>Save</strong> を選択して保存する</div></div>
+        </div>
+
+        <h3 class="subsection-title">💻 Azure CLI (StandardV2 NAT Gateway の作成)</h3>
+        <p class="lead">NAT64 の有効化そのものは Portal または ARM / REST API から行う。前段の StandardV2 NAT Gateway とパブリック IP の作成は Azure CLI で実施できる。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>StandardV2 NAT Gateway の作成</span></div>
+            <pre><code class="language-bash"># StandardV2 SKU の IPv4 パブリック IP を作成 (ゾーン冗長)
+az network public-ip create \
+    --resource-group test-rg \
+    --name public-ip-nat \
+    --location eastus \
+    --sku StandardV2 \
+    --allocation-method Static \
+    --version IPv4 \
+    --zone 1 2 3
+
+# StandardV2 NAT Gateway を作成
+az network nat gateway create \
+    --resource-group test-rg \
+    --name nat-gateway \
+    --location eastus \
+    --public-ip-addresses public-ip-nat \
+    --idle-timeout 4 \
+    --sku StandardV2
+
+# サブネットに NAT Gateway を関連付け (既定のアウトバウンドアクセスは無効化)
+az network vnet subnet update \
+    --resource-group test-rg \
+    --vnet-name vnet-1 \
+    --name subnet-1 \
+    --nat-gateway nat-gateway \
+    --default-outbound false</code></pre>
+        </div>
+        <div class="warning-box">
+            ⚠️ <code class="inline">az network nat gateway create</code> / <code class="inline">update</code> には NAT64 を設定するパラメーターは用意されていない (<code class="inline">--sku</code>、<code class="inline">--public-ip-addresses</code>、<code class="inline">--pip-addresses-v6</code>、<code class="inline">--pip-prefixes-v6</code>、<code class="inline">--idle-timeout</code>、<code class="inline">--zone</code> などが提供される)。NAT64 の有効化は Portal または ARM / REST API の <code class="inline">nat64</code> プロパティで行う。
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">👍</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>IPv6 のみのワークロードのまま IPv4 宛先へ到達できるため、IPv6 移行プロジェクトを IPv4 依存の外部サービスに引きずられずに進められる</li>
+                    <li>独自の NAT64 変換アプライアンスの構築・運用が不要になり、インフラ運用コストと保守負担を削減できる</li>
+                    <li>デュアルスタック構成の回避により、IPv4 アドレス空間の確保・設計・管理にかかるコストを抑制できる</li>
+                    <li>マネージドサービスとして提供されるため、変換レイヤーの可用性設計を Azure 側に委ねられる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>Well-Known Prefix <code class="inline">64:ff9b::/96</code> という標準 (RFC 6052) に準拠した変換方式のため、DNS64 実装との相互運用性が確保しやすい</li>
+                    <li>サブネットのルートテーブルへの追加構成が不要で、NAT Gateway を関連付けるだけで変換が適用される</li>
+                    <li>StandardV2 のゾーン冗長性により、単一ゾーン障害時も NAT64 変換を含むアウトバウンド接続が維持される</li>
+                    <li>最大 100 Gbps のスループットと 1,000 万 pps のパケット処理性能を NAT64 変換にも活用できる</li>
+                    <li>パブリック IP ごとに 64,512 の SNAT ポートが提供され、変換後の IPv4 側でも SNAT ポート枯渇のリスクが低い</li>
+                    <li>StandardV2 のフローログと組み合わせることで、変換後のアウトバウンドトラフィックを可視化できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="constraint-list">
+            <li><strong>DNS64 が別途必要</strong>: NAT64 単体では機能せず、AAAA レコードを合成するサードパーティ製 DNS64 ソリューションのデプロイが必要。この設計・運用コストは利用者側の負担となる</li>
+            <li><strong>Azure CLI で NAT64 を設定できない</strong>: <code class="inline">az network nat gateway create</code> / <code class="inline">update</code> に NAT64 用のパラメーターがなく、Portal または ARM / REST API の <code class="inline">nat64</code> プロパティで有効化する必要がある</li>
+            <li><strong>StandardV2 SKU 限定</strong>: Standard NAT Gateway では NAT64 を利用できない。Standard から StandardV2 への直接アップグレードは不可で、StandardV2 NAT Gateway を新規作成してサブネット上の Standard NAT Gateway を置き換える必要がある</li>
+            <li><strong>StandardV2 パブリック IP が必須</strong>: Standard / Basic のパブリック IP は StandardV2 NAT Gateway と併用できず、StandardV2 パブリック IP への再 IP が必要</li>
+            <li><strong>カスタム IP プレフィックス (BYOIP) 非サポート</strong>: StandardV2 SKU では Azure が提供する StandardV2 パブリック IP のみ利用可能</li>
+            <li><strong>変換用の IPv4 パブリック IP が必須</strong>: NAT64 の変換出力に使用するため、StandardV2 IPv4 パブリック IP を少なくとも 1 つアタッチする必要がある</li>
+            <li><strong>未サポートリージョンがある</strong>: Canada East、India South Central、Israel Northwest、Sweden South、West India では StandardV2 NAT Gateway 自体が利用できない</li>
+            <li><strong>既知の問題 (IPv6 とロードバランサーの併用)</strong>: StandardV2 NAT Gateway をサブネットに関連付けると、ロードバランサーのアウトバウンドルールによる IPv6 アウトバウンド接続が中断される</li>
+            <li><strong>既知の問題 (既存アウトバウンド経路の中断)</strong>: ロードバランサー、Azure Firewall、VM のインスタンスレベルパブリック IP を利用したアウトバウンド接続が、StandardV2 NAT Gateway の追加時に中断される可能性がある (新規接続はすべて StandardV2 NAT Gateway を経由する)</li>
+            <li><strong>インバウンド通信は非サポート</strong>: NAT Gateway はアウトバウンド起点の接続に対する応答パケットのみを通過させる。IPv4 側から IPv6 ワークロードへの接続開始 (DNAT / NAT46 的な用途) はできない</li>
+            <li><strong>IP フラグメンテーション非対応</strong>: Azure NAT Gateway は IP フラグメンテーションをサポートしない</li>
+            <li><strong>パブリック IP の構成制約</strong>: ルーティング設定が <strong>Internet</strong> のパブリック IP、および DDoS Protection が有効なパブリック IP は NAT Gateway で利用できない</li>
+        </ul>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 1</span>IPv6 のみのワークロードから IPv4 のみの外部 API への接続</h4>
+            <p><strong>シナリオ</strong>: IPv6 シングルスタックで設計した新規サービスが、IPv6 未対応のパートナー API や SaaS エンドポイントを呼び出す必要がある。デュアルスタック化による IPv4 アドレス管理は避けたい。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+                <pre><code class="language-bash"># StandardV2 NAT Gateway に IPv4 / IPv6 の StandardV2 パブリック IP を構成
+az network public-ip create \
+    --resource-group ipv6-workload-rg \
+    --name nat-pip-v4 \
+    --location eastus \
+    --sku StandardV2 \
+    --allocation-method Static \
+    --version IPv4 \
+    --zone 1 2 3
+
+az network public-ip create \
+    --resource-group ipv6-workload-rg \
+    --name nat-pip-v6 \
+    --location eastus \
+    --sku StandardV2 \
+    --allocation-method Static \
+    --version IPv6 \
+    --zone 1 2 3
+
+az network nat gateway create \
+    --resource-group ipv6-workload-rg \
+    --name ipv6-nat-gateway \
+    --location eastus \
+    --public-ip-addresses nat-pip-v4 \
+    --pip-addresses-v6 nat-pip-v6 \
+    --idle-timeout 4 \
+    --sku StandardV2
+
+# この後、Portal の Configuration または ARM / REST の nat64 プロパティで NAT64 を Enabled にする</code></pre>
+            </div>
+            <div class="usecase-effect"><strong>効果</strong>: DNS64 リゾルバーが IPv4 のみの API ホスト名に対して <code class="inline">64:ff9b::/96</code> の AAAA レコードを合成し、ワークロードは IPv6 通信のまま API を呼び出せる。NAT Gateway が IPv4 へ変換するため、アプリケーション側の IPv6 シングルスタック設計を維持できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 2</span>IPv6 移行の段階的な推進</h4>
+            <p><strong>シナリオ</strong>: IPv4 アドレスの枯渇と管理負荷を背景に IPv6 への移行を進めているが、依存する外部サービスの一部が IPv6 に未対応で、全面的な IPv6 化の障壁となっている。</p>
+            <p><strong>実装例</strong>:</p>
+            <ol>
+                <li>新規ワークロードのサブネットに StandardV2 NAT Gateway を関連付ける</li>
+                <li>NAT Gateway に StandardV2 の IPv4 / IPv6 パブリック IP を構成する</li>
+                <li>Portal の <strong>Configuration</strong> で <strong>NAT64</strong> を <strong>Enabled</strong> にする</li>
+                <li>DNS64 リゾルバーをデプロイし、ワークロードの DNS 参照先に設定する</li>
+                <li>IPv6 対応済みの宛先は素の IPv6 で、未対応の宛先は NAT64 経由で到達させる</li>
+            </ol>
+            <div class="usecase-effect"><strong>効果</strong>: 外部サービスの IPv6 対応状況にかかわらず新規ワークロードを IPv6 シングルスタックで構築でき、IPv6 移行を外部依存から切り離して進められる。宛先が IPv6 対応した際は DNS64 が本来の AAAA レコードを返すため、NAT64 を経由しない経路へ自然に移行する。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 3</span>独自 NAT64 アプライアンスの置き換え</h4>
+            <p><strong>シナリオ</strong>: 仮想マシン上に構築した NAT64 変換アプライアンスを運用しているが、可用性確保のための冗長構成、スケールアウト、OS / ソフトウェアの保守が負担になっている。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+                <pre><code class="language-bash"># 既存サブネットに StandardV2 NAT Gateway を関連付ける
+az network vnet subnet update \
+    --resource-group migration-rg \
+    --vnet-name migration-vnet \
+    --name app-subnet \
+    --nat-gateway standardv2-nat-gateway
+
+# Portal の Configuration で NAT64 を Enabled にした後、
+# 独自アプライアンスへの UDR を削除して NAT Gateway 経由に切り替える
+az network route-table route delete \
+    --resource-group migration-rg \
+    --route-table-name app-subnet-rt \
+    --name to-nat64-appliance</code></pre>
+            </div>
+            <div class="usecase-effect"><strong>効果</strong>: 変換レイヤーがマネージドサービスに置き換わり、ゾーン冗長性と最大 100 Gbps のスループットを追加の設計なしで得られる。アプライアンスの冗長化・パッチ適用・キャパシティ管理といった運用作業が不要になる。</div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p class="lead">NAT64 の利用による追加料金は Microsoft Learn および料金ページ上で示されていない。また、<strong>Standard SKU と StandardV2 SKU の NAT Gateway は同一料金</strong>であることが公式に明記されている。</p>
+        <div class="table-wrap">
+            <table class="spec">
+                <tr><th>項目</th><th>料金</th></tr>
+                <tr><td>NAT Gateway リソース時間</td><td>リソースがデプロイされている時間に基づく課金。リソース作成時点から課金が開始され、サブネットやパブリック IP が未アタッチでも課金される。1 時間未満は 1 時間として課金</td></tr>
+                <tr><td>データ処理</td><td>NAT Gateway を経由して処理されたデータ量 (アウトバウンドおよび応答トラフィック) に基づく課金</td></tr>
+                <tr><td>StandardV2 フローログ</td><td><code class="inline">NatGatewayFlowlogsV1</code> ログカテゴリに対する月額固定料金 (診断設定が有効な時間で按分)</td></tr>
+            </table>
+        </div>
+        <div class="highlight-box">
+            NAT64 で変換されたトラフィックも通常のデータ処理として課金されるものと考えられる。なお、NAT Gateway のデータ処理料金とは別に、Azure の帯域幅 (データ転送) 料金が発生する。StandardV2 パブリック IP アドレスの料金は別途発生する。NAT Gateway 自体に無料枠は設定されていない。具体的な単価はリージョン・通貨により異なるため、<a href="https://azure.microsoft.com/pricing/details/azure-nat-gateway/">Azure NAT Gateway の料金ページ</a>および Azure 料金計算ツールで確認されたい。
+        </div>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗺️</span>利用可能リージョン</h2>
+        <p class="lead">NAT64 は StandardV2 NAT Gateway の機能であるため、StandardV2 SKU が利用可能なリージョンで提供される。以下のリージョンでは StandardV2 NAT Gateway 自体が未サポートのため、NAT64 も利用できない。</p>
+        <div class="region-grid">
+            <span class="region-chip">🚫 Canada East</span>
+            <span class="region-chip">🚫 India South Central</span>
+            <span class="region-chip">🚫 Israel Northwest</span>
+            <span class="region-chip">🚫 Sweden South</span>
+            <span class="region-chip">🚫 West India</span>
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>Azure NAT Gateway (Standard SKU)</h5>
+                従来の SKU。NAT64 および IPv6 パブリック IP は非サポート。NAT64 を利用するには StandardV2 NAT Gateway への移行 (新規作成と置き換え) が必要
+            </div>
+            <div class="related-card">
+                <h5>Azure Virtual Network</h5>
+                NAT Gateway を関連付けるサブネットの基盤サービス。2026 年 3 月 31 日以降、新規仮想ネットワークは既定でプライベートサブネットとなり、既定のアウトバウンドアクセスが提供されないため、NAT Gateway のような明示的なアウトバウンド手段が必要
+            </div>
+            <div class="related-card">
+                <h5>Azure Public IP (StandardV2 SKU)</h5>
+                StandardV2 NAT Gateway が要求するパブリック IP SKU。NAT64 の変換出力には StandardV2 の IPv4 パブリック IP が必須
+            </div>
+            <div class="related-card">
+                <h5>Azure Load Balancer</h5>
+                アウトバウンドルールによる IPv6 アウトバウンドは StandardV2 NAT Gateway と併用すると中断される既知の問題がある。IPv4 / IPv6 双方のアウトバウンドが必要な場合は構成の選択に注意が必要
+            </div>
+            <div class="related-card">
+                <h5>Azure Monitor / StandardV2 フローログ</h5>
+                StandardV2 NAT Gateway のフローログにより、NAT64 変換を含むアウトバウンドトラフィックを可視化・分析できる
+            </div>
+            <div class="related-card">
+                <h5>Azure Kubernetes Service (AKS)</h5>
+                StandardV2 NAT Gateway をユーザー割り当て NAT Gateway として利用可能 (マネージド NAT Gateway としての利用はプレビュー)。IPv6 クラスターのアウトバウンド設計で NAT64 との組み合わせが検討対象になる
+            </div>
+            <div class="related-card">
+                <h5>Azure Firewall</h5>
+                サブネットに StandardV2 NAT Gateway を追加すると、Azure Firewall 経由の既存アウトバウンド接続が中断される可能性があるため、経路設計の確認が必要
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>StandardV2 NAT Gateway における NAT64 の一般提供は、IPv6 移行を進める組織にとって実務上のボトルネックを解消するアップデートである。従来、IPv6 のみのワークロードが IPv4 のみの宛先に到達するにはデュアルスタック化か独自の変換アプライアンスが必要だったが、本機能により Azure のマネージドサービスとして変換レイヤーを利用でき、ゾーン冗長性や最大 100 Gbps のスループットといった StandardV2 の基盤特性もそのまま享受できる。</p>
+            <p>一方で、NAT64 は DNS64 との組み合わせを前提とした機能であり、<strong>DNS64 についてはサードパーティ製ソリューションのデプロイが必要である点が最大の設計上の考慮事項</strong>となる。NAT64 を有効にしただけでは IPv4 宛先への到達性は得られないため、DNS64 の可用性・スコープ (どのワークロードにどのリゾルバーを参照させるか)・運用主体をあわせて設計する必要がある。</p>
+        </div>
+        <div class="action-box">
+            <h4>🎯 Solutions Architect への推奨アクション</h4>
+            <ul>
+                <li>IPv6 シングルスタックを志向する新規ワークロードでは、DNS64 ソリューションの選定と PoC を先行させる</li>
+                <li>既に StandardV2 NAT Gateway を運用している環境では、Portal の <strong>Configuration</strong> から NAT64 を有効化するだけで検証を開始できる</li>
+                <li>Standard NAT Gateway を利用中の環境では、直接アップグレードができず StandardV2 パブリック IP への再 IP も伴うため、移行計画の策定が前提となる</li>
+                <li>ロードバランサーのアウトバウンドルールによる IPv6 通信の中断や、既存の Azure Firewall / インスタンスレベルパブリック IP 経由のアウトバウンド接続への影響が既知の問題として挙げられているため、サブネット単位の既存アウトバウンド経路を棚卸ししてから導入する</li>
+            </ul>
+        </div>
+        <div class="tags">
+            <span class="tag">#Azure</span>
+            <span class="tag">#NATGateway</span>
+            <span class="tag">#StandardV2</span>
+            <span class="tag">#NAT64</span>
+            <span class="tag">#DNS64</span>
+            <span class="tag">#IPv6</span>
+            <span class="tag">#Networking</span>
+            <span class="tag">#GA</span>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li>🔔 <a href="https://azure.microsoft.com/updates?id=568409" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/nat-gateway/nat-overview" target="_blank" rel="noopener">Microsoft Learn - Azure NAT Gateway とは</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/nat-gateway/nat-gateway-resource" target="_blank" rel="noopener">Microsoft Learn - NAT Gateway リソース (NAT64 の動作と有効化)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/nat-gateway/nat-sku" target="_blank" rel="noopener">Microsoft Learn - Azure NAT Gateway の SKU</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/nat-gateway/quickstart-create-nat-gateway-v2" target="_blank" rel="noopener">Microsoft Learn - StandardV2 NAT Gateway の作成</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/cli/azure/network/nat/gateway" target="_blank" rel="noopener">Microsoft Learn - az network nat gateway コマンドリファレンス</a></li>
+            <li>📜 <a href="https://www.rfc-editor.org/info/rfc6052/" target="_blank" rel="noopener">RFC 6052 - IPv4/IPv6 トランスレーター用の IPv6 アドレス表記</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/azure-nat-gateway/" target="_blank" rel="noopener">Azure NAT Gateway 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== フッター ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=568409" target="_blank" rel="noopener">Azure Updates (ID: 568409)</a> / <a href="https://learn.microsoft.com/azure/nat-gateway/nat-gateway-resource" target="_blank" rel="noopener">Microsoft Learn - Azure NAT Gateway ドキュメント</a></p>
+        <p>本インフォグラフィックは Azure News Summary レポート (2026-07-28) を基に生成されました | 生成日: 2026-07-29</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

@@ -6,8 +6,10 @@
 ## 2026 年
 
 - [2026-07-28 - Azure Kubernetes Fleet Manager: update run の Maximum allowed failures (許容失敗数) がパブリックプレビュー](2026/2026-07-28-fleet-manager-max-allowed-failures.md)
+- [2026-07-28 - Azure Enclave: パブリックプレビュー](2026/2026-07-28-azure-enclave-public-preview.md)
 - [2026-07-28 - Azure Kubernetes Fleet Manager: リソース配置 (Resource placement) が一般提供開始](2026/2026-07-28-fleet-manager-resource-placement-ga.md)
 - [2026-07-28 - Azure Kubernetes Service (AKS): Application Routing with Gateway API が一般提供開始](2026/2026-07-28-aks-application-routing-gateway-api.md)
+- [2026-07-28 - Azure NAT Gateway: StandardV2 NAT Gateway で NAT64 が一般提供開始](2026/2026-07-28-nat-gateway-v2-nat64.md)
 - [2026-07-28 - Azure Regions & Datacenters: インド 4 番目のリージョン India South Central (ハイデラバード) が一般提供開始](2026/2026-07-28-azure-india-south-central-region.md)
 - [2026-07-28 - Azure Kubernetes Service (AKS): Prepared Image Specification (PIS) のパブリックプレビュー](2026/2026-07-28-aks-prepared-image-specification.md)
 - [2026-07-27 - Azure API Management: AI Gateway tier (Public Preview)](2026/2026-07-27-api-management-ai-gateway-tier.md)
