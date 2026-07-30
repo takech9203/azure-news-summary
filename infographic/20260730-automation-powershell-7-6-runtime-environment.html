@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Automation: PowerShell 7.6 ランブックと Runtime environment の GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::after {
+    content: "⚙️";
+    position: absolute;
+    right: 24px;
+    bottom: -20px;
+    font-size: 140px;
+    opacity: 0.12;
+}
+
+.hero .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.hero .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.hero .date {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-top: 8px;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 26px;
+}
+
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+/* ===== GA point cards ===== */
+.ga-points {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.ga-point {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 18px;
+    position: relative;
+}
+
+.ga-point .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--azure-blue);
+    color: white;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.ga-point h4 {
+    font-size: 15px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 6px;
+}
+
+.ga-point p {
+    font-size: 13.5px;
+    color: var(--ms-text-secondary);
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14.5px;
+}
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14.5px;
+}
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul {
+    padding-left: 20px;
+    font-size: 14px;
+}
+
+.before li, .after li { margin: 6px 0; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.figure-caption {
+    text-align: center;
+    font-size: 13.5px;
+    color: var(--ms-text-secondary);
+    margin: 8px 0 4px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 6px;
+}
+
+.feature-content p, .feature-content li {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content ul {
+    padding-left: 18px;
+    margin-top: 4px;
+}
+
+.feature-content li { margin: 4px 0; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+/* ===== Steps ===== */
+.step-list {
+    counter-reset: step;
+    list-style: none;
+    margin: 12px 0;
+}
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 12px 10px 52px;
+    margin: 8px 0;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* ===== Benefit / constraint lists ===== */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.benefit-card {
+    background: #E8F5E9;
+    border: 1px solid var(--ms-green);
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+
+.benefit-card h4 {
+    color: var(--ms-green);
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+.benefit-card ul {
+    padding-left: 18px;
+    font-size: 13.5px;
+}
+
+.benefit-card li { margin: 6px 0; }
+
+.constraint-list {
+    list-style: none;
+    font-size: 14px;
+}
+
+.constraint-list li {
+    position: relative;
+    padding: 8px 10px 8px 34px;
+    margin: 6px 0;
+    background: #FFF8F5;
+    border-left: 3px solid var(--ms-red);
+    border-radius: 0 6px 6px 0;
+}
+
+.constraint-list li::before {
+    content: "⚠️";
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    font-size: 14px;
+}
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    background: var(--azure-blue);
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin-right: 6px;
+}
+
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+
+.usecase-card ol {
+    padding-left: 22px;
+    font-size: 14px;
+    margin: 6px 0;
+}
+
+.usecase-effect {
+    background: #E8F5E9;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+}
+
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+}
+
+.related-card h4 {
+    color: var(--ms-blue-800);
+    font-size: 14.5px;
+    margin-bottom: 4px;
+}
+
+/* ===== Runtime env chips ===== */
+.chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.chip {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.chip.retired {
+    background: #FDE7E9;
+    color: var(--ms-red);
+    text-decoration: line-through;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); }
+
+.link-list {
+    list-style: none;
+    font-size: 14px;
+}
+
+.link-list li {
+    padding: 8px 10px 8px 30px;
+    position: relative;
+    border-bottom: 1px dashed var(--ms-border);
+}
+
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 6px;
+    font-size: 13px;
+}
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px 24px;
+    font-size: 14.5px;
+}
+
+.summary-box p { margin: 8px 0; }
+
+/* ===== Footer ===== */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 40px;
+}
+
+footer .tags {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--ms-text-disabled);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+    .before-after, .two-col { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトル ===== -->
+    <header class="hero">
+        <div class="meta-row">
+            <span class="service-badge">Azure Automation</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>PowerShell 7.6 ランブックと<br>Runtime environment が一般提供開始 (GA)</h1>
+        <div class="subtitle">PowerShell 7.6 ランブックのサポートと Runtime environment、PowerShell ランブックでの Azure CLI コマンドサポートの GA</div>
+        <div class="date">📅 リリース日: 2026-07-30</div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要 — 3 つの GA</h2>
+        <div class="ga-points">
+            <div class="ga-point">
+                <span class="num">1</span>
+                <h4>PowerShell 7.6 ランブックの GA</h4>
+                <p>サポート対象 (in-support) の PowerShell 7.6 でランブックを実行できるように</p>
+            </div>
+            <div class="ga-point">
+                <span class="num">2</span>
+                <h4>Runtime environment の GA</h4>
+                <p>言語・ランタイムバージョン・パッケージをランブックのコードから分離して管理。古いスクリプトをサポート対象バージョンへシームレスにアップグレード可能に</p>
+            </div>
+            <div class="ga-point">
+                <span class="num">3</span>
+                <h4>Azure CLI コマンドサポートの GA</h4>
+                <p>PowerShell 7.6 ランブック内で Azure CLI コマンドを利用可能に</p>
+            </div>
+        </div>
+        <div class="highlight-box">
+            Azure Automation は PowerShell / Python の<strong>親製品のサポートライフサイクルに準拠</strong>。PowerShell 7.1 / 7.2 や Python 2.7 / 3.8 などサポート終了バージョンのランブックは、<strong>機能追加・セキュリティ更新・性能最適化の対象外</strong>となる縮小サポート状態で動作します。今回の GA により、最新のサポート対象バージョンへの<strong>移行パスが正式に提供</strong>されました。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>ランタイムバージョンやモジュールがコードと一体で管理され、実行環境だけを差し替えた新バージョンへの移行が困難</li>
+                    <li>モジュールバージョンの競合回避のため、バージョンごとに複数の Automation アカウントを作成する必要があった</li>
+                    <li>サポート終了となった PowerShell 7.1 / 7.2 のランブックを、サポート対象バージョンへ容易にアップグレードできなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li><strong>最新化 (Stay current)</strong>: PowerShell 7.6 を利用でき、セキュリティと性能が向上</li>
+                    <li><strong>迅速なランブックアップグレード</strong>: Runtime environment の差し替えだけで異なるバージョンへ容易に移行</li>
+                    <li><strong>きめ細かな制御</strong>: モジュール競合を気にせず、実行環境 (言語・バージョン・パッケージ) を完全制御</li>
+                    <li><strong>効率的なコード整理</strong>: バージョン分離のための複数アカウント作成が不要に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🔴 Before: 従来の実行環境モデル"]
+        RB1["📜 ランブック&lt;br/&gt;(コード + ランタイム一体)"]
+        AA1["⚙️ Automation アカウント A&lt;br/&gt;(モジュール v1)"]
+        AA2["⚙️ Automation アカウント B&lt;br/&gt;(モジュール v2)"]
+        RB1 --> AA1
+        RB1 -. モジュール競合回避のため&lt;br/&gt;アカウントを分離 .-> AA2
+    end
+
+    subgraph After["🟢 After: Runtime environment (GA)"]
+        RB2["📜 ランブック&lt;br/&gt;(スクリプトコードのみ)"]
+        RE1["🧩 Runtime environment&lt;br/&gt;PowerShell 7.6 + Az + Azure CLI"]
+        RE2["🧩 Runtime environment&lt;br/&gt;PowerShell 5.1 + 既存モジュール"]
+        AA3["⚙️ 単一の Automation アカウント"]
+        RB2 -->|"リンクを差し替えるだけで&lt;br/&gt;アップグレード / ロールバック"| RE1
+        RB2 -.-> RE2
+        RE1 --> AA3
+        RE2 --> AA3
+    end
+
+    Before ==>|GA| After
+            </pre>
+        </div>
+        <p class="figure-caption">従来はランブックとランタイム・モジュールが密結合でしたが、Runtime environment の GA により、コードと実行環境を独立して管理し、リンクの差し替えだけでランタイムバージョンをアップグレード・ロールバックできるようになりました。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>1. PowerShell 7.6 ランブック (GA)</h4>
+                <ul>
+                    <li>親製品 PowerShell でサポート対象 (in-support) の 7.6 バージョンでランブックを実行可能</li>
+                    <li>サポート終了済みの PowerShell 7.1 / 7.2 ランブックからの移行先として利用できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>2. Runtime environment (GA)</h4>
+                <ul>
+                    <li>ジョブ実行環境を定義・管理する単一の情報源 (single source of truth)</li>
+                    <li>ランブックは「スクリプトコード」と「Runtime environment」の 2 コンポーネントで構成され、互いに影響を与えずに独立して変更可能</li>
+                    <li>定義する要素: <strong>Language</strong> (PowerShell、Python) / <strong>Runtime version</strong> (言語のバージョン) / <strong>Packages</strong> (既定パッケージ: Az PowerShell、Azure CLI など / ユーザー提供パッケージ: PSGallery・PyPI・自作)</li>
+                    <li>ランブック 1 つにつき Runtime environment 1 つを関連付け。1 つの Runtime environment は複数のランブックにリンク可能</li>
+                    <li>本番公開前にテスト可能。問題があれば以前の Runtime environment へ容易にロールバック可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">💻</div>
+            <div class="feature-content">
+                <h4>3. PowerShell ランブックでの Azure CLI コマンドサポート (GA)</h4>
+                <ul>
+                    <li>Azure CLI が Runtime environment の既定パッケージとして提供され、PowerShell ランブック内で Azure CLI コマンドを実行可能</li>
+                    <li>Azure Automation は Azure CLI の新バージョンのリリースサイクルに追随。サポート終了となった Azure CLI バージョンはサポート対象外</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>4. システム生成 Runtime environment</h4>
+                <ul>
+                    <li>既存の Automation アカウントの言語・バージョン・モジュール構成に基づき、6 種類のシステム生成 Runtime environment が自動作成される</li>
+                    <li>システム生成環境は編集不可だが、アカウントのモジュール / パッケージ変更は自動反映される</li>
+                </ul>
+                <div class="chip-row">
+                    <span class="chip">PowerShell-5.1</span>
+                    <span class="chip">PowerShell-7.1</span>
+                    <span class="chip">PowerShell-7.2</span>
+                    <span class="chip">Python-2.7</span>
+                    <span class="chip">Python-3.8</span>
+                    <span class="chip">Python-3.10</span>
+                </div>
+            </div>
+        </div>
+
+        <h3 class="subsection-title">🗓️ ランタイムのサポート・リタイアメントポリシー</h3>
+        <div class="warning-box">
+            言語ランタイムのサポートは、<strong>「言語コミュニティのサポート終了日」または「基盤 OS のサポート終了日」のいずれか早い方</strong>で終了します。<br><br>
+            リタイアメントは 2 段階で実施:
+            <br>① <strong>通知フェーズ</strong> — 影響を受けるランブックの所有者へメール通知
+            <br>② <strong>リタイアフェーズ</strong> — 縮小サポート状態への移行
+            <br><br>
+            リタイア済みバージョンのランブックも作成・実行は可能ですが、<strong>新機能・セキュリティ更新・性能最適化の対象外</strong>となり、<strong>インスタンス数が 1 に制限される場合</strong>があります。
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <tr><th style="width:38%">項目</th><th>詳細</th></tr>
+            <tr><td>対象サービス</td><td>Azure Automation (Process Automation)</td></tr>
+            <tr><td>新規サポートランタイム</td><td>PowerShell 7.6 (GA)</td></tr>
+            <tr><td>Runtime environment の構成要素</td><td>Language / Runtime version / Packages</td></tr>
+            <tr><td>既定パッケージ</td><td>Az PowerShell モジュール、Azure CLI</td></tr>
+            <tr><td>ユーザー提供パッケージ</td><td>PSGallery、PyPI、自作パッケージ</td></tr>
+            <tr><td>ランブックとの関連付け</td><td>ランブック 1 つにつき Runtime environment 1 つ (環境側は複数ランブックにリンク可)</td></tr>
+            <tr><td>システム生成環境</td><td>PowerShell-5.1 / 7.1 / 7.2、Python-2.7 / 3.8 / 3.10 (編集不可)</td></tr>
+            <tr><td>管理インターフェース</td><td>Azure portal、REST API</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 class="subsection-title">✅ 前提条件</h3>
+        <ul class="step-list">
+            <li>Azure Automation アカウント (サポート対象リージョン)</li>
+            <li>アップグレード対象の既存ランブック (例: PowerShell 7.1 ランブック)</li>
+        </ul>
+
+        <h3 class="subsection-title">1️⃣ Runtime environment の作成 (Azure Portal)</h3>
+        <ol class="step-list">
+            <li>Azure portal で Automation アカウントを開く</li>
+            <li><strong>Process Automation</strong> &gt; <strong>Runtime Environments</strong> を選択 (表示されない場合は <strong>Overview</strong> ページの <strong>Try Runtime environment experience</strong> で新インターフェースへ切り替え)</li>
+            <li><strong>Create</strong> を選択</li>
+            <li><strong>Basics</strong> タブで名前・言語 (PowerShell)・Runtime version・説明を入力</li>
+            <li><strong>Packages</strong> タブで既定の <strong>Az</strong> / <strong>Azure CLI</strong> パッケージを確認し、必要に応じて <strong>+Add from gallery</strong> でギャラリーからパッケージを追加</li>
+            <li><strong>Review + create</strong> で内容を確認して <strong>Create</strong></li>
+        </ol>
+
+        <h3 class="subsection-title">2️⃣ ランブックの Runtime environment 更新</h3>
+        <ol class="step-list">
+            <li><strong>Runbooks</strong> ページで対象のランブックを選択</li>
+            <li><strong>Edit in portal</strong> を選択</li>
+            <li><strong>Runtime environment</strong> ドロップダウンから互換性のある環境一覧を表示し、作成した新しい Runtime environment を選択</li>
+            <li>新しい PowerShell バージョンとの互換性を確保するようコードを修正</li>
+            <li><strong>Test pane</strong> で公開前にテスト</li>
+            <li>結果を確認後、<strong>Publish</strong> で本番公開</li>
+        </ol>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="two-col">
+            <div class="benefit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>サポート対象ランタイムへの移行が容易になり、サポート切れバージョン利用によるセキュリティ・信頼性リスクを低減</li>
+                    <li>モジュールバージョン分離のために複数の Automation アカウントを維持する必要がなくなり、管理コストを削減</li>
+                </ul>
+            </div>
+            <div class="benefit-card">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>実行環境 (言語・バージョン・パッケージ) をコードから独立して構成でき、モジュールバージョンの競合を回避</li>
+                    <li>モジュール更新時の互換性を事前にテストでき、本番シナリオへの予期しない影響を防止</li>
+                    <li>問題発生時は以前の Runtime environment へ容易にロールバック可能</li>
+                    <li>PowerShell ランブック内で Azure CLI コマンドを利用でき、スクリプト資産の選択肢が拡大</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <p style="font-size:14px; color:var(--ms-text-secondary); margin-bottom:12px;">Microsoft Learn の Runtime environment ドキュメントに記載されている制約事項 (2026-06 時点の記載):</p>
+        <ul class="constraint-list">
+            <li>Brazil Southeast および Gov クラウドを除くすべてのパブリックリージョンでサポート</li>
+            <li>PowerShell Workflow、Graphical PowerShell、Graphical PowerShell Workflow ランブックはシステム生成の PowerShell-5.1 Runtime environment でのみ動作 (PowerShell 7.x は Workflow 非サポートのため、これらのランブックはアップグレード不可)</li>
+            <li>Runtime environment に RBAC アクセス許可を割り当てることはできない</li>
+            <li>Visual Studio Code 用 Azure Automation 拡張機能からは Runtime environment を構成できない</li>
+            <li>削除した Runtime environment は復元できない</li>
+            <li>構成は Azure portal および REST API 経由でサポート (カスタムパッケージのアップロードは Packages REST API を使用)</li>
+            <li>Azure Automation State Configuration のモジュール管理は Runtime environment エクスペリエンスでは非サポート (従来のエクスペリエンスを継続利用)</li>
+            <li>PowerShell 7.x は署名付きランブックをサポートしない</li>
+            <li>ソース管理統合は PowerShell 7.x ランタイムをサポートしない</li>
+        </ul>
+        <div class="highlight-box">
+            Runtime environment エクスペリエンスと従来のエクスペリエンスは<strong>いつでも切り替え可能</strong>で、ランブックへの変更は両エクスペリエンス間で保持されます。
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 1</span>サポート終了ランタイムで動作する既存ランブックの一括アップグレード</h4>
+            <p><strong>📌 シナリオ</strong>: PowerShell 7.1 / 7.2 で作成された多数の運用ランブック (VM の起動停止、リソースのクリーンアップなど) がサポート終了状態で稼働している。セキュリティ更新の対象外となるリスクを解消したい。</p>
+            <p><strong>🔨 実装例</strong>:</p>
+            <ol>
+                <li>PowerShell 7.6 の Runtime environment を作成し、必要な Az モジュール・カスタムモジュールを登録</li>
+                <li>各ランブックの Runtime environment を新環境へ差し替え、Test pane で動作確認</li>
+                <li>問題なければ Publish、問題があれば元の Runtime environment へロールバック</li>
+            </ol>
+            <div class="usecase-effect"><strong>✨ 効果</strong>: Automation アカウントを分割せずに、テスト・ロールバック可能な安全な手順で全ランブックをサポート対象バージョンへ移行できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 2</span>Azure CLI ベースの運用スクリプト資産の活用</h4>
+            <p><strong>📌 シナリオ</strong>: 運用チームが Azure CLI で書かれたスクリプト資産を多く保有しており、これを Azure Automation のスケジュール実行・Webhook 起動に組み込みたい。</p>
+            <p><strong>🔨 実装例</strong>: Azure CLI パッケージを含む PowerShell Runtime environment を作成し、PowerShell ランブック内で <code style="background:var(--ms-blue-100); padding:2px 6px; border-radius:4px; font-family:Consolas,monospace;">az</code> コマンドを実行する。</p>
+            <div class="usecase-effect"><strong>✨ 効果</strong>: Azure CLI スクリプトを PowerShell へ書き換えることなく、Azure Automation のジョブ管理・スケジュール・監視の仕組みに統合できる。</div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 / リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p style="font-size:14.5px;">このアップデートに伴う料金変更は公式情報で確認できませんでした。Azure Automation の料金 (ジョブ実行時間に基づく従量課金など) は以下を参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/automation/" target="_blank" rel="noopener">Azure Automation の料金</a></li>
+        </ul>
+    </section>
+
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p style="font-size:14.5px;">Microsoft Learn のドキュメント (2026-06 時点) では、Runtime environment は <strong>Brazil Southeast と Gov クラウドを除くすべてのパブリックリージョン</strong>でサポートと記載されています。PowerShell 7.6 の最新のリージョン対応状況は公式ドキュメントを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://learn.microsoft.com/azure/automation/runtime-environment-overview" target="_blank" rel="noopener">Runtime environment の概要 (制限事項)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>Az PowerShell モジュール</h4>
+                <p>Runtime environment の既定パッケージとして提供され、ランブックから Azure リソースを管理する</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure CLI</h4>
+                <p>Runtime environment の既定パッケージとして PowerShell ランブック内で利用可能</p>
+            </div>
+            <div class="related-card">
+                <h4>Hybrid Runbook Worker</h4>
+                <p>クラウドジョブに加え、オンプレミス / 他クラウド上のマシンでランブックを実行する仕組み。PowerShell ランブックは Cloud / Hybrid 両ジョブに対応</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Automation State Configuration</h4>
+                <p>モジュール管理は Runtime environment エクスペリエンス非対応のため、従来のエクスペリエンスで管理する</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Automation における <strong>PowerShell 7.6 ランブック</strong>、<strong>Runtime environment</strong>、<strong>PowerShell ランブックでの Azure CLI サポート</strong>の 3 つが GA となりました。</p>
+            <p>特に Runtime environment の GA は、ランブックのコードと実行環境を分離する<strong>アーキテクチャ上の大きな転換</strong>であり、サポート終了ランタイム (PowerShell 7.1 / 7.2、Python 2.7 / 3.8) で稼働中のランブックを安全にアップグレードする正式な手段が整ったことを意味します。</p>
+            <p>サポート切れランタイムのランブックは縮小サポート状態 (セキュリティ更新なし・スケール制限の可能性) となるため、既存の Automation 資産を棚卸しし、Runtime environment を使った <strong>PowerShell 7.6 / Python 3.10 への計画的な移行</strong>を推奨します。</p>
+            <p>⚠️ PowerShell Workflow 系ランブックは PowerShell 7.x へアップグレードできない点に注意し、必要に応じて通常の PowerShell ランブックへの書き換えを検討してください。</p>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=568102" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/automation/automation-runbook-types" target="_blank" rel="noopener">Azure Automation ランブックの種類 | Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/automation/runtime-environment-overview" target="_blank" rel="noopener">Runtime environment の概要 | Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/automation/quickstart-update-runbook-in-runtime-environment" target="_blank" rel="noopener">ランブックを最新の言語バージョンにアップグレードする | Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/automation/quickstart-cli-support-powershell-runbook-runtime-environment" target="_blank" rel="noopener">Azure CLI コマンドを使用する PowerShell ランブックの作成 | Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/automation/automation-runtime-retirement-policy" target="_blank" rel="noopener">言語ランタイムのサポートとリタイアメントポリシー | Microsoft Learn</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/automation/" target="_blank" rel="noopener">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <div><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=568102" target="_blank" rel="noopener">Azure Updates (ID: 568102)</a> / <a href="https://learn.microsoft.com/azure/automation/runtime-environment-overview" target="_blank" rel="noopener">Microsoft Learn - Runtime environment の概要</a></div>
+        <div style="margin-top:6px;">レポート: reports/2026/2026-07-30-automation-powershell-7-6-runtime-environment.md | 生成日: 2026-07-30</div>
+        <div class="tags">タグ: Azure Automation, PowerShell 7.6, Runtime environment, Azure CLI, Runbook, GA, Management and governance</div>
+    </footer>
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

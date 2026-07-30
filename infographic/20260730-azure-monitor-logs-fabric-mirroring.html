@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Monitor Logs の Microsoft Fabric ミラーリング (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    --ms-teal: #008575;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--ms-blue-900), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 220px;
+    height: 220px;
+    background: rgba(80, 230, 255, 0.15);
+    border-radius: 50%;
+}
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; position: relative; z-index: 1; }
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    position: relative;
+    z-index: 1;
+}
+.header .subtitle {
+    margin-top: 12px;
+    font-size: 15px;
+    opacity: 0.92;
+    position: relative;
+    z-index: 1;
+}
+.header .meta {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+}
+.header .meta span { background: rgba(255,255,255,0.15); padding: 4px 14px; border-radius: 16px; }
+
+.service-badge {
+    background: rgba(255,255,255,0.22);
+    border: 1px solid rgba(255,255,255,0.5);
+    color: white;
+    padding: 5px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 22px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--ms-blue-800); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 18px;
+    margin: 14px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { color: var(--ms-blue-800); font-size: 16px; margin-bottom: 6px; }
+.feature-content ul { padding-left: 20px; font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content li { margin: 5px 0; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Tables ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+}
+.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+.spec-table td:first-child { font-weight: 500; white-space: nowrap; color: var(--ms-blue-800); }
+.table-wrap { overflow-x: auto; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+}
+
+/* ===== Code Blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+    background: #1E1E1E;
+}
+code.inline {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin: 12px 0;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+}
+.step-number {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-size: 15px;
+}
+.step-content { font-size: 14px; }
+.step-content strong { color: var(--ms-blue-800); }
+
+/* ===== Merit / Caution ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 18px 20px;
+}
+.merit-business { background: #E8F5E9; border: 2px solid var(--ms-green); }
+.merit-tech { background: var(--ms-blue-100); border: 2px solid var(--azure-blue); }
+.merit-card h4 { font-size: 16px; margin-bottom: 10px; }
+.merit-business h4 { color: var(--ms-green); }
+.merit-tech h4 { color: var(--ms-blue-800); }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin: 8px 0; }
+
+.caution-card {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.caution-card strong { color: var(--ms-red); }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    color: var(--ms-purple);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+.usecase-effect {
+    background: #E8F5E9;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 14px;
+    margin-top: 12px;
+}
+.usecase-effect strong { color: var(--ms-green); }
+
+/* ===== Related Services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card h5 { color: var(--azure-blue); font-size: 14.5px; margin-bottom: 6px; }
+.related-card p { color: var(--ms-text-secondary); font-size: 13.5px; }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); }
+.link-list { padding-left: 20px; font-size: 14px; }
+.link-list li { margin: 8px 0; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), #FFFFFF);
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+    font-size: 15px;
+}
+.summary-box p { margin: 10px 0; }
+.sa-points { margin-top: 14px; }
+.sa-point {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: #FFFFFF;
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.sa-point .num {
+    background: var(--azure-dark-blue);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-size: 13px;
+}
+
+/* ===== Tags & Footer ===== */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 16px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+.footer a { color: var(--azure-blue); word-break: break-all; }
+.footer p { margin: 6px 0; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Monitor</span>
+            <span class="service-badge">Microsoft Fabric</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Azure Monitor Logs の<br>Microsoft Fabric ミラーリング</h1>
+        <div class="subtitle">Log Analytics のテレメトリを複製なしで OneLake から利用 — 可観測性データとビジネスデータの融合へ</div>
+        <div class="meta">
+            <span>📅 リリース日: 2026-07-29</span>
+            <span>🔧 機能: Azure Monitor Logs mirroring into Microsoft Fabric</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Monitor の Log Analytics ワークスペースに蓄積されたテレメトリ (ログ) データを、Microsoft Fabric にミラーリングする機能がパブリックプレビューになりました。可観測性 (Observability) データがオープンフォーマットである <strong>Delta Parquet</strong> 形式で OneLake から利用可能になります。データの複製は行われず、ほぼリアルタイムで Fabric 側から参照できます。</p>
+        <div class="highlight-box">
+            この「Mirror Azure Monitor」機能は、SQL や Snowflake などの他の Fabric ミラーリング (レプリケーション型) とは異なり、<strong>接続 (Connection) ベース</strong>のミラーリングです。データは Log Analytics のストレージに留まったまま、Fabric のミラーアイテムが Azure Monitor と同じ Delta Lake ストレージを OneLake ショートカット経由で参照します。同期パイプラインは実行されず、データの重複もありません。
+        </div>
+        <p>Fabric 上では、運用テレメトリを ERP/CRM などのビジネスデータと組み合わせて、クロスドメイン分析、Power BI レポート、リアルタイムインテリジェンス、データエンジニアリング、エージェント (AI) シナリオに活用できます。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">複製ゼロ</div>
+                <div class="stat-label">接続ベースの参照<br>重複ストレージなし</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">数分以内</div>
+                <div class="stat-label">Fabric への反映レイテンシ<br>(Azure Monitor と同等)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">約 500</div>
+                <div class="stat-label">1 ミラーアイテムあたりの<br>テーブル数上限 (ソフトリミット)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">約 15 分</div>
+                <div class="stat-label">初期セットアップ時の<br>テーブル表示までの時間</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Log Analytics のデータを Azure Monitor の外部で利用するには、エクスポートパイプラインの構築、宛先ストアの用意、重複ストレージのコスト負担が必要だった</li>
+                    <li>運用テレメトリとビジネスデータがサイロ化しており、インシデントのビジネス影響 (収益への影響など) をリアルタイムに関連付けて分析することが困難だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>レプリケーション・取り込みパイプライン・重複ストレージが不要になり、データは Azure Monitor に留まったまま Fabric から参照できる</li>
+                    <li>Fabric でのデータ可用性のレイテンシは Azure Monitor のレイテンシと同等で、更新は数分以内に Fabric に反映される</li>
+                    <li>テレメトリが OneLake 上でビジネスデータの隣に配置され、結合・集計がすぐに実行できる</li>
+                    <li>既存の Azure Monitor の保持期間・ライフサイクルポリシーがそのままデータに適用され続ける</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph AzMon["☁️ Azure Monitor"]
+        LAW[("📊 Log Analytics<br/>ワークスペース<br/>(Delta Parquet)")]
+    end
+
+    subgraph Fabric["🧵 Microsoft Fabric"]
+        MI["🪞 ミラーされた<br/>Azure Monitor アイテム<br/>(OneLake ショートカット)"]
+        EH["⚡ Eventhouse<br/>エンドポイント (KQL)"]
+        LH["🏠 Lakehouse<br/>(Spark / バッチ分析)"]
+        PBI["📈 Power BI /<br/>Real-Time Dashboard"]
+    end
+
+    Ingest(["📥 通常の Azure Monitor<br/>ログ取り込み"]) --> LAW
+    LAW -- "接続ベースの参照<br/>(複製なし・読み取り専用)" --> MI
+    MI --> EH
+    MI --> LH
+    EH --> PBI
+    LH --> PBI
+            </pre>
+        </div>
+        <div class="diagram-note">
+            Log Analytics ワークスペースのテーブルは内部的に Delta Parquet として書き込まれ、Fabric のミラーアイテムが OneLake ショートカットでそのストレージを直接参照します。データのコピーは発生せず、Eventhouse (リアルタイム分析) と Lakehouse (バッチ分析) の両方の経路から同一データにアクセスできます。
+        </div>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🪞</div>
+            <div class="feature-content">
+                <h4>1. 複製なしのデータ共有 (接続ベースのミラーリング)</h4>
+                <ul>
+                    <li>Log Analytics ワークスペースの全テーブルが内部的に Delta Parquet ファイルとして書き込まれ、Fabric はエクスポートなしにこのデータへアクセスできる</li>
+                    <li>ミラーアイテムはショートカットのメタデータのみを保持し、ストレージ自体は Azure Monitor 側に残る</li>
+                    <li>Fabric からは読み取り専用。新しいデータは通常の Azure Monitor 取り込み経由で到着し続ける</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>2. Eventhouse エンドポイント (リアルタイム分析)</h4>
+                <ul>
+                    <li>ミラーアイテムの作成時に Fabric Eventhouse エンドポイントが自動作成され、選択した Log Analytics テーブルが Delta Lake テーブルとして接続される</li>
+                    <li>KQL クエリ、Real-Time Dashboard、異常検知、Activator アラートルールが利用可能</li>
+                    <li>既存の Eventhouse に OneLake ショートカットを追加し、ビジネスデータと結合するクロスドメイン分析も可能 (クエリアクセラレーションによる高速化に対応)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🏠</div>
+            <div class="feature-content">
+                <h4>3. Lakehouse への OneLake ショートカット (バッチ分析)</h4>
+                <ul>
+                    <li>Lakehouse からのショートカットにより、Spark ノートブック実行、Power BI セマンティックモデル構築、テレメトリを変換するパイプラインのスケジュールが可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗂️</div>
+            <div class="feature-content">
+                <h4>4. テーブル単位の選択とマルチアイテム構成</h4>
+                <ul>
+                    <li>ミラーアイテム作成時にミラー対象テーブルを選択 (例: <code class="inline">AppRequests</code>、<code class="inline">AppDependencies</code>、<code class="inline">AppExceptions</code>、<code class="inline">Heartbeat</code>、カスタムログテーブル)</li>
+                    <li>後から「Edit data selection」でテーブルの追加・削除が可能 (基盤データの再ロードは不要)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>5. AI コーディングエージェント向けの Skills for Fabric 対応</h4>
+                <ul>
+                    <li><a href="https://github.com/microsoft/skills-for-fabric/blob/main/skills/azmon-mirroredcatalogs-operations-cli/SKILL.md" target="_blank" rel="noopener">Mirror Azure Monitor skill</a> を使用して、AI エージェントによるエンドツーエンドのオンボーディングが可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrap">
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>ミラーリング方式</td><td>接続 (Connection) ベース。レプリケーション・同期パイプラインなし</td></tr>
+            <tr><td>データ形式</td><td>Delta Parquet (オープンフォーマット、Delta Lake テーブルとして公開)</td></tr>
+            <tr><td>アクセス経路</td><td>Eventhouse エンドポイント / Eventhouse への DB ショートカット / Lakehouse への OneLake ショートカット</td></tr>
+            <tr><td>データの向き</td><td>Fabric からは読み取り専用 (書き戻し不可)</td></tr>
+            <tr><td>レイテンシ</td><td>Azure Monitor のレイテンシと同等 (数分以内に反映)。初期セットアップ時はテーブル表示まで約 15 分</td></tr>
+            <tr><td>テーブル数上限</td><td>1 ミラーアイテムあたり約 500 テーブル (プレビュー中のソフトリミット)。超える場合は複数アイテムに分割</td></tr>
+            <tr><td>履歴データ</td><td>プレビュー中はバックフィルなし (ミラー開始後の新規データのみ)</td></tr>
+            <tr><td>認証モード</td><td>ワークスペース ID (同一テナント・本番推奨) / サービスプリンシパル (クロステナント) / 組織アカウント OAuth (対話的利用向け)</td></tr>
+            <tr><td>接続作成に必要な権限</td><td>ソース Log Analytics ワークスペースに対する <code class="inline">Microsoft.Authorization/roleAssignments/write</code> アクション (Owner、User Access Administrator、RBAC Administrator ロールに含まれる)</td></tr>
+            <tr><td>利用不可の列</td><td><code class="inline">_ResourceId</code>、<code class="inline">_SubscriptionId</code>、<code class="inline">Type</code> システム列はプレビュー中は含まれない</td></tr>
+        </table>
+        </div>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 class="subsection-title">📌 前提条件</h3>
+        <div class="steps">
+            <div class="step"><div class="step-number">1</div><div class="step-content">公開するテーブルを持つ既存の <strong>Log Analytics ワークスペース</strong></div></div>
+            <div class="step"><div class="step-number">2</div><div class="step-content">Log Analytics ワークスペースに対する <code class="inline">Microsoft.Authorization/roleAssignments/write</code> アクション (接続作成時のみ。既存接続の再利用なら Fabric ワークスペースへのアクセスのみで可)</div></div>
+            <div class="step"><div class="step-number">3</div><div class="step-content">既存の <strong>Fabric 容量 (Capacity)</strong> と <strong>Fabric ワークスペース</strong> (<em>My workspace</em> は不可)</div></div>
+            <div class="step"><div class="step-number">4</div><div class="step-content">テナント設定で <strong>Mirrored catalog item</strong> が有効化されていること (Fabric 管理ポータル &gt; テナント設定でテナント管理者が有効化)</div></div>
+            <div class="step"><div class="step-number">5</div><div class="step-content">クロステナントの場合: Log Analytics テナント側の<strong>サービスプリンシパル</strong> (テナント ID / クライアント ID / クライアントシークレット)</div></div>
+        </div>
+
+        <h3 class="subsection-title">🖱️ Fabric ポータルでの手順</h3>
+        <div class="steps">
+            <div class="step"><div class="step-number">1</div><div class="step-content">Microsoft Fabric にサインインし、対象ワークスペースを開く</div></div>
+            <div class="step"><div class="step-number">2</div><div class="step-content"><strong>+ New item</strong> から <strong>Mirrored Azure Monitor</strong> カードを選択</div></div>
+            <div class="step"><div class="step-number">3</div><div class="step-content">新規接続を作成 (認証種別: OAuth 2.0 / Workspace identity / Service principal) し、Log Analytics の <strong>ワークスペース ID</strong> (Azure ポータルの Overview ページで確認できる GUID) を入力</div></div>
+            <div class="step"><div class="step-number">4</div><div class="step-content">ミラーするテーブルを選択 (プレビュー中は最近ストリーミングデータを受信したテーブルのみ一覧に表示。不足分は後から追加可能)</div></div>
+            <div class="step"><div class="step-number">5</div><div class="step-content">内容を確認して <strong>Create</strong> を選択。アイテム自体は 1 分以内に作成され、テーブルがクエリ可能になるまで約 15 分かかる</div></div>
+        </div>
+
+        <h3 class="subsection-title">💻 Eventhouse での KQL クエリ例</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">Kusto (KQL)</span></div>
+            <pre><code class="language-sql">AppRequests
+| where TimeGenerated &gt; ago(1h)
+| summarize count() by ResultCode, bin(TimeGenerated, 5m)
+| render timechart</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>IT シグナルを孤立したアラートではなく、ビジネスコンテキスト付きで評価できる (誰が・何が影響を受け、どれだけのコストが発生しているか)</li>
+                    <li>1 つのインシデントから、同一ワークフロー内で複数チーム向けの複数のアクションを駆動できる</li>
+                    <li>エクスポートパイプラインの構築・運用コストと重複ストレージコストを削減できる</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>ストレージが重複しないため、追加のストレージ課金がどちら側にも発生しない</li>
+                    <li>Eventhouse / Lakehouse ショートカット経由のクエリは Fabric 容量を消費するため、大量分析での Azure Monitor クエリコストを削減できる可能性がある</li>
+                    <li>Delta Parquet というオープンフォーマットにより、Spark、Power BI (Direct Lake を含む Fabric エクスペリエンス)、KQL など多様なツールから同一データを利用できる</li>
+                    <li>Azure Monitor 側の保持・ライフサイクルポリシーがそのまま適用され、二重管理が不要</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項 (パブリックプレビュー中)</h2>
+        <div class="caution-card"><strong>履歴データのバックフィルなし</strong>: ミラー設定前にワークスペースへ到着したデータは Fabric に表示されない</div>
+        <div class="caution-card"><strong>テーブル数の上限</strong>: 1 アイテムあたり約 500 テーブル (ソフトリミット)</div>
+        <div class="caution-card"><strong>セキュリティモデルの分離</strong>: Azure RBAC と Fabric のアクセス許可は独立しており、相関しない。Log Analytics のテーブルレベル保護や行/列レベルのセキュリティはミラーアイテムに引き継がれない。Azure 側でテーブルへのアクセスを拒否されたユーザーでも、Fabric ワークスペースの権限があればミラーアイテム経由で読み取れるため、公開前にアクセスレビューが必要</div>
+        <div class="caution-card"><strong>プレビュー中は接続ワークスペースの全テーブルが利用可能</strong>: Azure Monitor のテーブルレベル保護設定に関わらずアクセスできる点に注意</div>
+        <div class="caution-card"><strong>認証ライフサイクル</strong>: 組織アカウント (OAuth) で作成したアイテムは、作成ユーザーがテナントを離れたりアクセスを失うと動作しなくなる。本番ではワークスペース ID またはサービスプリンシパルを推奨</div>
+        <div class="caution-card"><strong>データ削除 (パージ) は 2 段階</strong>: Azure Monitor 側の data purge API と OneLake 側の Lake Data Purge API の両方の操作が必要 (片方のパージではもう片方は消えない)</div>
+        <div class="caution-card"><strong>一部システム列が利用不可</strong>: <code class="inline">_ResourceId</code>、<code class="inline">_SubscriptionId</code>、<code class="inline">Type</code> はミラーテーブルに含まれない</div>
+        <div class="caution-card"><strong>クロスリージョンの読み取り</strong>: 動作するがネットワーク下り (egress) コストが発生する可能性がある</div>
+        <div class="caution-card"><strong>Share アクションに既知の問題</strong>: プレビュー中は Share ではなく OneLake セキュリティで細かなアクセス制御を行う</div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>📈 ユースケース 1: ユーザー体験と収益の相関分析</h4>
+            <p><strong>シナリオ</strong>: Application Insights の <code class="inline">AppRequests</code> を注文テーブルと結合し、リクエストのレイテンシや失敗を注文完了率と関連付ける。エラーの急増を「孤立した IT メトリック」ではなく「完了注文数の低下」として可視化する。</p>
+            <p><strong>実装例</strong>:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">Kusto (KQL)</span></div>
+                <pre><code class="language-sql">let orders = externaldata(OrderId:string, OrderTimestamp:datetime, OrderValue:real)
+  [@'&lt;shortcut to business orders table&gt;'];
+AppRequests
+| where TimeGenerated &gt; ago(24h)
+| project TimeGenerated, RequestId = OperationId, DurationMs = DurationMs
+| join kind=inner (orders) on $left.RequestId == $right.OrderId
+| summarize AvgDuration = avg(DurationMs), TotalValue = sum(OrderValue)
+  by bin(TimeGenerated, 1h)</code></pre>
+            </div>
+            <div class="usecase-effect"><strong>効果</strong>: インシデントのビジネス影響が拡大する前に、適切な対応をトリガーできる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>💰 ユースケース 2: 利用量とコストの関連付け</h4>
+            <p><strong>シナリオ</strong>: コンピュートの利用テレメトリを課金・コストデータと結合し、実際の消費に対する支出を分析する。</p>
+            <div class="usecase-effect"><strong>効果</strong>: テレメトリを別の分析ストアに移動することなく、運用シグナルとビジネスレコードをリアルタイムに横断分析できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🔔 ユースケース 3: リアルタイムダッシュボードとアラート</h4>
+            <p><strong>シナリオ</strong>: Eventhouse 上の KQL クエリ結果を Real-Time Dashboard のタイルとして保存し、Activator アラートルール (例: 5 分間の失敗リクエスト数がしきい値超過) でメールや Teams に通知する。</p>
+            <div class="usecase-effect"><strong>効果</strong>: 可観測性データに対する Fabric ネイティブのリアルタイム監視・通知フローを構築できる。</div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💴</span>料金</h2>
+        <p>ミラーリング自体による追加のストレージコストやパイプラインコストは発生しません。コストモデルは 2 つのサービスの自然な境界で分かれます。</p>
+        <div class="table-wrap">
+        <table class="spec-table">
+            <tr><th>項目</th><th>課金</th></tr>
+            <tr><td>ログの取り込み・保持</td><td>従来どおり Azure Monitor 側で課金</td></tr>
+            <tr><td>Azure Monitor 内のクエリ (Log Analytics UI、API 経由の KQL、アラートルール)</td><td>従来どおり Azure Monitor のクエリコンピュートを使用</td></tr>
+            <tr><td>Fabric 内のクエリ・処理 (Eventhouse クエリ、Spark ノートブック、Power BI セマンティックモデル更新など)</td><td>Fabric 容量 (Capacity) を消費</td></tr>
+            <tr><td>ストレージ</td><td>重複しないため、どちら側にも追加ストレージ課金なし</td></tr>
+        </table>
+        </div>
+        <div class="caution-card">プレビュー中のため課金は GA までに変更される可能性があります。</div>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/microsoft-fabric/" target="_blank" rel="noopener">Microsoft Fabric の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank" rel="noopener">Azure Monitor の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p>サポートされるすべての Microsoft Fabric リージョン (Azure リージョンのサブセット) で利用可能です。最新のリストは <a href="https://learn.microsoft.com/fabric/admin/region-availability" target="_blank" rel="noopener">Microsoft Fabric region availability</a> を参照してください。</p>
+        <div class="caution-card">クロスリージョンの読み取りは動作しますが、ネットワーク下り (egress) コストが発生する可能性があります。</div>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>☁️ Azure Monitor / Log Analytics ワークスペース</h5>
+                <p>ミラーリングのソース。データの保存・取り込み・保持ポリシーは引き続き Azure Monitor 側で管理される</p>
+            </div>
+            <div class="related-card">
+                <h5>🌊 Microsoft Fabric OneLake</h5>
+                <p>ミラーテーブルへの参照 (ショートカット) を保持する統合データレイク。Delta Parquet 形式でデータを公開</p>
+            </div>
+            <div class="related-card">
+                <h5>⚡ Fabric Eventhouse / Real-Time Intelligence</h5>
+                <p>ミラーデータに対する KQL クエリ、Real-Time Dashboard、Activator アラートの実行基盤</p>
+            </div>
+            <div class="related-card">
+                <h5>🏠 Fabric Lakehouse</h5>
+                <p>Spark ノートブック、Power BI セマンティックモデル、バッチパイプラインによるミラーデータの活用</p>
+            </div>
+            <div class="related-card">
+                <h5>🛡️ Microsoft Sentinel</h5>
+                <p>Log Analytics ワークスペースを利用するサービスの一例。ワークスペース内のデータが分析対象になり得る</p>
+            </div>
+            <div class="related-card">
+                <h5>🪞 Fabric Mirroring (Database / Metadata / Open mirroring)</h5>
+                <p>Fabric の他のミラーリング方式。Azure Monitor ミラーリングはメタデータ (カタログ) ミラーリングと同様に、複製ではなくショートカット参照ベース</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Monitor Logs の Microsoft Fabric ミラーリングは、可観測性データの活用における「エクスポートパイプライン + 重複ストレージ」という従来の課題を、<strong>接続ベースの参照モデル</strong>で解消するアップデートです。テレメトリが OneLake 上で Delta Parquet としてビジネスデータの隣に置かれることで、IT シグナルと収益・注文などのビジネス指標をリアルタイムに関連付ける分析が現実的になります。</p>
+            <p><strong>Solutions Architect が押さえるべき 3 つのポイント (PoC 開始前に確認)</strong></p>
+            <div class="sa-points">
+                <div class="sa-point"><span class="num">1</span><span>Azure RBAC と Fabric 権限が独立しており、テーブルレベル保護が引き継がれない点の<strong>セキュリティレビュー</strong></span></div>
+                <div class="sa-point"><span class="num">2</span><span>履歴データのバックフィルがないため、<strong>早期にミラーを開始する</strong>判断</span></div>
+                <div class="sa-point"><span class="num">3</span><span>本番では<strong>ワークスペース ID またはサービスプリンシパル認証</strong>を選択</span></div>
+            </div>
+            <p style="margin-top: 14px;">パブリックプレビューのため、機能・権限・課金は GA までに変更される可能性があります。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Monitor</span>
+            <span class="tag">Log Analytics</span>
+            <span class="tag">Microsoft Fabric</span>
+            <span class="tag">OneLake</span>
+            <span class="tag">Delta Parquet</span>
+            <span class="tag">Eventhouse</span>
+            <span class="tag">Mirroring</span>
+            <span class="tag">Observability</span>
+            <span class="tag">In preview</span>
+            <span class="tag">DevOps</span>
+            <span class="tag">Management and governance</span>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク / フッター ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=568322" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/fabric/mirroring/catalog-mirroring/azure-monitor" target="_blank" rel="noopener">Mirror Azure Monitor Data in Microsoft Fabric (Preview) - Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/fabric/mirroring/catalog-mirroring/azure-monitor-tutorial" target="_blank" rel="noopener">Tutorial: Configure the Mirror Azure Monitor Solution in Fabric (Preview) - Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/fabric/mirroring/overview" target="_blank" rel="noopener">Mirroring - Microsoft Fabric - Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-monitor/logs/log-analytics-workspace-overview" target="_blank" rel="noopener">Log Analytics workspace overview - Microsoft Learn</a></li>
+            <li><a href="https://github.com/microsoft/skills-for-fabric/blob/main/skills/azmon-mirroredcatalogs-operations-cli/SKILL.md" target="_blank" rel="noopener">Mirror Azure Monitor skill (Skills for Fabric) - GitHub</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/microsoft-fabric/" target="_blank" rel="noopener">Microsoft Fabric の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank" rel="noopener">Azure Monitor の料金</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=568322" target="_blank" rel="noopener">Azure Updates - Azure Monitor Logs mirroring into Microsoft Fabric (Public Preview)</a></p>
+        <p>ソースレポート: reports/2026/2026-07-29-azure-monitor-logs-fabric-mirroring.md (Azure News Summary プロジェクト)</p>
+        <p>リリース日: 2026-07-29 | インフォグラフィック生成日: 2026-07-30</p>
+        <p>本インフォグラフィックはパブリックプレビュー時点の情報に基づきます。最新情報は Microsoft Learn の公式ドキュメントを参照してください。</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

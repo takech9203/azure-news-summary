@@ -5,6 +5,13 @@
 
 ## 2026 年
 
+- [2026-07-30 - Azure Automation: PowerShell 7.6 ランブックと Runtime environment の一般提供開始 (GA)](2026/2026-07-30-automation-powershell-7-6-runtime-environment.md)
+- [2026-07-30 - Azure Key Vault: Key Vault Premium での対称鍵 (oct-HSM) サポート (Public Preview)](2026/2026-07-30-key-vault-premium-symmetric-keys.md)
+- [2026-07-30 - Azure Database for PostgreSQL: フレキシブルサーバーが India South Central リージョンで一般提供開始](2026/2026-07-30-postgresql-flexible-server-india-south-central.md)
+- [2026-07-30 - Azure Reservations: Savings Plan 対象サービスの Reservation Exchange (予約交換) が 2027 年 2 月 1 日で利用不可に](2026/2026-07-30-reservation-exchanges-retirement.md)
+- [2026-07-30 - Azure NetApp Files: SMB Opportunistic Locking (Oplocks) 構成のサポート (Public Preview)](2026/2026-07-30-netapp-files-smb-oplocks.md)
+- [2026-07-29 - Azure Sphere: OS version 26.09 が評価用に提供開始 (GA)](2026/2026-07-29-azure-sphere-os-26-09.md)
+- [2026-07-29 - Azure Monitor: Azure Monitor Logs の Microsoft Fabric ミラーリング (Public Preview)](2026/2026-07-29-azure-monitor-logs-fabric-mirroring.md)
 - [2026-07-28 - Azure Kubernetes Fleet Manager: update run の Maximum allowed failures (許容失敗数) がパブリックプレビュー](2026/2026-07-28-fleet-manager-max-allowed-failures.md)
 - [2026-07-28 - Azure Enclave: パブリックプレビュー](2026/2026-07-28-azure-enclave-public-preview.md)
 - [2026-07-28 - Azure Kubernetes Fleet Manager: リソース配置 (Resource placement) が一般提供開始](2026/2026-07-28-fleet-manager-resource-placement-ga.md)
