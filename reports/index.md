@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-07-31 - Microsoft Marketplace: パブリック SaaS オファーのシングルクリック購入が一般提供開始](2026/2026-07-31-marketplace-single-click-saas-purchase.md)
+- [2026-07-31 - Azure Route Server: Route-Maps (Public Preview)](2026/2026-07-31-route-server-route-maps.md)
 - [2026-07-31 - Azure SQL Database: Regex ベースの動的データマスキング (DDM) パブリックプレビュー](2026/2026-07-31-sql-late-july-updates.md)
 - [2026-07-30 - Azure Automation: PowerShell 7.6 ランブックと Runtime environment の一般提供開始 (GA)](2026/2026-07-30-automation-powershell-7-6-runtime-environment.md)
 - [2026-07-30 - Azure Key Vault: Key Vault Premium での対称鍵 (oct-HSM) サポート (Public Preview)](2026/2026-07-30-key-vault-premium-symmetric-keys.md)
