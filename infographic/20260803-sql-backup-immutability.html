@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SQL: 直近 7 日間のバックアップへの自動イミュータビリティ適用 GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+
+    /* Category Color: Database */
+    --db-yellow: #FFB900;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "🔒";
+    position: absolute;
+    font-size: 160px;
+    right: -10px;
+    bottom: -40px;
+    opacity: 0.12;
+    transform: rotate(-12deg);
+}
+
+.header .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga {
+    background: var(--ms-green);
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+
+.header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+}
+
+.header .meta span {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 14px;
+    border-radius: 8px;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 26px;
+}
+
+/* ===== Highlight ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong {
+    color: var(--ms-blue-800);
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 30px;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 6px;
+}
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before h4 {
+    color: var(--ms-red);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.after h4 {
+    color: var(--ms-green);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.before ul, .after ul {
+    padding-left: 20px;
+    font-size: 14px;
+}
+
+.before li, .after li {
+    margin-bottom: 8px;
+}
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 4px;
+}
+
+.feature-content p {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+/* ===== Table ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    text-align: left;
+    padding: 10px 16px;
+}
+
+.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 16px;
+}
+
+.spec-table tr:nth-child(even) {
+    background: var(--ms-blue-100);
+}
+
+.spec-table td:first-child {
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    white-space: nowrap;
+}
+
+/* ===== Benefit / Caution ===== */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.benefit-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+    border-top: 4px solid var(--azure-blue);
+}
+
+.benefit-card h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.benefit-card ul {
+    padding-left: 20px;
+    font-size: 14px;
+}
+
+.benefit-card li {
+    margin-bottom: 8px;
+}
+
+.caution-box {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-yellow);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+}
+
+.caution-box h4 {
+    color: var(--ms-orange);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.caution-box ul {
+    padding-left: 20px;
+    font-size: 14px;
+}
+
+.caution-box li {
+    margin-bottom: 8px;
+}
+
+/* ===== Use Case ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 12px 0;
+}
+
+.usecase-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.usecase-card p {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+/* ===== Related Services ===== */
+.related-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 10px 0;
+}
+
+.related-card .icon {
+    font-size: 22px;
+    min-width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-200);
+    border-radius: 8px;
+}
+
+.related-card h4 {
+    font-size: 15px;
+    color: var(--ms-blue-800);
+    margin-bottom: 2px;
+}
+
+.related-card p {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+}
+
+/* ===== Pricing ===== */
+.pricing-note {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 14px;
+    margin: 12px 0;
+}
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+.summary-box ul {
+    padding-left: 22px;
+    margin-top: 10px;
+}
+
+.summary-box li {
+    margin-bottom: 10px;
+}
+
+/* ===== Links ===== */
+a {
+    color: var(--azure-blue);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.link-list {
+    list-style: none;
+}
+
+.link-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+}
+
+.link-list li::before {
+    content: "🔗 ";
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 8px;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+    .before-after, .two-col {
+        grid-template-columns: 1fr;
+    }
+    .header h1 {
+        font-size: 22px;
+    }
+    .container {
+        padding: 12px;
+    }
+    .section {
+        padding: 18px;
+    }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">🗄️ Azure SQL Database</span>
+            <span class="service-badge">🗄️ Azure SQL Managed Instance</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>直近 7 日間のバックアップへの<br>自動イミュータビリティ (不変性) 適用が GA</h1>
+        <p class="subtitle">すべてのデータベースで既定で有効・設定不要。バックアップを偶発的・悪意ある削除や改変から自動的に保護</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-08-03</span>
+            <span>🚀 プレビューなしで直接 GA</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>
+            Azure SQL Database および Azure SQL Managed Instance において、<strong>直近 7 日間のバックアップにイミュータビリティ (不変性) が自動的に適用</strong>される機能が一般提供 (GA) されました。バックアップ保護の強化を目的とした機能で、プレビュー期間を経ずに直接 GA として提供されています。
+        </p>
+        <div class="highlight-box">
+            この機能は<strong>すべてのデータベースで既定で有効</strong>になっており、ユーザー側の設定や操作は一切不要です。構成されているポイントインタイム リストア (PITR) の保持期間の設定値に関係なく、直近 7 日間のバックアップに適用されます。
+        </div>
+        <p>
+            イミュータビリティが適用されたバックアップは<strong>変更・削除ができない状態</strong>で保持されるため、偶発的または悪意のある削除・改変からバックアップを保護できます。従来からある長期保持 (LTR) バックアップのイミュータビリティ (ユーザーが明示的に構成する機能) を補完し、短期のリストアポイントに対する保護を既定で提供するものです。なお、Azure SQL Hyperscale のバックアップへの対応は今後のリリースで提供予定です。
+        </p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">7 日間</div>
+                <div class="stat-label">自動イミュータビリティの適用範囲</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">設定不要</div>
+                <div class="stat-label">すべての DB で既定で有効</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">GA</div>
+                <div class="stat-label">プレビューなしで直接一般提供</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2 サービス</div>
+                <div class="stat-label">SQL Database / Managed Instance</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before: アップデート前の課題</h4>
+                <ul>
+                    <li>バックアップのイミュータビリティは<strong>長期保持 (LTR) バックアップに対してのみ構成可能</strong>で、PITR (短期保持) バックアップはイミュータブル構成をサポートしていなかった (公式ドキュメントの復元機能比較表にも「PITR: Not supported」と記載)</li>
+                    <li>LTR のイミュータビリティはユーザーが時間ベースのポリシーやリーガルホールドを<strong>明示的に構成する必要</strong>があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After: アップデート後の改善</h4>
+                <ul>
+                    <li>直近 7 日間のバックアップにイミュータビリティが<strong>自動的に</strong>適用されるようになった</li>
+                    <li>すべてのデータベースで<strong>既定で有効</strong>となり、ユーザーによる設定・操作が不要</li>
+                    <li>構成済みの PITR 保持期間の長短にかかわらず適用されるため、<strong>直近のリストアポイントが一律で保護</strong>される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🔓 Before: 従来のバックアップ保護"]
+        B1["🗄️ PITR バックアップ&lt;br/&gt;(1〜35 日)"] -->|イミュータブル構成不可| B2["⚠️ 短期バックアップは&lt;br/&gt;不変性保護なし"]
+        B3["🗄️ LTR バックアップ&lt;br/&gt;(最長 10 年)"] -->|ユーザーが明示的に構成| B4["🔒 イミュータブル (WORM)"]
+    end
+    subgraph After["🔐 After: 自動イミュータビリティ (GA)"]
+        A1["🗄️ 直近 7 日間の&lt;br/&gt;バックアップ"] -->|自動適用・既定で有効| A2["🔒 イミュータブル&lt;br/&gt;変更・削除不可"]
+        A3["🗄️ LTR バックアップ"] -->|従来どおり構成可能| A4["🔒 イミュータブル (WORM)"]
+    end
+    Before -.->|アップデート| After
+            </pre>
+        </div>
+        <p class="diagram-note">
+            💡 従来はイミュータビリティの構成が LTR バックアップに限られていましたが、本アップデートにより直近 7 日間のバックアップへ自動的に不変性が適用され、設定不要で保護されるようになりました。
+        </p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>1. 直近 7 日間のバックアップへの自動イミュータビリティ適用</h4>
+                <p>バックアップ保護を強化するため、直近 7 日間のバックアップが変更・削除不可の状態で保持されます。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">✅</div>
+            <div class="feature-content">
+                <h4>2. 既定で有効・設定不要</h4>
+                <p>すべてのデータベースで既定で有効化され、ユーザー側の有効化操作や構成変更は不要です。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⏱️</div>
+            <div class="feature-content">
+                <h4>3. PITR 保持期間の設定に非依存</h4>
+                <p>構成されているポイントインタイム リストアの保持期間 (Azure SQL Database では 1〜35 日で構成可能) にかかわらず、直近 7 日間分に適用されます。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象サービス</td><td>Azure SQL Database、Azure SQL Managed Instance</td></tr>
+            <tr><td>適用範囲</td><td>直近 7 日間のバックアップ</td></tr>
+            <tr><td>有効化</td><td>既定で有効 (ユーザー操作不要)</td></tr>
+            <tr><td>PITR 保持期間との関係</td><td>構成された保持期間の設定値に関係なく適用</td></tr>
+            <tr><td>Hyperscale 対応</td><td>未対応 (今後のリリースで対応予定)</td></tr>
+            <tr><td>提供形態</td><td>プレビューなしで直接 GA (2026 年 8 月)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+        <div class="highlight-box">
+            本機能は<strong>既定で有効</strong>であり、有効化のための設定・操作は<strong>不要</strong>です。
+        </div>
+        <p>
+            なお、長期保持 (LTR) バックアップに対するイミュータビリティ (時間ベース / リーガルホールド) は、従来どおりユーザーによる構成が必要です。構成方法は
+            <a href="https://learn.microsoft.com/azure/azure-sql/database/backup-immutability" target="_blank">Backup immutability (Microsoft Learn)</a> を参照してください。
+        </p>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💼</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🛡️ ランサムウェア・内部不正への備え</h4>
+            <p>イミュータビリティが適用されたバックアップは変更・削除ができないため、悪意のある削除・改変からバックアップを保護できます。直近 7 日間のリストアポイントが常に確保され、インシデント発生時の復旧手段を守ります。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>⚙️ 運用ミス (偶発的な削除) からの保護</h4>
+            <p>短い PITR 保持期間 (例: 1 日) を設定している場合でも直近 7 日間のバックアップが保護対象となるため、設定漏れや運用負荷のリスクなしに全データベースへ一律の保護を適用できます。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>📜 規制要件への対応 (LTR との組み合わせ)</h4>
+            <p>LTR イミュータビリティ (時間ベース / リーガルホールド) と組み合わせることで、短期・長期の両方でバックアップの不変性を確保できます。SEC Rule 17a-4(f) などの規制要件がある場合に有効です。</p>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>メリット</h2>
+        <div class="two-col">
+            <div class="benefit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>バックアップの偶発的または悪意のある削除・改変に対する保護が<strong>既定で提供</strong>され、データ保護態勢が強化される</li>
+                    <li>設定不要のため、運用負荷や設定漏れのリスクなしに<strong>全データベースへ一律の保護</strong>を適用できる</li>
+                </ul>
+            </div>
+            <div class="benefit-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>短い PITR 保持期間 (例: 1 日) を設定している場合でも、<strong>直近 7 日間のバックアップが保護対象</strong>となる</li>
+                    <li>LTR イミュータビリティ (時間ベース / リーガルホールド) と組み合わせることで、<strong>短期・長期の両方</strong>でバックアップの不変性を確保できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <h4>知っておくべき制約</h4>
+            <ul>
+                <li>Azure SQL <strong>Hyperscale のバックアップは現時点で対象外</strong> (今後のリリースで対応予定)</li>
+                <li>適用範囲は<strong>直近 7 日間に固定</strong>であり、この自動イミュータビリティの期間をユーザーが変更できるという情報は公式アナウンスに記載されていない</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="pricing-note">
+            <p>本機能 (直近 7 日間の自動イミュータビリティ) に固有の料金情報は、公式アナウンスには記載されていません。参考として、LTR バックアップのイミュータビリティについては、公式ドキュメントで「<strong>イミュータビリティの有効化自体に追加コストはない</strong>」と記載されています。</p>
+            <p style="margin-top: 10px;">バックアップ ストレージの料金は、購入モデル (DTU / vCore)、バックアップ ストレージ冗長性、リージョンによって異なります。詳細は料金ページを参照してください。</p>
+        </div>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/single/" target="_blank">Azure SQL Database の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-managed-instance/single/" target="_blank">Azure SQL Managed Instance の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card">
+            <div class="icon">⏪</div>
+            <div>
+                <h4>ポイントインタイム リストア (PITR)</h4>
+                <p>短期保持バックアップによる任意時点への復元機能。Azure SQL Database では既定 7 日間、1〜35 日で構成可能 (Basic は 1〜7 日)。本アップデートにより直近 7 日間のバックアップが不変性で保護されます。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <div class="icon">🗃️</div>
+            <div>
+                <h4>長期保持 (LTR) バックアップ イミュータビリティ</h4>
+                <p>LTR バックアップを WORM (Write Once, Read Many) 状態で保持する機能。時間ベースのイミュータビリティは GA、リーガルホールドはプレビュー。SEC Rule 17a-4(f)、FINRA Rule 4511(c)、CFTC Rule 1.31(c)-(d) などの規制要件に対応します。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <div class="icon">🌐</div>
+            <div>
+                <h4>バックアップ ストレージ冗長性 (LRS / ZRS / GRS / GZRS)</h4>
+                <p>バックアップの保存先ストレージの冗長構成。geo 冗長構成では geo リストアによるリージョン間復元が可能です。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure SQL Database と Azure SQL Managed Instance の直近 7 日間のバックアップに、イミュータビリティが自動適用されるようになりました。</p>
+            <ul>
+                <li>すべてのデータベースで<strong>既定で有効・設定不要</strong>。ユーザー側のアクションなしでバックアップの削除・改変への耐性が強化される</li>
+                <li>従来イミュータビリティは LTR バックアップに限られていたため、<strong>短期リストアポイントの保護が既定化された意義は大きい</strong></li>
+                <li>Solutions Architect としては、本機能が既定で適用されることを把握した上で、規制要件がある場合は <strong>LTR の時間ベース イミュータビリティやリーガルホールドとの組み合わせ</strong>を検討する</li>
+                <li><strong>Hyperscale</strong> を利用している場合は、対応が今後のリリース予定である点に注意</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=568339" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/automated-backups-overview" target="_blank">Automated backups in Azure SQL Database (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/backup-immutability" target="_blank">Backup immutability (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/single/" target="_blank">Azure SQL Database の料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <div class="tags">
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">Azure SQL Managed Instance</span>
+            <span class="tag">Backup</span>
+            <span class="tag">Immutability</span>
+            <span class="tag">Security</span>
+            <span class="tag">Databases</span>
+            <span class="tag">GA</span>
+        </div>
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=568339" target="_blank">Azure Updates (ID: 568339)</a> / <a href="https://learn.microsoft.com/azure/azure-sql/database/backup-immutability" target="_blank">Microsoft Learn</a></p>
+        <p>生成日: 2026-08-03 | Azure News Summary</p>
+    </footer>
+
+</div>
+</body>
+</html>

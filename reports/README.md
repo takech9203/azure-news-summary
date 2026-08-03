@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-08-03 - Azure SQL Database / Azure SQL Managed Instance: 直近 7 日間のバックアップへの自動イミュータビリティ適用が一般提供開始 (GA)](2026/2026-08-03-sql-backup-immutability.md)
 - [2026-07-31 - Microsoft Marketplace: パブリック SaaS オファーのシングルクリック購入が一般提供開始](2026/2026-07-31-marketplace-single-click-saas-purchase.md)
 - [2026-07-31 - Azure Route Server: Route-Maps (Public Preview)](2026/2026-07-31-route-server-route-maps.md)
 - [2026-07-31 - Azure SQL Database: Regex ベースの動的データマスキング (DDM) パブリックプレビュー](2026/2026-07-31-sql-late-july-updates.md)
