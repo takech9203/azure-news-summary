@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure DNS: Traffic Manager 統合による DNS ベースのロードバランシング (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "🌐";
+    position: absolute;
+    right: 24px;
+    bottom: -18px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+
+.header .badges { margin-bottom: 14px; }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 14px;
+}
+
+.header .meta span {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 14px;
+    border-radius: 16px;
+}
+
+.service-badge {
+    display: inline-block;
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-right: 8px;
+}
+
+.header .service-badge {
+    background: rgba(255, 255, 255, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 26px;
+}
+
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; font-size: 15px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+.keyword {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: #A31515;
+}
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    flex-shrink: 0;
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content ul { padding-left: 20px; }
+.feature-content li { font-size: 14px; margin: 4px 0; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table.spec {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+table.spec th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+table.spec td {
+    border-bottom: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+
+table.spec tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+table.spec td.item-name { font-weight: 700; color: var(--ms-blue-800); white-space: nowrap; }
+
+.check-yes { color: var(--ms-green); font-weight: 700; }
+.check-no { color: var(--ms-red); font-weight: 700; }
+
+/* ===== Merits / Constraints ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.merit-card h4 {
+    color: var(--ms-blue-800);
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 14px; margin: 8px 0; }
+
+.warning-box {
+    background: #FFF8E1;
+    border: 1px solid var(--ms-yellow);
+    border-left: 4px solid var(--ms-yellow);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+.warning-box ul { padding-left: 20px; }
+.warning-box li { font-size: 14px; margin: 8px 0; }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    margin: 16px 0;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.usecase-header {
+    background: linear-gradient(90deg, var(--azure-blue), var(--ms-blue-500));
+    color: #FFFFFF;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.usecase-body { padding: 16px 20px; }
+.usecase-body p { font-size: 14px; margin: 8px 0; }
+
+.usecase-body .label {
+    display: inline-block;
+    font-weight: 700;
+    font-size: 13px;
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 2px 12px;
+    margin-right: 8px;
+}
+
+.label-scenario { background: var(--ms-orange); }
+.label-effect { background: var(--ms-green); }
+
+/* ===== Recommendation lists ===== */
+.reco-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.reco-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.reco-new {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+}
+
+.reco-alias {
+    background: var(--ms-surface-tertiary);
+    border: 2px solid var(--ms-text-disabled);
+}
+
+.reco-card h4 { font-size: 15px; margin-bottom: 10px; }
+.reco-new h4 { color: var(--azure-blue); }
+.reco-alias h4 { color: var(--ms-text-secondary); }
+.reco-card ul { padding-left: 20px; }
+.reco-card li { font-size: 14px; margin: 6px 0; }
+
+/* ===== Related services / links ===== */
+.related-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 10px 0;
+}
+
+.related-card .rel-icon { font-size: 22px; }
+.related-card h4 { font-size: 15px; color: var(--ms-blue-800); margin-bottom: 4px; }
+.related-card p { font-size: 14px; margin: 0; }
+
+.link-list { list-style: none; }
+
+.link-list li {
+    margin: 8px 0;
+    padding-left: 26px;
+    position: relative;
+    font-size: 14px;
+}
+
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+a { color: var(--azure-blue); }
+a:hover { color: var(--ms-blue-800); }
+
+/* ===== Summary / Footer ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-size: 15px;
+}
+
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 20px 0 40px;
+}
+
+.footer .tags {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.footer .tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 12px;
+    padding: 2px 12px;
+    font-size: 12px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .merit-grid, .reco-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure DNS</span>
+            <span class="service-badge">Azure Traffic Manager</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Traffic Manager Linked Records<br>DNS ベースのロードバランシングをシームレスに統合</h1>
+        <div class="subtitle">Azure DNS レコードセットを Traffic Manager プロファイルに直接リンク — CNAME ホップ不要の「DNS フラット化」を実現</div>
+        <div class="meta">
+            <span>📅 リリース日: 2026-08-04</span>
+            <span>🧩 機能: Traffic Manager Linked Records</span>
+            <span>🚦 ステータス: Public Preview</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>
+            Azure DNS が Azure Traffic Manager とシームレスに統合し、DNS ベースのトラフィックルーティングを実現する新機能
+            <span class="keyword">Traffic Manager Linked Records</span> が Public Preview として発表された。
+            Azure DNS のレコードセットを Traffic Manager プロファイルに直接関連付けることが可能になり、
+            従来必要だった <code class="inline">trafficmanager.net</code> ドメインへの CNAME レコードの作成が不要になる。
+        </p>
+        <div class="highlight-box">
+            レコードセットの新しいプロパティ <code class="inline">trafficManagementProfile</code> でリンクを宣言すると、
+            DNS クエリの解決時に Azure DNS が Traffic Manager プロファイルを内部的に解決し、
+            エンドポイントの IP アドレス (A/AAAA レコード) または FQDN (CNAME レコード) をクライアントに直接返す。
+            このプロセスは <span class="keyword">DNS フラット化 (DNS flattening)</span> と呼ばれる。
+        </div>
+        <p>
+            CNAME ホップの排除により名前解決のレイテンシーが改善されるほか、署名されていない
+            <code class="inline">trafficmanager.net</code> ドメインが CNAME ルックアップチェーンから除外されるため、
+            ロードバランシングされたレコードで <span class="keyword">DNSSEC の互換性</span>が確保される。
+        </p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">0 ホップ</div>
+                <div class="stat-label">CNAME 追加ルックアップを排除</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">DNSSEC</div>
+                <div class="stat-label">署名済みゾーンで利用可能</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最大 50</div>
+                <div class="stat-label">プロファイルあたりのリンクレコード数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">APEX 対応</div>
+                <div class="stat-label">ネイキッドドメインで利用可能</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li><code class="inline">trafficmanager.net</code> への CNAME レコード (またはエイリアスレコード) が必要で、CNAME 型では追加の DNS ルックアップ (CNAME ホップ) が発生し、名前解決のレイテンシーが増加</li>
+                    <li>署名されていない <code class="inline">trafficmanager.net</code> への中間ホップが DNSSEC の信頼チェーンを壊すため、DNSSEC 署名済みゾーンで Traffic Manager を利用できない</li>
+                    <li>全 Azure 顧客共有の <code class="inline">trafficmanager.net</code> が DNS 応答に露出し、ファイアウォールで許可すると他顧客のプロファイルへのアクセスも意図せず許可されるリスク</li>
+                    <li>従来のエイリアスレコードでは型の検証がレコード作成時のみで、エンドポイントタイプの不整合による設定ミスが起こり得た</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>レコードセットを Traffic Manager プロファイルに直接関連付け、CNAME ホップなしでエンドポイントの IP アドレス/FQDN を直接返却 (レイテンシー改善)</li>
+                    <li>DNS 解決が Azure DNS インフラ内で完結し、DNSSEC の信頼チェーンを維持。DNSSEC 署名済みゾーンで利用可能</li>
+                    <li><code class="inline">trafficmanager.net</code> が DNS 応答に一切現れず、ファイアウォール要件やアタックサーフェスを削減</li>
+                    <li>Strictly Typed Profiles (STP) により Traffic Manager 側で型の一貫性を強制し、設定ミスを防止</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+sequenceDiagram
+    participant Client as 🖥️ クライアント
+    participant DNS as 🌐 Azure DNS&lt;br/&gt;(example.com ゾーン)
+    participant TM as ⚖️ Traffic Manager&lt;br/&gt;プロファイル
+    participant EP as ☁️ エンドポイント&lt;br/&gt;(各リージョン)
+
+    Note over Client,EP: 【従来: CNAME 方式】
+    Client-&gt;&gt;DNS: app.example.com を照会
+    DNS--&gt;&gt;Client: CNAME: myapp.trafficmanager.net
+    Client-&gt;&gt;TM: myapp.trafficmanager.net を照会 (追加ホップ)
+    TM--&gt;&gt;Client: 最適なエンドポイントの IP
+    Client-&gt;&gt;EP: 接続
+
+    Note over Client,EP: 【新方式: Traffic Manager Linked Records】
+    Client-&gt;&gt;DNS: app.example.com を照会
+    DNS-&gt;&gt;TM: 内部でプロファイルを解決 (DNS フラット化)
+    DNS--&gt;&gt;Client: エンドポイントの IP を直接返却
+    Client-&gt;&gt;EP: 接続
+            </pre>
+        </div>
+        <div class="highlight-box">
+            従来はクライアントが <code class="inline">trafficmanager.net</code> を再解決する追加ホップが必要だったのに対し、
+            新方式では Azure DNS が Traffic Manager プロファイルを内部的に解決し、最終的な回答を <strong>1 回の照会で直接返す</strong>。
+        </div>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>1. DNS フラット化 (統合解決モード)</h4>
+                <ul>
+                    <li>レコードセットの <code class="inline">trafficManagementProfile</code> プロパティで Traffic Manager プロファイルとのリンクを宣言</li>
+                    <li>Azure DNS がプロファイルを内部解決し、A/AAAA レコードは IP アドレス、CNAME レコードは FQDN を直接返却</li>
+                    <li>Traffic Manager Linked Records では統合モードが常に有効</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>2. DNSSEC 互換性</h4>
+                <ul>
+                    <li>DNS 解決が Azure DNS インフラ内で完結し、署名されていない中間ホップが存在しないため、DNSSEC の信頼チェーンを維持</li>
+                    <li>DNSSEC 署名済みゾーンでのロードバランシングが可能に</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌍</div>
+            <div class="feature-content">
+                <h4>3. ゾーン APEX (ネイキッドドメイン) 対応</h4>
+                <ul>
+                    <li>DNS プロトコル上 CNAME を配置できないゾーン APEX でも、IP アドレスを直接返すことで Traffic Manager を利用可能</li>
+                    <li>例: <code class="inline">www.contoso.com</code> だけでなく <code class="inline">contoso.com</code> 自体で利用可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>4. Strictly Typed Profiles (STP) による型強制</h4>
+                <ul>
+                    <li>リンクレコード作成時に Azure DNS が Traffic Manager プロファイルのエンドポイント構成と DNS レコードタイプの互換性を検証</li>
+                    <li>プロファイルタイプ (IPv4 / IPv6) は作成時または既存プロファイルの構成設定で指定でき、一度設定すると変更不可</li>
+                    <li>宣言されたタイプと異なる IP バージョンのエンドポイント追加は拒否される</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧱</div>
+            <div class="feature-content">
+                <h4>5. ネスト構成・削除保護</h4>
+                <ul>
+                    <li>ネストされた Traffic Manager プロファイルをすべてのプロファイルタイプでサポート (エイリアスレコードでは非サポート)</li>
+                    <li>リンクレコードが参照している間はプロファイルの削除がブロックされ、DNS レコードの意図しない破損を防止</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table class="spec">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td class="item-name">リンク宣言プロパティ</td><td>レコードセットの <code class="inline">trafficManagementProfile</code></td></tr>
+                <tr><td class="item-name">対応レコードタイプ</td><td>A (IPv4)、AAAA (IPv6)、CNAME (FQDN)</td></tr>
+                <tr><td class="item-name">エンドポイント要件</td><td>A: 全有効エンドポイントが IPv4 / AAAA: IPv6 / CNAME: FQDN ターゲット</td></tr>
+                <tr><td class="item-name">TTL</td><td>常に Traffic Manager プロファイルの DNS 構成から継承 (レコードセット側の TTL は無視)</td></tr>
+                <tr><td class="item-name">プロファイルあたりのリンク数</td><td>最大 50 リンクレコード</td></tr>
+                <tr><td class="item-name">ゾーン APEX</td><td>サポート (ネイキッドドメインで利用可能)</td></tr>
+                <tr><td class="item-name">ネストされたプロファイル</td><td>全プロファイルタイプでサポート</td></tr>
+                <tr><td class="item-name">DNSSEC</td><td>互換 (中間ホップなし)</td></tr>
+                <tr><td class="item-name">STP の API バージョン</td><td><code class="inline">2024-04-01-preview</code> (<code class="inline">ProfileProperties</code> の <code class="inline">recordType</code> プロパティ)</td></tr>
+                <tr><td class="item-name">プロファイル削除</td><td>リンクレコードが残っている間は削除不可</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Alias Comparison ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚖️</span>エイリアスレコードとの比較</h2>
+        <div class="table-wrap">
+            <table class="spec">
+                <tr>
+                    <th>項目</th>
+                    <th>エイリアスレコード<br>(<code style="color:#DEECF9">targetResource</code>)</th>
+                    <th>Traffic Manager Linked Records<br>(<code style="color:#DEECF9">trafficManagementProfile</code>)</th>
+                </tr>
+                <tr><td class="item-name">解決モード</td><td>CNAME 型は <code class="inline">trafficmanager.net</code> への CNAME ホップあり</td><td>常に統合モード (IP を直接返却)</td></tr>
+                <tr><td class="item-name">TTL のソース</td><td>DNS レコードセットの値</td><td>常に Traffic Manager プロファイル</td></tr>
+                <tr><td class="item-name">型の検証</td><td>Azure DNS 側 (作成時のエンドポイント状態に依存)</td><td>Traffic Manager 側 (STP で強制)</td></tr>
+                <tr><td class="item-name">ネストされたプロファイル</td><td><span class="check-no">✗ 非サポート</span></td><td><span class="check-yes">✓ 全プロファイルタイプでサポート</span></td></tr>
+                <tr><td class="item-name"><code class="inline">trafficmanager.net</code> の露出</td><td><span class="check-no">あり (CNAME 型)</span></td><td><span class="check-yes">なし</span></td></tr>
+                <tr><td class="item-name">DNSSEC 互換性</td><td><span class="check-no">✗ なし (署名されない中間ホップ)</span></td><td><span class="check-yes">✓ あり</span></td></tr>
+            </table>
+        </div>
+
+        <div class="reco-grid">
+            <div class="reco-card reco-new">
+                <h4>💡 Traffic Manager Linked Records が推奨されるケース (公式ドキュメントより)</h4>
+                <ul>
+                    <li>CNAME ホップのない最も直接的な DNS 解決を求める場合</li>
+                    <li>セキュリティやファイアウォールのコンプライアンス上、<code class="inline">trafficmanager.net</code> を通信経路から排除したい場合</li>
+                    <li>DNSSEC 署名済みゾーンで信頼チェーンを維持する必要がある場合</li>
+                    <li>STP による強い型強制を利用したい場合</li>
+                    <li>新規に Traffic Manager 連携の DNS レコードを構成する場合</li>
+                </ul>
+            </div>
+            <div class="reco-card reco-alias">
+                <h4>📎 エイリアスレコードが引き続き適するケース</h4>
+                <ul>
+                    <li>Traffic Manager 以外のリソース (Public IP、CDN、Front Door、ゾーン内レコードセット) を参照する場合</li>
+                    <li>既存のエイリアス構成との後方互換性を維持したい場合</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">👍</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>DNSSEC 対応が必須の政府・金融などコンプライアンス要件の厳しい環境でも、DNS ベースのグローバルロードバランシングを採用可能</li>
+                    <li><code class="inline">trafficmanager.net</code> (全顧客共有ドメイン) をファイアウォールで許可する必要がなくなり、アタックサーフェスとセキュリティレビューの負担を削減</li>
+                    <li>ネイキッドドメイン (ゾーン APEX) で Traffic Manager を直接利用でき、ドメイン設計の自由度が向上</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>CNAME ホップの排除により名前解決のレイテンシーが改善</li>
+                    <li>TTL がプロファイルの DNS 構成から常に継承されるため、DNS キャッシュがヘルス監視・フェールオーバーのタイミングを正確に反映</li>
+                    <li>STP による型強制とプロファイル削除保護で、運用上の設定ミス・事故を予防</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>Public Preview のため、<a href="https://azure.microsoft.com/support/legal/preview-supplemental-terms/" target="_blank" rel="noopener">Azure プレビューの追加利用規約</a>が適用される (本番利用は SLA 対象外)</li>
+                <li>STP でプロファイルタイプ (IPv4/IPv6) は一度設定すると変更不可。変更が必要な場合は別タイプのプロファイルを新規作成する必要がある</li>
+                <li>同一プロファイルに A レコードと AAAA レコードを同時にリンクすることはできない (最初のリンクレコードがプロファイルタイプを確定)</li>
+                <li>CNAME 型のリンクレコードには IP タイプの制限がない (FQDN ターゲットのエンドポイントはすべて許可)</li>
+                <li>リンクレコードが残っている間は Traffic Manager プロファイルを削除できない (削除前にリンクレコードの削除が必要)</li>
+                <li>レコードセット側で設定した TTL は無視される (常にプロファイル側の TTL を継承)</li>
+                <li>Traffic Manager 以外のリソース参照には利用できない (従来どおりエイリアスレコードを使用)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🔐 ユースケース 1: DNSSEC 署名済みゾーンでのグローバルロードバランシング</div>
+            <div class="usecase-body">
+                <p><span class="label label-scenario">シナリオ</span>DNSSEC が必須要件の組織が、独自ドメインでマルチリージョンのフェールオーバー/地理的ルーティングを実現したい。従来は <code class="inline">trafficmanager.net</code> への署名されていない CNAME ホップが DNSSEC 検証を壊すため、Traffic Manager を採用できなかった。</p>
+                <p><span class="label label-effect">効果</span>Traffic Manager Linked Records では解決が Azure DNS 内で完結し信頼チェーンが維持されるため、DNSSEC 署名済みゾーンで Traffic Manager のルーティング機能 (優先度、地理、パフォーマンスなど) をそのまま利用できる。</p>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🌍 ユースケース 2: ゾーン APEX (ネイキッドドメイン) での Traffic Manager 利用</div>
+            <div class="usecase-body">
+                <p><span class="label label-scenario">シナリオ</span><code class="inline">www.contoso.com</code> ではなく <code class="inline">contoso.com</code> 自体で Traffic Manager によるトラフィック分散を行いたいが、DNS プロトコル上ゾーン APEX に CNAME レコードを配置できない。</p>
+                <p><span class="label label-effect">効果</span>A/AAAA タイプのリンクレコードがエンドポイントの IP アドレスを直接返すため、ゾーン APEX でも Traffic Manager によるルーティングが可能になる。</p>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🧱 ユースケース 3: ファイアウォール要件の厳しい環境での名前解決</div>
+            <div class="usecase-body">
+                <p><span class="label label-scenario">シナリオ</span>クライアント側の DNS/ファイアウォールポリシーで許可ドメインを厳格に管理しており、全 Azure 顧客が共有する <code class="inline">trafficmanager.net</code> を許可リストに追加したくない。</p>
+                <p><span class="label label-effect">効果</span>DNS 応答に <code class="inline">trafficmanager.net</code> が一切現れないため、自社ドメインのみの許可で運用でき、他顧客のプロファイルへのアクセスを意図せず許可するリスクも排除できる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing & Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金・利用可能リージョン</h2>
+        <h3>料金</h3>
+        <p>本アップデートに固有の料金情報は公式発表では確認できなかった。最新の料金は以下の公式料金ページを参照。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/dns/" target="_blank" rel="noopener">Azure DNS の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/traffic-manager/" target="_blank" rel="noopener">Traffic Manager の料金</a></li>
+        </ul>
+        <h3>利用可能リージョン</h3>
+        <p>公式発表 (2026 年 8 月 Public Preview) では対象リージョンの明記は確認できなかった。詳細は <a href="https://learn.microsoft.com/azure/dns/dns-traffic-manager-linked-records" target="_blank" rel="noopener">公式ドキュメント</a>を参照。</p>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card">
+            <div class="rel-icon">⚖️</div>
+            <div>
+                <h4>Azure Traffic Manager</h4>
+                <p>DNS ベースのグローバルトラフィックルーティングサービス。本機能により Azure DNS レコードセットから直接リンク可能になった。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <div class="rel-icon">📛</div>
+            <div>
+                <h4>Azure DNS エイリアスレコード</h4>
+                <p><code class="inline">targetResource</code> プロパティで Traffic Manager などの Azure リソースを参照する既存機能。Traffic Manager 参照については Linked Records への移行が推奨されている。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <div class="rel-icon">🔏</div>
+            <div>
+                <h4>Azure DNS の DNSSEC</h4>
+                <p>本機能により、DNSSEC 署名済みゾーンでも Traffic Manager によるロードバランシングが利用可能になった。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <div class="rel-icon">🚪</div>
+            <div>
+                <h4>Azure Front Door</h4>
+                <p>L7 (HTTP/HTTPS) のグローバルロードバランシングを提供する代替・補完サービス。Front Door への参照は引き続きエイリアスレコードを使用する。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            Traffic Manager Linked Records は、Azure DNS と Traffic Manager の統合を「CNAME を介した間接参照」から
+            「<strong>レコードセットへの直接リンク + DNS フラット化</strong>」へと進化させるアップデートである。
+            CNAME ホップの排除によるレイテンシー改善に加え、これまで両立できなかった <strong>DNSSEC と DNS ベースロードバランシングの併用</strong>、
+            <strong>ゾーン APEX での利用</strong>、<strong><code class="inline">trafficmanager.net</code> 非露出によるセキュリティ強化</strong>を実現する。
+            新規に Traffic Manager 連携の DNS レコードを構成する場合は本機能が推奨されており、
+            DNSSEC 要件のある環境や既存のエイリアス構成を持つ環境では、Public Preview の段階で検証を開始し、GA 後の移行計画を検討する価値がある。
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=565214" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/dns/dns-traffic-manager-linked-records" target="_blank" rel="noopener">Traffic Manager Linked Records overview (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/traffic-manager/traffic-manager-strictly-typed-profiles" target="_blank" rel="noopener">Strictly Typed Profiles for Azure Traffic Manager (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/dns/dns-alias" target="_blank" rel="noopener">Azure DNS alias records (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/dns/" target="_blank" rel="noopener">Azure DNS の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/traffic-manager/" target="_blank" rel="noopener">Traffic Manager の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <div>出典: <a href="https://azure.microsoft.com/updates?id=565214" target="_blank" rel="noopener">Azure Updates (ID: 565214)</a> / <a href="https://learn.microsoft.com/azure/dns/dns-traffic-manager-linked-records" target="_blank" rel="noopener">Microsoft Learn</a></div>
+        <div>レポート作成日: 2026-08-04 | Azure News Summary</div>
+        <div class="tags">
+            <span class="tag">Azure DNS</span>
+            <span class="tag">Traffic Manager</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Management and governance</span>
+            <span class="tag">DNS</span>
+            <span class="tag">Load Balancing</span>
+            <span class="tag">DNSSEC</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </footer>
+
+</div>
+</body>
+</html>

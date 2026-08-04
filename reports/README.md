@@ -5,6 +5,11 @@
 
 ## 2026 年
 
+- [2026-08-04 - Network Security Perimeter: Perimeter Link (クロスペリメーター接続) のパブリックプレビュー](2026/2026-08-04-nsp-perimeter-link.md)
+- [2026-08-04 - Azure Private Link: IPv6 サポート (Public Preview)](2026/2026-08-04-private-link-ipv6.md)
+- [2026-08-04 - Azure DNS: Traffic Manager 統合による DNS ベースのロードバランシング (Public Preview)](2026/2026-08-04-azure-dns-traffic-manager-integration.md)
+- [2026-08-04 - Azure Virtual Network: ルーティングアプライアンスの一般提供開始 (GA)](2026/2026-08-04-virtual-network-routing-appliance.md)
+- [2026-08-03 - Azure Virtual Machines: Trusted Launch as Default (TLaD) の一般提供開始](2026/2026-08-03-trusted-launch-as-default.md)
 - [2026-08-03 - Azure SQL Database / Azure SQL Managed Instance: 直近 7 日間のバックアップへの自動イミュータビリティ適用が一般提供開始 (GA)](2026/2026-08-03-sql-backup-immutability.md)
 - [2026-07-31 - Microsoft Marketplace: パブリック SaaS オファーのシングルクリック購入が一般提供開始](2026/2026-07-31-marketplace-single-click-saas-purchase.md)
 - [2026-07-31 - Azure Route Server: Route-Maps (Public Preview)](2026/2026-07-31-route-server-route-maps.md)

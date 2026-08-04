@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Private Link: IPv6 サポート (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Networking category color */
+    --net-green: #00A651;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "IPv6";
+    position: absolute;
+    right: -10px;
+    bottom: -35px;
+    font-size: 140px;
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.08);
+    letter-spacing: -5px;
+}
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+.header .date {
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon {
+    font-size: 24px;
+}
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+.feature-content p, .feature-content li { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; margin-top: 4px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 32px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+/* ===== Table ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.spec-table th, .spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+}
+.spec-table th {
+    background: var(--ms-blue-100);
+    color: var(--azure-dark-blue);
+    font-weight: 700;
+    white-space: nowrap;
+}
+.spec-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Code ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--ms-blue-800);
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.merit-card h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 15px; }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 14px; margin: 8px 0; }
+
+.warning-list {
+    background: #FFF8E7;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+.warning-list ul { padding-left: 20px; }
+.warning-list li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+}
+.usecase-card .uc-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+}
+.uc-number {
+    background: var(--azure-blue);
+    color: white;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+}
+.usecase-card p { font-size: 14px; }
+.uc-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* ===== Regions ===== */
+.region-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 16px 0;
+}
+.region-chip {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+    color: var(--azure-dark-blue);
+    padding: 8px 18px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ===== Related Services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+.related-card h4 { font-size: 14px; color: var(--azure-blue); margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); }
+
+/* ===== Links ===== */
+.link-list { list-style: none; }
+.link-list li {
+    margin: 10px 0;
+    padding-left: 26px;
+    position: relative;
+    font-size: 14px;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+a { color: var(--azure-blue); word-break: break-all; }
+
+/* ===== Steps ===== */
+.step-list { counter-reset: step; list-style: none; margin: 12px 0; }
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 8px 0 8px 44px;
+    font-size: 14px;
+}
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* ===== Summary / Tags / Footer ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-size: 15px;
+}
+.tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 16px;
+}
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+}
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 20px 0 40px;
+}
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">Azure Private Link</span>
+            <span class="badge badge-preview">In Preview</span>
+            <span class="date">📅 リリース日: 2026-08-04</span>
+        </div>
+        <h1>Azure Private Link: IPv6 サポート<br>(Public Preview)</h1>
+        <p class="subtitle">機能: Azure Private Link support over IPv6 — IPv6 クライアントから Azure PaaS サービスへのプライベート接続が可能に</p>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <div class="highlight-box">
+            <p>Azure Private Link の <strong>IPv6 サポートがパブリックプレビュー</strong>になりました。Azure Storage や Azure SQL Database などの Azure PaaS サービスに対して、<strong>IPv6 ベースの接続でプライベートアクセス</strong>できるようになります。</p>
+        </div>
+        <p>IPv6 プライベートエンドポイントを作成することで、Azure 仮想ネットワーク内の IPv6 クライアントから、または <strong>ExpressRoute 経由でオンプレミスネットワークの IPv6 クライアント</strong>から、PaaS サービスにプライベート接続できます。オンプレミス接続の場合、ExpressRoute がオンプレミスの IPv6 クライアントからのトラフィックを <strong>Virtual Network Routing Appliance</strong> に転送し、そこからターゲットの IPv6 プライベートエンドポイントへルーティングされます。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">4</div>
+                <div class="stat-label">対応 PaaS サービス<br>(Storage / SQL DB / Key Vault / Data Explorer)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5</div>
+                <div class="stat-label">利用可能リージョン<br>(プレビュー時点)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2</div>
+                <div class="stat-label">接続シナリオ<br>(Azure 内 / ExpressRoute)</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>プライベートエンドポイントは <strong>IPv4 アドレスのみ</strong>に対応しており、IPv6 クライアントから PaaS サービスへのプライベート接続ができなかった</li>
+                    <li>IPv6 への移行を進める組織 (アドレス枯渇対応、政府・通信系の IPv6 要件など) は、Private Link 利用時に <strong>IPv4 との併用を前提</strong>とせざるを得なかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li><code class="inline">ip-version-type</code> パラメーターを <code class="inline">IPv6</code> に設定してプライベートエンドポイントを作成でき、<strong>IPv6 クライアントから PaaS サービスへプライベート接続</strong>できるようになった</li>
+                    <li><strong>Azure 内 (デュアルスタック VNet 内の IPv6 クライアント) と、ExpressRoute 経由のオンプレミス IPv6 クライアント</strong>の両方のシナリオに対応した</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph OnPrem["🏢 オンプレミスネットワーク"]
+        Client(["💻 IPv6 クライアント"])
+    end
+
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph VNet["🌐 デュアルスタック VNet (IPv4 + IPv6)"]
+            ER["🔌 ExpressRoute ゲートウェイ"]
+            VNRA["🔀 Virtual Network Routing Appliance"]
+            VM(["🖥️ IPv6 クライアント VM"])
+            PE["🔒 IPv6 プライベートエンドポイント"]
+        end
+        PaaS[("📦 Azure PaaS&lt;br/&gt;Storage / SQL Database /&lt;br/&gt;Key Vault / Data Explorer")]
+        DNS["📇 Azure Private DNS&lt;br/&gt;(FQDN → AAAA レコード)"]
+    end
+
+    Client -- "ExpressRoute (IPv6)" --> ER
+    ER --> VNRA
+    VNRA --> PE
+    VM -- "IPv6" --> PE
+    PE -- "Private Link" --> PaaS
+    VM -.-> DNS
+            </pre>
+        </div>
+        <p>デュアルスタック VNet 内の IPv6 クライアント VM は IPv6 プライベートエンドポイントに直接接続します。オンプレミスの IPv6 クライアントは ExpressRoute 経由で Virtual Network Routing Appliance に到達し、そこからプライベートエンドポイントにルーティングされます。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細: 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>1. IPv6 プライベートエンドポイント</h4>
+                <ul>
+                    <li>プライベートエンドポイント作成時に <code class="inline">--ip-version-type IPv6</code> を指定すると、IPv6 アドレスを持つプライベートエンドポイントが作成される</li>
+                    <li>Azure Private DNS で PaaS サービスの FQDN をプライベートエンドポイントの IPv6 アドレス (AAAA レコード) に解決させる</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">☁️</div>
+            <div class="feature-content">
+                <h4>2. Azure ネイティブ接続</h4>
+                <ul>
+                    <li>デュアルスタック VNet 内の IPv6 クライアント VM から、IPv6 プライベートエンドポイント経由で Azure PaaS サービスに接続</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔌</div>
+            <div class="feature-content">
+                <h4>3. オンプレミス接続 (ExpressRoute 経由)</h4>
+                <ul>
+                    <li>オンプレミスの IPv6 クライアントが ExpressRoute → Virtual Network Routing Appliance → IPv6 プライベートエンドポイントの経路で PaaS サービスにアクセス</li>
+                    <li>GatewaySubnet に関連付けたルートテーブルの UDR (次ホップ: 仮想アプライアンス) でルーティングを構成</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td><strong>対応 PaaS サービス (プレビュー時点)</strong></td><td>Azure Storage、Azure SQL Database、Azure Key Vault、Azure Data Explorer (Kusto)</td></tr>
+            <tr><td><strong>VNet 要件</strong></td><td>デュアルスタック (IPv4 + IPv6) VNet、<code class="inline">privateEndpointVNetPolicies: Basic</code></td></tr>
+            <tr><td><strong>サブネット要件</strong></td><td>デュアルスタックサブネット、<code class="inline">privateEndpointNetworkPolicies: RouteTableEnabled</code></td></tr>
+            <tr><td><strong>機能登録</strong></td><td><code class="inline">Microsoft.Network/SupportIPv6PrivateEndpoint</code> のフィーチャー登録が必須</td></tr>
+            <tr><td><strong>リージョン制約</strong></td><td>プライベートエンドポイントと接続先 PaaS リソースは同一リージョンである必要あり (クロスリージョン非対応)</td></tr>
+            <tr><td><strong>オンプレミス接続</strong></td><td>ExpressRoute + Virtual Network Routing Appliance のみ (VPN / Virtual WAN / NVA は非対応)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>サブスクリプションをプレビュー機能に登録する (必須)</li>
+            <li>デュアルスタック (IPv4 + IPv6) VNet と、デュアルスタックサブネットを用意する</li>
+            <li>デュアルスタック VNet 内に IPv6 アドレスを持つ VM を用意する (接続検証用)</li>
+        </ol>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>IPv6 プライベートエンドポイントの作成</span></div>
+            <pre><code class="language-bash"># プレビュー機能の登録 (必須)
+az feature register --namespace Microsoft.Network --name SupportIPv6PrivateEndpoint --subscription &lt;subscription-id&gt;
+az provider register --namespace Microsoft.Network
+
+# IPv6 プライベートエンドポイントの作成
+az network private-endpoint create \
+  --name &lt;private-endpoint-name&gt; \
+  --resource-group &lt;resource-group-name&gt; \
+  --vnet-name &lt;vnet-name&gt; \
+  --subnet &lt;subnet-name&gt; \
+  --private-connection-resource-id &lt;resource-id-of-target-service&gt; \
+  --group-id &lt;group-id&gt; \
+  --connection-name &lt;connection-name&gt; \
+  --location &lt;region&gt; \
+  --ip-version-type IPv6</code></pre>
+        </div>
+        <p>DNS はサービスごとに Private DNS ゾーンを作成してプライベートエンドポイントにリンクし、PaaS の FQDN がプライベートエンドポイントの IPv6 アドレスに解決されることを確認します。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>接続検証の例 (Azure Storage)</span></div>
+            <pre><code class="language-bash"># 接続検証の例 (Azure Storage)
+nslookup &lt;storage-account&gt;.blob.core.windows.net
+# AAAA レコードでプライベートエンドポイントの IPv6 アドレスが返ることを確認
+
+curl https://&lt;storage-account&gt;.blob.core.windows.net</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">👍</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>IPv6 移行を進める組織 (IPv4 アドレス枯渇対応、IPv6 対応が求められる業界要件など) が、Private Link によるプライベート接続をあきらめずに移行を進められる</li>
+                    <li>パブリックインターネットを経由しないプライベート接続のセキュリティメリットを IPv6 環境でも享受できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>IPv6 クライアントから Azure PaaS へのエンドツーエンドのプライベート接続が可能になる</li>
+                    <li>Azure 内 (VNet) とオンプレミス (ExpressRoute 経由) の両方の接続シナリオに対応</li>
+                    <li>既存のプライベートエンドポイント作成フローに <code class="inline">--ip-version-type IPv6</code> を追加するだけで利用できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-list">
+            <ul>
+                <li>プレビュー段階のため <strong>SLA はなく</strong>、本番ワークロードでの利用は推奨されない</li>
+                <li>利用可能リージョンが <strong>5 リージョンに限定</strong>される</li>
+                <li>接続先 PaaS リソースはプライベートエンドポイントと<strong>同一リージョン</strong>である必要がある (クロスリージョン接続非対応)</li>
+                <li>対応 PaaS サービスは <strong>Storage、SQL Database、Key Vault、Data Explorer の 4 サービスに限定</strong>される</li>
+                <li>オンプレミス接続は <strong>ExpressRoute ベースのシナリオのみ</strong>。VPN、Virtual WAN (vWAN)、Network Virtual Appliance (NVA) は現時点で非対応</li>
+                <li>IPv6 プライベートエンドポイントに対する <strong>NSG および ASG は非対応</strong></li>
+                <li>暗黙的な NAT 変換により、ダウンストリームサービスのログには元のクライアント IPv6 アドレスではなく <strong>VNet 側で変換されたソース IP アドレス</strong>が記録される</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="uc-title"><span class="uc-number">1</span>IPv6-only クライアントからの Azure Storage プライベートアクセス</div>
+            <p><strong>シナリオ</strong>: IPv6 移行を進めている組織が、デュアルスタック VNet 内の IPv6 クライアントから Azure Storage にパブリックネットワークを経由せずアクセスする。</p>
+            <p style="margin-top:12px;"><strong>実装例</strong>:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>Storage (blob) 向け IPv6 プライベートエンドポイント</span></div>
+                <pre><code class="language-bash"># IPv6 プライベートエンドポイントを Storage (blob) 向けに作成
+az network private-endpoint create \
+  --name pe-storage-ipv6 \
+  --resource-group rg-ipv6-demo \
+  --vnet-name vnet-dualstack \
+  --subnet snet-pe \
+  --private-connection-resource-id $(az storage account show -n mystorageacct -g rg-ipv6-demo --query id -o tsv) \
+  --group-id blob \
+  --connection-name conn-storage-ipv6 \
+  --location westcentralus \
+  --ip-version-type IPv6</code></pre>
+            </div>
+            <div class="uc-effect"><strong>効果</strong>: IPv6 クライアントから Storage への通信が Azure バックボーン内のプライベート接続に閉じ、パブリックエンドポイントを公開する必要がなくなる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="uc-title"><span class="uc-number">2</span>オンプレミス IPv6 ネットワークから ExpressRoute 経由での SQL Database アクセス</div>
+            <p><strong>シナリオ</strong>: オンプレミスを IPv6 化した企業が、ExpressRoute 経由で Azure SQL Database にプライベート接続する。</p>
+            <p style="margin-top:12px;"><strong>実装例</strong>: ExpressRoute 回線と ExpressRoute ゲートウェイ VNet 内のデュアルスタック Virtual Network Routing Appliance を用意し、GatewaySubnet に関連付けたルートテーブルに UDR (宛先: プライベートエンドポイントの IPv6 プレフィックス、次ホップ: Virtual Network Routing Appliance の IPv6 アドレス) を追加する。</p>
+            <div class="uc-effect"><strong>効果</strong>: オンプレミスの IPv6 クライアントからインターネットを経由せずに Azure SQL Database へ安全に接続できる。</div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>公式アップデートおよびドキュメントでは IPv6 サポートに固有の料金情報は確認できませんでした。Private Link の料金は以下のページを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/private-link/" target="_blank" rel="noopener">Azure Private Link 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <p>プレビューは以下のリージョンでのみ利用可能です。</p>
+        <div class="region-grid">
+            <span class="region-chip">🇺🇸 West Central US</span>
+            <span class="region-chip">🌏 East Asia</span>
+            <span class="region-chip">🇬🇧 UK South</span>
+            <span class="region-chip">🇺🇸 Central US</span>
+            <span class="region-chip">🇪🇺 North Europe</span>
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>Azure Virtual Network (デュアルスタック)</h4>
+                <p>IPv6 プライベートエンドポイントの配置には IPv4 + IPv6 のデュアルスタック VNet / サブネットが前提となる</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure ExpressRoute</h4>
+                <p>オンプレミス IPv6 クライアントからの接続経路。Virtual Network Routing Appliance と組み合わせて使用する</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Private DNS</h4>
+                <p>PaaS サービスの FQDN をプライベートエンドポイントの IPv6 アドレス (AAAA レコード) に解決させるために使用する</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Storage / SQL Database / Key Vault / Data Explorer</h4>
+                <p>プレビューで IPv6 プライベートエンドポイントに対応する PaaS サービス</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Private Link がついに <strong>IPv6 に対応</strong>し、IPv6 クライアントから Azure PaaS サービスへのプライベート接続が可能になりました。IPv4 アドレス枯渇対応や IPv6 要件を持つ組織にとって、<strong>Private Link のセキュリティメリットを維持したまま IPv6 移行を進められる重要な一歩</strong>です。ただしプレビュー段階では対応サービス 4 種・5 リージョンに限定され、NSG/ASG 非対応、オンプレミス接続は ExpressRoute のみといった制約があるため、まずは<strong>非本番環境での検証から始めることを推奨</strong>します。利用にはサブスクリプションのフィーチャー登録 (<code class="inline">SupportIPv6PrivateEndpoint</code>) が必須である点に注意してください。</p>
+        </div>
+        <div class="tag-row">
+            <span class="tag"># Networking</span>
+            <span class="tag"># Azure Private Link</span>
+            <span class="tag"># IPv6</span>
+            <span class="tag"># Private Endpoint</span>
+            <span class="tag"># Public Preview</span>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク / フッター ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=568842" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/private-link/private-link-ipv6" target="_blank" rel="noopener">Configure Azure Private Link over IPv6 (Preview) - Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/private-link/private-endpoint-overview" target="_blank" rel="noopener">What is a private endpoint? - Microsoft Learn</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/private-link/" target="_blank" rel="noopener">Azure Private Link 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=568842" target="_blank" rel="noopener">Azure Updates (ID: 568842)</a> / <a href="https://learn.microsoft.com/en-us/azure/private-link/private-link-ipv6" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>レポート: 2026-08-04 Azure Private Link IPv6 サポート (Public Preview) | Azure News Summary</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
