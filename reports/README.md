@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-08-05 - Azure Firewall: Explicit Proxy (明示的プロキシ) の一般提供開始](2026/2026-08-05-azure-firewall-explicit-proxy.md)
+- [2026-08-05 - Azure Virtual Machines: Nested Confidential VM (cc_v5) シリーズの廃止 (2026 年 9 月 1 日)](2026/2026-08-05-confidential-vms-ccv5-retirement.md)
 - [2026-08-04 - Network Security Perimeter: Perimeter Link (クロスペリメーター接続) のパブリックプレビュー](2026/2026-08-04-nsp-perimeter-link.md)
 - [2026-08-04 - Azure Private Link: IPv6 サポート (Public Preview)](2026/2026-08-04-private-link-ipv6.md)
 - [2026-08-04 - Azure DNS: Traffic Manager 統合による DNS ベースのロードバランシング (Public Preview)](2026/2026-08-04-azure-dns-traffic-manager-integration.md)

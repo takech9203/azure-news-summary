@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Firewall: Explicit Proxy (明示的プロキシ) の一般提供開始</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.release-date {
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 14px;
+    border-radius: 16px;
+}
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+/* Highlight */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 32px; font-weight: bold; }
+.stat-label { font-size: 14px; opacity: 0.9; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 4px;
+}
+
+.feature-content p {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin: 4px 0 0;
+}
+
+.ga-tag {
+    display: inline-block;
+    background: var(--ms-green);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-tertiary); }
+
+td code, li code, p code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* Steps */
+.steps {
+    counter-reset: step;
+    list-style: none;
+    margin: 16px 0;
+}
+
+.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 12px 12px 56px;
+    margin: 10px 0;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px;
+    border: 2px solid var(--ms-blue-300);
+    background: var(--ms-blue-100);
+}
+
+.merit-card h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+}
+
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 8px 0; font-size: 14px; }
+
+.warning-box {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+.warning-box h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin: 8px 0; font-size: 14px; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 18px;
+    margin: 14px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.usecase-card h4 {
+    color: var(--ms-purple);
+    margin-bottom: 8px;
+    font-size: 16px;
+}
+
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+
+.usecase-card .effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    margin-top: 10px;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+    border-left: 4px solid var(--ms-blue-500);
+}
+
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; }
+
+/* Links */
+.links-list { list-style: none; }
+
+.links-list li {
+    margin: 8px 0;
+    padding: 10px 14px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.links-list a {
+    color: var(--ms-blue-700);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.links-list a:hover { text-decoration: underline; }
+
+a { color: var(--ms-blue-700); }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0 0;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 8px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer a { color: var(--ms-blue-700); }
+
+.prereq-list { padding-left: 20px; }
+.prereq-list li { margin: 8px 0; font-size: 14px; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .container { padding: 12px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">🛡️ Azure Firewall</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="release-date">📅 リリース日: 2026-08-05</span>
+        </div>
+        <h1>Explicit Proxy (明示的プロキシ) の一般提供開始</h1>
+        <p class="subtitle">UDR 不要でアウトバウンド Web トラフィックをアプリケーションレベルで制御 — プロキシ設定だけで Azure Firewall に誘導</p>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Firewall の <strong>Explicit Proxy (明示的プロキシ)</strong> が一般提供 (GA) となりました。Explicit Proxy を有効にすると、アプリケーションやブラウザーのプロキシ設定で Azure Firewall のプライベート IP アドレスを指定し、HTTP / HTTPS トラフィックを直接ファイアウォールに送信できます。従来のユーザー定義ルート (UDR) によるルートベースのトラフィック制御に代わる選択肢となり、アウトバウンド Web トラフィックをアプリケーションレベルでより細かく制御できます。</p>
+        <div class="highlight-box">
+            Azure Firewall は既定では<strong>透過プロキシモード</strong>で動作し、UDR によってトラフィックをファイアウォールに誘導してインラインで検査・転送します。<strong>Explicit Proxy モード</strong>では UDR に依存せず、送信元アプリケーション側のプロキシ設定 (手動設定または PAC ファイルによる自動構成) でトラフィックをファイアウォールに向けます。PAC ファイルはファイアウォール自身がホストして配信できます。
+        </div>
+
+        <h3>📊 パブリックプレビューの実績</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">300+</div>
+                <div class="stat-label">プレビューで有効化された<br>Azure サブスクリプション</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">約 40 社</div>
+                <div class="stat-label">採用した S500 顧客</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1 ポート</div>
+                <div class="stat-label">HTTP / HTTPS 両対応の<br>単一プロキシエンドポイント</div>
+            </div>
+        </div>
+        <p>プレビューで得られたフィードバックをもとに、単一プロキシエンドポイントでの HTTP / HTTPS 両対応、マネージド ID ベースの PAC ファイル取得、ポータルでの構成エクスペリエンス改善などが GA で提供されています。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>トラフィックをファイアウォールに誘導するには UDR の構成が必要で、ルーティング設計・運用の負担があった</li>
+                    <li>プレビュー時点では HTTP と HTTPS で個別のポート指定が必要だった</li>
+                    <li>PAC ファイル取得のセキュアな認証手段が限られていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>UDR を構成せず、アプリケーション / ブラウザーのプロキシ設定だけでトラフィックを Azure Firewall に送信可能に</li>
+                    <li>単一のプロキシエンドポイント (単一ポート) で HTTP / HTTPS 両方のトラフィックに対応</li>
+                    <li>ユーザー割り当てマネージド ID による PAC ファイル取得に対応し、Blob Storage 上の PAC ファイルをセキュアに参照可能に</li>
+                    <li>Azure Portal での構成エクスペリエンスが改善</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph OnPrem["🏢 オンプレミス / ハイブリッド環境"]
+        ARC["🖥️ Azure Arc 対応サーバー"]
+    end
+    subgraph VNet["☁️ Azure Virtual Network"]
+        APP(["🌐 ブラウザー / アプリケーション&lt;br&gt;(プロキシ設定: FW プライベート IP)"])
+        FW["🛡️ Azure Firewall&lt;br&gt;(Explicit Proxy 有効)"]
+        POLICY["📋 ファイアウォールポリシー&lt;br&gt;(アプリケーションルール)"]
+    end
+    subgraph Support["🔐 PAC ファイル配信"]
+        BLOB[("🗄️ Blob Storage&lt;br&gt;(PAC ファイル)")]
+        MSI["🪪 マネージド ID&lt;br&gt;(Storage Blob Data Reader/Contributor)"]
+    end
+    INTERNET["🌍 インターネット (HTTP/HTTPS)"]
+
+    APP -- "プロキシ経由 (UDR 不要)" --> FW
+    ARC -- "フォワードプロキシとして利用" --> FW
+    POLICY --> FW
+    MSI --> BLOB
+    FW -- "PAC ファイル取得・配信" --> BLOB
+    FW -- "許可されたトラフィックを送信" --> INTERNET
+            </pre>
+        </div>
+        <p>クライアントはプロキシ設定 (手動または PAC ファイル) で Azure Firewall のプライベート IP を指定し、UDR なしで HTTP / HTTPS トラフィックを直接ファイアウォールへ送信します。PAC ファイルは Blob Storage に配置し、マネージド ID 経由でファイアウォールが取得・配信します。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🧭</div>
+            <div class="feature-content">
+                <h4>プロキシ設定によるトラフィック誘導 (UDR 不要)</h4>
+                <p>ブラウザーやアプリケーションのプロキシ設定に Azure Firewall のプライベート IP を指定することで、UDR に依存せずトラフィックをファイアウォール経由で送信</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔌</div>
+            <div class="feature-content">
+                <h4>単一ポートでの HTTP / HTTPS 両対応<span class="ga-tag">GA での強化点</span></h4>
+                <p>単一の HTTP ポート設定で HTTP / HTTPS 両方の宛先に対応可能</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📄</div>
+            <div class="feature-content">
+                <h4>PAC ファイルによる自動構成</h4>
+                <p>PAC (Proxy Auto-Configuration) ファイルを Blob Storage にアップロードし、ファイアウォールがホストしてクライアントに配信。PAC ファイル配信用のポートを個別に指定可能</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🪪</div>
+            <div class="feature-content">
+                <h4>マネージド ID ベースの PAC ファイル取得<span class="ga-tag">GA での強化点</span></h4>
+                <p>ユーザー割り当てマネージド ID (Storage Blob Data Contributor / Storage Blob Data Reader ロール) を使用して、Blob Storage から PAC ファイルをセキュアに取得</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🏛️</div>
+            <div class="feature-content">
+                <h4>Azure Policy によるガバナンス</h4>
+                <p>「ファイアウォールポリシーへの Explicit Proxy 構成の強制」「Explicit Proxy 使用時の PAC ファイル構成の監査」のポリシー定義が利用可能</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <tr><th style="width: 32%;">項目</th><th>詳細</th></tr>
+            <tr><td>対応プロトコル</td><td>HTTP / HTTPS</td></tr>
+            <tr><td>構成場所</td><td>ファイアウォールポリシー (ファイアウォールリソース本体ではない)</td></tr>
+            <tr><td>トラフィック誘導方式</td><td>クライアント側プロキシ設定 (手動または PAC ファイル)。UDR 不要</td></tr>
+            <tr><td>ポート</td><td>単一の HTTP ポートで HTTP / HTTPS 両対応。PAC ファイル配信用ポートは別途指定</td></tr>
+            <tr><td>PAC ファイルの配置先</td><td>Azure Storage アカウントの Blob コンテナー</td></tr>
+            <tr><td>PAC ファイル取得の認証</td><td>ユーザー割り当てマネージド ID (プレフィックス <code>PacFileMSI-</code> が必要)</td></tr>
+            <tr><td>必要なロール</td><td>Storage Blob Data Contributor、Storage Blob Data Reader (対象ストレージアカウント上)</td></tr>
+            <tr><td>トラフィック許可</td><td>ファイアウォールポリシーのアプリケーションルールで定義</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3>✅ 前提条件</h3>
+        <ol class="prereq-list">
+            <li>ファイアウォールポリシーが関連付けられた Azure Firewall (Explicit Proxy はポリシー側で構成)</li>
+            <li>PAC ファイルをホストする場合: PAC ファイルを格納する Blob コンテナーを持つ Azure Storage アカウント</li>
+            <li>PAC ファイルをホストする場合: 対象ストレージアカウントに対して Storage Blob Data Contributor / Storage Blob Data Reader ロールを持つユーザー割り当てマネージド ID (名前は <code>PacFileMSI-</code> プレフィックス必須)</li>
+        </ol>
+
+        <h3>💻 Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code class="language-bash"># Explicit Proxy を有効にしたファイアウォールポリシーを作成
+az network firewall policy create \
+    --resource-group "testrg" \
+    --name "testfwpolicy" \
+    --sku Premium \
+    --explicit-proxy enable-explicit-proxy=true http-port=9001 enable-pac-file=true pac-file-port=122 pac-file="https://&lt;storage&gt;.blob.core.windows.net/&lt;container&gt;/proxy.pac" \
+    --identity "&lt;Managed_Identity_ID&gt;"
+
+# 既存のファイアウォールポリシーを更新
+az network firewall policy update \
+    --resource-group "testrg" \
+    --name "testfwpolicy" \
+    --explicit-proxy enable-explicit-proxy=true http-port=9001 enable-pac-file=true pac-file-port=124 pac-file="https://&lt;storage&gt;.blob.core.windows.net/&lt;container&gt;/proxy.pac" \
+    --identity "&lt;Managed_Identity_ID&gt;"</code></pre>
+        </div>
+
+        <h3>💻 PowerShell</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">powershell</span></div>
+            <pre><code class="language-powershell"># Explicit Proxy 設定を作成
+$exProxy = New-AzFirewallPolicyExplicitProxy `
+    -EnableExplicitProxy `
+    -HttpPort 100 `
+    -EnablePacFile `
+    -PacFilePort 130 `
+    -PacFile "https://&lt;storage&gt;.blob.core.windows.net/&lt;container&gt;/proxy.pac"
+
+# マネージド ID とともにファイアウォールポリシーを作成
+New-AzFirewallPolicy `
+    -Name "fp1" `
+    -ResourceGroupName "TestRg" `
+    -ExplicitProxy $exProxy `
+    -UserAssignedIdentityId $identityId</code></pre>
+        </div>
+
+        <h3>🖥️ Azure Portal</h3>
+        <ol class="steps">
+            <li>ファイアウォールポリシーで <strong>Enable explicit proxy</strong> を有効化 (HTTP ポートは HTTP / HTTPS 共通で 1 つ指定可能)</li>
+            <li>トラフィックを許可する<strong>アプリケーションルール</strong>をポリシーに作成</li>
+            <li>PAC ファイルを使用する場合は <strong>Enable proxy auto-configuration</strong> を選択</li>
+            <li>Blob コンテナーに PAC ファイルをアップロードし、ファイル URL をコピー</li>
+            <li>マネージド ID を作成し、ストレージアカウントの IAM で Storage Blob Data Contributor / Storage Blob Data Reader ロールを割り当て</li>
+            <li>Explicit Proxy 構成に PAC ファイル URL とマネージド ID を設定</li>
+        </ol>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">👍</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>既存のフォワードプロキシ製品からの移行シナリオに対応でき、Azure Firewall の既存セキュリティ機能を活かしながらネットワーク運用を簡素化できる</li>
+                    <li>ハイブリッド環境の Azure Arc オンボーディングにおいて、集中管理されたアウトバウンド制御を維持しつつ Microsoft サービスへのセキュアな接続を実現できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>UDR の設計・管理が不要になり、ルーティング構成に手を加えずにファイアウォール経由の通信を実現できる</li>
+                    <li>アプリケーション単位・ブラウザー単位でプロキシ利用を選択でき、トラフィック制御の粒度が向上する</li>
+                    <li>PAC ファイルによりプロキシ設定の配布・条件分岐 (宛先ごとのプロキシ経由/直接接続の振り分け) を自動化できる</li>
+                    <li>Azure Policy でポリシー全体に Explicit Proxy 構成を強制・監査でき、ガバナンスを確保できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <h4>知っておくべき制約</h4>
+            <ul>
+                <li>対応プロトコルは HTTP / HTTPS のみ (その他のプロトコルは従来どおりルートベースの制御が必要)</li>
+                <li>クライアント側 (アプリケーション / ブラウザー) にプロキシ設定を行う必要がある</li>
+                <li>PAC ファイルをホストする場合は Storage アカウントとユーザー割り当てマネージド ID の準備が必要で、マネージド ID 名には <code>PacFileMSI-</code> プレフィックスが必須</li>
+                <li>Explicit Proxy はファイアウォールポリシーで構成するため、ポリシーを使用しないクラシックルール構成では利用できない</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🖥️ ユースケース 1: Azure Arc 対応サーバーのオンボーディング</h4>
+            <p><strong>シナリオ</strong>: ハイブリッド環境のオンプレミスサーバーを Azure Arc にオンボードする際、Azure Firewall をフォワードプロキシとして使用し、必要な Microsoft サービスへの接続を集中管理されたアウトバウンド制御のもとで許可する。</p>
+            <p class="effect"><strong>効果</strong>: Arc 対応サーバーからの通信経路を Azure Firewall に集約し、セキュリティ制御を維持したままセキュアな接続を実現できる。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>🔄 ユースケース 2: 既存フォワードプロキシからの移行</h4>
+            <p><strong>シナリオ</strong>: サードパーティのフォワードプロキシ製品を利用中の組織が、クライアントのプロキシ設定 (または PAC ファイル) の向き先を Azure Firewall に変更して移行する。</p>
+            <p class="effect"><strong>効果</strong>: ルーティング変更なしで移行でき、Azure Firewall の既存のセキュリティ機能 (アプリケーションルールなど) を活用しながらネットワーク運用を簡素化できる。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>🎯 ユースケース 3: UDR を使わないアプリケーションレベルのトラフィック制御</h4>
+            <p><strong>シナリオ</strong>: 特定のアプリケーションやブラウザーのみプロキシ設定でファイアウォール経由とし、その他のトラフィックはルーティングに影響を与えず制御する。</p>
+            <p class="effect"><strong>効果</strong>: サブネット単位の UDR では難しいアプリケーション単位のトラフィックステアリングを実現できる。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Azure Firewall の料金は SKU (Basic / Standard / Premium) ごとに、デプロイ料金 (時間あたり) とデータ処理料金 (GB あたり) で構成されます。<strong>料金ページに Explicit Proxy に関する追加料金の記載はありません。</strong>具体的な料金はリージョン・通貨によって異なるため、料金ページを参照してください。</p>
+        <table>
+            <tr><th style="width: 32%;">課金項目</th><th>内容</th></tr>
+            <tr><td>デプロイ料金</td><td>SKU ごとの固定時間料金 (スケールに関係なくデプロイ単位)</td></tr>
+            <tr><td>データ処理料金</td><td>処理データ量 (GB) に応じた課金</td></tr>
+            <tr><td>Capacity Unit (オプション)</td><td>Standard / Premium のみ。事前容量予約用で、明示的に構成しない限り追加料金なし</td></tr>
+        </table>
+        <p>詳細: <a href="https://azure.microsoft.com/pricing/details/azure-firewall/" target="_blank" rel="noopener">Azure Firewall の料金</a></p>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>📋 ファイアウォールポリシー (Azure Firewall Manager)</strong>
+                Explicit Proxy の構成先。アプリケーションルールによるトラフィック許可もポリシーで定義
+            </div>
+            <div class="related-card">
+                <strong>🗄️ Azure Blob Storage</strong>
+                PAC ファイルのホスティング先
+            </div>
+            <div class="related-card">
+                <strong>🪪 マネージド ID (Microsoft Entra ID)</strong>
+                PAC ファイルのセキュアな取得に使用するユーザー割り当てマネージド ID
+            </div>
+            <div class="related-card">
+                <strong>🏛️ Azure Policy</strong>
+                Explicit Proxy 構成の強制・PAC ファイル構成の監査に利用可能
+            </div>
+            <div class="related-card">
+                <strong>🖥️ Azure Arc</strong>
+                ハイブリッド環境のサーバーオンボーディングで Azure Firewall をフォワードプロキシとして活用
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="links-list">
+            <li>🔔 <a href="https://azure.microsoft.com/updates?id=568825" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/firewall/explicit-proxy" target="_blank" rel="noopener">Microsoft Learn: Azure Firewall explicit proxy</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/firewall/policy-rule-sets" target="_blank" rel="noopener">Microsoft Learn: Azure Firewall policy rule sets</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/azure-firewall/" target="_blank" rel="noopener">料金ページ: Azure Firewall</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            Azure Firewall の Explicit Proxy が GA となり、<strong>UDR に依存しないアウトバウンド Web トラフィック制御</strong>が本番環境で利用可能になりました。単一ポートでの HTTP / HTTPS 両対応、マネージド ID による PAC ファイル取得など、プレビューからの実用的な強化が含まれています。既存フォワードプロキシからの移行や Azure Arc オンボーディングを検討している組織は、ファイアウォールポリシーでの有効化と PAC ファイル配信構成の評価を推奨します。あわせて Azure Policy による構成の強制・監査でガバナンスを確保するとよいでしょう。
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Firewall</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">Explicit Proxy</span>
+            <span class="tag">PAC</span>
+            <span class="tag">Managed Identity</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=568825" target="_blank" rel="noopener">Azure Updates (ID: 568825)</a> / <a href="https://learn.microsoft.com/azure/firewall/explicit-proxy" target="_blank" rel="noopener">Microsoft Learn: Azure Firewall explicit proxy</a></p>
+        <p>Azure News Summary — Azure Firewall: Explicit Proxy の一般提供開始 (2026-08-05)</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

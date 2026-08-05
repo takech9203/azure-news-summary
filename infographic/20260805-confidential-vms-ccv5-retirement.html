@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Virtual Machines: Nested Confidential VM (cc_v5) シリーズの廃止</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-retirement { background: var(--ms-red); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta { font-size: 14px; opacity: 0.9; }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+/* Alert box */
+.alert-box {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.alert-box .alert-icon { font-size: 26px; flex-shrink: 0; }
+.alert-box strong { color: var(--ms-red); }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-card.stat-red { background: linear-gradient(135deg, var(--ms-red), #A52D00); }
+.stat-card.stat-orange { background: linear-gradient(135deg, var(--ms-orange), #D97700); }
+
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 14px; opacity: 0.92; margin-top: 6px; }
+
+/* VM size chips */
+.vm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.vm-chip {
+    background: var(--ms-surface-tertiary);
+    border: 2px solid var(--ms-red);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+}
+
+.vm-chip .vm-name {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-weight: 700;
+    color: var(--ms-red);
+    font-size: 15px;
+}
+
+.vm-chip .vm-desc { font-size: 12.5px; color: var(--ms-text-secondary); margin-top: 4px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-card.red-accent { border-left-color: var(--ms-red); }
+.feature-card.red-accent .feature-icon { background: #FFEBEE; }
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.feature-content h4 { font-size: 15.5px; color: var(--azure-dark-blue); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 6px 0; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+table.info-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+table.info-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+table.info-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+.mono { font-family: 'Cascadia Code', 'Consolas', monospace; font-size: 13px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid { display: flex; justify-content: center; }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* Lists */
+.section ul.plain-list { padding-left: 22px; margin: 10px 0; }
+.section ul.plain-list li { margin: 6px 0; }
+
+/* Constraint list */
+.constraint-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.constraint-item .c-icon { font-size: 18px; flex-shrink: 0; }
+
+/* Related services */
+.related-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.related-card h4 { color: var(--ms-purple); font-size: 15px; margin-bottom: 6px; }
+.related-card p { font-size: 13.5px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+.link-list { list-style: none; padding: 0; margin: 10px 0; }
+.link-list li {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    font-size: 14px;
+}
+.link-list li:last-child { border-bottom: none; }
+.link-list a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+.link-list a:hover { text-decoration: underline; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* Timeline */
+.timeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 24px 0;
+    flex-wrap: wrap;
+}
+
+.timeline-step {
+    flex: 1;
+    min-width: 200px;
+    text-align: center;
+    padding: 16px 12px;
+    border-radius: 10px;
+    position: relative;
+}
+
+.timeline-step.now { background: var(--ms-blue-100); border: 2px solid var(--azure-blue); }
+.timeline-step.deadline { background: #FFF4E5; border: 2px solid var(--ms-orange); }
+.timeline-step.retired { background: #FFEBEE; border: 2px solid var(--ms-red); }
+
+.timeline-arrow {
+    font-size: 24px;
+    color: var(--ms-text-secondary);
+    padding: 0 10px;
+    flex-shrink: 0;
+}
+
+.timeline-step .t-date { font-weight: 900; font-size: 17px; }
+.timeline-step .t-desc { font-size: 13px; color: var(--ms-text-secondary); margin-top: 4px; }
+.timeline-step.now .t-date { color: var(--azure-blue); }
+.timeline-step.deadline .t-date { color: var(--ms-orange); }
+.timeline-step.retired .t-date { color: var(--ms-red); }
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+.footer a:hover { text-decoration: underline; }
+
+@media (max-width: 640px) {
+    .before-after { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .timeline { flex-direction: column; }
+    .timeline-arrow { transform: rotate(90deg); padding: 6px 0; }
+    .timeline-step { width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Virtual Machines (Confidential Computing)</span>
+            <span class="badge badge-retirement">Retirement (廃止告知)</span>
+            <span class="badge badge-preview">Preview のまま廃止</span>
+        </div>
+        <h1>Nested Confidential VM (cc_v5) シリーズが 2026 年 9 月 1 日に廃止</h1>
+        <div class="meta">リリース日: 2026-08-05 | 機能: Nested Confidential VM (cc_v5) シリーズの廃止告知</div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>2026 年 9 月 1 日に、Nested Confidential VM である <strong>cc_v5 シリーズ (Confidential child capable VM)</strong> が廃止され、利用および購入ができなくなります。</p>
+
+        <div class="alert-box">
+            <span class="alert-icon">⚠️</span>
+            <div>廃止日までにリサイズされていない対象 VM は、<strong>割り当て解除 (deallocate) されます</strong>。ワークロードが停止するため、対象 VM を利用中の場合は早急な対応が必要です。</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card stat-red">
+                <div class="stat-value">2026-09-01</div>
+                <div class="stat-label">廃止日 (利用・購入不可)</div>
+            </div>
+            <div class="stat-card stat-orange">
+                <div class="stat-value">4 シリーズ</div>
+                <div class="stat-label">廃止対象の VM サイズ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">deallocate</div>
+                <div class="stat-label">未対応 VM の扱い</div>
+            </div>
+        </div>
+
+        <h3>廃止対象の VM サイズ (4 シリーズ)</h3>
+        <div class="vm-grid">
+            <div class="vm-chip">
+                <div class="vm-name">DCas_cc_v5</div>
+                <div class="vm-desc">汎用、ローカルディスクなし</div>
+            </div>
+            <div class="vm-chip">
+                <div class="vm-name">DCads_cc_v5</div>
+                <div class="vm-desc">汎用、ローカルディスクあり</div>
+            </div>
+            <div class="vm-chip">
+                <div class="vm-name">ECas_cc_v5</div>
+                <div class="vm-desc">メモリ最適化、ローカルディスクなし</div>
+            </div>
+            <div class="vm-chip">
+                <div class="vm-name">ECads_cc_v5</div>
+                <div class="vm-desc">メモリ最適化、ローカルディスクあり</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            cc_v5 シリーズは、デプロイした親 VM からリソースを借りて <strong>AMD SEV-SNP で保護された子 VM (nested confidential VM)</strong> を作成できる Preview 段階の VM シリーズで、Azure ホストおよび親 VM からのより高いレベルの分離を実現するための親子デプロイメントモデルを提供していました。Azure Confidential VM と同じハードウェア (AMD EPYC Milan) 上に構築されており、主に <strong>Azure Kubernetes Service (AKS) のエージェントノードサイズ</strong>として有効化されていました。
+        </div>
+
+        <h3>影響を受けるユーザーが取るべきアクション</h3>
+        <div class="timeline">
+            <div class="timeline-step now">
+                <div class="t-date">今すぐ</div>
+                <div class="t-desc">対象 VM の利用状況を確認し、移行先を検討</div>
+            </div>
+            <div class="timeline-arrow">➜</div>
+            <div class="timeline-step deadline">
+                <div class="t-date">〜 2026-09-01</div>
+                <div class="t-desc">期限までに対象 VM を別の VM サイズにリサイズ</div>
+            </div>
+            <div class="timeline-arrow">➜</div>
+            <div class="timeline-step retired">
+                <div class="t-date">2026-09-01 以降</div>
+                <div class="t-desc">リサイズしなかった VM は割り当て解除 (deallocate)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["⚠️ 移行前 (2026 年 9 月 1 日に廃止)"]
+        P["🖥️ 親 VM: cc_v5 シリーズ<br/>(DCas/DCads/ECas/ECads_cc_v5)"]
+        C["🔒 子 VM (Nested Confidential VM)<br/>AMD SEV-SNP 保護"]
+        P -->|リソースを貸与| C
+    end
+
+    subgraph After["✅ 移行後 (リサイズ・移行先の例)"]
+        CVM["🔐 Confidential VM (GA)<br/>DCasv5/DCadsv5, ECasv5/ECadsv5,<br/>DCasv6/ECasv6 など"]
+    end
+
+    Before -->|"2026-09-01 までにリサイズ<br/>(未対応の VM は deallocate)"| After
+            </pre>
+        </div>
+        <p>親 VM のリソースを借りて SEV-SNP 保護の子 VM を動かす cc_v5 の親子モデルが廃止されます。移行先の例として、同じ AMD SEV-SNP による保護を VM 単位で提供する GA 済みの Confidential VM シリーズ (DCasv5/ECasv5、DCasv6/ECasv6 など) があります。</p>
+    </section>
+
+    <!-- サービスアップデートの詳細 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔍</span>サービスアップデートの詳細</h2>
+
+        <h3>廃止の内容</h3>
+        <div class="feature-card red-accent">
+            <div class="feature-icon">📅</div>
+            <div class="feature-content">
+                <h4>廃止日: 2026 年 9 月 1 日</h4>
+                <p>この日以降、cc_v5 シリーズは利用・購入ができなくなる</p>
+            </div>
+        </div>
+        <div class="feature-card red-accent">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>廃止対象の VM サイズ</h4>
+                <p>DCas_cc_v5、DCads_cc_v5、ECas_cc_v5、ECads_cc_v5 の各シリーズ</p>
+            </div>
+        </div>
+        <div class="feature-card red-accent">
+            <div class="feature-icon">🛑</div>
+            <div class="feature-content">
+                <h4>未対応時の動作</h4>
+                <p>廃止日までにリサイズされていない対象 VM は割り当て解除 (deallocate) される</p>
+            </div>
+        </div>
+
+        <h3>廃止される cc_v5 シリーズの特徴 (参考)</h3>
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>Confidential child capable VM</h4>
+                <p>親 VM からリソースを借りて AMD SEV-SNP 保護の子 VM を作成する親子デプロイメントモデル</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>親 VM は汎用 VM とほぼ同等</h4>
+                <p>親 VM は汎用 Azure VM (D シリーズ / E シリーズ相当) とほぼ同等の機能を持つ</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-content">
+                <h4>Confidential VM と同じハードウェア基盤</h4>
+                <p>Azure Confidential VM と同じハードウェア (AMD EPYC Milan) 上に構築</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧪</div>
+            <div class="feature-content">
+                <h4>Preview のまま GA に至らず</h4>
+                <p>Preview のまま提供されており、GA には至らなかった</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">☸️</div>
+            <div class="feature-content">
+                <h4>主に AKS のエージェントノード向け</h4>
+                <p>主に AKS のエージェントノードサイズとして有効化 (AKS 以外での利用は個別問い合わせが必要だった)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📐</span>技術仕様</h2>
+        <p>廃止対象シリーズの主な仕様 (Microsoft Learn ドキュメントより):</p>
+        <div class="table-wrap">
+            <table class="info-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>対象シリーズ</td><td><span class="mono">DCas_cc_v5 / DCads_cc_v5</span> (汎用)、<span class="mono">ECas_cc_v5 / ECads_cc_v5</span> (メモリ最適化)</td></tr>
+                <tr><td>プロセッサ</td><td>AMD EPYC (Milan) [x86-64]</td></tr>
+                <tr><td>vCPU / メモリ (DCas_cc_v5)</td><td>4〜96 vCPU / 16〜384 GiB</td></tr>
+                <tr><td>vCPU / メモリ (ECas_cc_v5)</td><td>4〜96 vCPU / 32〜672 GiB</td></tr>
+                <tr><td>セキュリティ機能</td><td>AMD SEV-SNP 保護の子 VM (Nested Virtualization: サポート)</td></tr>
+                <tr><td>ステータス</td><td>Preview (GA 未到達のまま廃止)</td></tr>
+                <tr><td>廃止日</td><td>2026 年 9 月 1 日</td></tr>
+                <tr><td>未対応時の動作</td><td>割り当て解除 (deallocate)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- 移行方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🚚</span>移行方法</h2>
+
+        <h3>移行先の検討</h3>
+        <p>今回の廃止告知では具体的な移行先シリーズは指定されていませんが、Microsoft Learn の Confidential VM ドキュメントでは、GA 済みの Confidential VM として以下のシリーズがサポート対象として記載されています。VM 単位で AMD SEV-SNP (または Intel TDX) によるハードウェアベースの分離が必要な場合の移行先候補となります。</p>
+        <div class="table-wrap">
+            <table class="info-table">
+                <tr><th>用途</th><th>ローカルディスクなし</th><th>ローカルディスクあり</th></tr>
+                <tr><td>汎用</td><td><span class="mono">DCasv5、DCasv6、DCesv6</span></td><td><span class="mono">DCadsv5、DCadsv6、DCedsv6</span></td></tr>
+                <tr><td>メモリ最適化</td><td><span class="mono">ECasv5、ECasv6、ECesv6</span></td><td><span class="mono">ECadsv5、ECadsv6、ECedsv6</span></td></tr>
+                <tr><td>GPU (NVIDIA H100)</td><td><span class="mono">NCCadsH100v5</span></td><td>-</td></tr>
+            </table>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>🔐 機密コンピューティングが必要な場合</h4>
+                <ul>
+                    <li>GA 済み Confidential VM シリーズへ移行</li>
+                    <li>DCasv5/DCadsv5、ECasv5/ECadsv5、DCasv6/ECasv6 など</li>
+                    <li>VM 単位の AMD SEV-SNP / Intel TDX 分離を提供</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>🖥️ 機密コンピューティングが不要な場合</h4>
+                <ul>
+                    <li>通常の D シリーズ / E シリーズへのリサイズも選択肢</li>
+                    <li>親 VM と機能面でほぼ同等</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>Azure CLI でのリサイズ</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI</span></div>
+            <pre><code class="language-bash"># 対象サイズが移行先リージョンで利用可能か確認
+az vm list-vm-resize-options --resource-group &lt;リソースグループ名&gt; --name &lt;VM 名&gt; --output table
+
+# VM のリサイズ (例: DCasv5 シリーズへ変更)
+az vm resize --resource-group &lt;リソースグループ名&gt; --name &lt;VM 名&gt; --size Standard_DC4as_v5</code></pre>
+        </div>
+
+        <div class="alert-box">
+            <span class="alert-icon">💡</span>
+            <div>リサイズ時は <strong>VM の再起動が発生</strong>します。また、Confidential VM への移行では OS イメージのセキュリティ要件 (Confidential VM 対応イメージ) やセキュリティタイプの設定が異なるため、単純なリサイズではなく<strong>再デプロイが必要になる場合があります</strong>。事前に Microsoft Learn のドキュメントで移行先シリーズの要件を確認してください。</div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="constraint-item"><span class="c-icon">🚫</span><div>2026 年 9 月 1 日以降、cc_v5 シリーズは利用・購入不可となる</div></div>
+        <div class="constraint-item"><span class="c-icon">🛑</span><div>期限までにリサイズしなかった VM は割り当て解除され、ワークロードが停止する</div></div>
+        <div class="constraint-item"><span class="c-icon">🧩</span><div>cc_v5 特有の「親 VM のリソースを借りて子 VM を SEV-SNP 保護する」親子デプロイメントモデルは、GA 済み Confidential VM シリーズでは同一の形では提供されない</div></div>
+        <div class="constraint-item"><span class="c-icon">📋</span><div>Confidential VM (DCasv5/ECasv5 など) へ移行する場合、対応 OS イメージや機能サポート (Azure Backup、Site Recovery、Accelerated Networking などに制限あり) の確認が必要</div></div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🔐 Azure Confidential VM</h4>
+                <p>DCasv5/ECasv5、DCasv6/ECasv6 シリーズなど。AMD SEV-SNP / Intel TDX による VM 単位のハードウェアベース分離を提供する GA 済みシリーズ。cc_v5 と同様の機密コンピューティング要件に対する移行先候補。</p>
+            </div>
+            <div class="related-card">
+                <h4>☸️ Azure Kubernetes Service (AKS)</h4>
+                <p>cc_v5 シリーズが主にエージェントノードサイズとして有効化されていたサービス。AKS で利用中の場合はノードプールの VM サイズ変更が必要。</p>
+            </div>
+            <div class="related-card">
+                <h4>✅ Azure Attestation</h4>
+                <p>Confidential VM のプラットフォーム健全性を起動時に検証するアテステーションサービス。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li>🖼️ <a href="https://takech9203.github.io/azure-news-summary/20260805-confidential-vms-ccv5-retirement.html" target="_blank" rel="noopener">インフォグラフィック</a></li>
+            <li>📢 <a href="https://azure.microsoft.com/updates?id=568661" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/sizes/general-purpose/dcasccv5-series" target="_blank" rel="noopener">DCas_cc_v5 シリーズ (Microsoft Learn)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/ecasccv5-ecadsccv5-series" target="_blank" rel="noopener">ECas_cc_v5 / ECads_cc_v5 シリーズ (Microsoft Learn)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/en-us/azure/confidential-computing/confidential-vm-overview" target="_blank" rel="noopener">Azure Confidential VM の概要 (Microsoft Learn)</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/calculator/" target="_blank" rel="noopener">料金計算ツール</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section summary-box">
+        <h2 class="section-title"><span class="icon">💡</span>まとめ</h2>
+        <p>Preview として提供されてきた Nested Confidential VM (cc_v5) シリーズ 4 種 (DCas_cc_v5、DCads_cc_v5、ECas_cc_v5、ECads_cc_v5) が <strong>2026 年 9 月 1 日に廃止</strong>されます。<strong>期限までにリサイズしなかった VM は割り当て解除されるため、対象 VM を利用中の場合は早急な対応が必要です。</strong></p>
+        <p>機密コンピューティングの要件が継続する場合は GA 済みの Confidential VM シリーズ (DCasv5/ECasv5、DCasv6/ECasv6 など) を、不要な場合は通常の D/E シリーズを移行先として検討し、AKS ノードプールで利用している場合はノードサイズの変更計画を立ててください。</p>
+        <div class="tags">
+            <span class="tag">Azure Virtual Machines</span>
+            <span class="tag">Confidential Computing</span>
+            <span class="tag">Retirement</span>
+            <span class="tag">cc_v5</span>
+            <span class="tag">AMD SEV-SNP</span>
+            <span class="tag">AKS</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>:
+            <a href="https://azure.microsoft.com/updates?id=568661" target="_blank" rel="noopener">Azure Updates (ID: 568661)</a> /
+            <a href="https://learn.microsoft.com/en-us/azure/confidential-computing/confidential-vm-overview" target="_blank" rel="noopener">Microsoft Learn</a>
+        </p>
+        <p>Source report: reports/2026/2026-08-05-confidential-vms-ccv5-retirement.md | Generated: 2026-08-05 | Azure News Summary</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
