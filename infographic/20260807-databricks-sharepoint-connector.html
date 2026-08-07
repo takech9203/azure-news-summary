@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Databricks: SharePoint コネクタが一般提供 (GA) 開始</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 220px;
+    height: 220px;
+    background: rgba(80, 230, 255, 0.15);
+    border-radius: 50%;
+}
+
+.header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+
+.header .meta {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 13px;
+    opacity: 0.95;
+    position: relative;
+    z-index: 1;
+}
+
+.header .meta span {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 4px 12px;
+    border-radius: 6px;
+}
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+/* Highlight */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* Feature card */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+    font-size: 16px;
+}
+
+.feature-content p, .feature-content ul {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content ul { padding-left: 20px; margin-top: 6px; }
+.feature-content li { margin: 4px 0; }
+
+.feature-content code, .table-wrap code, .section code:not(pre code) {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: var(--ms-blue-800);
+}
+
+/* Table */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    text-align: left;
+    padding: 10px 14px;
+    white-space: nowrap;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.merit-business {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+}
+
+.merit-tech {
+    background: #F3EEF9;
+    border: 2px solid var(--ms-purple);
+}
+
+.merit-business h4 { color: var(--azure-blue); margin-bottom: 10px; }
+.merit-tech h4 { color: var(--ms-purple); margin-bottom: 10px; }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 8px 0; font-size: 14px; }
+
+.caution-box {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+.caution-box h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.caution-box ul { padding-left: 20px; }
+.caution-box li { margin: 8px 0; font-size: 14px; }
+
+/* Use case */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.usecase-num {
+    background: var(--azure-blue);
+    color: white;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.usecase-row {
+    display: flex;
+    gap: 10px;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.usecase-label {
+    min-width: 92px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    flex-shrink: 0;
+}
+
+/* Flow steps */
+.flow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 16px 0;
+}
+
+.flow-step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.flow-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.flow-num {
+    background: var(--azure-blue);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.flow-line {
+    width: 2px;
+    flex-grow: 1;
+    min-height: 24px;
+    background: var(--ms-blue-300);
+}
+
+.flow-body { padding-bottom: 20px; font-size: 14px; }
+.flow-body strong { color: var(--ms-blue-800); }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.related-card h4 { color: var(--ms-blue-800); font-size: 15px; margin-bottom: 8px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+a { color: var(--azure-blue); }
+
+.link-list { padding-left: 20px; }
+.link-list li { margin: 8px 0; font-size: 14px; }
+
+/* Code block */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    background: #1E1E1E;
+}
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 16px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer a { word-break: break-all; }
+.footer p { margin: 6px 0; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-badges">
+            <span class="service-badge">Azure Databricks</span>
+            <span class="service-badge">Lakeflow Connect</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>SharePoint コネクタが一般提供 (GA) 開始</h1>
+        <p class="subtitle">SharePoint のエンタープライズコンテンツを、マネージドコネクタで Lakehouse と AI ワークフローに統合</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-08-05 (Databricks リリースノート上の GA 日: 2026-08-04)</span>
+            <span>🧩 機能: SharePoint Connector for Azure Databricks (Lakeflow Connect)</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📰</span>概要</h2>
+        <p>Azure Databricks の Lakeflow Connect における <strong>SharePoint コネクタが一般提供 (GA)</strong> となりました。組織は Lakeflow Connect のマネージドコネクタを使用して、SharePoint 上のファイルを Azure Databricks に取り込み、社内に蓄積されたエンタープライズコンテンツをデータ・AI ワークフローと統合できます。</p>
+        <div class="highlight-box">
+            <p>PDF や DOCX などの<strong>非構造化ファイルをバイナリデータとして取り込む</strong>ほか、CSV / JSON / XML / Excel などの<strong>構造化フォーマットをパースして Delta テーブルに変換</strong>したり、ファイル本体をダウンロードせずに<strong>メタデータのみを取得</strong>したりすることが可能です。増分取り込み (インクリメンタルインジェスト)、Unity Catalog によるガバナンス、複数の認証方式をサポートし、エンタープライズ規模のデプロイに対応します。</p>
+        </div>
+        <p>取り込みパイプラインは Unity Catalog により統制され、サーバーレスコンピュートと Lakeflow パイプライン上で動作します。なお、同時期に <strong>Google Drive コネクタも GA</strong> となっており、ファイルソースコネクタ群の強化が進んでいます。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>SharePoint のファイルを Databricks に取り込むには、<code>read_files</code>、<code>COPY INTO</code>、Auto Loader などを用いたカスタムパイプラインを自前で構築・運用する必要があり、パイプラインの管理・保守の負担が大きかった</li>
+                    <li>社内ドキュメント (SharePoint) と Lakehouse 上のデータ・AI ワークフローが分断されており、RAG などの生成 AI ユースケースでエンタープライズコンテンツを活用しにくかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>フルマネージドなコネクタとして GA となり、本番ワークロードで低メンテナンスに SharePoint ファイルを Delta テーブルへ取り込み、ソースと同期し続けられるようになった</li>
+                    <li>増分取り込みにより変更のあったファイルのみを効率的に処理し、Unity Catalog による一元的なガバナンス (権限管理・リネージ) のもとでエンタープライズコンテンツを AI ワークフローに接続できるようになった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    SP["📁 SharePoint<br>(サイト / ドライブ / フォルダー)"]
+    subgraph Azure["☁️ Azure Databricks"]
+        subgraph LFC["🔌 Lakeflow Connect"]
+            CONN["🔐 Unity Catalog 接続<br>(OAuth U2M / M2M)"]
+            PIPE["⚙️ 取り込みパイプライン<br>(サーバーレスコンピュート)"]
+        end
+        DELTA[("🗄️ Delta テーブル<br>(ストリーミングテーブル)")]
+        UC["🛡️ Unity Catalog<br>(ガバナンス)"]
+    end
+    AI["🤖 AI / RAG / 分析<br>ワークロード"]
+
+    SP -->|"増分取り込み<br>(ファイル + メタデータ)"| PIPE
+    CONN --- PIPE
+    PIPE --> DELTA
+    UC -.->|統制| DELTA
+    DELTA --> AI
+            </pre>
+        </div>
+        <p class="diagram-caption">SharePoint のファイルは Lakeflow Connect のマネージドパイプライン (サーバーレスコンピュート) により増分取り込みされ、Unity Catalog で統制された Delta テーブルとして AI・分析ワークロードから利用できます。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">📥</div>
+            <div class="feature-content">
+                <h4>1. 3 つの取り込みモード</h4>
+                <ul>
+                    <li><code>FILE</code> + <code>BINARYFILE</code> 形式: PDF、Office ファイル、画像などの非構造化ファイルをバイナリとして取り込み (1 ファイル = 1 行、コンテンツ + SharePoint メタデータ付き)</li>
+                    <li><code>FILE</code> + 構造化形式: CSV / JSON / XML / EXCEL / PARQUET / AVRO / ORC をパースして行データとして Delta テーブル化</li>
+                    <li><code>FILE_METADATA</code>: ファイル本体をダウンロードせず、メタデータのみを取り込み</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>2. 増分取り込み (インクリメンタルインジェスト)</h4>
+                <p>初回実行で選択したデータをすべて取り込み、以降は変更追跡に基づき変更分のみを処理。高速・スケーラブル・コスト効率の良い取り込みを実現。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>3. Unity Catalog ガバナンス</h4>
+                <p>接続情報は Unity Catalog のセキュリティ保護可能オブジェクトとして管理。取り込んだデータも Unity Catalog の権限管理下に置かれる。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>4. 複数の認証方式</h4>
+                <ul>
+                    <li><strong>OAuth U2M (Databricks 管理・推奨)</strong>: Azure アプリ登録不要で Databricks が OAuth 設定とトークン更新を管理</li>
+                    <li><strong>OAuth U2M (カスタム管理)</strong>: 自組織の Azure アプリ登録を使用 (アプリ所有権や API レート制限の制御が必要な場合)</li>
+                    <li><strong>OAuth M2M</strong>: ユーザー操作なしで実行する完全自動化された本番パイプライン向け</li>
+                    <li><strong>OAuth 手動リフレッシュトークン</strong>: レガシー方式 (新規実装には非推奨)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧬</div>
+            <div class="feature-content">
+                <h4>5. スキーマ進化とファイルフィルター</h4>
+                <ul>
+                    <li><code>schema_evolution_mode</code> (デフォルト: <code>ADD_NEW_COLUMNS_WITH_TYPE_WIDENING</code>) で新規カラムの扱いを制御。<code>schema_hints</code> による型の上書きにも対応</li>
+                    <li><code>path_filter</code> (glob パターン)、<code>modified_before</code> / <code>modified_after</code> (タイムスタンプ) で取り込み対象ファイルを絞り込み可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗓️</div>
+            <div class="feature-content">
+                <h4>6. オーケストレーションとデプロイ</h4>
+                <p>Databricks Workflows によるスケジュール実行に対応。Declarative Automation Bundles (DAB) による CI/CD デプロイもサポート。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td><strong>コネクタ種別</strong></td><td>Lakeflow Connect ファイルソースコネクタ (マネージド)</td></tr>
+                <tr><td><strong>取り込み対象</strong></td><td>SharePoint のサイト / サブサイト / ドライブ / フォルダー (URL 指定)</td></tr>
+                <tr><td><strong>エンティティタイプ</strong></td><td><code>FILE</code> (コンテンツ + メタデータ)、<code>FILE_METADATA</code> (メタデータのみ)</td></tr>
+                <tr><td><strong>対応ファイル形式</strong></td><td><code>BINARYFILE</code>, <code>CSV</code>, <code>JSON</code>, <code>XML</code>, <code>EXCEL</code>, <code>PARQUET</code>, <code>AVRO</code>, <code>ORC</code></td></tr>
+                <tr><td><strong>パイプライン作成</strong></td><td>API ベース / Declarative Automation Bundles (UI ベースの作成は非対応)</td></tr>
+                <tr><td><strong>コンピュート</strong></td><td>サーバーレスコンピュート (Lakeflow パイプライン)</td></tr>
+                <tr><td><strong>増分取り込み</strong></td><td>対応</td></tr>
+                <tr><td><strong>スキーマ進化</strong></td><td>対応 (<code>schema_evolution_mode</code> で構成可能)</td></tr>
+                <tr><td><strong>ストレージモード</strong></td><td><code>SCD_TYPE_1</code> (BINARYFILE のデフォルト)、<code>APPEND_ONLY</code> (構造化形式のデフォルト)。SCD Type 2 は非対応</td></tr>
+                <tr><td><strong>認証</strong></td><td>OAuth U2M (Databricks 管理 / カスタム管理)、OAuth M2M、OAuth 手動リフレッシュトークン。Basic 認証は非対応</td></tr>
+                <tr><td><strong>ガバナンス</strong></td><td>Unity Catalog</td></tr>
+                <tr><td><strong>取得メタデータ</strong></td><td>site_id、drive_id、web_url、MIME タイプ、作成者/更新者、etag、権限情報など (<code>_sharepoint_metadata</code> 構造体)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <div class="flow-steps">
+            <div class="flow-step">
+                <div class="flow-marker"><div class="flow-num">1</div><div class="flow-line"></div></div>
+                <div class="flow-body"><strong>Unity Catalog が有効な Azure Databricks ワークスペース</strong></div>
+            </div>
+            <div class="flow-step">
+                <div class="flow-marker"><div class="flow-num">2</div><div class="flow-line"></div></div>
+                <div class="flow-body"><strong>SharePoint 認証の構成</strong> (推奨: Databricks 管理の OAuth U2M。この方式では Azure アプリ登録は不要)</div>
+            </div>
+            <div class="flow-step">
+                <div class="flow-marker"><div class="flow-num">3</div></div>
+                <div class="flow-body"><strong>管理者が Catalog Explorer で SharePoint への Unity Catalog 接続を作成</strong> (非管理者ユーザーはこの接続を使ってパイプラインを作成)</div>
+            </div>
+        </div>
+
+        <h3>設定の流れ</h3>
+        <div class="table-wrap">
+            <table>
+                <tr><th>ユーザー</th><th>手順</th></tr>
+                <tr><td><strong>管理者</strong></td><td>1. SharePoint 認証を構成 (OAuth U2M / M2M など)<br>2. Catalog Explorer で SharePoint への接続を作成</td></tr>
+                <tr><td><strong>非管理者</strong></td><td>既存の接続を使い、サポートされるインターフェイス (API / DAB) でパイプラインを作成</td></tr>
+            </table>
+        </div>
+
+        <div class="highlight-box">
+            <p>パイプライン定義では、各テーブルの <code>connector_options.sharepoint_options</code> ブロックに <code>entity_type</code>、<code>url</code>、<code>file_ingestion_options</code> (format、file_filters、schema_evolution_mode など) を指定します。API のみで認証するコネクタは、Databricks CLI の <code>databricks connections create</code> やノートブックからの Connections API 呼び出しで接続をプログラム的に作成することも可能です。</p>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌟</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>SharePoint に蓄積された社内ドキュメント (契約書、レポート、マニュアルなど) を Lakehouse に統合し、RAG などの生成 AI ユースケースで活用できる</li>
+                    <li>フルマネージドサービスのため、カスタムパイプラインの構築・保守コストを削減できる</li>
+                    <li>GA となり本番ワークロードでの利用に適したサポートレベルが提供される</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>増分取り込みにより、変更のあったファイルのみを処理してコストと処理時間を最適化</li>
+                    <li>Unity Catalog による接続情報・データの一元的なガバナンス (アクセス制御、監査)</li>
+                    <li>障害時は指数バックオフで自動リトライし、カーソル位置を保存して次回実行時に再開する自動復旧機構を備える</li>
+                    <li><code>system.billing.usage</code> テーブルやイベントログ、パイプラインヘルスメトリクスによるコスト・稼働監視が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <h4>知っておくべき制約</h4>
+            <ul>
+                <li>UI ベースのパイプライン作成は非対応 (API または Declarative Automation Bundles を使用)</li>
+                <li>SCD Type 2 は非対応 (BINARYFILE は SCD Type 1、構造化形式は APPEND_ONLY)</li>
+                <li>API ベースのカラム選択・除外、行フィルタリングは非対応</li>
+                <li>Basic 認証 (ユーザー名/パスワード、API キー、サービスアカウント JSON キー) は非対応</li>
+                <li>マネージドコネクタは接続先の外部サービス (SharePoint) の可用性・互換性・安定性に依存する。外部サービス側の変更によりコネクタの提供が中止される可能性がある</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-num">1</span>SharePoint ドキュメントを活用した RAG 基盤の構築</h4>
+            <div class="usecase-row"><span class="usecase-label">📌 シナリオ</span><span>SharePoint に保存された PDF や Office ドキュメントを Databricks に取り込み、ベクトル検索と組み合わせた RAG (Retrieval-Augmented Generation) アプリケーションを構築する。</span></div>
+            <div class="usecase-row"><span class="usecase-label">🔧 実装の<br>ポイント</span><span><code>entity_type: FILE</code>、<code>format: BINARYFILE</code> で取り込むと、1 ファイルが 1 行となり <code>content</code> (バイナリ)、<code>web_url</code>、MIME タイプ、作成者などのメタデータ付きで Delta テーブルに格納される。ダウンストリームでは公式ドキュメントの RAG ユースケース向け UDF を使ってコンテンツを処理する。</span></div>
+            <div class="usecase-row"><span class="usecase-label">✨ 効果</span><span>社内ナレッジを最新状態に保ちながら (増分同期)、Unity Catalog のガバナンス下で生成 AI アプリケーションに供給できる。</span></div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-num">2</span>部門管理の Excel / CSV ファイルの分析パイプライン化</h4>
+            <div class="usecase-row"><span class="usecase-label">📌 シナリオ</span><span>各部門が SharePoint 上で管理している Excel や CSV のデータを、手作業なしで Lakehouse に取り込み BI・分析に利用する。</span></div>
+            <div class="usecase-row"><span class="usecase-label">🔧 実装の<br>ポイント</span><span><code>format: EXCEL</code> や <code>CSV</code> を指定するとファイル内容がパースされて行データとして Delta テーブル化される。<code>path_filter</code> で対象フォルダー・ファイルパターンを絞り込み、<code>schema_hints</code> で型を制御。スケジュール実行で自動同期する。</span></div>
+            <div class="usecase-row"><span class="usecase-label">✨ 効果</span><span>現場のファイルベース運用を変えずに、ガバナンスの効いた分析基盤へデータを自動供給できる。</span></div>
+        </div>
+    </section>
+
+    <!-- 料金・リージョン -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金・利用可能リージョン</h2>
+        <h3>料金</h3>
+        <p>取り込みパイプラインはサーバーレスコンピュート上で動作し、Azure Databricks の <strong>DBU ベースの課金</strong>が適用されます。パイプラインのコストは <code>system.billing.usage</code> テーブルで追跡できます。SharePoint コネクタ固有の料金は公式ページを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/databricks/" target="_blank" rel="noopener">Azure Databricks 料金ページ</a></li>
+        </ul>
+        <h3>利用可能リージョン</h3>
+        <p>リージョン別の提供状況は公式情報を確認してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/explore/global-infrastructure/products-by-region/?products=databricks" target="_blank" rel="noopener">Products available by region</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🛡️ Unity Catalog</h4>
+                <p>接続情報 (認証資格情報) と取り込んだデータのガバナンス (アクセス制御、リネージ) を提供</p>
+            </div>
+            <div class="related-card">
+                <h4>🔌 Lakeflow Connect</h4>
+                <p>SaaS アプリ、データベース、ファイルストレージからのマネージド取り込みを提供するコネクタ群。今回の SharePoint コネクタと同時に Google Drive コネクタも GA、PagerDuty コネクタが Beta となった</p>
+            </div>
+            <div class="related-card">
+                <h4>⚙️ Lakeflow パイプライン / Databricks Workflows</h4>
+                <p>取り込みパイプラインの実行基盤とスケジュール・オーケストレーション</p>
+            </div>
+            <div class="related-card">
+                <h4>📂 Auto Loader (Standard SharePoint コネクタ)</h4>
+                <p>パースや変換を完全に制御したい場合の代替手段。SQL / PySpark で独自パイプラインを構築できるが、管理責任はユーザー側にある</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>SharePoint コネクタの GA により、SharePoint 上のエンタープライズコンテンツを、カスタムパイプラインを構築することなく Azure Databricks の Lakehouse へ継続的に取り込めるようになりました。非構造化ファイルのバイナリ取り込みから構造化フォーマットの Delta テーブル化、メタデータのみの取得まで対応し、増分取り込みと Unity Catalog ガバナンスによりエンタープライズ規模の本番利用に耐える構成です。</p>
+            <p>特に <strong>RAG などの生成 AI ユースケースで社内ドキュメントを活用したい組織にとって重要なアップデート</strong>であり、まずは Databricks 管理の OAuth U2M 認証で接続を作成し、対象サイトの取り込みパイプラインを API または Declarative Automation Bundles で構築することを推奨します。UI からのパイプライン作成や SCD Type 2 が非対応である点は設計時に考慮が必要です。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Databricks</span>
+            <span class="tag">Lakeflow Connect</span>
+            <span class="tag">SharePoint</span>
+            <span class="tag">AI + machine learning</span>
+            <span class="tag">Analytics</span>
+            <span class="tag">GA</span>
+            <span class="tag">Feature</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典・参考リンク</strong></p>
+        <p><a href="https://azure.microsoft.com/updates?id=568905" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></p>
+        <p><a href="https://learn.microsoft.com/en-us/azure/databricks/release-notes/product/2026/august#sharepoint-connector-ga" target="_blank" rel="noopener">Azure Databricks リリースノート (2026 年 8 月)</a></p>
+        <p><a href="https://learn.microsoft.com/en-us/azure/databricks/ingestion/lakeflow-connect/sharepoint" target="_blank" rel="noopener">SharePoint コネクタ (Microsoft Learn)</a> | <a href="https://learn.microsoft.com/en-us/azure/databricks/ingestion/lakeflow-connect/sharepoint-source-setup-overview" target="_blank" rel="noopener">SharePoint 取り込みセットアップの概要</a> | <a href="https://learn.microsoft.com/en-us/azure/databricks/ingestion/lakeflow-connect/sharepoint-reference" target="_blank" rel="noopener">SharePoint コネクタ リファレンス</a></p>
+        <p><a href="https://learn.microsoft.com/en-us/azure/databricks/ingestion/lakeflow-connect/" target="_blank" rel="noopener">Lakeflow Connect マネージドコネクタの概要</a> | <a href="https://azure.microsoft.com/pricing/details/databricks/" target="_blank" rel="noopener">料金ページ</a></p>
+        <p style="margin-top: 12px;">ソースレポート: reports/2026/2026-08-05-databricks-sharepoint-connector.md | 生成日: 2026-08-07</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Storage Mover: AWS FSx for Windows File Server から Azure Files へのエージェントレス移行 (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 26px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle { font-size: 15px; opacity: 0.9; }
+.header .meta { margin-top: 16px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 16px; opacity: 0.95; }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--azure-blue);
+    border-bottom: 2px solid var(--ms-blue-300);
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; font-size: 15px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 15px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 15px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 15px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); margin: 0; }
+.feature-content ul { padding-left: 18px; }
+.feature-content li { margin: 4px 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Tables */
+table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+table.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+
+table.spec-table td {
+    border-bottom: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+
+table.spec-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+table.spec-table td:first-child { font-weight: 500; color: var(--ms-blue-800); white-space: nowrap; }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Steps */
+.steps { counter-reset: step; list-style: none; margin: 12px 0; }
+.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 0 10px 48px;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--ms-border);
+}
+.steps li:last-child { border-bottom: none; }
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Pros / Cons */
+.pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
+.pros-box, .cons-box { border-radius: 8px; padding: 16px; font-size: 14px; }
+.pros-box { background: #E8F5E9; border: 2px solid var(--ms-green); }
+.cons-box { background: #FFF8E1; border: 2px solid var(--ms-orange); }
+.pros-box h4 { color: var(--ms-green); margin-bottom: 8px; }
+.cons-box h4 { color: var(--ms-orange); margin-bottom: 8px; }
+.pros-box ul, .cons-box ul { padding-left: 20px; }
+.pros-box li, .cons-box li { margin: 6px 0; }
+
+.warn-list { padding-left: 22px; font-size: 14px; }
+.warn-list li { margin: 8px 0; }
+
+/* Use case */
+.usecase-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 { color: var(--ms-blue-800); font-size: 16px; margin-bottom: 10px; }
+.usecase-card p { font-size: 14px; }
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Related services */
+.related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin: 16px 0; }
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card strong { color: var(--azure-blue); display: block; margin-bottom: 4px; }
+
+/* Links */
+.link-list { list-style: none; margin: 8px 0; }
+.link-list li { padding: 8px 0 8px 28px; position: relative; border-bottom: 1px dashed var(--ms-border); font-size: 14px; }
+.link-list li:last-child { border-bottom: none; }
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+ul.plain { padding-left: 22px; font-size: 14px; }
+ul.plain li { margin: 6px 0; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 20px 0 30px;
+    border-top: 1px solid var(--ms-border);
+}
+.footer p { margin: 6px 0; }
+
+@media (max-width: 700px) {
+    .before-after, .pros-cons { grid-template-columns: 1fr; }
+    .header h1 { font-size: 21px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">🚚 Azure Storage Mover</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>AWS FSx for Windows File Server から Azure Files へ<br>エージェントレスなクラウド間移行</h1>
+        <div class="subtitle">移行エージェント VM のデプロイ不要。Azure Storage Mover サービスが Windows ファイル共有 (SMB) の転送を代行</div>
+        <div class="meta">
+            <span>📅 リリース日: 2026-08-06</span>
+            <span>🧩 機能: AWS FSx (SMB) → Azure Files (SMB) クラウド間移行</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📌 概要</h2>
+        <p>Azure Storage Mover が、<strong>AWS FSx for Windows File Server (SMB)</strong> から <strong>Azure Files (SMB)</strong> への<strong>エージェントレスなクラウド間 (cloud-to-cloud) 移行</strong>にパブリックプレビューで対応した。移行エージェントのデプロイや管理を行うことなく、Windows ファイル共有を FSx から Azure Files に移動できる。データ転送はサービス側が代行し、Azure と AWS ネットワーク間の<strong>プライベート接続</strong>を通じて、FSx から Azure ファイル共有へ直接コピーされる。</p>
+        <div class="highlight-box">
+            Azure Storage Mover はもともとオンプレミスのファイル共有を Azure に移行するためのフルマネージドなハイブリッド移行サービスであり、従来はソース側の近くに移行エージェント VM をデプロイ・登録する構成が基本だった。今回のアップデートにより、AWS 上の SMB ファイルサーバーからの移行がエージェントレスで実現でき、<strong>マルチクラウド環境からの Azure への統合シナリオが簡素化</strong>される。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>AWS FSx から Azure Files への移行には、移行用の VM (エージェントやツール) を自前でデプロイ・管理する必要があった</li>
+                    <li>クラウド間のファイル移行はツール選定・構成・運用の負担が大きく、増分コピーやカットオーバーの管理も手作業が中心だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>移行エージェントのデプロイ・管理が不要。Azure Storage Mover サービスが転送を代行 (エージェントレス)</li>
+                    <li>Azure Portal / Azure CLI から、エンドポイント定義、移行ジョブの作成・実行・監視までを一元管理</li>
+                    <li>プライベート接続経由で FSx から Azure Files へ直接コピー。インターネットを経由しない安全な転送経路</li>
+                    <li>増分コピー (複数回のコピーパス) により、最終カットオーバー時のダウンタイムを最小化</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph AWS["☁️ AWS"]
+        FSX[("📁 FSx for Windows<br/>File Server (SMB)")]
+    end
+
+    subgraph Azure["☁️ Azure"]
+        SM["🚚 Azure Storage Mover<br/>(エージェントレス)"]
+        KV["🔑 Azure Key Vault<br/>(FSx 資格情報)"]
+        AF[("📁 Azure Files<br/>(SMB)")]
+    end
+
+    Client(["👤 ユーザー / アプリ"])
+
+    FSX -- "プライベート接続<br/>(VPN / ExpressRoute, TCP 445)" --> SM
+    KV -. "ユーザー名 / パスワード<br/>シークレット取得" .-> SM
+    SM -- "コピー (Additive / Mirror)" --> AF
+    Client -- "カットオーバー後<br/>UNC パスで接続" --> AF
+            </pre>
+        </div>
+        <div class="diagram-note">
+            Azure Storage Mover サービスが、Key Vault に格納された FSx 資格情報を用いてプライベート接続経由で AWS FSx の SMB 共有からデータを読み取り、Azure Files へ直接コピーする。移行エージェント VM のデプロイは不要。
+        </div>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⚙️ サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>1. エージェントレスなクラウド間移行</h4>
+                <p>移行エージェント VM のデプロイ・登録・管理が不要。Azure Storage Mover サービスがデータ転送を代行する。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧭</div>
+            <div class="feature-content">
+                <h4>2. マルチクラウド移行タイプのエンドポイント定義</h4>
+                <ul>
+                    <li>ソースエンドポイントとして「AWS FSx - SMB」を選択し、FSx の DNS 名 (FQDN) またはプライベート IP、共有名、Key Vault のシークレット (ユーザー名・パスワード) を指定して作成</li>
+                    <li>ターゲットエンドポイントとして Azure Files (SMB ファイル共有) を指定</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>3. プライベート接続経由の直接転送</h4>
+                <ul>
+                    <li>FSx SMB 移行には Azure と AWS ネットワーク間のプライベート接続 (VPN / ExpressRoute など) が必須</li>
+                    <li>ジョブ定義の「Private connections (Preview)」セクションでプライベート接続リソースを関連付ける</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔁</div>
+            <div class="feature-content">
+                <h4>4. コピーモードの選択と増分コピー</h4>
+                <ul>
+                    <li>Additive (追加) / Mirror (ミラー: ターゲットをソースと完全一致させる) のコピーモードを選択可能</li>
+                    <li>複数回のコピーパスで差分のみを転送し、カットオーバー時のダウンタイムを最小化</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>5. ジョブの監視</h4>
+                <p>転送済みファイル数、スループット、エラーなどのジョブ実行詳細を Azure Portal で監視できる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔬 技術仕様</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">5 億</div>
+                <div class="stat-label">1 ジョブあたりの最大オブジェクト数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">10</div>
+                <div class="stat-label">サブスクリプションあたりの同時実行ジョブ数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0 台</div>
+                <div class="stat-label">必要な移行エージェント VM</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">無料</div>
+                <div class="stat-label">Storage Mover サービス利用 (現行機能)</div>
+            </div>
+        </div>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>移行元</td><td>AWS FSx for Windows File Server (SMB 2.x / 3.x)</td></tr>
+            <tr><td>移行先</td><td>Azure Files (SMB)</td></tr>
+            <tr><td>転送方式</td><td>エージェントレス (サービスが転送を代行)、プライベート接続経由の直接コピー</td></tr>
+            <tr><td>1 ジョブあたりの上限</td><td>最大 5 億オブジェクト (超える場合は複数ジョブに分割)</td></tr>
+            <tr><td>同時実行ジョブ数</td><td>サブスクリプションあたり最大 10 ジョブ</td></tr>
+            <tr><td>プレビュー中の推奨</td><td>同一ターゲットファイル共有に対しては同時に 1 ジョブのみ実行</td></tr>
+            <tr><td>非サポート</td><td>SMB 1.x ソース</td></tr>
+            <tr><td>データの扱い</td><td>コピー (移動ではない)。ソースデータは廃止するまで FSx に残る</td></tr>
+            <tr><td>ネットワーク要件</td><td>Azure-AWS 間のプライベート接続、TCP 445 の到達性 (VPN / ExpressRoute / NSG / ファイアウォール)</td></tr>
+            <tr><td>資格情報管理</td><td>Azure Key Vault (ユーザー名・パスワードを個別のシークレットとして格納)</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="steps">
+            <li>移行対象の FSx for Windows File Server にアクセスできる AWS アカウント</li>
+            <li>Azure サブスクリプション内の Storage Mover リソース</li>
+            <li>Azure Storage アカウントと移行先の Azure ファイル共有</li>
+            <li>クラウド間移行用のプライベート接続 (Azure-AWS 間)</li>
+            <li>FSx の資格情報 (ユーザー名・パスワード) を 2 つのシークレットとして格納した Azure Key Vault</li>
+            <li>Storage Mover リソースの作成と RBAC ロール割り当ての権限
+                <ul class="plain">
+                    <li>ソースエンドポイントのマネージド ID に <strong>Key Vault Secrets User</strong> (Key Vault に対して)</li>
+                    <li>ターゲットエンドポイントのマネージド ID に <strong>Storage File Data Privileged Contributor</strong> (ストレージアカウントに対して)</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI</span></div>
+            <pre><code class="language-bash"># ソースエンドポイント (AWS FSx SMB) の作成
+az storage-mover endpoint create-for-smb \
+  --resource-group &lt;resource-group&gt; \
+  --storage-mover-name &lt;storage-mover-name&gt; \
+  --name FSxSourceEndpoint \
+  --host &lt;fsx-dns-or-private-ip&gt; \
+  --share-name &lt;fsx-share-name&gt;
+
+# ターゲットエンドポイント (Azure Files SMB) の作成
+az storage-mover endpoint create-for-storage-smb-file-share \
+  --resource-group &lt;resource-group&gt; \
+  --storage-mover-name &lt;storage-mover-name&gt; \
+  --name AzureFilesTargetEndpoint \
+  --storage-account-id &lt;storage-account-resource-id&gt; \
+  --file-share-name &lt;target-file-share-name&gt;
+
+# プロジェクトの作成
+az storage-mover project create \
+  --resource-group &lt;resource-group&gt; \
+  --storage-mover-name &lt;storage-mover-name&gt; \
+  --name FSxMigrationProject
+
+# ジョブ定義の作成
+az storage-mover job-definition create \
+  --resource-group &lt;resource-group&gt; \
+  --storage-mover-name &lt;storage-mover-name&gt; \
+  --project-name FSxMigrationProject \
+  --name FSxToAzureFilesJob \
+  --source-name FSxSourceEndpoint \
+  --target-name AzureFilesTargetEndpoint \
+  --copy-mode Additive
+
+# ジョブの開始
+az storage-mover job-definition start \
+  --resource-group &lt;resource-group&gt; \
+  --storage-mover-name &lt;storage-mover-name&gt; \
+  --project-name FSxMigrationProject \
+  --job-definition-name FSxToAzureFilesJob</code></pre>
+        </div>
+
+        <h3>Azure Portal</h3>
+        <ol class="steps">
+            <li>Storage Mover リソースの <strong>Resource Management</strong> &gt; <strong>Storage endpoints</strong> &gt; <strong>Source endpoints</strong> &gt; <strong>Create endpoint</strong> を選択</li>
+            <li><strong>Migration type</strong> で <strong>Multicloud migration</strong>、<strong>Source type</strong> で <strong>AWS FSx - SMB</strong> を選択し、FSx のホスト名/IP、共有名、Key Vault とシークレット情報を入力して作成</li>
+            <li><strong>Target endpoints</strong> &gt; <strong>Add endpoint</strong> で移行先のストレージアカウントとファイル共有を指定してターゲットエンドポイントを作成</li>
+            <li><strong>Projects</strong> でプロジェクトを作成し、ジョブ定義を作成 (Migration type: <strong>Multicloud migration</strong>、Source type: <strong>AWS FSx - SMB (Preview)</strong>)</li>
+            <li><strong>Private connections (Preview)</strong> セクションでプライベート接続リソースを関連付け、コピーモードを設定</li>
+            <li><strong>Migration jobs</strong> からジョブを開始し、転送状況を監視</li>
+        </ol>
+    </section>
+
+    <!-- メリット / デメリット -->
+    <section class="section">
+        <h2>⚖️ メリット / デメリット・制約事項</h2>
+        <div class="pros-cons">
+            <div class="pros-box">
+                <h4>👍 メリット (ビジネス面)</h4>
+                <ul>
+                    <li>移行用インフラ (エージェント VM) の構築・運用コストが不要になり、AWS から Azure へのファイルサーバー統合の障壁が下がる</li>
+                    <li>増分コピーによるカットオーバーで業務影響 (ダウンタイム) を最小化できる</li>
+                    <li>Storage Mover サービス自体の現行機能は無償で提供されており、移行ツールのライセンスコストが発生しない</li>
+                </ul>
+            </div>
+            <div class="pros-box">
+                <h4>👍 メリット (技術面)</h4>
+                <ul>
+                    <li>エンドポイント、プロジェクト、ジョブという Storage Mover の一貫したリソース階層でマルチクラウド移行を管理できる</li>
+                    <li>Key Vault とマネージド ID による資格情報管理で、認証情報をコードや設定ファイルに埋め込む必要がない</li>
+                    <li>プライベート接続経由の転送により、インターネットに公開しない安全な移行経路を構成できる</li>
+                </ul>
+            </div>
+        </div>
+        <div class="cons-box">
+            <h4>⚠️ デメリット・制約事項</h4>
+            <ul>
+                <li>パブリックプレビューであり、本番利用前に制限事項の確認が必要</li>
+                <li>Azure-AWS 間のプライベート接続 (VPN / ExpressRoute など) の事前構築が必須で、その構成・コストは別途発生する</li>
+                <li>1 ジョブあたり最大 5 億オブジェクト。超える場合は移行スコープを複数ジョブに分割する必要がある</li>
+                <li>プレビュー期間中は、同一ターゲットファイル共有への同時ジョブ実行は 1 つに制限することが推奨される</li>
+                <li>SMB 1.x ソースは非サポート (SMB 2.x / 3.x が必要)</li>
+                <li>データはコピーであり移動ではないため、移行完了後の FSx 側の廃止 (デコミッション) は利用者側の作業となる</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💼 ユースケース</h2>
+        <div class="usecase-card">
+            <h4>ユースケース 1: AWS ファイルサーバーの Azure への統合移行</h4>
+            <p><strong>シナリオ</strong>: マルチクラウド環境で AWS FSx for Windows File Server 上に Windows ファイル共有を運用している企業が、ストレージ基盤を Azure Files に統合する。</p>
+            <p style="margin-top:10px;"><strong>実装例</strong>:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>移行手順</span></div>
+                <pre><code class="language-bash"># 1. 初回コピー (Additive) を実行し、フォルダー構造・ファイル数・サンプルファイルを検証
+# 2. 増分パスを複数回実行して差分のみを転送
+# 3. 最終カットオーバー時に FSx への書き込みを停止し、最終増分パスを実行
+# 4. ユーザー・アプリの接続先を Azure Files の UNC パスに切り替え
+#    \\&lt;storage-account-name&gt;.file.core.windows.net\&lt;share-name&gt;
+# 5. FSx を短期間読み取り専用で保持した後、検証完了後に廃止</code></pre>
+            </div>
+            <div class="usecase-effect">
+                <strong>効果</strong>: エージェント VM を管理することなく、ダウンタイムを最小化しながら AWS から Azure へファイル共有を移行できる。
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Azure Storage Mover サービスの現行機能はすべて<strong>無償</strong>で提供される (将来のリリースで課金対象となる機能が追加される可能性はある)。移行に伴い、以下のコストが別途発生し得る。</p>
+        <table class="spec-table">
+            <tr><th>項目</th><th>料金</th></tr>
+            <tr><td>Storage Mover サービス利用</td><td>無料 (現行機能)</td></tr>
+            <tr><td>移行先ストレージ (Azure Files)</td><td>ストレージトランザクションと容量に対する課金 (課金モデルは従量課金型 / プロビジョニング型で異なる)</td></tr>
+            <tr><td>ネットワーク</td><td>Azure 向けトラフィックと同等の帯域コスト。Storage Mover 固有の追加料金なし (AWS 側のデータ転送料金は別途 AWS の課金体系に従う)</td></tr>
+        </table>
+        <ul class="plain">
+            <li>従量課金型の Azure Files ターゲットでは、移行によるトランザクション数はファイル数 (名前空間アイテム数) に比例するため、小さいファイルが多いほどトランザクションコストが増える</li>
+            <li>プロビジョニング型ターゲットでは通常トランザクション課金は発生しないが、ソース全体を格納できる十分な容量の事前プロビジョニングが必要 (不足するとコピージョブが失敗する)</li>
+        </ul>
+        <p style="font-size:14px;">詳細: <a href="https://learn.microsoft.com/azure/storage-mover/billing" target="_blank">Azure Storage Mover の課金について</a> / <a href="https://azure.microsoft.com/pricing/details/storage/files/" target="_blank">Azure Files 料金</a></p>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2>🌏 利用可能リージョン</h2>
+        <p>公式アップデートおよびドキュメントではプレビューの対象リージョンは明記されていない。最新情報は以下を参照。</p>
+        <ul class="link-list">
+            <li><a href="https://learn.microsoft.com/azure/storage-mover/release-notes" target="_blank">Azure Storage Mover リリースノート</a></li>
+            <li><a href="https://azure.microsoft.com/explore/global-infrastructure/products-by-region/" target="_blank">リージョン別の製品提供状況</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス -->
+    <section class="section">
+        <h2>🧩 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>Azure Files</strong>移行先となるフルマネージドの SMB / NFS ファイル共有サービス</div>
+            <div class="related-card"><strong>Azure Key Vault</strong>FSx の接続資格情報 (ユーザー名・パスワード) をシークレットとして安全に管理</div>
+            <div class="related-card"><strong>Azure ExpressRoute / VPN Gateway</strong>Azure-AWS 間のプライベート接続を構成するために使用</div>
+            <div class="related-card"><strong>Azure RBAC / マネージド ID</strong>ソース・ターゲットエンドポイントの ID に対する Key Vault・ストレージへのアクセス制御</div>
+            <div class="related-card"><strong>Azure File Sync</strong>移行後にオンプレミス Windows Server と Azure Files をキャッシュ同期する場合の補完サービス</div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            Azure Storage Mover のエージェントレスなクラウド間移行対応により、AWS FSx for Windows File Server 上の SMB ファイル共有を、<strong>移行インフラを構築することなく Azure Files に移行</strong>できるようになった。マルチクラウド環境の整理や AWS からの脱却を検討している組織にとって、移行の技術的・運用的ハードルを大きく下げるアップデートである。現時点では<strong>パブリックプレビュー</strong>であり、Azure-AWS 間のプライベート接続が前提となるため、まずは非本番環境でネットワーク構成とジョブ実行を検証し、増分コピーによるカットオーバー計画を立てることを推奨する。
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure Storage Mover</span>
+            <span class="tag">Azure Files</span>
+            <span class="tag">AWS FSx</span>
+            <span class="tag">Migration</span>
+            <span class="tag">Storage</span>
+            <span class="tag">Multicloud</span>
+            <span class="tag">In preview</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2>🔗 参考リンク (出典)</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=567979" target="_blank">公式アップデート情報 (Azure Updates #567979)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage-mover/amazon-files-azure-files-migration" target="_blank">Microsoft Learn: AWS FSx for Windows File Server から Azure Files への移行</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage-mover/" target="_blank">Microsoft Learn: Azure Storage Mover ドキュメント</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage-mover/billing" target="_blank">Microsoft Learn: Azure Storage Mover の課金について</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/storage/files/" target="_blank">Azure Files 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=567979" target="_blank">Azure Updates - Azure Storage Mover: AWS FSx for Windows File Server to Azure Files migration (Public Preview)</a></p>
+        <p>レポート: reports/2026/2026-08-06-storage-mover-aws-fsx-migration.md | リリース日: 2026-08-06 | インフォグラフィック生成日: 2026-08-07</p>
+        <p>Generated by Azure News Summary</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
