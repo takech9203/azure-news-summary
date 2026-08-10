@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-08-10 - Microsoft Fabric: Item Recovery が未設定テナントでデフォルト有効化へ](2026/2026-08-10-fabric-item-recovery-default.md)
 - [2026-08-07 - Azure ExpressRoute: Resiliency Guard (Public Preview)](2026/2026-08-07-expressroute-resiliency-guard.md)
 - [2026-08-06 - Azure Storage Mover: AWS FSx for Windows File Server から Azure Files へのエージェントレス移行 (Public Preview)](2026/2026-08-06-storage-mover-aws-fsx-migration.md)
 - [2026-08-06 - Azure Databricks: Genie One / Genie Agents 無償利用期間を 2027 年 1 月 31 日まで延長](2026/2026-08-06-databricks-genie-free-usage-extension.md)
