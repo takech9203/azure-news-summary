@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Firewall: IDPS パフォーマンスの 2.2 倍最適化 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+    :root {
+        /* Azure Brand Colors */
+        --azure-blue: #0078D4;
+        --azure-dark-blue: #003D69;
+        --azure-light-blue: #50E6FF;
+
+        /* Microsoft Fluent Colors */
+        --ms-blue-900: #004578;
+        --ms-blue-800: #005A9E;
+        --ms-blue-700: #106EBE;
+        --ms-blue-600: #0078D4;
+        --ms-blue-500: #2B88D8;
+        --ms-blue-400: #71AFE5;
+        --ms-blue-300: #C7E0F4;
+        --ms-blue-200: #DEECF9;
+        --ms-blue-100: #EFF6FC;
+
+        /* Status Colors */
+        --ms-green: #107C10;
+        --ms-yellow: #FFB900;
+        --ms-orange: #FF8C00;
+        --ms-red: #D83B01;
+        --ms-purple: #8764B8;
+
+        /* Text Colors */
+        --ms-text-primary: #323130;
+        --ms-text-secondary: #605E5C;
+        --ms-text-disabled: #A19F9D;
+
+        /* Surface Colors */
+        --ms-surface: #FFFFFF;
+        --ms-surface-secondary: #FAF9F8;
+        --ms-surface-tertiary: #F3F2F1;
+        --ms-border: #EDEBE9;
+
+        /* Category: Security */
+        --category-color: #D83B01;
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+        color: var(--ms-text-primary);
+        background: var(--ms-surface-secondary);
+        line-height: 1.6;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 24px;
+    }
+
+    /* ===== Header ===== */
+    .header {
+        background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+        color: #FFFFFF;
+        border-radius: 16px;
+        padding: 40px 32px;
+        margin-bottom: 24px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .header::after {
+        content: '🛡️';
+        position: absolute;
+        right: 24px;
+        bottom: -16px;
+        font-size: 120px;
+        opacity: 0.15;
+    }
+
+    .header .meta-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .service-badge {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        color: white;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        color: #FFFFFF;
+    }
+
+    .badge-ga {
+        background: var(--ms-green);
+    }
+
+    .header h1 {
+        font-size: clamp(24px, 4vw, 36px);
+        font-weight: 900;
+        line-height: 1.3;
+        margin-bottom: 12px;
+    }
+
+    .header .subtitle {
+        font-size: 16px;
+        opacity: 0.9;
+    }
+
+    .header .release-date {
+        display: inline-block;
+        margin-top: 16px;
+        background: rgba(255, 255, 255, 0.15);
+        padding: 4px 14px;
+        border-radius: 6px;
+        font-size: 14px;
+    }
+
+    /* ===== Sections ===== */
+    .section {
+        background: var(--ms-surface);
+        border: 1px solid var(--ms-border);
+        border-radius: 12px;
+        padding: 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--ms-blue-800);
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 3px solid var(--ms-blue-300);
+    }
+
+    .section-title .icon {
+        font-size: 26px;
+    }
+
+    /* ===== Stats ===== */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin: 20px 0;
+    }
+
+    .stat-card {
+        background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+        color: white;
+        padding: 24px 20px;
+        border-radius: 12px;
+        text-align: center;
+    }
+
+    .stat-card.green {
+        background: linear-gradient(135deg, var(--ms-green), #0B5A0B);
+    }
+
+    .stat-value {
+        font-size: 34px;
+        font-weight: 900;
+        line-height: 1.2;
+    }
+
+    .stat-value small {
+        font-size: 16px;
+        font-weight: 500;
+    }
+
+    .stat-label {
+        font-size: 14px;
+        opacity: 0.9;
+        margin-top: 6px;
+    }
+
+    .stat-sub {
+        font-size: 12px;
+        opacity: 0.75;
+        margin-top: 4px;
+    }
+
+    /* ===== Highlight ===== */
+    .highlight-box {
+        background: var(--ms-blue-100);
+        border-left: 4px solid var(--azure-blue);
+        padding: 16px 20px;
+        border-radius: 0 8px 8px 0;
+        margin: 16px 0;
+    }
+
+    .highlight-box strong {
+        color: var(--ms-blue-800);
+    }
+
+    /* ===== Before / After ===== */
+    .before-after {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin: 20px 0;
+    }
+
+    .before {
+        background: #FFEBEE;
+        border: 2px solid var(--ms-red);
+        border-radius: 8px;
+        padding: 16px 20px;
+    }
+
+    .after {
+        background: #E8F5E9;
+        border: 2px solid var(--ms-green);
+        border-radius: 8px;
+        padding: 16px 20px;
+    }
+
+    .before h4 {
+        color: var(--ms-red);
+        margin-bottom: 10px;
+        font-size: 16px;
+    }
+
+    .after h4 {
+        color: var(--ms-green);
+        margin-bottom: 10px;
+        font-size: 16px;
+    }
+
+    .before ul, .after ul {
+        padding-left: 20px;
+        font-size: 14px;
+    }
+
+    .before li, .after li {
+        margin-bottom: 8px;
+    }
+
+    /* ===== Mermaid ===== */
+    .mermaid-container {
+        background: #FFFFFF;
+        border-radius: 12px;
+        padding: 24px;
+        margin: 20px 0;
+        border: 2px solid rgba(0, 120, 212, 0.3);
+        overflow-x: auto;
+    }
+
+    .mermaid {
+        display: flex;
+        justify-content: center;
+    }
+
+    .diagram-caption {
+        text-align: center;
+        font-size: 14px;
+        color: var(--ms-text-secondary);
+        margin-top: 8px;
+    }
+
+    /* ===== Feature Cards ===== */
+    .feature-card {
+        display: flex;
+        gap: 16px;
+        background: var(--ms-surface);
+        border: 1px solid var(--ms-border);
+        border-left: 4px solid var(--azure-blue);
+        padding: 16px 20px;
+        margin: 12px 0;
+        border-radius: 0 8px 8px 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .feature-icon {
+        font-size: 24px;
+        min-width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--ms-blue-100);
+        border-radius: 8px;
+    }
+
+    .feature-content h4 {
+        font-size: 16px;
+        color: var(--ms-blue-800);
+        margin-bottom: 6px;
+    }
+
+    .feature-content p {
+        font-size: 14px;
+        color: var(--ms-text-secondary);
+    }
+
+    /* ===== Tables ===== */
+    .spec-table-wrapper {
+        overflow-x: auto;
+        margin: 16px 0;
+    }
+
+    table.spec-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: var(--ms-surface);
+    }
+
+    table.spec-table th {
+        background: var(--ms-blue-800);
+        color: #FFFFFF;
+        padding: 10px 14px;
+        text-align: left;
+        white-space: nowrap;
+    }
+
+    table.spec-table td {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--ms-border);
+    }
+
+    table.spec-table tr:nth-child(even) {
+        background: var(--ms-blue-100);
+    }
+
+    .improved {
+        color: var(--ms-green);
+        font-weight: 700;
+    }
+
+    .old-value {
+        color: var(--ms-text-secondary);
+        font-size: 12px;
+    }
+
+    .note-list {
+        font-size: 13px;
+        color: var(--ms-text-secondary);
+        padding-left: 20px;
+        margin-top: 8px;
+    }
+
+    .note-list li {
+        margin-bottom: 4px;
+    }
+
+    /* ===== Benefit Columns ===== */
+    .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .benefit-box {
+        background: var(--ms-surface-tertiary);
+        border-radius: 8px;
+        padding: 18px 20px;
+        border-top: 4px solid var(--azure-blue);
+    }
+
+    .benefit-box.business {
+        border-top-color: var(--ms-orange);
+    }
+
+    .benefit-box h4 {
+        font-size: 16px;
+        margin-bottom: 12px;
+        color: var(--ms-text-primary);
+    }
+
+    .benefit-box ul {
+        padding-left: 20px;
+        font-size: 14px;
+    }
+
+    .benefit-box li {
+        margin-bottom: 8px;
+    }
+
+    /* ===== Caution ===== */
+    .caution-box {
+        background: #FFF8E1;
+        border-left: 4px solid var(--ms-yellow);
+        border-radius: 0 8px 8px 0;
+        padding: 16px 20px;
+        margin: 12px 0;
+    }
+
+    .caution-box ul {
+        padding-left: 20px;
+        font-size: 14px;
+    }
+
+    .caution-box li {
+        margin-bottom: 8px;
+    }
+
+    /* ===== Use Cases ===== */
+    .usecase-card {
+        background: var(--ms-blue-100);
+        border: 1px solid var(--ms-blue-300);
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin: 16px 0;
+    }
+
+    .usecase-card h4 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 17px;
+        color: var(--ms-blue-800);
+        margin-bottom: 10px;
+    }
+
+    .usecase-card p {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    .usecase-effect {
+        background: #E8F5E9;
+        border-left: 4px solid var(--ms-green);
+        border-radius: 0 6px 6px 0;
+        padding: 10px 14px;
+        font-size: 14px;
+        margin-top: 12px;
+    }
+
+    .usecase-effect strong {
+        color: var(--ms-green);
+    }
+
+    /* ===== Related Services ===== */
+    .related-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 14px;
+    }
+
+    .related-card {
+        background: var(--ms-surface-tertiary);
+        border-radius: 8px;
+        padding: 16px;
+        border-left: 4px solid var(--ms-purple);
+    }
+
+    .related-card h5 {
+        font-size: 14px;
+        color: var(--ms-text-primary);
+        margin-bottom: 6px;
+    }
+
+    .related-card p {
+        font-size: 13px;
+        color: var(--ms-text-secondary);
+    }
+
+    /* ===== Pricing / Region ===== */
+    .info-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+
+    .info-row .section {
+        margin-bottom: 0;
+    }
+
+    /* ===== Links ===== */
+    .link-list {
+        list-style: none;
+    }
+
+    .link-list li {
+        margin-bottom: 10px;
+        padding-left: 28px;
+        position: relative;
+        font-size: 14px;
+    }
+
+    .link-list li::before {
+        content: '🔗';
+        position: absolute;
+        left: 0;
+    }
+
+    a {
+        color: var(--azure-blue);
+        text-decoration: none;
+        word-break: break-all;
+    }
+
+    a:hover {
+        text-decoration: underline;
+    }
+
+    /* ===== Summary ===== */
+    .summary-box {
+        background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+        border: 2px solid var(--azure-blue);
+        border-radius: 12px;
+        padding: 24px 28px;
+        font-size: 15px;
+    }
+
+    /* ===== Tags ===== */
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+    }
+
+    .tag {
+        background: var(--ms-blue-200);
+        color: var(--ms-blue-800);
+        padding: 4px 12px;
+        border-radius: 14px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    /* ===== Footer ===== */
+    .footer {
+        text-align: center;
+        color: var(--ms-text-secondary);
+        font-size: 13px;
+        padding: 24px 0 8px;
+        border-top: 1px solid var(--ms-border);
+        margin-top: 8px;
+    }
+
+    .footer a {
+        font-size: 12px;
+    }
+
+    /* ===== Responsive ===== */
+    @media (max-width: 700px) {
+        .before-after,
+        .two-col,
+        .info-row {
+            grid-template-columns: 1fr;
+        }
+
+        .container {
+            padding: 16px;
+        }
+
+        .section {
+            padding: 20px;
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="meta-badges">
+            <span class="service-badge">🛡️ Azure Firewall (Premium)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>IDPS パフォーマンスの<br>2.2 倍最適化が GA</h1>
+        <p class="subtitle">TLS インスペクション + IDPS (Deny モード) のスループットが 10 Gbps → 最大 22 Gbps へ 120% 向上</p>
+        <span class="release-date">📅 リリース日: 2026-08-11</span>
+    </header>
+
+    <!-- ===== Stats ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📊</span>数字で見るアップデート効果</h2>
+        <div class="stats-grid">
+            <div class="stat-card green">
+                <div class="stat-value">2.2<small>X</small></div>
+                <div class="stat-label">TLS + IDPS Deny 時のスループット</div>
+                <div class="stat-sub">10 Gbps → 最大 22 Gbps (+120%)</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-value">2<small>倍</small></div>
+                <div class="stat-label">単一 TCP 接続あたりスループット</div>
+                <div class="stat-sub">300 Mbps → 最大 600 Mbps</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">67,000<small>+</small></div>
+                <div class="stat-label">IDPS シグネチャルール</div>
+                <div class="stat-sub">50 以上のカテゴリを継続更新</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">¥0</div>
+                <div class="stat-label">追加コスト</div>
+                <div class="stat-sub">既存 Premium デプロイに自動適用</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Firewall Premium の <strong>IDPS (侵入検知防御システム) パフォーマンス最適化</strong>が一般提供 (GA) されました。TLS インスペクションと IDPS (Deny モード) を有効にした場合のスループットが従来の 10 Gbps から<strong>最大 22 Gbps へと 120% 向上</strong>しました。</p>
+        <div class="highlight-box">
+            TLS インスペクションと IDPS は Premium の中核となる高度な脅威保護機能ですが、トラフィックの復号やシグネチャマッチングによる処理負荷が高く、有効化するとスループットが大きく低下する点が課題でした。今回の最適化により、<strong>セキュリティ機能を最大限有効化したままでも大幅に高いスループット</strong>を実現できます。
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before: アップデート前の課題</h4>
+                <ul>
+                    <li>TLS インスペクション + IDPS (Deny モード) 有効時、スループットが最大 <strong>10 Gbps</strong> に制限され、高トラフィック環境ではセキュリティと性能のトレードオフが発生</li>
+                    <li>IDPS 有効時の単一 TCP 接続あたりのスループットが最大 <strong>300 Mbps</strong> に制限され、大容量ファイル転送などの単一フローが遅くなる可能性</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After: アップデート後の改善</h4>
+                <ul>
+                    <li>TLS インスペクション + IDPS (Deny モード) 有効時のスループットが最大 <strong>22 Gbps</strong> に向上 (120% 増)</li>
+                    <li>IDPS 有効時 (Alert / Deny いずれか) の単一 TCP 接続あたりのスループットが最大 <strong>600 Mbps</strong> に向上 (2 倍)</li>
+                    <li>セキュリティ機能をフル活用したまま、より大規模なワークロードを保護可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🕐 Before: 従来のパフォーマンス"]
+        C1([💻 クライアント]) --> FW1["🛡️ Azure Firewall Premium<br/>TLS インスペクション + IDPS Deny"]
+        FW1 -->|"最大 10 Gbps<br/>単一 TCP: 300 Mbps"| D1["🌐 宛先"]
+    end
+
+    subgraph After["✨ After: 2.2X 最適化 (GA)"]
+        C2([💻 クライアント]) --> FW2["🛡️ Azure Firewall Premium<br/>TLS インスペクション + IDPS Deny"]
+        FW2 -->|"最大 22 Gbps (+120%)<br/>単一 TCP: 600 Mbps (2 倍)"| D2["🌐 宛先"]
+    end
+
+    Before -.->|パフォーマンス最適化| After
+            </pre>
+        </div>
+        <p class="diagram-caption">同一構成 (TLS インスペクション + IDPS 有効) のまま、ファイアウォールを通過するトラフィックのスループット上限が大幅に向上</p>
+    </section>
+
+    <!-- ===== Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>1. TLS インスペクション + IDPS (Deny モード) 有効時のスループット向上</h4>
+                <p>従来の 10 Gbps から最大 22 Gbps へ 120% 向上。復号を伴うフルインスペクション構成でも高スループットを維持。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>2. 単一 TCP 接続あたりのスループット向上</h4>
+                <p>IDPS を Alert モードまたは Deny モードで有効化した場合、従来の 300 Mbps から最大 600 Mbps へ 2 倍に向上。大容量データ転送など、単一フローに依存するワークロードの性能が改善。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>3. IDPS の脅威検知能力はそのまま維持</h4>
+                <p>IDPS はシグネチャベースで L3〜L7 のトラフィックを監視し、50 以上のカテゴリ・67,000 以上のルールを継続的に更新。マルウェア C&amp;C、フィッシング、エクスプロイトキットなどの検知・遮断が可能。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <p style="font-size: 14px; margin-bottom: 8px;">Microsoft Learn の Azure Firewall パフォーマンスドキュメントに記載されている最新の性能値 (最大オートスケール 20 インスタンス時)。</p>
+        <div class="spec-table-wrapper">
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>構成</th>
+                        <th>TCP/UDP 帯域幅</th>
+                        <th>HTTP/S 帯域幅</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Premium (TLS 無効 + IDPS 無効)</td>
+                        <td>100 Gbps</td>
+                        <td>100 Gbps</td>
+                    </tr>
+                    <tr>
+                        <td>Premium (TLS 有効 + IDPS 無効)</td>
+                        <td>-</td>
+                        <td>100 Gbps</td>
+                    </tr>
+                    <tr>
+                        <td>Premium (TLS 有効 + IDPS Alert モード)</td>
+                        <td>100 Gbps</td>
+                        <td>100 Gbps</td>
+                    </tr>
+                    <tr>
+                        <td>Premium (TLS 有効 + IDPS Deny モード)</td>
+                        <td><span class="improved">最大 22 Gbps</span> <span class="old-value">(従来 10 Gbps)</span></td>
+                        <td><span class="improved">最大 22 Gbps</span> <span class="old-value">(従来 10 Gbps)</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p style="font-size: 14px; margin: 12px 0 8px;"><strong>単一接続あたりのスループット:</strong></p>
+        <div class="spec-table-wrapper">
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>構成</th>
+                        <th>スループット</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Premium 単一 TCP 接続 (最大)</td>
+                        <td>最大 9 Gbps</td>
+                    </tr>
+                    <tr>
+                        <td>Premium 単一 TCP 接続 (IDPS Alert and Deny モード)</td>
+                        <td><span class="improved">最大 600 Mbps</span> <span class="old-value">(従来 300 Mbps)</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <ul class="note-list">
+            <li>上記の性能値は最大オートスケール 20 インスタンス時のもの。プリスケーリング有効時は最大 50 インスタンスまでスケール可能で、その場合の性能値は異なる</li>
+            <li>Azure Firewall Premium では performance boost 機能 (基盤となるファイアウォール VM での Accelerated Networking 有効化を含む) がすべてのデプロイでデフォルトで有効</li>
+        </ul>
+    </section>
+
+    <!-- ===== Benefits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="two-col">
+            <div class="benefit-box business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>セキュリティと性能のトレードオフが緩和され、規制業界 (決済、医療など) でもフルインスペクション構成を採用しやすくなる</li>
+                    <li>スループット不足を理由とした構成の分割や回避策 (IDPS バイパスなど) の必要性が低減し、運用がシンプルに</li>
+                    <li>追加コストなしで既存の Premium デプロイの性能上限が向上</li>
+                </ul>
+            </div>
+            <div class="benefit-box">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>TLS インスペクション + IDPS Deny モード構成で最大 22 Gbps まで処理可能となり、高トラフィックなハブ &amp; スポーク構成でも対応しやすい</li>
+                    <li>単一 TCP 接続あたり 600 Mbps により、大容量ファイル転送やバックアップトラフィックなど単一フロー依存のワークロードが高速化</li>
+                    <li>IDPS の検知能力 (67,000 以上のシグネチャ) を維持したままの性能向上</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>性能値は<strong>最大値</strong>であり、実際のスループットはトラフィックの特性 (パケットサイズ、接続数、プロトコルなど) に依存する。本番導入前にテスト環境での性能評価が推奨される</li>
+                <li>TLS 有効 + IDPS Deny モード構成 (最大 22 Gbps) は、IDPS 無効時や Alert モード時 (最大 100 Gbps) と比較すると依然としてスループット上限が低い</li>
+                <li>記載の性能値は最大オートスケール 20 インスタンス時のもの。初期デプロイ (オートスケール前) の Premium の最大帯域幅は 18 Gbps で、スケールアウトには 5〜7 分を要する</li>
+                <li>IDPS バイパスリストはスループット改善を目的とした機能ではない (ドキュメントに明記)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🌐 ユースケース 1: ハブ &amp; スポーク構成でのフルインスペクション</h4>
+            <p><strong>シナリオ</strong>: ハブ VNet に Azure Firewall Premium を配置し、スポーク間 (East-West) およびアウトバウンド通信すべてに TLS インスペクションと IDPS (Deny モード) を適用。従来はスループット上限 10 Gbps がボトルネックとなり得たが、22 Gbps まで対応可能となったことで、より多くのスポーク・ワークロードを単一のファイアウォールで保護できる。</p>
+            <div class="usecase-effect"><strong>効果</strong>: セキュリティ検査を省略することなく、大規模環境のトラフィックを集約的に保護。</div>
+        </div>
+        <div class="usecase-card">
+            <h4>📦 ユースケース 2: 大容量データ転送を伴うワークロードの保護</h4>
+            <p><strong>シナリオ</strong>: バックアップやデータ同期など、単一 TCP 接続で大容量データを転送するワークロードのトラフィックを IDPS で検査。単一接続あたりのスループットが 300 Mbps から 600 Mbps に倍増したことで、転送時間が短縮される。</p>
+            <div class="usecase-effect"><strong>効果</strong>: IDPS による検査を維持しつつ、単一フローの転送性能が最大 2 倍に向上。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing & Regions ===== -->
+    <div class="info-row" style="margin-bottom: 24px;">
+        <section class="section">
+            <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+            <p style="font-size: 14px;">今回のパフォーマンス最適化は Premium の機能改善であり、<strong>料金体系の変更は確認されていません</strong>。</p>
+            <p style="font-size: 14px; margin-top: 10px;">Azure Firewall の課金は、デプロイ時間あたりの固定料金とデータ処理量 (GB あたり) の変動料金の組み合わせ。Premium SKU ではオプションとして Capacity Unit (プリスケーリング用の容量予約) も利用可能。1 時間未満の利用は 1 時間分として課金されます。</p>
+            <p style="font-size: 13px; margin-top: 10px;">詳細: <a href="https://azure.microsoft.com/pricing/details/azure-firewall/" target="_blank" rel="noopener">料金ページ</a> / <a href="https://azure.microsoft.com/pricing/calculator/" target="_blank" rel="noopener">料金計算ツール</a></p>
+        </section>
+        <section class="section">
+            <h2 class="section-title"><span class="icon">🗺️</span>利用可能リージョン</h2>
+            <p style="font-size: 14px;">Azure Firewall が利用可能なリージョンについては、公式のリージョン別提供状況を参照してください。</p>
+            <p style="font-size: 13px; margin-top: 10px;"><a href="https://azure.microsoft.com/global-infrastructure/services/?products=azure-firewall" target="_blank" rel="noopener">リージョン別の利用可能な製品</a></p>
+        </section>
+    </div>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>Azure Firewall Manager</h5>
+                <p>複数の Azure Firewall インスタンスとファイアウォールポリシーを集中管理。Premium ポリシーの一元適用に利用。</p>
+            </div>
+            <div class="related-card">
+                <h5>Azure Virtual WAN (Secured Virtual Hub)</h5>
+                <p>Virtual WAN ハブに Azure Firewall Premium をデプロイし、グローバルなトラフィックを保護。</p>
+            </div>
+            <div class="related-card">
+                <h5>Azure Monitor / Log Analytics</h5>
+                <p>IDPS のアラートやネットワークルールログの収集・分析に利用。</p>
+            </div>
+            <div class="related-card">
+                <h5>Azure Web Application Firewall (WAF)</h5>
+                <p>インバウンドの TLS インスペクションは Application Gateway 上の WAF が担当し、Azure Firewall Premium (アウトバウンド / East-West) と補完関係。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            Azure Firewall Premium の IDPS パフォーマンス最適化が GA となり、TLS インスペクション + IDPS (Deny モード) 有効時のスループットが <strong>10 Gbps から最大 22 Gbps へ 120% 向上</strong>、IDPS 有効時の単一 TCP 接続あたりのスループットが <strong>300 Mbps から最大 600 Mbps へ倍増</strong>しました。追加の設定や料金なしで得られる性能向上であり、これまでスループット上限を理由に IDPS Deny モードや TLS インスペクションの適用範囲を限定していた環境では、<strong>フルインスペクション構成への移行を再検討する好機</strong>です。導入時は最大値がトラフィック特性に依存する点を踏まえ、本番相当のトラフィックでの性能テストを実施することを推奨します。
+        </div>
+        <div class="tags">
+            <span class="tag">#Azure Firewall</span>
+            <span class="tag">#IDPS</span>
+            <span class="tag">#TLS Inspection</span>
+            <span class="tag">#Networking</span>
+            <span class="tag">#Security</span>
+            <span class="tag">#Performance</span>
+            <span class="tag">#GA</span>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=569256" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/firewall/premium-features" target="_blank" rel="noopener">Azure Firewall Premium features (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/firewall/firewall-performance" target="_blank" rel="noopener">Azure Firewall performance (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-firewall/" target="_blank" rel="noopener">Azure Firewall 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=569256" target="_blank" rel="noopener">Azure Updates (ID: 569256)</a> / <a href="https://learn.microsoft.com/azure/firewall/firewall-performance" target="_blank" rel="noopener">Microsoft Learn - Azure Firewall performance</a></p>
+        <p style="margin-top: 8px;">Azure News Summary — Azure Firewall: IDPS パフォーマンスの 2.2 倍最適化 (GA) | レポート日: 2026-08-11</p>
+    </footer>
+
+</div>
+</body>
+</html>
