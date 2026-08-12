@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Front Door: バッチルール更新 (Batch rule updates) の一般提供開始</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 61, 105, 0.25);
+}
+
+.header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga {
+    background: var(--ms-green);
+}
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.92;
+}
+
+.header .release-date {
+    margin-top: 14px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong {
+    color: var(--azure-dark-blue);
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 {
+    color: var(--ms-red);
+    margin-bottom: 10px;
+}
+
+.after h4 {
+    color: var(--ms-green);
+    margin-bottom: 10px;
+}
+
+.before ul, .after ul {
+    padding-left: 20px;
+}
+
+.before li, .after li {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 6px;
+    font-size: 16px;
+}
+
+.feature-content p {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+/* Tables */
+.table-wrapper {
+    overflow-x: auto;
+    margin: 16px 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td {
+    background: var(--ms-surface-secondary);
+}
+
+td:first-child {
+    font-weight: 500;
+    color: var(--azure-dark-blue);
+}
+
+/* Steps */
+.steps {
+    counter-reset: step;
+    list-style: none;
+    margin: 16px 0;
+}
+
+.steps li {
+    position: relative;
+    padding: 12px 12px 12px 56px;
+    margin: 10px 0;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--ms-border);
+}
+
+.steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* Merit grid */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 18px;
+    border-top: 4px solid var(--azure-blue);
+}
+
+.merit-card h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+}
+
+.merit-card ul {
+    padding-left: 20px;
+}
+
+.merit-card li {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* Warning / limitation list */
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box h4 {
+    color: var(--ms-orange);
+    margin-bottom: 8px;
+}
+
+.limitation-list {
+    list-style: none;
+}
+
+.limitation-list li {
+    position: relative;
+    padding: 10px 12px 10px 36px;
+    margin: 8px 0;
+    background: #FFF9F5;
+    border: 1px solid #F7C8A8;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.limitation-list li::before {
+    content: "⚠️";
+    position: absolute;
+    left: 10px;
+    top: 10px;
+}
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 18px;
+    margin: 14px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.usecase-card .scenario {
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.usecase-card .effect {
+    font-size: 14px;
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+}
+
+.usecase-card .label {
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+}
+
+.usecase-card .effect .label {
+    color: var(--ms-green);
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.related-card h4 {
+    color: var(--azure-blue);
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.related-card p {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+}
+
+/* Links */
+a {
+    color: var(--azure-blue);
+}
+
+.links-list {
+    list-style: none;
+}
+
+.links-list li {
+    padding: 8px 12px;
+    margin: 6px 0;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--ms-border);
+    font-size: 14px;
+    word-break: break-all;
+}
+
+.links-list li::before {
+    content: "🔗 ";
+}
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 20px 0 8px;
+}
+
+.footer a {
+    color: var(--azure-blue);
+}
+
+.note {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+@media (max-width: 700px) {
+    .before-after,
+    .merit-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .header h1 {
+        font-size: 24px;
+    }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <header class="header">
+        <div class="header-badges">
+            <span class="service-badge">Azure Front Door</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>バッチルール更新 (Batch rule updates) の一般提供開始</h1>
+        <p class="subtitle">ルールセット内の複数ルールの追加・更新・削除・並べ替えを 1 つの協調された操作としてアトミックに適用。IaC ワークフローのデプロイ安全性と予測可能性を向上。</p>
+        <p class="release-date">📅 リリース日: 2026-08-12 | 対象: Azure Front Door Standard / Premium</p>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Front Door Standard および Premium で、ルールセットに対する<strong>バッチルール更新 (Batch rule updates)</strong> が一般提供 (GA) となりました。ルールセット内の複数ルールの追加・更新・削除・並べ替えを 1 つの協調された操作として実行でき、すべての変更が「まとめて適用される」か「まったく適用されない」かのいずれか (アトミック適用) が保証されます。</p>
+        <div class="highlight-box">
+            <p>大規模・複雑なルールセットを Terraform などの <strong>Infrastructure-as-Code (IaC)</strong> ワークフローで管理する場合、従来はルールを個別に更新する必要があり、部分的なルール状態、ルール順序の競合、デプロイのリトライ、ロールバックの複雑さといった問題が発生していました。バッチルール更新はこれらを解消します。</p>
+        </div>
+        <p>バッチモードは<strong>新しいルールセットの作成時に明示的に有効化するオプトイン方式</strong>です。有効化した場合、望ましい最終状態のルール構成全体を送信すると、Azure Front Door がルールセットレベルで差分を計算し、変更をまとめて適用します。既存のルールセットは既定で従来のクラシックなルール管理を継続するため、<strong>完全な後方互換性</strong>が維持されます。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>各ルールは個別の作成・更新・削除操作で管理され、並べ替えや一括編集はアトミックではなかった</li>
+                    <li>大規模なルールセットの更新中に、一時的または不整合なルール動作が発生する可能性があった</li>
+                    <li>IaC ワークフローでデプロイの失敗やリトライが発生し、複数の更新が並行して行われる場合の運用リスクがあった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>ルールを個別ではなくセットとして更新でき、すべての変更が成功するか失敗するかのいずれかになる (アトミック適用)</li>
+                    <li>更新中の一時的・部分的なルール状態が排除される</li>
+                    <li>Terraform、Azure CLI、PowerShell などによる安全で再現性のある自動化が可能になる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗺️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["❌ Before: クラシックルール更新 (従来)"]
+        IaC1["🛠️ IaC / CLI / PowerShell"] --> R1["ルール 1 更新 ✅"]
+        IaC1 --> R2["ルール 2 更新 ✅"]
+        IaC1 --> R3["ルール 3 更新 ❌ 失敗"]
+        R1 & R2 & R3 --> P1["⚠️ 部分適用状態<br/>ルール順序の競合・リトライが必要"]
+    end
+
+    subgraph After["✅ After: バッチルール更新 (GA)"]
+        IaC2["🛠️ IaC / CLI / PowerShell"] --> Batch["📦 望ましい最終状態を一括送信"]
+        Batch --> AFD["☁️ Azure Front Door<br/>ルールセット (バッチモード)"]
+        AFD --> Atomic{"アトミック適用"}
+        Atomic -->|成功| OK["✅ 全ルール一括反映"]
+        Atomic -->|失敗| NG["↩️ 一切適用されない<br/>(元の状態を維持)"]
+    end
+            </pre>
+        </div>
+        <p class="diagram-caption">従来はルールごとに個別更新され途中失敗で部分適用状態が発生し得ましたが、バッチモードではルールセット全体の望ましい状態を送信し、すべての変更が成功または失敗のいずれかとしてアトミックに適用されます。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>サービスアップデートの詳細: 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">⚛️</div>
+            <div class="feature-content">
+                <h4>1. ルールセットレベルのアトミックな一括更新</h4>
+                <p>複数ルールの追加・更新・削除・並べ替えを 1 つの協調された操作として実行。すべての変更が「まとめて成功」または「まとめて失敗」となり、部分的なルール状態を排除。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📝</div>
+            <div class="feature-content">
+                <h4>2. 宣言的なルール管理 (望ましい状態の送信)</h4>
+                <p>ルールの配列としてルールセットの「望ましい最終状態」を送信。Azure Front Door が差分を計算し、変更をバッチで適用。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>3. オプトイン方式と完全な後方互換性</h4>
+                <p>バッチモードは新しいルールセットの作成時に明示的に有効化。既存のルールセットは変更なしで従来どおり動作 (既定はクラシックモード)。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛠️</div>
+            <div class="feature-content">
+                <h4>4. IaC ワークフローとの親和性</h4>
+                <p>Terraform、ARM/REST、Azure CLI、PowerShell など決定論的なデプロイが求められるシナリオに最適。</p>
+            </div>
+        </div>
+
+        <h3 style="color: var(--azure-dark-blue); margin-top: 24px; margin-bottom: 8px;">ルール管理モードの比較</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>クラシックルール更新 (既定)</th>
+                        <th>バッチルール更新 (オプトイン)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>ルールの管理単位</td>
+                        <td>ルールごとに個別</td>
+                        <td>ルールセット全体</td>
+                    </tr>
+                    <tr>
+                        <td>更新方法</td>
+                        <td>個別の作成・更新・削除操作</td>
+                        <td>望ましい最終状態を一括送信</td>
+                    </tr>
+                    <tr>
+                        <td>アトミック性</td>
+                        <td>並べ替え・一括編集は非アトミック</td>
+                        <td>すべての変更が成功または失敗</td>
+                    </tr>
+                    <tr>
+                        <td>適するシナリオ</td>
+                        <td>シンプルな構成、少量の増分変更</td>
+                        <td>大規模ルールセット、頻繁な並べ替え、IaC デプロイ</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>詳細</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>対象ティア</td>
+                        <td>Azure Front Door Standard / Premium</td>
+                    </tr>
+                    <tr>
+                        <td>有効化方法</td>
+                        <td>ルールセット作成時にバッチモードを明示的に有効化 (オプトイン)</td>
+                    </tr>
+                    <tr>
+                        <td>モードの変更</td>
+                        <td>バッチモードは作成後に変更不可 (イミュータブル)。モードを変えるには新しいルールセットを作成しルートを再関連付け</td>
+                    </tr>
+                    <tr>
+                        <td>ルール数上限</td>
+                        <td>ルールセットあたり最大 100 ルール</td>
+                    </tr>
+                    <tr>
+                        <td>キャッシュ有効ルールのカウント</td>
+                        <td>Route Override でキャッシュを有効にしたルールは 2 ルール分としてカウント</td>
+                    </tr>
+                    <tr>
+                        <td>既定の動作</td>
+                        <td>既存・新規ともに既定はクラシックモード (後方互換性を維持)</td>
+                    </tr>
+                    <tr>
+                        <td>対応ツール</td>
+                        <td>Terraform、ARM/REST、Azure CLI、PowerShell</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="warning-box">
+            <h4>⚠️ キャッシュ有効時のクォータに関する注意</h4>
+            <p>キャッシュを有効にしたルールは 2 ルール分としてカウントされます。例えば 50 ルールすべてでキャッシュが有効な場合、実効ルール数は 100 となり上限に達します。この状態で 50 ルールすべてを 1 回のバッチ更新で置き換えようとすると、操作中に既存ルールの削除前に新ルールが追加され一時的にクォータを超過するため失敗します。この場合は <strong>25 ルールずつ 2 回のバッチに分けて更新する</strong>ことが推奨されています。</p>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🚀</span>設定方法</h2>
+        <h3 style="color: var(--azure-dark-blue); margin-bottom: 8px;">前提条件</h3>
+        <ul style="padding-left: 24px; margin-bottom: 16px;">
+            <li>Azure Front Door Standard または Premium のプロファイル</li>
+            <li>バッチモードはルールセットの新規作成時にのみ有効化可能 (既存ルールセットのモード変更は不可)</li>
+        </ul>
+        <h3 style="color: var(--azure-dark-blue); margin-bottom: 8px;">設定の流れ</h3>
+        <ol class="steps">
+            <li>バッチモードを有効にして新しいルールセットを作成する</li>
+            <li>ルールの配列として「望ましい最終状態」を定義し、順序どおりに送信する</li>
+            <li>Azure Front Door が変更を計算し、バッチとしてアトミックに適用する</li>
+            <li>既存のクラシックモードのルールセットから移行する場合は、バッチモードの新しいルールセットを作成し、ルートを再関連付けする</li>
+        </ol>
+        <p class="note">具体的な構成手順は <a href="https://learn.microsoft.com/azure/frontdoor/rule-set-batch" target="_blank">Microsoft Learn のドキュメント</a>を参照してください。</p>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>デプロイの安全性と予測可能性が向上し、ルール更新に起因するサービス影響のリスクを低減</li>
+                    <li>IaC による構成管理の信頼性が高まり、リトライやロールバック対応にかかる運用コストを削減</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>複数ルールの変更がアトミックに適用され、更新中の一時的・不整合な動作を排除</li>
+                    <li>ルール順序の競合や部分適用状態を防止</li>
+                    <li>Terraform などの宣言的ワークフローと自然に整合する「望ましい状態」ベースの管理</li>
+                    <li>既存構成への影響ゼロ (オプトイン方式・完全な後方互換性)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🚧</span>デメリット・制約事項</h2>
+        <ul class="limitation-list">
+            <li>バッチモードは<strong>ルールセット作成後に変更不可</strong> (クラシックモードへの切り替えは不可)</li>
+            <li>モードを変更するには、新しいルールセットを作成してルートを再関連付けする必要がある</li>
+            <li>既存のルールセットをそのままバッチモードに移行することはできない</li>
+            <li>プラットフォームの信頼性確保のため、バッチ操作にはサイズと操作数の制限が適用される</li>
+            <li>キャッシュ有効ルールは 2 ルール分としてカウントされるため、大規模な一括置換時はクォータの一時超過に注意が必要 (バッチの分割が必要になる場合がある)</li>
+        </ul>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>ユースケース 1: Terraform による大規模ルールセットの管理</h4>
+            <p class="scenario"><span class="label">シナリオ:</span> 数十のリダイレクト・ヘッダー操作・URL 書き換えルールを含むルールセットを Terraform で管理しており、リリースのたびにルールの追加や並べ替えが発生する。</p>
+            <p class="effect"><span class="label">効果:</span> ルールセット全体を望ましい状態として一括適用できるため、部分適用による一時的な誤動作やデプロイのリトライが不要になり、CI/CD パイプラインでのデプロイが決定論的になる。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>ユースケース 2: 頻繁なルール並べ替えを伴う運用</h4>
+            <p class="scenario"><span class="label">シナリオ:</span> キャンペーンや A/B テストに合わせてルールの優先順位を頻繁に変更する必要があり、従来は並べ替え中に意図しないルール評価順序が発生するリスクがあった。</p>
+            <p class="effect"><span class="label">効果:</span> 並べ替えを含むすべての変更がアトミックに適用されるため、更新中も一貫したルール評価順序が保証される。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>バッチルール更新自体に追加の課金項目はありません。Azure Front Door Standard / Premium の課金ディメンションは基本料金、送信データ転送、リクエスト数であり、ルールセットに対する個別の課金はありません。</p>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>Standard</th>
+                        <th>Premium</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>基本料金 (月額、時間単位で課金)</td>
+                        <td>$35/月</td>
+                        <td>$330/月</td>
+                    </tr>
+                    <tr>
+                        <td>リクエスト (Zone 1 北米 / Zone 6 欧州、1 万リクエストあたり)</td>
+                        <td>$0.009</td>
+                        <td>$0.015</td>
+                    </tr>
+                    <tr>
+                        <td>エッジ→クライアント送信 (北米・欧州、最初の 10 TB/月)</td>
+                        <td>$0.083/GB</td>
+                        <td>$0.083/GB</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p class="note">※ Premium には WAF と Private Link が追加費用なしで含まれます。最新の詳細は<a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank">料金ページ</a>を参照してください。</p>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>ルールセット (Rules Engine)</h4>
+                <p>本アップデートの対象機能。Front Door エッジでのリクエスト処理をカスタマイズするルールの集合で、1 ルールにつき最大 10 個の一致条件と 5 個のアクションを構成可能。</p>
+            </div>
+            <div class="related-card">
+                <h4>Web Application Firewall (WAF)</h4>
+                <p>Front Door エッジでルールセットより先に処理されるセキュリティレイヤー。Premium ティアでは追加費用なしで利用可能。</p>
+            </div>
+            <div class="related-card">
+                <h4>Terraform / ARM テンプレート / Azure CLI / PowerShell</h4>
+                <p>バッチルール更新が特に効果を発揮する IaC ツール群。決定論的なデプロイを実現。</p>
+            </div>
+            <div class="related-card">
+                <h4>ルート (Routes)</h4>
+                <p>ルールセットの関連付け先。モード変更時は新しいルールセットへのルート再関連付けが必要。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📌</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Front Door Standard / Premium のバッチルール更新の GA により、ルールセット内の複数ルールの変更をアトミックに適用できるようになりました。Terraform などの IaC でルールセットを管理している場合、部分適用やデプロイリトライの問題を根本的に解消できるため、大規模または頻繁に変更されるルールセットではバッチモードの採用を推奨します。ただしバッチモードは作成後に変更できないため、新規ルールセット作成時にどちらのモードを使うかを事前に判断し、既存ルールセットの移行時はルートの再関連付け手順を計画しておくことが重要です。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Front Door</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">Rules Engine</span>
+            <span class="tag">Batch Rule Updates</span>
+            <span class="tag">IaC</span>
+            <span class="tag">Terraform</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="links-list">
+            <li><a href="https://azure.microsoft.com/updates?id=569246" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/frontdoor/rule-set-batch" target="_blank">Batch rule updates for rule sets - Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/frontdoor/front-door-rules-engine" target="_blank">What is a rule set? - Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-resource-manager/management/azure-subscription-service-limits#azure-front-door-standard-and-premium-service-limits" target="_blank">Azure Front Door の制限・クォータ</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=569246" target="_blank">Azure Updates (ID: 569246)</a> | <a href="https://learn.microsoft.com/azure/frontdoor/rule-set-batch" target="_blank">Microsoft Learn</a></p>
+        <p>生成日: 2026-08-12 | Azure News Summary</p>
+    </footer>
+
+</div>
+</body>
+</html>

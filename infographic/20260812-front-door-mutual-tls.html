@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Front Door: Mutual TLS (クライアント証明書認証) パブリックプレビュー</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--ms-blue-900), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.header .meta {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; }
+
+/* ===== Highlight ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content p, .feature-content li { font-size: 14px; }
+.feature-content ul { padding-left: 20px; margin-top: 6px; }
+.feature-content li { margin-bottom: 6px; }
+
+/* ===== Validation Mode Cards ===== */
+.mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.mode-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.mode-card .mode-num {
+    display: inline-block;
+    background: var(--azure-blue);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 28px;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.mode-card h4 { font-size: 15px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.mode-card p { font-size: 13.5px; margin-bottom: 0; color: var(--ms-text-secondary); }
+
+.mode-tag {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin: 0 4px 6px 0;
+}
+.tag-required { background: #FDE7E9; color: var(--ms-red); }
+.tag-optional { background: var(--ms-blue-200); color: var(--ms-blue-800); }
+.tag-edge { background: #DFF6DD; color: var(--ms-green); }
+.tag-origin { background: #FFF4CE; color: #8A6D00; }
+.tag-default { background: var(--ms-purple); color: white; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+td code, li code, p code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* ===== Steps ===== */
+.step-list { list-style: none; counter-reset: step; margin: 16px 0; }
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 16px 12px 56px;
+    margin-bottom: 10px;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* ===== Pros / Cons ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    padding: 18px;
+    border-top: 4px solid var(--ms-green);
+}
+
+.merit-card.tech { border-top-color: var(--azure-blue); }
+
+.merit-card h4 { font-size: 16px; margin-bottom: 10px; }
+.merit-card.biz h4 { color: var(--ms-green); }
+.merit-card.tech h4 { color: var(--azure-blue); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 14px; margin-bottom: 8px; }
+
+.constraint-list { list-style: none; margin: 12px 0; }
+
+.constraint-list li {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.constraint-list li strong { color: var(--ms-red); }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    font-size: 16px;
+    color: white;
+    background: var(--ms-blue-700);
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+}
+
+.usecase-card .uc-row { margin-bottom: 10px; font-size: 14px; }
+
+.uc-label {
+    display: inline-block;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    background: var(--ms-blue-200);
+    padding: 2px 10px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    margin-right: 6px;
+}
+
+/* ===== Related Services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.related-card h4 {
+    font-size: 15px;
+    color: var(--azure-blue);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.related-card p { font-size: 13.5px; color: var(--ms-text-secondary); margin-bottom: 0; }
+
+/* ===== Links ===== */
+.links-list { list-style: none; margin: 12px 0; }
+
+.links-list li {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    font-size: 14px;
+}
+
+.links-list li::before { content: "🔗 "; }
+
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 20px 0 8px;
+}
+
+.footer .tags { margin-top: 8px; }
+
+.tag-chip {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin: 3px 2px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .merit-grid, .mode-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .container { padding: 14px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Front Door</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Mutual TLS (クライアント証明書認証)<br>パブリックプレビュー開始</h1>
+        <p class="subtitle">Azure Front Door のエッジで X.509 クライアント証明書を検証し、認証されないリクエストをアプリケーション到達前にブロック</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-08-12</span>
+            <span>🛡️ 対象: Azure Front Door Premium</span>
+            <span>🔐 機能: Mutual TLS (mTLS)</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Front Door で <strong>mutual TLS (mTLS、クライアント証明書認証)</strong> がパブリックプレビューとして利用可能になりました。mTLS を有効にすると、リクエストがアプリケーションに到達する前に、Azure Front Door のエッジで <strong>X.509 証明書</strong>を使用してクライアントを認証できます。B2B アプリケーション、IoT、金融サービス、VPN、エンタープライズネットワークなど、機密性の高いアプリケーションや API の保護に有効です。</p>
+        <div class="highlight-box">
+            <p style="margin-bottom: 0;">クライアント証明書の検証モードは <strong>4 種類</strong>から選択可能。エッジで完全検証を行うモードから、検証をオリジン側に委ねるパススルーモードまで、要件に応じた柔軟な構成ができます。検証済みの証明書は <code>X-Azure-ClientCertificate</code> リクエストヘッダーでオリジンに転送されます。</p>
+        </div>
+        <p>クライアント証明書は<strong>パブリック CA・プライベート CA</strong> の両方の発行証明書をサポート。信頼する CA 証明書チェーンを <strong>Azure Key Vault</strong> にアップロードし、Front Door のカスタムドメインに関連付けて使用します。本機能は <strong>Azure Front Door Premium</strong> で利用できます。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure Front Door はクライアント認証 (mTLS) に対応しておらず、エッジでの TLS 終端はサーバー証明書による一方向認証のみだった (公式ドキュメントにも「Azure Front Door は client/mutual authentication (mTLS) をサポートしない」と明記されていた)</li>
+                    <li>クライアント証明書認証が必要な場合、オリジン側 (アプリケーションや別のサービス) で mTLS を終端する必要があり、不正なクライアントからのリクエストもオリジンまで到達していた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Front Door のエッジでクライアント証明書の検証 (有効期限、EKU、証明書チェーン、OCSP 失効確認、SAN/CN リスト照合) が可能になり、認証されないリクエストをアプリケーション到達前にブロックできる</li>
+                    <li>4 つの検証モードにより、エッジでの完全検証からオリジンへのパススルーまで柔軟に構成できる</li>
+                    <li>検証結果や証明書情報がヘッダーでオリジンに転送されるため、オリジン側での追加検証やアプリケーションロジックへの活用が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Client([👤 クライアント&lt;br/&gt;X.509 クライアント証明書])
+    subgraph Edge["🌐 Azure Front Door Premium (エッジ)"]
+        MTLS{"🔐 mTLS 検証&lt;br/&gt;有効期限 / EKU / チェーン&lt;br/&gt;OCSP 失効確認 / SAN・CN"}
+    end
+    subgraph Azure["☁️ Azure"]
+        KV[("🔑 Azure Key Vault&lt;br/&gt;信頼 CA 証明書チェーン")]
+        Origin["🖥️ オリジン&lt;br/&gt;(アプリケーション / API)"]
+    end
+    Client -- "1️⃣ TLS ハンドシェイク&lt;br/&gt;+ クライアント証明書提示" --> MTLS
+    KV -. "CA チェーンを参照" .-> MTLS
+    MTLS -- "2️⃣ 検証成功:&lt;br/&gt;X-Azure-ClientCertificate&lt;br/&gt;ヘッダー付きで転送" --> Origin
+    MTLS -- "❌ 検証失敗: HTTP 403" --> Client
+            </pre>
+        </div>
+        <p>クライアントが提示した証明書を Azure Front Door のエッジで検証し、Key Vault にアップロードした信頼 CA チェーンと照合します。検証に成功したリクエストのみが証明書情報のヘッダー付きでオリジンへ転送され、失敗時は HTTP 403 が返されます。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2>⭐ 主要機能</h2>
+
+        <h3>1. 4 つのクライアント証明書検証モード</h3>
+        <div class="mode-grid">
+            <div class="mode-card">
+                <span class="mode-num">1</span>
+                <h4>Client certificate required and validated (必須 + 検証)</h4>
+                <div>
+                    <span class="mode-tag tag-required">証明書必須</span>
+                    <span class="mode-tag tag-edge">エッジで完全検証</span>
+                    <span class="mode-tag tag-default">既定モード</span>
+                </div>
+                <p>Front Door がエッジで完全検証 (証明書の有無、有効性、失効、ルート CA チェーン、SAN/CN リスト) を行い、<code>X-Azure-ClientCertificate</code> ヘッダーでオリジンに転送する。mTLS 有効時の既定モード。</p>
+            </div>
+            <div class="mode-card">
+                <span class="mode-num">2</span>
+                <h4>Client certificate required but not validated (必須 + 検証なし)</h4>
+                <div>
+                    <span class="mode-tag tag-required">証明書必須</span>
+                    <span class="mode-tag tag-origin">検証はオリジン側</span>
+                </div>
+                <p>証明書は必須だが Front Door は検証せず、証明書を持たないリクエストのみ拒否する。検証はオリジン側で実施。</p>
+            </div>
+            <div class="mode-card">
+                <span class="mode-num">3</span>
+                <h4>Client certificate validation if presented (提示時のみ検証)</h4>
+                <div>
+                    <span class="mode-tag tag-optional">証明書任意</span>
+                    <span class="mode-tag tag-edge">提示時にエッジ検証</span>
+                </div>
+                <p>提示された場合のみ完全検証してオリジンに転送し、証明書なしのリクエストもオリジンへ通す。</p>
+            </div>
+            <div class="mode-card">
+                <span class="mode-num">4</span>
+                <h4>mTLS passthrough to origin (パススルー)</h4>
+                <div>
+                    <span class="mode-tag tag-optional">証明書任意</span>
+                    <span class="mode-tag tag-origin">検証はオリジンに委任</span>
+                </div>
+                <p>Front Door は検証を行わず、提示された証明書をオリジンに転送して検証を委ねる。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-content">
+                <h4>2. エッジでの証明書検証</h4>
+                <ul>
+                    <li>有効期間 (<code>Not Before</code> / <code>Not After</code>) の確認</li>
+                    <li>Extended Key Usage (EKU) にクライアント認証 OID が含まれることの確認</li>
+                    <li>証明書の完全性と、信頼された発行者からの切れ目のない証明書チェーンの確認</li>
+                    <li>オプション: アップロードした許可 SAN リストとの SAN/CN 照合 (SAN を先に照合し、一致しない場合は CN を照合)</li>
+                    <li>オプション: OCSP による失効確認 (既定で有効。失効している場合は HTTP 403 を返す)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🏛️</div>
+            <div class="feature-content">
+                <h4>3. パブリック CA / プライベート CA のサポート</h4>
+                <ul>
+                    <li>既知のパブリック CA と組織内で構築したプライベート CA の両方の発行証明書に対応</li>
+                    <li>信頼する CA 証明書チェーンは Azure Key Vault 経由でアップロードし、カスタムドメインに関連付ける</li>
+                    <li>業界動向によりパブリック CA はクライアント認証 EKU 付き証明書の発行を停止していくため、Microsoft はプライベート CA への移行を推奨</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>4. 監視用のメトリック・ログ</h4>
+                <ul>
+                    <li>mTLS リクエスト数、失敗した mTLS リクエスト数</li>
+                    <li>エラータイプ・SNI ホスト名・TLS プロトコル別の mTLS エラーリクエスト</li>
+                    <li>トラブルシューティング用に <code>X-Azure-DebugInfo:1</code> ヘッダーを付けると、403 応答時に <code>X-Azure-Externalerror</code> ヘッダーでエラー理由 (ClientCertExpired、ClientCertRevoked など) を確認可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <table>
+            <thead>
+                <tr><th style="width: 34%;">項目</th><th>詳細</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>対応 tier</td><td>Azure Front Door Premium のみ</td></tr>
+                <tr><td>検証モード</td><td>4 種類 (必須+検証 / 必須+検証なし / 提示時のみ検証 / パススルー)</td></tr>
+                <tr><td>証明書転送ヘッダー</td><td><code>X-Azure-ClientCertificate</code> (クライアントが同名ヘッダーを送信した場合は Front Door が削除)</td></tr>
+                <tr><td>CA 証明書チェーン</td><td>ルート 1 つ + 中間証明書最大 3 つ</td></tr>
+                <tr><td>CA 証明書形式</td><td>PEM エンコード、25 KB 未満</td></tr>
+                <tr><td>CA 証明書の自動ローテーション</td><td>非対応 (2 つの CA 証明書を関連付けたデュアル CA 構成でシームレスな入れ替えが可能)</td></tr>
+                <tr><td>クライアント証明書チェーン</td><td>リーフ証明書を含め最大 5 証明書 (超過時は ClientCertTooLongChain エラー)</td></tr>
+                <tr><td>失効確認</td><td>OCSP のみ (既定で有効)</td></tr>
+                <tr><td>キャッシュ</td><td>mTLS 有効時はルートのキャッシュおよび Rules Engine のキャッシュオーバーライドを有効化できない</td></tr>
+                <tr><td>許可ドメインリスト</td><td>ワイルドカードドメインは非対応 (クライアント証明書側の SAN/CN がワイルドカードの場合、許可リスト内の 1 レベルのサブドメインと一致すれば検証成功)</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2>⚙️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <div class="highlight-box">
+            <ul style="padding-left: 20px;">
+                <li>Azure Front Door Premium プロファイル</li>
+                <li>信頼する CA 証明書チェーン (PEM、25 KB 未満) を Azure Key Vault にアップロード済みであること</li>
+                <li>Front Door から Key Vault にアクセスできる権限設定</li>
+            </ul>
+        </div>
+
+        <h3>Azure Portal での設定手順</h3>
+        <ol class="step-list">
+            <li>Front Door プロファイルの <strong>Security</strong> &gt; <strong>Mutual TLS CA certificates</strong> で <strong>+ Add</strong> を選択し、Key Vault のシークレットから CA 証明書チェーンを追加する</li>
+            <li><strong>Settings</strong> &gt; <strong>Front Door manager</strong> で <strong>+ Add an endpoint</strong> を選択し、<strong>Enforce mutual TLS</strong> をチェックしてエンドポイントを作成する (mTLS 有効エンドポイントには既定ドメイン <code>*.z01.azurefd.net</code> をルートに追加できない)</li>
+            <li><strong>Settings</strong> &gt; <strong>Domains</strong> で <strong>+ Add</strong> を選択し、<strong>Advanced settings</strong> の <strong>Enable mutual TLS</strong> を有効化してカスタムドメインを作成する。検証モード、CA 証明書、失効確認、SAN/CN リストを設定する (カスタムドメインのホスト名を SAN/CN リストに明示的に含める必要がある)</li>
+            <li>作成したエンドポイントにルートを追加してドメインとオリジングループを関連付ける</li>
+            <li>動作確認後、DNS の CNAME レコードを Front Door エンドポイントに向ける</li>
+            <li>オリジンへの直接アクセスで mTLS がバイパスされないよう、オリジン側で Front Door からのトラフィックのみを許可するアクセス制御を構成する</li>
+        </ol>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2>👍 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card biz">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>B2B、IoT、金融サービス、VPN、エンタープライズネットワークなど、強固なクライアント認証が求められる規制業界・機密アプリケーションの要件をエッジで満たせる</li>
+                    <li>認証されないトラフィックがアプリケーションに到達する前に遮断されるため、機密 API の攻撃対象領域を削減できる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>アプリケーション側で mTLS 終端を実装せずに、CDN・グローバルロードバランサーのエッジでクライアント証明書認証を実現できる</li>
+                    <li>4 つの検証モードにより、エッジ完全検証・オリジン側検証・ハイブリッドなど段階的な移行や柔軟な設計が可能</li>
+                    <li>WAF、Private Link など Front Door Premium の既存セキュリティ機能や他の認証・認可方式と組み合わせて利用できる</li>
+                    <li>メトリック・デバッグヘッダーによるトラブルシューティング手段が提供される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <ul class="constraint-list">
+            <li><strong>Premium tier のみ</strong>: Standard tier では利用できない</li>
+            <li><strong>プレビュー機能</strong>: プレビューの追加利用条件が適用され、本番利用は推奨されない</li>
+            <li><strong>キャッシュとの併用不可</strong>: mTLS 有効時はルートのキャッシュを有効化できない (未認証クライアントへのキャッシュ済みコンテンツ返却を防ぐため)</li>
+            <li><strong>既存ドメインへの適用にはダウンタイムが発生</strong>: mTLS はエンドポイント単位で有効化した上でドメインを関連付ける設計のため、既存ドメインで有効化/無効化する際はルート・エンドポイントからの関連付け解除と再関連付けが必要。新規エンドポイント・新規ドメインでの有効化が推奨される</li>
+            <li><strong>同一エンドポイントに mTLS 有効/無効のドメインを混在できない</strong></li>
+            <li><strong>CA 証明書の自動ローテーション非対応</strong>: 期限切れ・失効時はデュアル CA 構成で手動入れ替えが必要</li>
+            <li><strong>失効確認は OCSP のみ</strong>: 業界が OCSP から移行しつつある中、現時点で Front Door の失効確認は OCSP に限定される</li>
+            <li><strong>パブリック CA の EKU 問題</strong>: パブリック CA はクライアント認証 EKU 付き証明書の発行を今後停止するため、プライベート CA への移行が必要</li>
+        </ul>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>ユースケース 1: B2B API のクライアント証明書認証</h4>
+            <div class="uc-row"><span class="uc-label">シナリオ</span>パートナー企業のみに公開する API で、パートナーに配布した証明書 (プライベート CA 発行) を持つクライアントのみアクセスを許可する。</div>
+            <div class="uc-row"><span class="uc-label">実装例</span>「Client certificate required and validated」モードを使用し、プライベート CA チェーンを Key Vault にアップロードして Front Door に関連付ける。SAN/CN 許可リストと OCSP 失効確認を有効化し、エッジで完全検証を行う。</div>
+            <div class="uc-row"><span class="uc-label">効果</span>不正なクライアントのリクエストがエッジで遮断され、オリジン API の攻撃対象領域が削減される。オリジンは <code>X-Azure-ClientCertificate</code> ヘッダーで証明書情報を受け取り、追加の認可判定にも利用できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>ユースケース 2: 段階的な mTLS 移行 (オリジン側検証との併用)</h4>
+            <div class="uc-row"><span class="uc-label">シナリオ</span>現在オリジンで mTLS を終端しているアプリケーションを、ダウンタイムを最小化しながら Front Door 配下に移行する。</div>
+            <div class="uc-row"><span class="uc-label">実装例</span>まず「mTLS passthrough to origin」または「Client certificate required but not validated」モードで Front Door を導入し、検証をオリジン側に残したままエッジ経由の配信を開始する。動作確認後に「Client certificate required and validated」モードへ切り替え、検証をエッジに移す。</div>
+            <div class="uc-row"><span class="uc-label">効果</span>既存のオリジン側検証ロジックを維持したまま段階的に移行でき、最終的にエッジ検証によってオリジンの負荷と攻撃対象領域を削減できる。</div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Azure Front Door の料金ページには、mutual TLS 機能に関する追加料金の記載はありません (2026-08-12 時点)。mTLS は Premium tier の機能であるため、Premium の基本料金と従量課金が適用されます。</p>
+        <table>
+            <thead>
+                <tr><th>項目</th><th>料金 (参考)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Front Door Premium 基本料金</td><td>$330/月 (WAF、Private Link を含む)</td></tr>
+                <tr><td>リクエスト (Premium、北米・欧州)</td><td>$0.015/1 万リクエスト (最初の 2.5 億リクエスト)</td></tr>
+                <tr><td>データ転送 (エッジ → クライアント、Zone 1)</td><td>$0.083/GB (最初の 10 TB)</td></tr>
+            </tbody>
+        </table>
+        <p>最新の料金は <a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">Azure Front Door 料金ページ</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🔑 Azure Key Vault</h4>
+                <p>信頼する CA 証明書チェーンのアップロード先。Front Door はここから CA 証明書を参照してクライアント証明書を検証する。</p>
+            </div>
+            <div class="related-card">
+                <h4>🔒 Front Door Private Link / オリジンセキュリティ</h4>
+                <p>mTLS のバイパスを防ぐため、オリジン側で Front Door からのトラフィックのみを許可するアクセス制御との併用が推奨される。</p>
+            </div>
+            <div class="related-card">
+                <h4>🛡️ Azure Web Application Firewall (WAF)</h4>
+                <p>Front Door Premium に含まれる WAF と mTLS を組み合わせ、多層防御を構成できる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p style="margin-bottom: 0;">Azure Front Door Premium で mTLS (クライアント証明書認証) がパブリックプレビューとなり、これまでオリジン側で終端するしかなかったクライアント証明書認証を<strong>エッジで実現</strong>できるようになりました。B2B API や金融・IoT など強固なクライアント認証が必要なワークロードを Front Door 配下に置けるようになる重要なアップデートです。一方で、<strong>Premium 限定、キャッシュとの併用不可、既存ドメインへの適用時のダウンタイム、OCSP のみの失効確認</strong>などの制約があるため、新規エンドポイント・新規ドメインでの検証から始め、プライベート CA の準備と合わせて GA に向けた設計を進めることを推奨します。</p>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="links-list">
+            <li><a href="https://azure.microsoft.com/updates?id=569251" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/frontdoor/mutual-tls" target="_blank" rel="noopener">Microsoft Learn: Mutual TLS authentication (Preview) - Azure Front Door</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/frontdoor/end-to-end-tls" target="_blank" rel="noopener">Microsoft Learn: TLS encryption - Azure Front Door</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/frontdoor/origin-security" target="_blank" rel="noopener">Microsoft Learn: Secure traffic to Azure Front Door origins</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">Azure Front Door 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=569251" target="_blank" rel="noopener">Azure Updates (ID: 569251)</a> / <a href="https://learn.microsoft.com/en-us/azure/frontdoor/mutual-tls" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>生成日: 2026-08-12 | Azure News Summary</p>
+        <div class="tags">
+            <span class="tag-chip">Azure Front Door</span>
+            <span class="tag-chip">Networking</span>
+            <span class="tag-chip">Security</span>
+            <span class="tag-chip">mTLS</span>
+            <span class="tag-chip">クライアント証明書認証</span>
+            <span class="tag-chip">X.509</span>
+            <span class="tag-chip">Azure Key Vault</span>
+            <span class="tag-chip">Public Preview</span>
+        </div>
+    </footer>
+
+</div>
+</body>
+</html>
