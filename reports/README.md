@@ -5,8 +5,12 @@
 
 ## 2026 年
 
+- [2026-08-13 - Azure Database for PostgreSQL Flexible Server: メジャーバージョンアップグレード事前検証チェックの一般提供開始](2026/2026-08-13-postgresql-pre-upgrade-validation.md)
+- [2026-08-13 - Azure Disk Storage: 共有 Premium SSD v2 / Ultra データディスクの Live Resize が一般提供 (GA)](2026/2026-08-13-disk-storage-live-resize-shared-pv2-ultra.md)
+- [2026-08-13 - Azure Kubernetes Service (AKS): Managed Prometheus によるコントロールプレーンメトリクス収集の一般提供開始 (GA)](2026/2026-08-13-aks-control-plane-metrics-managed-prometheus.md)
 - [2026-08-12 - Azure Front Door: バッチルール更新 (Batch rule updates) の一般提供開始](2026/2026-08-12-front-door-batch-rule-updates.md)
 - [2026-08-12 - Azure Front Door: mutual TLS (クライアント証明書認証) パブリックプレビュー](2026/2026-08-12-front-door-mutual-tls.md)
+- [2026-08-12 - Microsoft Sentinel: SAP アプリケーション向けソリューションのコンテナ化データコネクタエージェント廃止](2026/2026-08-12-sentinel-sap-containerized-agent-retirement.md)
 - [2026-08-12 - Azure App Service: Markdown for Agents (パブリックプレビュー)](2026/2026-08-12-app-service-markdown-for-agents.md)
 - [2026-08-11 - Azure Firewall: IDPS パフォーマンスの 2.2 倍最適化 (GA)](2026/2026-08-11-azure-firewall-idps-performance.md)
 - [2026-08-10 - Microsoft Fabric: Item Recovery が未設定テナントでデフォルト有効化へ](2026/2026-08-10-fabric-item-recovery-default.md)

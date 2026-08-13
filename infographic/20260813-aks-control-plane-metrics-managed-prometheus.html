@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS: Managed Prometheus によるコントロールプレーンメトリクス収集 GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta { font-size: 14px; opacity: 0.9; }
+.header .meta span { margin-right: 20px; display: inline-block; }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title .icon { font-size: 24px; }
+
+h3.sub-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-700);
+    margin: 20px 0 10px;
+}
+
+p.lead { margin-bottom: 12px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 32px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; font-size: 16px; }
+.feature-content p, .feature-content li { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; margin-top: 6px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* ===== Component chips ===== */
+.component-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.component-chip {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+}
+
+.component-chip .chip-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+.component-chip .chip-name { font-weight: 700; color: var(--ms-blue-800); display: block; }
+.component-chip .chip-note { font-size: 11px; color: var(--ms-text-secondary); display: block; margin-top: 2px; }
+.component-chip.default-on { background: #E8F5E9; border-color: var(--ms-green); }
+.component-chip.default-on .chip-name { color: var(--ms-green); }
+
+/* ===== Tables ===== */
+.spec-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+.spec-table code {
+    background: var(--ms-surface-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--ms-blue-800);
+}
+
+p code, li code {
+    background: var(--ms-surface-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--ms-blue-800);
+}
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+.diagram-caption {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+}
+.step-num {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: white;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 15px;
+}
+.step-body { padding-top: 3px; font-size: 14px; }
+.step-body strong { color: var(--ms-blue-800); }
+
+/* ===== Merit / Limitation ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    padding: 18px;
+    border-top: 4px solid var(--azure-blue);
+}
+.merit-card.business { border-top-color: var(--ms-orange); }
+.merit-card.tech { border-top-color: var(--ms-purple); }
+.merit-card h4 { margin-bottom: 10px; color: var(--ms-blue-800); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 14px; margin-bottom: 8px; }
+
+.caution-list { list-style: none; margin: 12px 0; }
+.caution-list li {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-orange);
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+}
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    color: var(--ms-blue-800);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-label {
+    display: inline-block;
+    background: var(--azure-blue);
+    color: white;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+.usecase-card p { font-size: 14px; margin-bottom: 8px; }
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+    margin-top: 12px;
+}
+
+/* ===== Related services ===== */
+.related-card {
+    display: flex;
+    gap: 12px;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    align-items: flex-start;
+}
+.related-icon { font-size: 20px; min-width: 28px; text-align: center; }
+.related-card h4 { font-size: 14px; color: var(--ms-blue-800); }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 0 8px 26px;
+    border-bottom: 1px dashed var(--ms-border);
+    position: relative;
+    font-size: 14px;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* ===== Tags ===== */
+.tags { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+.footer a { word-break: break-all; }
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .container { padding: 12px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Kubernetes Service (AKS)</span>
+            <span class="service-badge">Azure Monitor</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Managed Prometheus による AKS コントロールプレーンメトリクス収集が一般提供開始 (GA)</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-08-13</span>
+            <span>🛠️ 機能: Control plane metrics collection for AKS with Managed Prometheus</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p class="lead">Azure Monitor Managed Service for Prometheus を利用した AKS コントロールプレーンメトリクスの収集機能が一般提供 (GA) となった。AKS ユーザーは、Microsoft がマネージドで運用するコントロールプレーンの主要コンポーネントに対して、ネイティブな可観測性を得られる。</p>
+        <div class="highlight-box">
+            <strong>収集対象コンポーネント (6 種類)</strong>: プラットフォームチームは、ワークロード・コントローラー・自動化・スケーリング活動がコントロールプレーンとどのように相互作用しているかを時系列で把握できる。
+        </div>
+        <div class="component-grid">
+            <div class="component-chip default-on"><span class="chip-icon">🌐</span><span class="chip-name">API サーバー</span><span class="chip-note">デフォルト有効</span></div>
+            <div class="component-chip default-on"><span class="chip-icon">🗄️</span><span class="chip-name">etcd</span><span class="chip-note">デフォルト有効</span></div>
+            <div class="component-chip"><span class="chip-icon">📋</span><span class="chip-name">kube-scheduler</span><span class="chip-note">ConfigMap で有効化</span></div>
+            <div class="component-chip"><span class="chip-icon">🎛️</span><span class="chip-name">kube-controller-manager</span><span class="chip-note">ConfigMap で有効化</span></div>
+            <div class="component-chip"><span class="chip-icon">📈</span><span class="chip-name">クラスターオートスケーラー</span><span class="chip-note">ConfigMap で有効化</span></div>
+            <div class="component-chip"><span class="chip-icon">🚀</span><span class="chip-name">ノード自動プロビジョニング</span><span class="chip-note">ConfigMap で有効化</span></div>
+        </div>
+        <p>収集されたメトリクスは Azure Monitor ワークスペースに格納され、PromQL によるクエリ、Azure Managed Grafana でのダッシュボード可視化、Prometheus アラートルールによる監視が可能となる。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>コントロールプレーンは Microsoft のマネージド運用で、無料のプラットフォームメトリクスで確認できるのは API サーバーと etcd の一部メトリクスに限られていた</li>
+                    <li>Preview 期間中は <code>aks-preview</code> CLI 拡張機能のインストールと <code>AzureMonitorMetricsControlPlanePreview</code> フィーチャーフラグの登録が必要で、SLA 対象外のため本番環境での利用は非推奨だった</li>
+                    <li>セルフホスト Prometheus ではコントロールプレーンをスクレイプできない (ロードバランサー経由で単一インスタンスしか参照できず、複数レプリカのメトリクスを確実に取得できない) ため、詳細な監視手段がなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>API サーバー・etcd に加え、kube-scheduler、kube-controller-manager、クラスターオートスケーラー、ノード自動プロビジョニングの 6 種類のコンポーネントの Prometheus メトリクスをネイティブに収集可能に</li>
+                    <li>GA となり、本番環境で利用できる正式リリースに</li>
+                    <li>Managed Prometheus・Azure Managed Grafana と完全互換で、API サーバー / etcd 用の公式 Grafana ダッシュボードテンプレートも提供</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">6 種類</div>
+                <div class="stat-label">収集対象コントロールプレーンコンポーネント</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">18 か月</div>
+                <div class="stat-label">メトリクスのデータ保持期間 (追加コストなし)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">GA</div>
+                <div class="stat-label">本番環境で利用可能な正式リリース</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2 種類</div>
+                <div class="stat-label">公式 Grafana ダッシュボード (API server / etcd)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph CP["🎛️ AKS マネージドコントロールプレーン"]
+        API["🌐 API サーバー"]
+        ETCD[("🗄️ etcd")]
+        SCHED["📋 kube-scheduler /<br>kube-controller-manager"]
+        AUTO["📈 クラスターオートスケーラー /<br>ノード自動プロビジョニング"]
+    end
+    subgraph MON["☁️ Azure Monitor"]
+        PROM["🔥 Managed Prometheus<br>(メトリクス収集)"]
+        AMW[("📦 Azure Monitor<br>ワークスペース")]
+    end
+    GRAF["📊 Azure Managed Grafana /<br>Prometheus エクスプローラー"]
+    ALERT["🚨 Prometheus<br>アラートルール"]
+
+    API --> PROM
+    ETCD --> PROM
+    SCHED --> PROM
+    AUTO --> PROM
+    PROM --> AMW
+    AMW --> GRAF
+    AMW --> ALERT
+            </pre>
+        </div>
+        <p class="diagram-caption">AKS のマネージドコントロールプレーン各コンポーネントのメトリクスを Managed Prometheus が収集して Azure Monitor ワークスペースに格納し、Grafana での可視化と PromQL ベースのアラートに利用できる。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>1. 6 種類のコントロールプレーンコンポーネントのメトリクス収集</h4>
+                <ul>
+                    <li>API サーバー (<code>apiserver</code>)、etcd (<code>etcd</code>)、<code>kube-scheduler</code>、<code>kube-controller-manager</code>、クラスターオートスケーラー (<code>cluster-autoscaler</code>)、ノード自動プロビジョニング (<code>node-auto-provisioning</code>) を対象にメトリクスを収集</li>
+                    <li>デフォルトでは API サーバーと etcd が有効。その他のターゲットは ConfigMap で有効化する</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-content">
+                <h4>2. ConfigMap によるカスタマイズ</h4>
+                <ul>
+                    <li><code>ama-metrics-settings-configmap.yaml</code> (kube-system 名前空間) の <code>controlplane-metrics</code> セクションで、収集対象ターゲットと保持するメトリクスのリスト (keep-list) を制御可能</li>
+                    <li><code>minimal-ingestion-profile</code> を <code>true</code> にすると、既定の記録ルール・アラート・ダッシュボードで使用される最小限のメトリクスのみを取り込み、インジェスト量 (= コスト) を抑制できる</li>
+                    <li>ConfigMap スキーマ v2 では <code>cluster-metrics</code> と <code>controlplane-metrics</code> が分離され、クラスターレベルとコントロールプレーンのインジェスト量を個別に制御可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>3. 公式 Grafana ダッシュボードテンプレート</h4>
+                <ul>
+                    <li><a href="https://grafana.com/grafana/dashboards/20331-kubernetes-api-server/" target="_blank" rel="noopener">API サーバー用 (ID: 20331)</a> と <a href="https://grafana.com/grafana/dashboards/20330-kubernetes-etcd/" target="_blank" rel="noopener">etcd 用 (ID: 20330)</a> のダッシュボードテンプレートを Azure Managed Grafana にインポートしてすぐに可視化できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th style="width: 34%;">項目</th><th>詳細</th></tr>
+            <tr><td>収集対象コンポーネント</td><td>apiserver, etcd, kube-scheduler, kube-controller-manager, cluster-autoscaler, node-auto-provisioning</td></tr>
+            <tr><td>デフォルト有効ターゲット</td><td>apiserver, etcd (その他は ConfigMap で有効化)</td></tr>
+            <tr><td>メトリクスの格納先</td><td>クラスターと同一リージョンの Azure Monitor ワークスペース</td></tr>
+            <tr><td>データ保持期間</td><td>18 か月 (追加コストなし)</td></tr>
+            <tr><td>クエリ言語</td><td>PromQL (Prometheus エクスプローラー、Grafana、Workbooks、Query API)</td></tr>
+            <tr><td>カスタマイズ方法</td><td><code>ama-metrics-settings-configmap.yaml</code> (kube-system 名前空間) のみ</td></tr>
+            <tr><td>認証要件</td><td>クラスターがマネージド ID 認証を使用していること</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 class="sub-title">前提条件</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-body">AKS クラスターが<strong>マネージド ID 認証</strong>を使用していること</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Azure Monitor Managed Service for Prometheus</strong> (Azure Monitor metrics アドオン) が有効であること</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-body">メトリクス格納先の <strong>Azure Monitor ワークスペース</strong> (新規作成または既存) へのアクセス権があること</div></div>
+        </div>
+
+        <h3 class="sub-title">Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">Managed Prometheus (Azure Monitor metrics アドオン) を有効化</span></div>
+            <pre><code class="language-bash"># Managed Prometheus (Azure Monitor metrics アドオン) を有効化
+az aks update --enable-azure-monitor-metrics \
+  --name $CLUSTER_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --azure-monitor-workspace-resource-id $AMW_RESOURCE_ID</code></pre>
+        </div>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">yaml</span><span class="code-desc">ama-metrics-settings-configmap.yaml (kube-system) で収集ターゲットをカスタマイズ</span></div>
+            <pre><code class="language-yaml"># ama-metrics-settings-configmap.yaml (kube-system) で収集ターゲットをカスタマイズ
+controlplane-metrics: |-
+    default-targets-scrape-enabled: |-
+      apiserver = true
+      cluster-autoscaler = false
+      node-auto-provisioning = false
+      kube-scheduler = false
+      kube-controller-manager = false
+      etcd = true</code></pre>
+        </div>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">ConfigMap を適用</span></div>
+            <pre><code class="language-bash"># ConfigMap を適用 (反映まで数分かかる)
+kubectl apply -f configmap-controlplane.yaml</code></pre>
+        </div>
+
+        <h3 class="sub-title">Azure Portal</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-body">Azure Portal で <strong>AKS クラスターリソース</strong>を開く</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-body">左側メニューの「<strong>Monitor</strong>」→「<strong>Monitor Settings</strong>」で Managed Prometheus を有効化し、Azure Monitor ワークスペースをリンクする</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-body">リンクされた Azure Monitor ワークスペースの「<strong>Managed Prometheus</strong>」→ Prometheus エクスプローラーでメトリクスをクエリする</div></div>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>コントロールプレーン起因の障害 (API サーバーの過負荷、etcd の容量逼迫など) を早期に検知でき、大規模クラスター運用の信頼性が向上する</li>
+                    <li>GA となったことで本番ワークロードでの利用が可能となり、エンタープライズでの標準監視構成に組み込める</li>
+                    <li>セルフホスト Prometheus サーバーの構築・運用が不要で、運用コストを削減できる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>これまで可視化できなかったスケジューラー、コントローラーマネージャー、オートスケーラーの動作をメトリクスで追跡でき、スケーリング遅延やスケジューリング問題のトラブルシューティングが容易になる</li>
+                    <li>PromQL・Grafana ダッシュボード・Prometheus アラートルールなど、Kubernetes コミュニティ標準のツールチェーンをそのまま利用できる</li>
+                    <li>minimal ingestion profile と keep-list により、必要なメトリクスだけを取り込んでコストを最適化できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li>コントロールプレーンメトリクスの収集は Azure Monitor Managed Service for Prometheus のみサポート (セルフホスト Prometheus によるスクレイプは不可)</li>
+            <li>Azure Private Link はサポートされない</li>
+            <li>カスタマイズは既定の <code>ama-metrics-settings-configmap.yaml</code> ConfigMap のみ可能で、それ以外のカスタマイズはサポートされない</li>
+            <li>クラスターがマネージド ID 認証を使用している必要がある</li>
+            <li>コントロールプレーンメトリクスにはユーザーエージェント情報が含まれない (ユーザーエージェントは診断設定によるコントロールプレーンログでのみ取得可能)</li>
+            <li>有効化・設定変更後、メトリクスがワークスペースに反映されるまで数分かかる</li>
+        </ul>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">Case 1</span>API サーバー・etcd の健全性監視とアラート</h4>
+            <p><strong>シナリオ</strong>: 大規模 AKS クラスターで、API サーバーのレイテンシ悪化や etcd のデータベースサイズ逼迫を早期に検知したい。</p>
+            <p><strong>実装例</strong>:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">デフォルトターゲットで開始</span></div>
+                <pre><code class="language-bash"># Managed Prometheus を有効化 (デフォルトで apiserver / etcd メトリクスを収集)
+az aks update --enable-azure-monitor-metrics \
+  --name myAKSCluster --resource-group myResourceGroup
+
+# Grafana に公式ダッシュボード (API server: 20331, etcd: 20330) をインポートして可視化</code></pre>
+            </div>
+            <div class="usecase-effect">✅ <strong>効果</strong>: コントロールプレーンのボトルネックをダッシュボードとアラートで常時監視でき、障害の未然防止につながる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">Case 2</span>オートスケーリング動作の分析</h4>
+            <p><strong>シナリオ</strong>: クラスターオートスケーラーやノード自動プロビジョニングによるスケール動作が期待どおりか、スケジューラーの遅延が発生していないかを分析したい。</p>
+            <p><strong>実装例</strong>:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">yaml</span><span class="code-desc">スケーリング関連ターゲットを有効化</span></div>
+                <pre><code class="language-yaml"># ConfigMap でスケーリング関連ターゲットを有効化
+controlplane-metrics: |-
+    default-targets-scrape-enabled: |-
+      apiserver = true
+      cluster-autoscaler = true
+      node-auto-provisioning = true
+      kube-scheduler = true
+      kube-controller-manager = false
+      etcd = true</code></pre>
+            </div>
+            <div class="usecase-effect">✅ <strong>効果</strong>: ワークロード急増時のスケーリング挙動を時系列で追跡し、スケール遅延の原因 (スケジューラー、オートスケーラーのどちらに起因するか) を切り分けられる。</div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p class="lead">Azure Monitor Managed Service for Prometheus 自体および Azure Monitor ワークスペースの作成に直接コストはかからず、収集データのインジェストとクエリに対する従量課金となる。コントロールプレーンメトリクスも Azure Monitor ワークスペースに取り込まれるサンプルとして課金対象になる。</p>
+        <table class="spec-table">
+            <tr><th style="width: 34%;">項目</th><th>課金単位</th></tr>
+            <tr><td>メトリクスのインジェスト</td><td>1,000 万サンプルあたりの従量課金 (18 か月のデータ保持を含む)</td></tr>
+            <tr><td>メトリクスのクエリ</td><td>処理された 1,000 万サンプルあたりの従量課金 (PromQL でクエリされたデータポイント数)</td></tr>
+            <tr><td>Prometheus アラートルール</td><td>ルール自体は無料 (クエリ分のみ課金)</td></tr>
+        </table>
+        <div class="highlight-box">
+            具体的な単価はリージョン・通貨により異なるため、<a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank" rel="noopener">Azure Monitor 料金ページ</a>の「Metrics」タブを参照。なお、AKS の無料プラットフォームメトリクス (API サーバー・etcd の一部) は引き続き無料で利用できる。
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card"><div class="related-icon">📦</div><div><h4>Azure Monitor ワークスペース</h4><p>コントロールプレーンメトリクスを含む Prometheus メトリクスの格納先。データは 18 か月保持される</p></div></div>
+        <div class="related-card"><div class="related-icon">📊</div><div><h4>Azure Managed Grafana</h4><p>Azure Monitor ワークスペースをデータソースとしてメトリクスを可視化。API サーバー / etcd 用の公式ダッシュボードテンプレートが提供される</p></div></div>
+        <div class="related-card"><div class="related-icon">🔍</div><div><h4>Container insights</h4><p>ノード・コンテナーなどデータプレーン側の監視を担い、コントロールプレーンメトリクスと組み合わせてクラスター全体の可観測性を実現する</p></div></div>
+        <div class="related-card"><div class="related-icon">📜</div><div><h4>AKS 診断設定 (リソースログ)</h4><p>コントロールプレーンのログ (kube-audit など) を Log Analytics ワークスペースに送信する機能。メトリクスと相補的に利用する</p></div></div>
+        <div class="related-card"><div class="related-icon">📈</div><div><h4>Azure Monitor プラットフォームメトリクス</h4><p>API サーバー・etcd の一部メトリクスを全 AKS クラスターで無料・自動収集する機能</p></div></div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=568830" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/aks/control-plane-metrics-monitor" target="_blank" rel="noopener">Monitor AKS Control Plane Metrics (Microsoft Learn)</a></li>
+            <li><a href="https://aka.ms/aks/ccp-metrics" target="_blank" rel="noopener">AKS コントロールプレーンメトリクス詳細 (aka.ms)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-monitor/metrics/prometheus-metrics-overview" target="_blank" rel="noopener">Azure Monitor managed service for Prometheus 概要 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-monitor/containers/kubernetes-monitoring-enable" target="_blank" rel="noopener">Kubernetes クラスターの監視の有効化 (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank" rel="noopener">料金ページ (Azure Monitor)</a></li>
+            <li><a href="https://grafana.com/grafana/dashboards/20331-kubernetes-api-server/" target="_blank" rel="noopener">Grafana ダッシュボード: Kubernetes API server (ID: 20331)</a></li>
+            <li><a href="https://grafana.com/grafana/dashboards/20330-kubernetes-etcd/" target="_blank" rel="noopener">Grafana ダッシュボード: Kubernetes etcd (ID: 20330)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>これまでブラックボックスになりがちだった AKS マネージドコントロールプレーン (API サーバー、etcd、スケジューラー、コントローラーマネージャー、オートスケーラー、ノード自動プロビジョニング) の可観測性が、Managed Prometheus によりネイティブかつ GA 品質で提供されるようになった。</p>
+            <p style="margin-top: 10px;">大規模クラスターや本番ワークロードを運用するプラットフォームチームは、Managed Prometheus アドオンの有効化とデフォルトターゲット (API サーバー・etcd) の監視から始め、必要に応じてスケーリング関連ターゲットを ConfigMap で有効化し、minimal ingestion profile でコストを制御する構成を検討することを推奨する。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">#AKS</span>
+            <span class="tag">#Azure Kubernetes Service</span>
+            <span class="tag">#Azure Monitor</span>
+            <span class="tag">#Managed Prometheus</span>
+            <span class="tag">#コントロールプレーン</span>
+            <span class="tag">#可観測性</span>
+            <span class="tag">#Grafana</span>
+            <span class="tag">#GA</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong>:
+            <a href="https://azure.microsoft.com/updates?id=568830" target="_blank" rel="noopener">Azure Updates (ID: 568830)</a> /
+            <a href="https://learn.microsoft.com/azure/aks/control-plane-metrics-monitor" target="_blank" rel="noopener">Microsoft Learn: Monitor AKS Control Plane Metrics</a>
+        </p>
+        <p style="margin-top: 8px;">ソースレポート: reports/2026/2026-08-13-aks-control-plane-metrics-managed-prometheus.md (Azure News Summary)</p>
+        <p style="margin-top: 8px;">リリース日: 2026-08-13 | 本インフォグラフィックは Azure News レポートを基に自動生成されています</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
