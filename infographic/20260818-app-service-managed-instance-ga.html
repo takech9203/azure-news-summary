@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure App Service: Managed Instance の一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: rgba(80, 230, 255, 0.15);
+}
+.hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+.hero p.subtitle {
+    font-size: 16px;
+    opacity: 0.95;
+    position: relative;
+    z-index: 1;
+}
+.hero .meta {
+    margin-top: 16px;
+    font-size: 14px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+/* ===== Sections ===== */
+section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-700);
+    margin: 20px 0 10px;
+}
+p { margin-bottom: 12px; }
+section > p:last-child { margin-bottom: 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 28px; font-weight: 900; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.92; margin-top: 6px; }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin: 0; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+td:first-child { font-weight: 500; white-space: nowrap; }
+.table-wrap { overflow-x: auto; }
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+.step-num {
+    counter-increment: step;
+    min-width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+.step-text { padding-top: 3px; font-size: 15px; }
+
+/* ===== Benefit columns ===== */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.benefit-col {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 18px;
+}
+.benefit-col.biz { border-top-color: var(--ms-orange); }
+.benefit-col.tech { border-top-color: var(--ms-purple); }
+.benefit-col h4 { font-size: 16px; margin-bottom: 10px; }
+.benefit-col.biz h4 { color: var(--ms-orange); }
+.benefit-col.tech h4 { color: var(--ms-purple); }
+.benefit-col ul { padding-left: 20px; font-size: 14px; }
+.benefit-col li { margin-bottom: 8px; }
+
+/* ===== Warning / limitation ===== */
+.limitation-box {
+    background: #FFF8E7;
+    border: 2px solid var(--ms-yellow);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 16px 0;
+}
+.limitation-box ul { padding-left: 20px; font-size: 14px; }
+.limitation-box li { margin-bottom: 8px; }
+.note {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    margin-bottom: 12px;
+}
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-right: 6px;
+}
+.usecase-card p, .usecase-card ol { font-size: 14px; margin-bottom: 10px; }
+.usecase-card ol { padding-left: 22px; }
+.usecase-card ol li { margin-bottom: 6px; }
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+}
+.effect-box strong { color: var(--ms-green); }
+
+/* ===== Region / related grids ===== */
+.region-tags { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.region-tag {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    color: var(--ms-blue-800);
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+}
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; }
+
+/* ===== Links / tags ===== */
+.link-list { list-style: none; }
+.link-list li { margin-bottom: 8px; font-size: 14px; }
+.link-list li::before { content: "🔗"; margin-right: 8px; }
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+}
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px;
+}
+.summary-box p { font-size: 15px; }
+
+/* ===== Footer ===== */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 12px;
+}
+footer a { font-weight: 500; }
+
+@media (max-width: 700px) {
+    .before-after, .two-col { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="hero-badges">
+            <span class="service-badge">Azure App Service</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Managed Instance on Azure App Service<br>一般提供開始 (GA)</h1>
+        <p class="subtitle">コード変更なしで、Windows 固有依存を持つレガシー .NET アプリをフルマネージド PaaS へ移行</p>
+        <div class="meta">📅 リリース日: 2026-08-18 | 🧩 機能: Managed Instance on Azure App Service</div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section>
+        <h2>📋 概要</h2>
+        <p>Managed Instance on Azure App Service が一般提供 (GA) となりました。<strong>最小限の構成変更かつコード変更なし</strong>で、Web アプリケーションを Azure App Service に移行できる新しいホスティングオプションです。オンプレミスや仮想マシン上で稼働しているアプリケーションを、Windows 固有の依存関係との互換性を維持したまま、フルマネージドな PaaS 環境へ移行できます。</p>
+        <p>多くのビジネスクリティカルな .NET アプリケーションは、Windows サービス、サードパーティライブラリ、カスタムランタイムなどのコンポーネントに依存しており、これがモダナイゼーションの障壁となってきました。Managed Instance はこれらの互換性を保持しながら、App Service 上での実行を可能にし、運用負荷を削減します。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">99.95%</div>
+                <div class="stat-label">SLA (GA)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">コード変更<br>なし</div>
+                <div class="stat-label">レガシーアプリを移行</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">Premium v4</div>
+                <div class="stat-label">Pv4 / Pmv4 パフォーマンス</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">IaC 対応</div>
+                <div class="stat-label">Bicep / Terraform / ARM</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            GA に伴い、99.95% の SLA、Premium v4 のパフォーマンス、Azure Policy 統合、Microsoft Defender for Cloud サポート、Bicep / Terraform / ARM テンプレートによるデプロイといった<strong>エンタープライズ対応の機能</strong>が提供されます。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>COM コンポーネント、レジストリ変更、MSI インストーラー、GAC 登録など Windows 固有の依存関係を持つレガシー .NET Framework アプリは、標準の App Service では OS カスタマイズができず移行が困難だった</li>
+                    <li>そのため IaaS (仮想マシン) での運用を継続せざるを得ず、OS パッチ適用やスケーリングなどの運用負荷を利用者側が負担していた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>コード変更なしで、Windows 固有の依存関係を持つアプリ (クラシック .NET Framework アプリを含む) を App Service のフルマネージド環境で実行可能に</li>
+                    <li>オートスケール、回復性、ゾーン冗長、Azure サービス統合といった App Service 組み込みの機能をそのまま利用できる</li>
+                    <li>Azure Bastion 経由の RDP アクセス、カスタムスクリプト、レジストリアダプター、ストレージマウント、ID 管理による管理者レベルの制御が可能に</li>
+                    <li>99.95% SLA、Azure Policy、Microsoft Defender for Cloud、IaC (Bicep / Terraform / ARM) 対応により本番ワークロードで利用可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section>
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    App(["🏢 オンプレミス / VM 上の<br>レガシー .NET アプリ"]) --> Migrate["🔍 Azure Migrate<br>(移行対象の評価)"]
+    Migrate --> MI
+
+    subgraph Azure["☁️ Azure Cloud"]
+        MI["🚀 Managed Instance<br>on App Service<br>(Pv4 / Pmv4 プラン)"]
+        MI --> Scripts["📜 インストールスクリプト<br>(COM / MSI / GAC / IIS 構成)"]
+        MI --> KV["🔑 Azure Key Vault<br>(レジストリアダプター)"]
+        MI --> Files[("📁 Azure Files<br>ストレージマウント")]
+        VNet["🌐 VNet 統合<br>(プライベートエンドポイント)"] --- MI
+        Bastion["🖥️ Azure Bastion<br>(Just-in-Time RDP)"] --> MI
+    end
+            </pre>
+        </div>
+        <p>オンプレミスや VM 上のレガシーアプリを Azure Migrate で評価し、コード変更なしで Managed Instance へ移行する構成です。インストールスクリプトによる OS カスタマイズ、Key Vault 連携のレジストリアダプター、Azure Files マウント、Bastion 経由の RDP 診断アクセスを組み合わせて利用できます。</p>
+    </section>
+
+    <!-- ===== Key features ===== -->
+    <section>
+        <h2>⚡ サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🧱</div>
+            <div class="feature-content">
+                <h4>1. App Service 組み込み機能の活用</h4>
+                <p>オートスケール、回復性、ゾーン冗長、Azure サービス統合など、App Service が標準で備える機能をレガシーアプリでも利用可能。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛠️</div>
+            <div class="feature-content">
+                <h4>2. 管理者レベルの制御</h4>
+                <p>Azure Bastion 経由の Just-in-Time RDP アクセス (診断用途)、PowerShell カスタムスクリプト、レジストリアダプター、ストレージマウント、マネージド ID による ID 管理。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>3. 複雑なワークロードのサポート</h4>
+                <p>クラシック .NET Framework アプリケーションを含む、Windows 固有依存 (COM、レジストリ、MSI、GAC、Windows 機能) を持つワークロードをコード変更なしで実行。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🏢</div>
+            <div class="feature-content">
+                <h4>4. エンタープライズ対応</h4>
+                <p>99.95% SLA、Premium v4 パフォーマンス、Azure Policy 統合、Microsoft Defender for Cloud サポート、Bicep / Terraform / ARM テンプレートによるデプロイ。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech specs ===== -->
+    <section>
+        <h2>🔧 技術仕様</h2>
+        <p class="note">※ Microsoft Learn ドキュメント (プレビュー時点の記載) に基づく仕様です。GA での最新仕様は公式ドキュメントを確認してください。</p>
+        <div class="table-wrap">
+            <table>
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>対象プラットフォーム</td><td>Windows Web アプリのみ (Linux / コンテナーは非対応)</td></tr>
+                <tr><td>対応 SKU</td><td>Premium v4 (Pv4) / Premium v4 メモリ最適化 (Pmv4)</td></tr>
+                <tr><td>プリインストールランタイム</td><td>.NET Framework 3.5 / 4.8、.NET 8 (カスタムランタイムはインストールスクリプトで追加可能)</td></tr>
+                <tr><td>OS カスタマイズ</td><td>PowerShell インストールスクリプト (COM、レジストリ、IIS 構成・ACL、MSI、Windows サービス、GAC、MSMQ などの Windows 機能)</td></tr>
+                <tr><td>レジストリアダプター</td><td>Azure Key Vault と連携したセキュアなレジストリキー定義 (プランレベル)</td></tr>
+                <tr><td>ストレージ</td><td>Azure Files マウント (Key Vault 統合)、UNC パス / ネットワーク共有、ドライブマッピング、ローカル一時ストレージ 2 GB (非永続)</td></tr>
+                <tr><td>ネットワーク</td><td>プランレベルの VNet 統合 (作成後の追加も可)、プライベートエンドポイント、NSG、NAT ゲートウェイ、ルートテーブル、プライベート DNS</td></tr>
+                <tr><td>RDP アクセス</td><td>Azure Bastion 経由の Just-in-Time RDP (VNet 統合が必要、診断用途。変更は再起動で失われる)</td></tr>
+                <tr><td>認証</td><td>Microsoft Entra ID / マネージド ID (ドメイン参加、NTLM、Kerberos は非対応)</td></tr>
+                <tr><td>ID 管理</td><td>プランレベルのシステム割り当て / ユーザー割り当てマネージド ID</td></tr>
+                <tr><td>CI/CD</td><td>GitHub Actions、Azure DevOps、zip デプロイ、パッケージデプロイ、run-from-package</td></tr>
+                <tr><td>SLA</td><td>99.95% (GA)</td></tr>
+                <tr><td>ログ</td><td>App Service プランレベルで生成。Logstream / Azure Monitor 統合が可能</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section>
+        <h2>⚙️ 設定方法 — 前提条件</h2>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-text">Windows Web アプリであること (Linux / コンテナーは非対応)</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-text">Premium v4 (Pv4) または Premium v4 メモリ最適化 (Pmv4) プランを使用すること</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-text">RDP アクセスを利用する場合は VNet 統合と Azure Bastion が必要</div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-text">インストールスクリプトは zip 化した PowerShell スクリプトを Azure Storage に配置し、マネージド ID 経由でアクセスさせる</div></div>
+        </div>
+        <div class="highlight-box">
+            デプロイは <strong>Azure Portal、Azure CLI、または IaC ツール (Bicep / Terraform / ARM テンプレート)</strong> から実行できます。移行対象ワークロードの評価には <strong>Azure Migrate</strong> の利用が推奨されています。
+        </div>
+    </section>
+
+    <!-- ===== Benefits ===== -->
+    <section>
+        <h2>💪 メリット</h2>
+        <div class="two-col">
+            <div class="benefit-col biz">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>レガシー .NET Framework アプリの書き換え (リライト) を行わずに PaaS へ移行でき、モダナイゼーションのコストとリスクを大幅に削減</li>
+                    <li>99.95% SLA と Premium v4 パフォーマンスにより、ビジネスクリティカルなワークロードの移行先として本番利用が可能</li>
+                    <li>OS パッチ適用・負荷分散・スケーリングがプラットフォームマネージドとなり、IaaS 運用と比較して運用負荷を削減</li>
+                </ul>
+            </div>
+            <div class="benefit-col tech">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>COM、レジストリ、MSI、GAC、Windows サービスなどの Windows 固有依存をコード変更なしで維持可能</li>
+                    <li>インストールスクリプトによる宣言的かつ再現可能な OS カスタマイズ (RDP での手動変更は非永続のため、構成のドリフトを防止)</li>
+                    <li>Key Vault 連携のレジストリアダプターとマネージド ID により、シークレットレスでセキュアな構成管理を実現</li>
+                    <li>Azure Policy / Microsoft Defender for Cloud との統合によりガバナンス・セキュリティ運用を標準化</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Limitations ===== -->
+    <section>
+        <h2>⚠️ デメリット・制約事項</h2>
+        <p class="note">※ プレビュー時点のドキュメントに記載されている制限です。GA での最新情報は公式ドキュメントを確認してください。</p>
+        <div class="limitation-box">
+            <ul>
+                <li><strong>Windows のみ対応</strong> (Linux / コンテナーは非対応)。App Service Environment (ASE) では利用不可</li>
+                <li><strong>SKU は Pv4 / Pmv4 に限定</strong>される</li>
+                <li>認証は <strong>Entra ID / マネージド ID のみ</strong> (ドメイン参加、NTLM、Kerberos は非対応)</li>
+                <li><strong>Web アプリのみ対応</strong> (WebJobs、TCP / NetPipes は非対応)</li>
+                <li>永続的な構成変更は<strong>インストールスクリプト経由が必須</strong> (RDP は診断用途のみで、変更は再起動やプラットフォームメンテナンスで失われる)</li>
+                <li>ローカル一時ストレージは <strong>2 GB で非永続</strong></li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use cases ===== -->
+    <section>
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🏭 ユースケース 1: レガシー .NET Framework アプリの「リフト &amp; 改善」移行</h4>
+            <p><span class="usecase-label">シナリオ</span>オンプレミスの IIS サーバー上で稼働する .NET Framework 4.8 アプリケーションが、COM コンポーネントとレジストリ設定、サードパーティ MSI に依存しており、標準の App Service へは移行できない。</p>
+            <p><span class="usecase-label">実装アプローチ</span></p>
+            <ol>
+                <li>Azure Migrate で対象ワークロードの適格性を評価</li>
+                <li>Pv4 / Pmv4 プランで Managed Instance を作成 (Portal / CLI / Bicep / Terraform)</li>
+                <li>COM 登録・MSI インストール・レジストリ設定を PowerShell インストールスクリプトとして Azure Storage に配置</li>
+                <li>機密性の高いレジストリ値は Key Vault 連携のレジストリアダプターで管理</li>
+                <li>ネットワーク共有依存は Azure Files マウントまたは UNC パスで置き換え</li>
+            </ol>
+            <div class="effect-box"><strong>効果:</strong> コード変更なしで PaaS 移行が完了し、OS 管理・パッチ適用から解放される。オートスケールとゾーン冗長により可用性も向上する。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🔒 ユースケース 2: コンプライアンス要件のあるアプリのプライベートネットワーク移行</h4>
+            <p><span class="usecase-label">シナリオ</span>社内ネットワークからのみアクセス可能にする必要がある業務アプリを PaaS 化したい。</p>
+            <p><span class="usecase-label">実装アプローチ</span>プランレベルの VNet 統合とプライベートエンドポイントを構成し、NSG・ルートテーブル・プライベート DNS で社内ネットワーク要件に合わせたネットワーク境界を構築する。診断が必要な場合は Azure Bastion 経由の Just-in-Time RDP を使用する。</p>
+            <div class="effect-box"><strong>効果:</strong> パブリック公開せずにフルマネージド PaaS の運用メリットを享受できる。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section>
+        <h2>💰 料金</h2>
+        <p>Managed Instance は <strong>Premium v4 (Pv4) / Premium v4 メモリ最適化 (Pmv4)</strong> プランで提供されます。具体的な料金は、リージョンや従量課金 / Savings Plan / リザーブドの選択により異なるため、料金ページおよび料金計算ツールで確認してください。</p>
+        <h3>Premium v4 プランのスペック (すべてストレージ 250 GB)</h3>
+        <div class="table-wrap">
+            <table>
+                <tr><th>プラン</th><th>vCPU</th><th>RAM</th></tr>
+                <tr><td>P0v4</td><td>1</td><td>4 GB</td></tr>
+                <tr><td>P1v4</td><td>2</td><td>8 GB</td></tr>
+                <tr><td>P1mv4</td><td>2</td><td>16 GB</td></tr>
+                <tr><td>P2v4</td><td>4</td><td>16 GB</td></tr>
+                <tr><td>P2mv4</td><td>4</td><td>32 GB</td></tr>
+                <tr><td>P3v4</td><td>8</td><td>32 GB</td></tr>
+                <tr><td>P3mv4</td><td>8</td><td>64 GB</td></tr>
+                <tr><td>P4mv4</td><td>16</td><td>128 GB</td></tr>
+                <tr><td>P5mv4</td><td>32</td><td>256 GB</td></tr>
+            </table>
+        </div>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/app-service/windows/" target="_blank" rel="noopener">App Service (Windows) 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section>
+        <h2>🌏 利用可能リージョン</h2>
+        <p>GA 時点でのリージョン一覧は公式発表では確認できませんでした。最新の提供状況は <a href="https://learn.microsoft.com/azure/app-service/overview-managed-instance" target="_blank" rel="noopener">Managed Instance on App Service overview (Microsoft Learn)</a> を参照してください。</p>
+        <p class="note">参考: プレビュー時点のドキュメントでは以下のリージョンが記載されていました。</p>
+        <div class="region-tags">
+            <span class="region-tag">East Asia</span>
+            <span class="region-tag">West Central US</span>
+            <span class="region-tag">North Europe</span>
+            <span class="region-tag">East US</span>
+            <span class="region-tag">Australia East</span>
+            <span class="region-tag">Central India</span>
+            <span class="region-tag">South India</span>
+        </div>
+    </section>
+
+    <!-- ===== Related services ===== -->
+    <section>
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>🔍 Azure Migrate</strong>移行対象ワークロードの適格性評価に使用。GA アナウンスでも移行の最初のステップとして推奨されている</div>
+            <div class="related-card"><strong>🖥️ Azure Bastion</strong>Managed Instance への Just-in-Time RDP アクセスを提供 (VNet 統合が必要)</div>
+            <div class="related-card"><strong>🔑 Azure Key Vault</strong>レジストリアダプターのシークレット値やストレージマウントの資格情報を安全に管理</div>
+            <div class="related-card"><strong>📁 Azure Files</strong>ストレージマウントとしてネットワーク共有依存を置き換え</div>
+            <div class="related-card"><strong>📊 Azure Monitor / Logstream</strong>プランレベルのプラットフォームログ・スクリプト実行ログの集中管理</div>
+            <div class="related-card"><strong>🛡️ Microsoft Defender for Cloud</strong>脅威検出によるセキュリティ監視 (GA でサポート)</div>
+            <div class="related-card"><strong>📜 Azure Policy</strong>ガバナンス統制 (GA で統合)</div>
+            <div class="related-card"><strong>🏰 App Service Environment (ASE)</strong>100 以上のアプリを完全分離環境でホストする場合の代替オプション (Managed Instance は ASE では利用不可)</div>
+        </div>
+    </section>
+
+    <!-- ===== Links ===== -->
+    <section>
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=568952" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://techcommunity.microsoft.com/blog/AppsonAzureBlog/announcing-general-availability-of-managed-instance-on-azure-app-service/4541283" target="_blank" rel="noopener">GA アナウンスブログ (Microsoft Tech Community)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/app-service/overview-managed-instance" target="_blank" rel="noopener">Managed Instance on App Service overview (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/app-service/windows/" target="_blank" rel="noopener">App Service (Windows) 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section>
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Managed Instance on Azure App Service の GA により、<strong>COM・レジストリ・MSI・GAC などの Windows 固有依存を理由に IaaS に留まっていたレガシー .NET アプリケーション</strong>を、コード変更なしでフルマネージド PaaS へ移行する道が開かれました。99.95% SLA、Azure Policy、Defender for Cloud、IaC 対応が揃い、本番ワークロードでの採用が現実的になっています。</p>
+            <p style="margin-bottom: 0;">Windows Server ベースの Web アプリを VM で運用している組織は、まず <strong>Azure Migrate で対象ワークロードの適格性を評価</strong>し、<strong>Pv4 / Pmv4 プランでの PoC</strong> から始めることを推奨します。永続構成はインストールスクリプトで管理する運用モデルへの理解が導入のポイントです。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">App Service</span>
+            <span class="tag">Managed Instance</span>
+            <span class="tag">GA</span>
+            <span class="tag">.NET Framework</span>
+            <span class="tag">レガシー移行</span>
+            <span class="tag">PaaS</span>
+            <span class="tag">Windows</span>
+            <span class="tag">Compute</span>
+            <span class="tag">Web</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <p><strong>出典:</strong></p>
+        <p><a href="https://azure.microsoft.com/updates?id=568952" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=568952</a></p>
+        <p><a href="https://techcommunity.microsoft.com/blog/AppsonAzureBlog/announcing-general-availability-of-managed-instance-on-azure-app-service/4541283" target="_blank" rel="noopener">Microsoft Tech Community - Announcing GA of Managed Instance on Azure App Service</a></p>
+        <p><a href="https://learn.microsoft.com/azure/app-service/overview-managed-instance" target="_blank" rel="noopener">Microsoft Learn - Managed Instance on App Service overview</a></p>
+        <p style="margin-top: 12px;">Generated by Azure News Summary | レポート日付: 2026-08-18</p>
+    </footer>
+
+</div>
+</body>
+</html>

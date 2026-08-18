@@ -5,6 +5,10 @@
 
 ## 2026 年
 
+- [2026-08-18 - Azure App Service: Managed Instance の一般提供開始 (GA)](2026/2026-08-18-app-service-managed-instance-ga.md)
+- [2026-08-18 - Azure Firewall: IPv6 サポート (Public Preview)](2026/2026-08-18-azure-firewall-ipv6-preview.md)
+- [2026-08-17 - Azure SQL Managed Instance: Next-gen General Purpose のゾーン冗長 (Public Preview)](2026/2026-08-17-sql-managed-instance-nextgen-gp-zone-redundancy.md)
+- [2026-08-17 - Dragon Copilot: Physician Apps and Agents の Microsoft Marketplace 提供が一般提供 (GA)](2026/2026-08-17-dragon-copilot-marketplace.md)
 - [2026-08-17 - Azure Linux: Azure Linux on WSL (Public Preview)](2026/2026-08-17-azure-linux-wsl-preview.md)
 - [2026-08-14 - Azure Databricks: Databricks Runtime 10.4 LTS が 2026 年 11 月 1 日に End of Life (EOL)](2026/2026-08-14-databricks-runtime-10-4-lts-eol.md)
 - [2026-08-13 - Azure Kubernetes Service (AKS): Managed Prometheus によるコントロールプレーンメトリクス収集の一般提供開始 (GA)](2026/2026-08-13-aks-control-plane-metrics-managed-prometheus.md)
