@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Site Recovery: BYON (Bring Your Own NIC) の一般提供開始</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+}
+
+.hero .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga {
+    background: var(--ms-green);
+}
+
+.hero h1 {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.hero .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.hero .meta {
+    margin-top: 16px;
+    font-size: 14px;
+    opacity: 0.85;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p {
+    margin: 12px 0;
+}
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 {
+    color: var(--ms-red);
+    margin-bottom: 10px;
+}
+
+.after h4 {
+    color: var(--ms-green);
+    margin-bottom: 10px;
+}
+
+.before ul, .after ul {
+    padding-left: 20px;
+}
+
+.before li, .after li {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+    font-size: 16px;
+}
+
+.feature-content p, .feature-content li {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content ul {
+    padding-left: 18px;
+    margin-top: 6px;
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+}
+
+tr:nth-child(even) td {
+    background: var(--ms-surface-secondary);
+}
+
+/* Steps */
+.steps {
+    counter-reset: step;
+    list-style: none;
+    margin: 16px 0;
+}
+
+.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 12px 12px 56px;
+    margin: 10px 0;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.merit-card h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+}
+
+.merit-card ul {
+    padding-left: 20px;
+}
+
+.merit-card li {
+    font-size: 14px;
+    margin: 8px 0;
+}
+
+.caution-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.caution-box ul {
+    padding-left: 20px;
+}
+
+.caution-box li {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.usecase-card h4 {
+    color: var(--ms-purple);
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.usecase-card .uc-row {
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.uc-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    border-radius: 12px;
+    padding: 2px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 8px;
+}
+
+/* Notes list */
+.note-list {
+    padding-left: 20px;
+    margin: 12px 0;
+}
+
+.note-list li {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card strong {
+    color: var(--ms-blue-800);
+    display: block;
+    margin-bottom: 6px;
+}
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+}
+
+.summary-box p {
+    margin: 10px 0;
+    font-size: 15px;
+}
+
+/* Links */
+a {
+    color: var(--azure-blue);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.link-list {
+    padding-left: 20px;
+}
+
+.link-list li {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    border-radius: 14px;
+    padding: 4px 14px;
+    font-size: 13px;
+}
+
+/* Code blocks (not used but rule-compliant) */
+.code-block,
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* Footer */
+footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 28px 0 8px;
+    font-size: 13px;
+}
+
+footer h3 {
+    font-size: 15px;
+    margin-bottom: 10px;
+    color: var(--azure-light-blue);
+}
+
+footer a {
+    color: var(--azure-light-blue);
+    word-break: break-all;
+}
+
+footer ul {
+    padding-left: 20px;
+}
+
+footer li {
+    margin: 6px 0;
+}
+
+footer .generated {
+    margin-top: 14px;
+    opacity: 0.7;
+}
+
+@media (max-width: 700px) {
+    .before-after,
+    .merit-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .hero h1 {
+        font-size: 22px;
+    }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure Site Recovery</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>BYON (Bring Your Own NIC) の一般提供開始</h1>
+        <p class="subtitle">事前プロビジョニング済み NIC をフェールオーバー / テストフェールオーバーでターゲット VM にアタッチ可能に</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-08-19</span>
+            <span>🌐 対象シナリオ: Azure-to-Azure</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Site Recovery (ASR) の <strong>Azure-to-Azure シナリオ</strong>において、ターゲットリージョンに事前作成 (プロビジョニング) しておいた既存のネットワークインターフェイスカード (NIC) を、テストフェールオーバーおよびフェールオーバー時にターゲット VM へアタッチできる <strong>BYON (Bring Your Own NIC)</strong> 機能が一般提供 (GA) となりました。</p>
+        <div class="highlight-box">
+            従来、ASR はディザスターリカバリー (DR) 操作の際に常に新しい NIC を作成していました。BYON により、ターゲット環境で事前に準備した NIC を選択できるようになり、<strong>準備済みのネットワーク構成の保持</strong>、<strong>ネットワークセキュリティグループ (NSG) の関連付けの維持</strong>、<strong>ターゲットリージョンでの IP アドレスの予約</strong>が可能になります。フェールオーバー用とテストフェールオーバー用の NIC は、それぞれ独立して選択できます。
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>フェールオーバー / テストフェールオーバーのたびに ASR が新しい NIC を作成するため、事前に準備したネットワーク構成 (NSG の関連付け、IP アドレスの予約など) をそのまま引き継ぐことができなかった</li>
+                    <li>ターゲットリージョンで特定の IP アドレスや NIC 設定を確実に使用したい場合でも、DR 操作時の NIC 新規作成の動作を回避できなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>ターゲットリージョンに事前作成した既存 NIC を、フェールオーバー / テストフェールオーバー時にそのままターゲット VM へアタッチできるようになった</li>
+                    <li>準備済みのネットワーク構成・NSG 関連付けを維持し、IP アドレスをターゲットリージョンで予約したまま DR を実行できるようになった</li>
+                    <li>フェールオーバー用とテストフェールオーバー用で、それぞれ別の既存 NIC を独立して指定できる</li>
+                    <li>NIC を選択しない場合は、従来どおり ASR がリカバリー時に新しい NIC を作成する (後方互換性を維持)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph Source["🌏 ソースリージョン"]
+        VM["🖥️ 保護対象 Azure VM"]
+        SNIC["🔌 ソース NIC"]
+        VM --- SNIC
+    end
+
+    ASR["🔄 Azure Site Recovery&lt;br/&gt;(レプリケーション / フェールオーバー)"]
+
+    subgraph Target["🌍 ターゲットリージョン"]
+        TVM["🖥️ フェールオーバー VM"]
+        BYON["🔌 事前プロビジョニング NIC&lt;br/&gt;(BYON・IP 予約済み)"]
+        NSG["🛡️ NSG 関連付け維持"]
+        TVNET["🕸️ ターゲット VNet / サブネット"]
+        TVM --- BYON
+        BYON --- NSG
+        BYON --- TVNET
+    end
+
+    VM -- "レプリケーション" --> ASR
+    ASR -- "フェールオーバー /&lt;br/&gt;テストフェールオーバー" --> TVM
+            </pre>
+        </div>
+        <p>ソースリージョンの保護対象 VM を ASR でレプリケーションし、フェールオーバー時にはターゲットリージョンに事前作成しておいた NIC (BYON) をターゲット VM にアタッチします。これにより NSG の関連付けや予約済み IP アドレスなどの準備済みネットワーク構成が維持されます。</p>
+    </section>
+
+    <!-- サービスアップデートの詳細 -->
+    <section class="section">
+        <h2>⚙️ サービスアップデートの詳細</h2>
+        <h3>主要機能</h3>
+        <div class="feature-card">
+            <div class="feature-icon">🔌</div>
+            <div class="feature-content">
+                <h4>1. 事前プロビジョニング済み NIC の利用</h4>
+                <ul>
+                    <li>ターゲットリージョンに事前作成した既存 NIC を、テストフェールオーバーおよびフェールオーバーでターゲット VM にアタッチ可能</li>
+                    <li>準備済みのネットワーク構成の保持、NSG 関連付けの維持、ターゲットリージョンでの IP アドレス予約に有効</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>2. フェールオーバーとテストフェールオーバーで独立した NIC 選択</h4>
+                <ul>
+                    <li>フェールオーバー用とテストフェールオーバー用の既存 NIC をそれぞれ独立して選択可能</li>
+                    <li>テスト環境と本番 DR 環境で異なるネットワーク構成を事前準備できる</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔁</div>
+            <div class="feature-content">
+                <h4>3. 後方互換性のあるオプトイン動作</h4>
+                <ul>
+                    <li>既存 NIC を選択しない場合は、従来どおり ASR がリカバリー時に新しい NIC を作成</li>
+                    <li>既存の保護構成に影響を与えずに段階的に導入可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>フェールオーバー VM で構成可能なネットワークリソース</h3>
+        <p>Microsoft Learn の「Customize networking configurations for a failover VM」ドキュメントによると、フェールオーバー VM に対して以下のリソースを事前指定できます。</p>
+        <table>
+            <thead>
+                <tr><th>リソース</th><th>説明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ネットワークインターフェイス (NIC)</td><td>事前作成した NIC をターゲット VM にアタッチ (本アップデートで GA)</td></tr>
+                <tr><td>内部ロードバランサー</td><td>事前作成したバックエンドプール / フロントエンド構成を持つ ILB に接続</td></tr>
+                <tr><td>パブリック IP</td><td>事前作成したパブリック IP を割り当て</td></tr>
+                <tr><td>セカンダリ IP</td><td>セカンダリ IP 構成を保持</td></tr>
+                <tr><td>ネットワークセキュリティグループ</td><td>サブネット用・NIC 用の両方の NSG を指定可能</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+        <h3>前提条件</h3>
+        <ol class="steps">
+            <li>対象シナリオは Azure-to-Azure (Azure リージョン間) のディザスターリカバリーであること</li>
+            <li>利用したい NIC がターゲット環境 (ターゲットリージョン) に事前に存在していること</li>
+            <li>リカバリー側の構成を事前に計画し、ネットワークリソースを事前作成しておくこと</li>
+        </ol>
+        <h3>Azure Portal での設定手順</h3>
+        <ol class="steps">
+            <li>Recovery Services コンテナーで <strong>Replicated Items (レプリケートされたアイテム)</strong> に移動する</li>
+            <li>対象の Azure VM を選択する</li>
+            <li><strong>Network (ネットワーク)</strong> を選択し、<strong>Edit (編集)</strong> を選択する</li>
+            <li>テストフェールオーバー用の仮想ネットワークを選択する</li>
+            <li>構成したい NIC のタブを選択し、テストフェールオーバーおよびフェールオーバーの場所に対応する事前作成済みリソース (NIC、サブネットなど) を選択する</li>
+            <li><strong>OK</strong> を選択する</li>
+        </ol>
+        <p>以降、Site Recovery はこの設定に従い、フェールオーバー時に VM が選択したリソースへ対応する NIC 経由で接続されるようにします。</p>
+        <div class="caution-box">
+            <strong>💡 トラブルシューティングの補足</strong> (公式ドキュメントより)
+            <ul>
+                <li>ネットワークリソースのターゲットフィールドは、ソース VM に対応する入力がある場合にのみ有効になる</li>
+                <li>ドロップダウンリストには、フェールオーバーの信頼性を維持できるリソースのみが表示されるようフィルターが適用される</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>👍 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>DR 発動時のネットワーク構成を事前に確定・検証でき、フェールオーバー後の接続性に関する不確実性を低減できる</li>
+                    <li>テストフェールオーバーと本番フェールオーバーで独立した構成を持てるため、DR 訓練を本番構成に影響なく実施しやすい</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>ターゲットリージョンで IP アドレスを予約したまま DR を実行できるため、IP 依存の構成 (ファイアウォールルール、許可リストなど) を維持しやすい</li>
+                    <li>NSG の関連付けなど、事前に準備したネットワークセキュリティ構成をフェールオーバー後も保持できる</li>
+                    <li>NIC を選択しなければ従来の動作 (新規 NIC 作成) が維持されるため、既存の運用に影響しない</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>対象は Azure-to-Azure シナリオのみ (本アップデートで確認できた範囲)</li>
+                <li>利用する NIC はターゲット環境に事前作成しておく必要があり、事前準備と管理の手間が発生する</li>
+                <li>保護対象 VM ごとにネットワーク設定を更新し、対象のサブネットと NIC を明示的に選択する必要がある</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🏦 ユースケース 1: IP アドレス固定が必要な基幹システムの DR</h4>
+            <div class="uc-row"><span class="uc-label">シナリオ</span>ファイアウォールや外部システムの許可リストで IP アドレスを固定している基幹システムを、リージョン障害に備えて別リージョンに保護したい。フェールオーバー後も事前に予約した IP アドレスと NSG 構成をそのまま利用したい。</div>
+            <div class="uc-row"><span class="uc-label">実装方法</span>ターゲットリージョンに静的 IP を設定した NIC を事前作成し、NSG を関連付けておく。保護対象 VM のネットワーク設定でこの NIC をフェールオーバー用に選択する。</div>
+            <div class="uc-row"><span class="uc-label">効果</span>フェールオーバー後の VM が事前予約済みの IP アドレス・NSG 構成で起動するため、依存システム側の設定変更なしに業務を再開できる。</div>
+        </div>
+        <div class="usecase-card">
+            <h4>🧪 ユースケース 2: 本番影響のない DR 訓練環境の分離</h4>
+            <div class="uc-row"><span class="uc-label">シナリオ</span>定期的な DR 訓練 (テストフェールオーバー) を、本番フェールオーバー用とは別のネットワーク構成で実施したい。</div>
+            <div class="uc-row"><span class="uc-label">実装方法</span>テストフェールオーバー用とフェールオーバー用にそれぞれ別の NIC を事前作成し、保護対象 VM のネットワーク設定で独立して選択する。</div>
+            <div class="uc-row"><span class="uc-label">効果</span>訓練用ネットワークと本番 DR 用ネットワークを分離しつつ、いずれも事前検証済みの構成で実行できる。</div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Azure Site Recovery は保護対象インスタンス数 (VM / 物理サーバー) に基づいて課金されます。</p>
+        <table>
+            <thead>
+                <tr><th>項目</th><th>料金</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>保護インスタンス (最初の 31 日間)</td><td>無料</td></tr>
+                <tr><td>保護インスタンス (32 日目以降)</td><td>保護インスタンスあたりの月額課金 (料金はリージョンにより異なるため<a href="https://azure.microsoft.com/pricing/details/site-recovery/" target="_blank" rel="noopener">料金ページ</a>を参照)</td></tr>
+            </tbody>
+        </table>
+        <ul class="note-list">
+            <li>Azure リージョン間 (Azure-to-Azure) の保護は「Azure への復旧」と同じレートで課金されます</li>
+            <li>課金は月間の 1 日平均保護インスタンス数で計算されます</li>
+            <li>無料期間中でも、Azure Storage、ストレージトランザクション、送信データ転送 (egress)、フェールオーバー時のコンピューティング料金は別途発生します</li>
+            <li>BYON で事前作成する NIC 自体に加え、予約するパブリック IP アドレスなどのネットワークリソースには通常の料金が適用される点に留意してください</li>
+        </ul>
+        <div class="highlight-box">
+            <strong>無料枠</strong>: 保護対象として新規追加された各インスタンスは最初の 31 日間無料
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>🕸️ Azure Virtual Network / NIC</strong>
+                事前プロビジョニングする NIC・サブネット・IP アドレスの構成基盤。ネットワークマッピングによりソース / ターゲットの VNet を対応付ける
+            </div>
+            <div class="related-card">
+                <strong>🛡️ ネットワークセキュリティグループ (NSG)</strong>
+                事前作成した NIC に関連付けておくことで、フェールオーバー後もセキュリティ構成を維持できる
+            </div>
+            <div class="related-card">
+                <strong>⚖️ Azure Load Balancer / パブリック IP</strong>
+                NIC と同様に、フェールオーバー VM 用に事前作成したリソースを指定可能
+            </div>
+            <div class="related-card">
+                <strong>🗄️ Recovery Services コンテナー</strong>
+                ASR のレプリケーション・フェールオーバー設定を管理するコンテナー
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>BYON (Bring Your Own NIC) の GA により、Azure-to-Azure の DR シナリオで、ターゲットリージョンに事前作成した NIC をフェールオーバー / テストフェールオーバー時にそのまま利用できるようになりました。従来は DR 操作のたびに NIC が新規作成されていたため、IP アドレスの固定や NSG 構成の維持が求められるワークロードでは運用上の考慮が必要でしたが、本機能により事前検証済みのネットワーク構成で確実にフェールオーバーできるようになります。</p>
+            <p>IP 依存の構成を持つ基幹システムを ASR で保護している、または保護を検討している場合は、ターゲットリージョンに NIC を事前作成し、保護対象 VM のネットワーク設定 (Network &gt; Edit) で BYON を構成することを推奨します。NIC を選択しない場合は従来の動作が維持されるため、既存環境への影響なく段階的に導入できます。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Site Recovery</span>
+            <span class="tag">BYON</span>
+            <span class="tag">NIC</span>
+            <span class="tag">ディザスターリカバリー</span>
+            <span class="tag">フェールオーバー</span>
+            <span class="tag">Azure-to-Azure</span>
+            <span class="tag">ネットワーク</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- フッター -->
+    <footer>
+        <h3>出典・参考リンク</h3>
+        <p>出典レポート: 「Azure Site Recovery: BYON (Bring Your Own NIC) の一般提供開始」 (リリース日: 2026-08-19)</p>
+        <ul>
+            <li><a href="https://azure.microsoft.com/updates?id=569515" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/site-recovery/feature-updates-whats-new" target="_blank" rel="noopener">New feature updates in Azure Site Recovery (BYON の発表)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/site-recovery/azure-to-azure-customize-networking" target="_blank" rel="noopener">Customize networking configurations for a failover VM</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/site-recovery/azure-to-azure-network-mapping" target="_blank" rel="noopener">Map virtual networks between two regions in Azure Site Recovery</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/site-recovery/azure-to-azure-about-networking" target="_blank" rel="noopener">About networking in Azure VM disaster recovery</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/site-recovery/" target="_blank" rel="noopener">Azure Site Recovery 料金ページ</a></li>
+        </ul>
+        <p class="generated">このインフォグラフィックは Azure News Summary プロジェクトにより生成されました (2026-08-19)</p>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

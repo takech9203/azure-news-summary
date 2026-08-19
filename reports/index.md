@@ -5,8 +5,11 @@
 
 ## 2026 年
 
+- [2026-08-19 - Azure Virtual Machines: vCore Customization (SMT/HT 無効化 + 構成可能な Constrained Cores) が一般提供開始](2026/2026-08-19-vm-vcore-customization-smt-constrained-cores.md)
+- [2026-08-19 - Azure Site Recovery: BYON (Bring Your Own NIC) の一般提供開始](2026/2026-08-19-site-recovery-byon.md)
 - [2026-08-18 - Azure App Service: Managed Instance の一般提供開始 (GA)](2026/2026-08-18-app-service-managed-instance-ga.md)
 - [2026-08-18 - Azure Firewall: IPv6 サポート (Public Preview)](2026/2026-08-18-azure-firewall-ipv6-preview.md)
+- [2026-08-18 - Azure VMware Solution: License-included サービスのリタイア (2027 年 8 月 30 日)](2026/2026-08-18-vmware-solution-license-included-retirement.md)
 - [2026-08-17 - Azure SQL Managed Instance: Next-gen General Purpose のゾーン冗長 (Public Preview)](2026/2026-08-17-sql-managed-instance-nextgen-gp-zone-redundancy.md)
 - [2026-08-17 - Dragon Copilot: Physician Apps and Agents の Microsoft Marketplace 提供が一般提供 (GA)](2026/2026-08-17-dragon-copilot-marketplace.md)
 - [2026-08-17 - Azure Linux: Azure Linux on WSL (Public Preview)](2026/2026-08-17-azure-linux-wsl-preview.md)
