@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SQL Database: MSSQL 拡張機能からのデータベースプロビジョニングが GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+
+    /* Category Color: Database */
+    --category-db: #FFB900;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "🗄️";
+    position: absolute;
+    right: 24px;
+    bottom: -18px;
+    font-size: 130px;
+    opacity: 0.15;
+}
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+.header .subtitle { font-size: 16px; opacity: 0.92; max-width: 780px; }
+.header .meta {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+.header .meta span { display: inline-flex; align-items: center; gap: 6px; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon { font-size: 24px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--ms-blue-800); }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-unit { font-size: 15px; font-weight: bold; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 4px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+td:first-child { font-weight: 500; white-space: nowrap; }
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+.step-number {
+    counter-increment: step;
+    min-width: 34px;
+    height: 34px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+}
+.step-number::before { content: counter(step); }
+.step-content { padding-top: 4px; font-size: 14.5px; }
+.step-content strong { color: var(--ms-blue-800); }
+.step-content ul { padding-left: 18px; margin-top: 6px; color: var(--ms-text-secondary); }
+
+.prereq-list {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 16px 20px 16px 38px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+.prereq-list li { margin-bottom: 6px; }
+
+/* ===== Benefits / Constraints ===== */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.benefit-box {
+    border-radius: 8px;
+    padding: 18px 20px;
+    border: 1px solid var(--ms-border);
+    background: var(--ms-surface);
+}
+.benefit-box.business { border-top: 4px solid var(--ms-green); }
+.benefit-box.tech { border-top: 4px solid var(--azure-blue); }
+.benefit-box h4 { font-size: 16px; margin-bottom: 10px; }
+.benefit-box.business h4 { color: var(--ms-green); }
+.benefit-box.tech h4 { color: var(--azure-blue); }
+.benefit-box ul { padding-left: 20px; font-size: 14px; }
+.benefit-box li { margin-bottom: 8px; }
+
+.caution-box {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 18px 20px;
+}
+.caution-box ul { padding-left: 20px; font-size: 14px; }
+.caution-box li { margin-bottom: 8px; }
+
+/* ===== Use Cases ===== */
+.usecase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.usecase-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 20px;
+}
+.usecase-card h4 {
+    font-size: 16px;
+    color: var(--ms-blue-900);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-card .uc-row { font-size: 13.5px; margin-bottom: 10px; }
+.usecase-card .uc-label {
+    display: inline-block;
+    background: var(--azure-blue);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-bottom: 4px;
+}
+
+/* ===== Related Services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+}
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    border-left: 4px solid var(--ms-purple);
+}
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px 26px;
+    font-size: 15px;
+}
+
+/* ===== Links / Footer ===== */
+.links-list { list-style: none; }
+.links-list li {
+    margin-bottom: 8px;
+    padding-left: 24px;
+    position: relative;
+    font-size: 14px;
+    word-break: break-all;
+}
+.links-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-weight: 500;
+}
+
+.footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 20px 0 8px;
+    border-top: 1px solid var(--ms-border);
+}
+.footer a { color: var(--azure-blue); }
+
+/* ===== Code blocks (dark, excluding mermaid) ===== */
+.code-block,
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 0;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+    overflow-x: auto;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .two-col, .usecase-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure SQL Database</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>VS Code の MSSQL 拡張機能から<br>Azure SQL Database をプロビジョニング — 一般提供開始</h1>
+        <p class="subtitle">エディタを離れることなく、フルマネージドなクラウドデータベースを<strong>無料</strong>で作成し、そのまま自動接続。ARM / Bicep / Terraform の IaC テンプレートエクスポートにも対応。</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-08-19</span>
+            <span>🧩 MSSQL extension for VS Code v1.45</span>
+            <span>🏷️ ステータス: Launched (GA)</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Visual Studio Code 用 MSSQL 拡張機能の「Azure SQL Database プロビジョニング」機能が一般提供 (GA) となりました。MSSQL 拡張機能の「Deployments」ページのガイド付きウィザードから、Microsoft Entra ID で認証し、サブスクリプション・リソースグループ・論理サーバー・データベースを <strong>1 画面で構成</strong>。数分でデータベースが作成され、接続プロファイルへの追加と自動接続まで完了します。</p>
+        <div class="highlight-box">
+            <strong>💡 ポイント</strong>: プロビジョニングされるのは Azure SQL Database <strong>無料オファー</strong>のデータベース。GA に伴い、<strong>ARM・Bicep・Terraform</strong> のすぐに使える IaC テンプレートのエクスポートに対応し、エディタで作成した構成をチームや他環境で再現可能なデプロイとして展開できます。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">¥0</div>
+                <div class="stat-label">無料枠で開始<br>(コストゼロ)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">100,000</div>
+                <div class="stat-label">vCore 秒 / 月<br>(サーバーレス)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">32<span class="stat-unit"> GB</span></div>
+                <div class="stat-label">データ + 32 GB<br>バックアップ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">10<span class="stat-unit"> 個</span></div>
+                <div class="stat-label">無料 DB / サブスク<br>(General Purpose)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3<span class="stat-unit"> 形式</span></div>
+                <div class="stat-label">IaC エクスポート<br>ARM / Bicep / Terraform</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure SQL Database の作成には Azure portal など、エディタの外のツールへの切り替えが必要で、開発フローが中断</li>
+                    <li>作成したデータベースへの接続情報を手動で設定する必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>VS Code 内のガイド付きウィザードだけで、無料枠 DB の作成から自動接続 (保存済みプロファイルへの追加) まで完結</li>
+                    <li>ARM / Bicep / Terraform テンプレートのエクスポートで、同じ構成を再現可能な IaC デプロイとして横展開</li>
+                    <li>デプロイ完了画面から接続文字列・マイグレーションコマンドを即座にコピー可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    Dev([👩‍💻 開発者]) --> VSC["📝 VS Code<br/>MSSQL 拡張機能"]
+    VSC --> Wizard["🧭 Deployments<br/>ガイド付きウィザード"]
+    Wizard --> Entra["🔐 Microsoft Entra ID<br/>認証"]
+    Entra --> Prov["⚙️ プロビジョニング<br/>(無料枠から開始)"]
+    Prov --> DB[("🗄️ Azure SQL Database")]
+    Prov --> IaC["📦 ARM / Bicep / Terraform<br/>テンプレート出力"]
+    DB -.->|"🔌 自動接続"| VSC
+            </pre>
+        </div>
+        <p class="diagram-caption">開発者は VS Code の Deployments ウィザードから Microsoft Entra ID で認証し、Azure SQL Database を作成。プロビジョニング完了と同時にエディタへ自動接続され、同じ構成を IaC テンプレートとして出力できます。</p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🧭</div>
+            <div class="feature-content">
+                <h4>1. エディタ内でのデータベースプロビジョニング</h4>
+                <p>「Deployments」ビューから「Create an Azure SQL Database」を選択し、VS Code 内で作成。サブスクリプション、リソースグループ、論理サーバー、データベース名を 1 ページのウィザードで構成 (プロファイル名、接続グループ、タグなどのオプション設定も可能)。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🆓</div>
+            <div class="feature-content">
+                <h4>2. 無料枠 (Free Tier) からの開始</h4>
+                <p>Azure SQL Database 無料オファーを利用し、コストゼロでクラウドデータベースを作成・接続。月間無料枠到達時の動作を「翌月まで自動一時停止」または「標準のサーバーレス料金で継続」から選択可能。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>3. Microsoft Entra ID 認証と自動接続</h4>
+                <p>Azure アカウントによる永続的なサインイン (persistent sign-in) に対応。プロビジョニング完了と同時に新しいデータベースへ自動接続し、接続を保存済みプロファイルに追加。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <div class="feature-content">
+                <h4>4. ARM / Bicep / Terraform テンプレート (GA での追加)</h4>
+                <p>すぐに使える IaC テンプレートを ARM、Bicep、Terraform 形式でエクスポートし、チームや環境間で再現可能なデプロイを実現。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>5. デプロイ後のワークフロー連携</h4>
+                <p>完了画面から接続文字列やマイグレーションコマンドをコピー可能。Schema Designer (GitHub Copilot 連携による自然言語でのスキーマ設計)、Data API builder (REST / GraphQL / MCP エンドポイント生成)、SQL Notebooks へシームレスに継続。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象拡張機能</td><td>MSSQL extension for Visual Studio Code (v1.45 で GA)</td></tr>
+            <tr><td>対象サービス</td><td>Azure SQL Database のみ (SQL Managed Instance、SQL Server on Azure VM は非対応)</td></tr>
+            <tr><td>認証方式</td><td>Microsoft Entra ID (プロビジョニングに必須)</td></tr>
+            <tr><td>プロビジョニング対象ティア</td><td>無料枠 (Free Tier) のみ。コンピュート・ストレージ・価格オプションのカスタマイズは不可</td></tr>
+            <tr><td>無料枠の内容</td><td>月間 100,000 vCore 秒 (サーバーレス) + データ 32 GB + バックアップ 32 GB / データベース</td></tr>
+            <tr><td>無料枠の上限</td><td>1 サブスクリプションあたり最大 10 個の General Purpose データベース</td></tr>
+            <tr><td>IaC テンプレート</td><td>ARM / Bicep / Terraform 形式でエクスポート可能</td></tr>
+            <tr><td>拡張機能の対応 OS</td><td>Windows 10/11 (x64, Arm64)、macOS (Intel, Apple Silicon)、Linux (x64, Arm64)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🚀</span>設定方法</h2>
+        <h3 style="font-size:16px; color:var(--ms-blue-800); margin-bottom:8px;">✅ 前提条件</h3>
+        <ol class="prereq-list">
+            <li>Visual Studio Code に MSSQL 拡張機能 (SQL Server (mssql)) をインストールしていること</li>
+            <li>有効な Azure アカウントを持っていること</li>
+            <li>対象のサブスクリプション・リソースグループでリソースを作成する権限を持っていること</li>
+        </ol>
+        <h3 style="font-size:16px; color:var(--ms-blue-800); margin-bottom:12px;">📝 Visual Studio Code での手順</h3>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">MSSQL 拡張機能のアクティビティバーで「<strong>Deployments</strong>」ビューを選択</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">「<strong>Create an Azure SQL Database</strong>」を選択</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">プロンプトに従い Azure アカウントでサインイン (<strong>Microsoft Entra ID</strong>)</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">1 ページのウィザードで構成:
+                    <ul>
+                        <li><strong>Subscription</strong>: データベースを所有するサブスクリプション</li>
+                        <li><strong>Resource group</strong>: 既存のリソースグループを選択、または新規作成</li>
+                        <li><strong>Server</strong>: 既存の論理サーバーを選択、または新規作成 (新規の場合は管理者サインイン情報を入力)</li>
+                        <li><strong>Database name</strong>: データベース名</li>
+                        <li><strong>Optional Settings</strong>: プロファイル名、接続グループ、タグなど</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">無料枠の月間上限に達した際の動作を選択:
+                    <ul>
+                        <li><strong>Auto-pause</strong>: 翌月まで自動一時停止</li>
+                        <li><strong>Continue at standard serverless rates</strong>: 標準のサーバーレス料金で継続</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">「<strong>Create Database</strong>」を選択。作成完了後、接続が保存済みプロファイルに追加され自動接続される</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Benefits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>メリット</h2>
+        <div class="two-col">
+            <div class="benefit-box business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>プロトタイピング・PoC・開発/テスト用のクラウドデータベースを<strong>完全無料</strong>で開始でき、検証コストを削減</li>
+                    <li>エディタからデプロイ完了・接続までが<strong>数分</strong>で完結し、開発の立ち上がりが高速化</li>
+                    <li>ARM / Bicep / Terraform テンプレートにより、個人の試行から組織的な IaC ベースの展開へスムーズに移行</li>
+                </ul>
+            </div>
+            <div class="benefit-box tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>コンテキストスイッチ (VS Code → Azure portal / CLI) が不要になり、開発フローが途切れない</li>
+                    <li>Schema Designer、Data API builder、SQL Notebooks と組み合わせて、データベースからバックエンド構築までを VS Code 内で完結</li>
+                    <li>無料枠超過時の動作 (自動一時停止 / 課金継続) を作成時に明示的に選択でき、予期しない課金を防止</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>現時点で対応するのは <strong>Azure SQL Database のみ</strong>。Azure SQL Managed Instance と SQL Server on Azure Virtual Machines は非対応</li>
+                <li>プロビジョニングできるのは<strong>無料枠のみ</strong>で、コンピュート・ストレージ・価格オプションのカスタマイズは不可。有料ティアや高度な設定が必要な場合は Azure portal からデプロイが必要</li>
+                <li>プロビジョニングには <strong>Microsoft Entra ID 認証が必須</strong></li>
+                <li>無料オファー自体の制約が適用される (自動一時停止オプション有効時は最大 4 vCore / 最大 32 GB、長期バックアップ保持は利用不可、PITR は 7 日間、エラスティックプール / フェールオーバーグループへの参加不可など)</li>
+                <li>「課金継続」オプションを選択した後は「自動一時停止」オプションに<strong>戻せない</strong></li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+        <div class="usecase-grid">
+            <div class="usecase-card">
+                <h4>🧪 1. 新規アプリ開発の迅速なプロトタイピング</h4>
+                <div class="uc-row"><span class="uc-label">シナリオ</span><br>新しい Web アプリのバックエンドとして Azure SQL Database を試したいが、ポータルでのセットアップに時間をかけたくない。</div>
+                <div class="uc-row"><span class="uc-label">実装例</span><br>Deployments ビューのウィザードで無料枠 DB を作成し、自動接続後に Schema Designer + GitHub Copilot で自然言語からスキーマを生成。Data API builder で REST / GraphQL / MCP エンドポイントを生成してバックエンドを構築。</div>
+                <div class="uc-row"><span class="uc-label">効果</span><br>エディタを離れずに、コストゼロで DB から API までのエンドツーエンドの開発環境を数分で構築。</div>
+            </div>
+            <div class="usecase-card">
+                <h4>📦 2. 検証済み構成の IaC 化とチーム展開</h4>
+                <div class="uc-row"><span class="uc-label">シナリオ</span><br>個人で検証したデータベース構成を、チームの開発・ステージング環境へ再現性のある形で展開したい。</div>
+                <div class="uc-row"><span class="uc-label">実装例</span><br>プロビジョニング後に ARM / Bicep / Terraform テンプレートをエクスポートし、リポジトリに格納して CI/CD パイプラインからデプロイ。</div>
+                <div class="uc-row"><span class="uc-label">効果</span><br>手動構築による環境差異を排除し、エディタでの試行から本格的な IaC 運用への移行が容易に。</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="highlight-box">
+            MSSQL 拡張機能からのプロビジョニングは Azure SQL Database 無料オファーを利用するため、無料枠の範囲内であれば <strong>費用はかかりません</strong>。
+        </div>
+        <table>
+            <tr><th>項目</th><th>内容</th></tr>
+            <tr><td>コンピュート</td><td>月間 100,000 vCore 秒 (サーバーレス) / データベース — <strong>無料</strong></td></tr>
+            <tr><td>データストレージ</td><td>最大 32 GB / データベース — <strong>無料</strong></td></tr>
+            <tr><td>バックアップストレージ</td><td>32 GB / データベース — <strong>無料</strong> (ローカル冗長)</td></tr>
+            <tr><td>対象データベース数</td><td>1 サブスクリプションあたり最大 10 個の General Purpose データベース</td></tr>
+            <tr><td>無料枠超過時</td><td>「翌月まで自動一時停止」または「標準の General Purpose サーバーレス料金で継続」を選択</td></tr>
+        </table>
+        <p style="font-size:13.5px; color:var(--ms-text-secondary);">※ 無料オファーはサブスクリプションの種類を問わず利用でき、無料枠はサブスクリプションが有効な限り毎月 (暦月の開始時に) 更新されます。超過分の料金は <a href="https://azure.microsoft.com/pricing/details/azure-sql-database/" target="_blank">Azure SQL Database 料金ページ</a>を参照してください。</p>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>Azure SQL Database (サーバーレス)</strong>無料オファーの DB は General Purpose サーバーレスとして稼働。無料枠超過時はサーバーレス料金体系が適用。</div>
+            <div class="related-card"><strong>Microsoft Entra ID</strong>プロビジョニング時の Azure 認証に使用 (必須)。</div>
+            <div class="related-card"><strong>Schema Designer / GitHub Copilot 連携</strong>プロビジョニング後、自然言語でのスキーマ設計と ORM スクリプト生成に利用可能。</div>
+            <div class="related-card"><strong>Data API builder</strong>同じ Azure SQL 接続から REST / GraphQL / MCP エンドポイントを生成。</div>
+            <div class="related-card"><strong>ARM / Bicep / Terraform</strong>エクスポートされる IaC テンプレートの形式。再現可能なデプロイに利用。</div>
+            <div class="related-card"><strong>SQL database in Microsoft Fabric</strong>MSSQL 拡張機能は Fabric ワークスペースの参照と SQL データベースのプロビジョニングにも対応 (別機能)。</div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>VS Code の MSSQL 拡張機能から Azure SQL Database を<strong>無料で作成・自動接続</strong>できるプロビジョニング機能が GA となり、<strong>ARM / Bicep / Terraform テンプレートのエクスポート</strong>にも対応しました。開発者はエディタを離れずにクラウドデータベースの作成からスキーマ設計、API 生成までを完結でき、検証した構成を IaC としてチームに展開できます。</p>
+            <p style="margin-top:12px;">プロトタイピングや開発/テスト環境の標準的な入口として、<strong>開発チームへの周知を推奨</strong>します。本番用途や有料ティアが必要な場合は Azure portal からのデプロイを検討してください。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">MSSQL Extension</span>
+            <span class="tag">Visual Studio Code</span>
+            <span class="tag">GA</span>
+            <span class="tag">Databases</span>
+            <span class="tag">IaC</span>
+            <span class="tag">Bicep</span>
+            <span class="tag">Terraform</span>
+            <span class="tag">無料オファー</span>
+        </div>
+    </section>
+
+    <!-- ===== References / Footer ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク (出典)</h2>
+        <ul class="links-list">
+            <li><a href="https://azure.microsoft.com/updates?id=569160" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://devblogs.microsoft.com/azure-sql/vscode-mssql-august2026/" target="_blank">Azure SQL Dev Corner Blog: MSSQL Extension for VS Code v1.45</a></li>
+            <li><a href="https://learn.microsoft.com/sql/tools/visual-studio-code-extensions/mssql/mssql-azure-integration" target="_blank">Microsoft Learn: Create an Azure SQL Database (Free Tier) in Visual Studio Code</a></li>
+            <li><a href="https://learn.microsoft.com/sql/tools/visual-studio-code-extensions/mssql/mssql-extension-visual-studio-code" target="_blank">Microsoft Learn: MSSQL extension for Visual Studio Code</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/free-offer" target="_blank">Microsoft Learn: Azure SQL Database 無料オファー</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/" target="_blank">Azure SQL Database 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=569160" target="_blank">Microsoft Azure Updates</a> / Azure News Summary レポート (2026-08-19)</p>
+        <p>このインフォグラフィックは Azure News Summary プロジェクトにより自動生成されました。</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

@@ -5,7 +5,13 @@
 
 ## 2026 年
 
+- [2026-08-20 - Azure ExpressRoute / VPN Gateway: 集約ゲートウェイプレフィックスによるルート広報 (Summarized Advertised Gateway Prefixes) が GA](2026/2026-08-20-expressroute-vpn-gateway-summarized-prefixes.md)
+- [2026-08-20 - Azure Copilot: エージェントへの直接アクセスを発表](2026/2026-08-20-azure-copilot-agents-direct-access.md)
 - [2026-08-19 - Azure Virtual Machines: vCore Customization (SMT/HT 無効化 + 構成可能な Constrained Cores) が一般提供開始](2026/2026-08-19-vm-vcore-customization-smt-constrained-cores.md)
+- [2026-08-19 - Azure Databricks: Lakebase が 4 つの追加リージョンで一般提供開始 (GA)](2026/2026-08-19-databricks-lakebase-four-regions.md)
+- [2026-08-19 - Azure SQL Database: MSSQL 拡張機能の SQL Formatter (Public Preview)](2026/2026-08-19-mssql-extension-sql-formatter.md)
+- [2026-08-19 - Azure SQL Database: MSSQL 拡張機能からのデータベースプロビジョニングが一般提供 (GA)](2026/2026-08-19-sql-database-provisioning-mssql-extension.md)
+- [2026-08-19 - Azure SQL: 2026 年 8 月中旬アップデート (VS Code MSSQL 拡張機能のショートカット設定が GA)](2026/2026-08-19-sql-mid-august-updates.md)
 - [2026-08-19 - Azure Site Recovery: BYON (Bring Your Own NIC) の一般提供開始](2026/2026-08-19-site-recovery-byon.md)
 - [2026-08-18 - Azure App Service: Managed Instance の一般提供開始 (GA)](2026/2026-08-18-app-service-managed-instance-ga.md)
 - [2026-08-18 - Azure Firewall: IPv6 サポート (Public Preview)](2026/2026-08-18-azure-firewall-ipv6-preview.md)

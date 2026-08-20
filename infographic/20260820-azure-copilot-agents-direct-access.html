@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Copilot: エージェントへの直接アクセスを発表</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "🤖";
+    position: absolute;
+    right: 28px;
+    bottom: -18px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+
+.header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+.badge-announcement { background: var(--ms-purple); }
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 18px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 26px 28px;
+    margin: 22px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+/* Highlight */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong { color: var(--ms-blue-800); }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 6px 0; font-size: 14px; }
+
+/* Agent chips */
+.agent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin: 18px 0;
+}
+
+.agent-chip {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+}
+
+.agent-chip .agent-icon { font-size: 28px; }
+
+.agent-chip .agent-name {
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin: 6px 0 4px;
+}
+
+.agent-chip .agent-desc {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.figure-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 18px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 4px;
+    font-size: 16px;
+}
+
+.feature-content p, .feature-content li {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content ul { padding-left: 20px; margin-top: 4px; }
+.feature-content li { margin: 4px 0; }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-tertiary); }
+
+/* Steps */
+.steps { counter-reset: step; margin: 16px 0; }
+
+.step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin: 14px 0;
+}
+
+.step-number {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: white;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.step-number::before { content: counter(step); }
+
+.step-content {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 10px 16px;
+    flex: 1;
+    font-size: 14px;
+}
+
+.step-content strong { color: var(--ms-blue-800); }
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 10px;
+    padding: 18px 20px;
+}
+
+.merit-business {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--ms-blue-400);
+}
+
+.merit-tech {
+    background: #F3EEF9;
+    border: 2px solid var(--ms-purple);
+}
+
+.merit-card h4 { margin-bottom: 10px; }
+.merit-business h4 { color: var(--ms-blue-800); }
+.merit-tech h4 { color: var(--ms-purple); }
+
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 8px 0; font-size: 14px; }
+
+/* Warning */
+.warning-box {
+    background: #FFF8E6;
+    border: 2px solid var(--ms-orange);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 16px 0;
+}
+
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin: 8px 0; font-size: 14px; }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 10px;
+    padding: 14px 16px;
+    border-top: 3px solid var(--azure-blue);
+    font-size: 14px;
+}
+
+.related-card h4 { color: var(--ms-blue-800); font-size: 15px; margin-bottom: 4px; }
+.related-card p { color: var(--ms-text-secondary); }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px 24px;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* Links */
+.links-list { list-style: none; }
+
+.links-list li {
+    margin: 10px 0;
+    padding-left: 26px;
+    position: relative;
+    font-size: 14px;
+    word-break: break-all;
+}
+
+.links-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Code blocks (rule compliance; excludes mermaid) */
+.code-block,
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 24px 16px 36px;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+}
+
+.footer a { word-break: break-all; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-badges">
+            <span class="service-badge">Azure Copilot</span>
+            <span class="badge badge-announcement">Announcement</span>
+            <span class="badge badge-preview">Agents: In Preview</span>
+        </div>
+        <h1>エージェントへの直接アクセスを発表<br><span style="font-size: 20px; font-weight: 500;">Direct access to agents in Azure Copilot</span></h1>
+        <p class="subtitle">チャット画面から目的別エージェントを直接選択し、「質問から実行」までを迅速に</p>
+        <div class="header-meta">
+            <span>📅 リリース日: 2026-08-20</span>
+            <span>🚀 2026 年 8 月より提供開始</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>2026 年 8 月より、Azure Copilot のチャット画面から<strong>エージェントを直接呼び出せる</strong>ようになることが発表された。ユーザーは目的に最適なエージェント (Troubleshooting、Deployment、Optimization、Resiliency の 4 種類) を自分で選択して対話を開始でき、<strong>「質問から実行 (アクション)」までをより迅速に</strong>進められるようになる。</p>
+
+        <div class="agent-grid">
+            <div class="agent-chip">
+                <div class="agent-icon">🔧</div>
+                <div class="agent-name">Troubleshooting</div>
+                <div class="agent-desc">トラブルシューティング (Preview)</div>
+            </div>
+            <div class="agent-chip">
+                <div class="agent-icon">🚀</div>
+                <div class="agent-name">Deployment</div>
+                <div class="agent-desc">デプロイ (Preview)</div>
+            </div>
+            <div class="agent-chip">
+                <div class="agent-icon">📉</div>
+                <div class="agent-name">Optimization</div>
+                <div class="agent-desc">最適化 (Preview)</div>
+            </div>
+            <div class="agent-chip">
+                <div class="agent-icon">🛟</div>
+                <div class="agent-name">Resiliency</div>
+                <div class="agent-desc">レジリエンシー (Preview)</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            エージェント機能は Azure Copilot へのアクセス権を持つユーザーに対して<strong>デフォルトで有効化</strong>される。一方で、グローバル管理者は <strong>Azure Copilot Admin Center</strong> から個々のエージェントの有効/無効をきめ細かく制御できるため、組織のガバナンスポリシーに沿った運用が可能である。
+        </div>
+
+        <div class="highlight-box">
+            なお、<strong>Observability Agent (GA)</strong> と <strong>Migration Agent (プレビュー)</strong> は、従来どおりそれぞれ <strong>Azure Monitor</strong> と <strong>Azure Migrate</strong> 内の既存エクスペリエンスから呼び出す方式が継続される。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure Copilot のエージェントを目的に応じて明示的に選択して対話を開始する手段がなかった</li>
+                    <li>Solutions Architect や運用者が特定タスク (トラブルシューティング、デプロイなど) に特化した支援を受けるための入口が分かりにくかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>チャット画面の <strong>New chat</strong> ボタンのドロップダウンから目的に合ったエージェントを直接選択して対話を開始できる</li>
+                    <li>フルスクリーンモードのナビゲーションバー、サイドカーモードのドロップダウンメニューの 2 つの方法でエージェントを選択できる</li>
+                    <li>管理者は Azure Copilot Admin Center でエージェントごとにアクセスを有効化/無効化できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗺️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    User([👤 ユーザー]) -->|New chat ▼ でエージェント選択| Copilot["🤖 Azure Copilot チャット"]
+    Admin([🛡️ グローバル管理者]) -->|エージェントごとに有効/無効| AC["⚙️ Azure Copilot Admin Center"]
+    AC -.->|アクセス制御| Copilot
+    Copilot --> TS["🔧 Troubleshooting (preview)"]
+    Copilot --> DP["🚀 Deployment (preview)"]
+    Copilot --> OP["📉 Optimization (preview)"]
+    Copilot --> RS["🛟 Resiliency (preview)"]
+    TS & DP & OP & RS -->|提案 → ユーザー承認後に実行| Azure["☁️ Azure リソース"]
+            </pre>
+        </div>
+        <p class="figure-caption">ユーザーはチャット画面から目的別エージェントを直接選択でき、エージェントが提案するアクションはユーザーの承認を経て実行される。管理者は Admin Center でエージェントごとのアクセスを制御する。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細: 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>1. 目的に合ったエージェントの直接選択</h4>
+                <ul>
+                    <li>Azure Copilot チャットの <strong>New chat</strong> ボタン横のドロップダウンから、Troubleshooting / Deployment / Optimization / Resiliency の各エージェントを選択して対話を開始できる</li>
+                    <li>フルスクリーンモード (ナビゲーションバー) とサイドカーモード (ドロップダウンメニュー) の両方に対応</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔛</div>
+            <div class="feature-content">
+                <h4>2. デフォルトで有効化</h4>
+                <ul>
+                    <li>ほとんどの Azure テナントでエージェントはデフォルトで有効化され、Azure Copilot にアクセスできるすべてのユーザーが利用可能</li>
+                    <li>新しいエージェントが利用可能になると、テナントのアクセスポリシーに従って自動的にユーザーへ展開される</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>3. 管理者によるきめ細かな制御</h4>
+                <ul>
+                    <li>グローバル管理者は Azure Copilot Admin Center から個々のエージェントの有効/無効を設定できる</li>
+                    <li>Microsoft Entra のユーザー/グループ単位で Azure Copilot 自体へのアクセスを制限することも可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">✅</div>
+            <div class="feature-content">
+                <h4>4. 承認ベースのアクション実行</h4>
+                <ul>
+                    <li>エージェントはユーザーに代わってアクションを実行できるが、提案内容をユーザーが確認・承認するまでアクションは実行されない</li>
+                    <li>スクリプトなどの成果物 (アーティファクト) を生成し、Azure 環境へデプロイできる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔬</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>エージェント</th>
+                        <th>ステータス</th>
+                        <th>呼び出し方法</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>🔧 Troubleshooting</td>
+                        <td><span class="badge badge-preview">Preview</span></td>
+                        <td>Azure Copilot チャットから直接選択</td>
+                    </tr>
+                    <tr>
+                        <td>🚀 Deployment</td>
+                        <td><span class="badge badge-preview">Preview</span></td>
+                        <td>Azure Copilot チャットから直接選択</td>
+                    </tr>
+                    <tr>
+                        <td>📉 Optimization</td>
+                        <td><span class="badge badge-preview">Preview</span></td>
+                        <td>Azure Copilot チャットから直接選択</td>
+                    </tr>
+                    <tr>
+                        <td>🛟 Resiliency</td>
+                        <td><span class="badge badge-preview">Preview</span></td>
+                        <td>Azure Copilot チャットから直接選択</td>
+                    </tr>
+                    <tr>
+                        <td>📦 Migration</td>
+                        <td><span class="badge badge-preview">Preview</span></td>
+                        <td>Azure Migrate 内の既存エクスペリエンスから (従来どおり)</td>
+                    </tr>
+                    <tr>
+                        <td>📊 Observability</td>
+                        <td><span class="badge badge-ga">GA</span></td>
+                        <td>Azure Monitor 内の既存エクスペリエンスから (従来どおり)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 style="color: var(--ms-blue-800); margin-bottom: 8px;">前提条件</h3>
+        <div class="highlight-box">
+            <ul style="padding-left: 20px;">
+                <li>Azure Copilot へのアクセス権があること (テナントの管理者がアクセスを制限している場合を除き、エージェントはデフォルトで有効)</li>
+                <li>エージェントへのアクセスは段階的にロールアウトされるため、テナントによってはまだ表示されない場合がある</li>
+            </ul>
+        </div>
+
+        <h3 style="color: var(--ms-blue-800); margin: 18px 0 8px;">Azure Portal での利用手順</h3>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">Azure Copilot のチャットウィンドウ上部にある <strong>New chat</strong> ボタンの下向き矢印を選択する</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">利用したい<strong>エージェントを選択</strong>してチャットを開始する</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">エージェントに質問や指示を送ると、<strong>情報・推奨事項・実行可能なアクション</strong>が提示される</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">エージェントが提案するアクションを確認し、<strong>承認すると実行</strong>される</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            🛡️ 管理者は <strong>Azure Copilot Admin Center</strong> からエージェントごとの有効/無効を設定できる。
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>質問から実行 (アクション) までの時間を短縮し、クラウド運用の生産性を向上できる</li>
+                    <li>デフォルト有効化により、追加の展開作業なしに組織全体でエージェントを活用できる</li>
+                    <li>Admin Center による集中管理で、組織のガバナンス要件に沿ったエージェント利用を実現できる</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>目的特化型エージェント (トラブルシューティング、デプロイ、最適化、レジリエンシー) により、タスクに応じた的確な支援を受けられる</li>
+                    <li>アクションは必ずユーザーの承認を経て実行されるため、意図しない変更を防止できる</li>
+                    <li>Azure プラットフォームにネイティブに統合されており、個別の AI/自動化ツールを組み合わせる場合と異なり、エージェント・コンテキスト・ガバナンスが一体で提供される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>チャットから直接呼び出せる 4 エージェント (Troubleshooting / Deployment / Optimization / Resiliency) はいずれも<strong>プレビュー段階</strong>である</li>
+                <li>エージェントへのアクセスは<strong>段階的にロールアウト</strong>されるため、テナントによってはまだ利用できない場合がある</li>
+                <li>すべてのリソースタイプに対応しているとは限らない</li>
+                <li>フルサポートは<strong>英語のみ</strong>で、他言語での会話のサポートは限定的である</li>
+                <li>Azure Copilot の一般的な制限事項も併せて適用される</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- 関連サービス -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>📊 Azure Monitor</h4>
+                <p>Observability Agent (GA) は Azure Monitor 内の既存エクスペリエンスから呼び出す</p>
+            </div>
+            <div class="related-card">
+                <h4>📦 Azure Migrate</h4>
+                <p>Migration Agent (プレビュー) は Azure Migrate 内の既存エクスペリエンスから呼び出す</p>
+            </div>
+            <div class="related-card">
+                <h4>🪪 Microsoft Entra ID</h4>
+                <p>ユーザー/グループ単位で Azure Copilot およびエージェントへのアクセスを制限する際に使用する</p>
+            </div>
+            <div class="related-card">
+                <h4>⚙️ Azure Copilot Admin Center</h4>
+                <p>テナントレベルでエージェントごとのアクセスを管理する</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Copilot のチャット画面から目的別エージェント (Troubleshooting / Deployment / Optimization / Resiliency) を直接選択できるようになり、<strong>「質問から実行」までの流れが大幅に効率化</strong>される。エージェントはデフォルトで有効化されるため、Solutions Architect はまず自社テナントでのロールアウト状況を確認し、Admin Center でのアクセス制御ポリシー (エージェントごとの有効/無効、Entra ユーザー/グループによる制限) を組織のガバナンス要件に合わせて整備することを推奨する。アクションは承認ベースで実行されるため、運用チームへの展開時にはこの承認フローを含めた利用ガイドラインの周知が有効である。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Copilot</span>
+            <span class="tag">AI Agents</span>
+            <span class="tag">Management and governance</span>
+            <span class="tag">Announcement</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="links-list">
+            <li><a href="https://azure.microsoft.com/updates?id=569685" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://techcommunity.microsoft.com/blog/AzureInfrastructureBlog/azure-copilot-introduces-direct-access-to-agents/4547932" target="_blank" rel="noopener">Azure Infrastructure Blog: Azure Copilot Introduces Direct Access to Agents</a></li>
+            <li><a href="https://learn.microsoft.com/azure/copilot/agents" target="_blank" rel="noopener">Microsoft Learn: Agents in Azure Copilot</a></li>
+            <li><a href="https://learn.microsoft.com/azure/copilot/manage-access" target="_blank" rel="noopener">Microsoft Learn: Manage access to Azure Copilot</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典:</strong></p>
+        <p><a href="https://azure.microsoft.com/updates?id=569685" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=569685</a></p>
+        <p><a href="https://techcommunity.microsoft.com/blog/AzureInfrastructureBlog/azure-copilot-introduces-direct-access-to-agents/4547932" target="_blank" rel="noopener">https://techcommunity.microsoft.com/blog/AzureInfrastructureBlog/azure-copilot-introduces-direct-access-to-agents/4547932</a></p>
+        <p><a href="https://learn.microsoft.com/azure/copilot/agents" target="_blank" rel="noopener">https://learn.microsoft.com/azure/copilot/agents</a> / <a href="https://learn.microsoft.com/azure/copilot/manage-access" target="_blank" rel="noopener">https://learn.microsoft.com/azure/copilot/manage-access</a></p>
+        <p style="margin-top: 12px;">レポート: reports/2026/2026-08-20-azure-copilot-agents-direct-access.md | 生成日: 2026-08-20 | Azure News Summary</p>
+    </footer>
+
+</div>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Databricks: Lakebase が 4 つの追加リージョンで一般提供開始 (GA)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "🌐";
+    position: absolute;
+    right: 24px;
+    bottom: -16px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+
+.header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.header .date {
+    margin-top: 12px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 26px;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong { color: var(--azure-dark-blue); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 8px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 32px; font-weight: bold; }
+.stat-label { font-size: 13px; opacity: 0.9; }
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 4px;
+    font-size: 15px;
+}
+
+.feature-content p, .feature-content ul {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content ul { padding-left: 18px; margin-top: 4px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+.new-tag {
+    display: inline-block;
+    background: var(--ms-green);
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+code.inline {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Code Blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; margin: 16px 0; }
+
+.step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 12px 0;
+}
+
+.step-number {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: white;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.step-number::before { content: counter(step); }
+
+.step-text { font-size: 14.5px; padding-top: 3px; }
+
+/* ===== Pros / Cons ===== */
+.merit-card {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 10px 0;
+    font-size: 14.5px;
+}
+
+.merit-card strong { color: var(--ms-green); }
+
+.caution-card {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 10px 0;
+    font-size: 14.5px;
+}
+
+.caution-card strong { color: var(--ms-orange); }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-purple);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+
+.effect-box {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+.effect-box strong { color: var(--azure-dark-blue); }
+
+/* ===== Related / Links ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+}
+
+.related-card strong {
+    display: block;
+    color: var(--azure-dark-blue);
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+
+.links-list { list-style: none; }
+
+.links-list li {
+    margin: 8px 0;
+    padding-left: 24px;
+    position: relative;
+    font-size: 14px;
+    word-break: break-all;
+}
+
+.links-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== Summary Actions ===== */
+.action-card {
+    display: flex;
+    gap: 14px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    align-items: flex-start;
+}
+
+.action-num {
+    background: var(--azure-dark-blue);
+    color: white;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.action-text { font-size: 14.5px; padding-top: 3px; }
+.action-text strong { color: var(--azure-dark-blue); }
+
+/* ===== Tags ===== */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== Footer ===== */
+.footer {
+    background: var(--azure-dark-blue);
+    color: white;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 24px 0;
+    font-size: 13.5px;
+}
+
+.footer h4 { margin-bottom: 10px; font-size: 15px; }
+.footer a { color: var(--azure-light-blue); word-break: break-all; }
+.footer ul { list-style: none; }
+.footer li { margin: 6px 0; }
+.footer .credit {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    opacity: 0.8;
+    font-size: 12.5px;
+}
+
+@media (max-width: 700px) {
+    .before-after { grid-template-columns: 1fr; }
+    .header h1 { font-size: 23px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="header-badges">
+            <span class="service-badge">Azure Databricks</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Lakebase Postgres が 4 つの追加リージョンで一般提供開始 (GA)</h1>
+        <p class="subtitle">North Central US / France Central / Germany West Central / East Asia が追加され、利用可能リージョンは合計 18 に拡大</p>
+        <p class="date">📅 リリース日: 2026-08-19</p>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Databricks <strong>Lakebase</strong> が、新たに 4 つの Azure リージョン (<strong>North Central US、France Central、Germany West Central、East Asia</strong>) で一般提供 (GA) された。今回の拡大により、Lakebase の利用可能リージョンは<strong>合計 18 リージョン</strong>となり、顧客はより多くのデプロイオプションと広範なリージョン可用性を得られる。</p>
+        <p>Lakebase は、Databricks Data Intelligence Platform に統合された<strong>フルマネージドの PostgreSQL データベースサービス</strong>であり、Lakehouse にオンライントランザクション処理 (OLTP) 機能を提供する。ストレージとコンピュートを分離した次世代アーキテクチャにより、オートスケーリング、Scale-to-Zero、ブランチ (インスタントクローン)、インスタントリストア、Read Replica、Unity Catalog ネイティブ統合といった機能を備える。2026 年 3 月の GA 発表時点では 14 リージョンでの提供であったが、今回の拡大で<strong>欧州大陸 (フランス・ドイツ) と東アジア</strong>が新たにカバーされた。</p>
+        <div class="highlight-box">
+            <strong>実務上のポイント</strong>: Lakebase プロジェクトは Databricks ワークスペースのリージョンに作成されるため、これらの新規リージョンにワークスペースを持つ顧客が Lakebase を利用できるようになった。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">18</div>
+                <div class="stat-label">利用可能リージョン合計</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">+4</div>
+                <div class="stat-label">今回追加リージョン</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">7</div>
+                <div class="stat-label">米国リージョン数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5</div>
+                <div class="stat-label">欧州リージョン数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">4</div>
+                <div class="stat-label">アジア太平洋リージョン数</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Lakebase は 14 リージョンでの提供にとどまり、France Central、Germany West Central、East Asia など一部の主要リージョンにワークスペースを持つ顧客は Lakebase を利用できなかった</li>
+                    <li>フランス・ドイツ国内へのデータ所在 (データレジデンシー) 要件を持つ顧客は、Lakebase の採用に際して国外リージョン (North Europe / West Europe など) を選択する必要があった</li>
+                    <li>東アジア (香港) 近傍の低レイテンシー要件を持つ OLTP アプリケーションは Southeast Asia リージョンを利用するしかなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>利用可能リージョンが 18 に拡大し、米国 (North Central US 追加で 7 リージョン)、欧州 (France Central / Germany West Central 追加で 5 リージョン)、アジア太平洋 (East Asia 追加で 4 リージョン) のカバレッジが強化された</li>
+                    <li>フランス・ドイツのデータレジデンシー要件に対応したまま Lakebase を採用可能になった</li>
+                    <li>東アジア近傍のユーザー・アプリケーションに対して低レイテンシーな OLTP を提供可能になった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗺️</span>アーキテクチャ図: リージョンカバレッジ</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    LB["🐘 Lakebase Postgres&lt;br/&gt;(合計 18 リージョンで GA)"]
+
+    subgraph AM["🌎 南北アメリカ (9)"]
+        NCU["🆕 North Central US"]
+        AMEX["✅ 既存 8: East US / East US 2 / Central US /&lt;br/&gt;South Central US / West US / West US 2 /&lt;br/&gt;Canada Central / Brazil South"]
+    end
+
+    subgraph EU["🌍 ヨーロッパ (5)"]
+        FRC["🆕 France Central"]
+        GWC["🆕 Germany West Central"]
+        EUEX["✅ 既存 3: North Europe /&lt;br/&gt;West Europe / UK South"]
+    end
+
+    subgraph AP["🌏 アジア太平洋 (4)"]
+        EA["🆕 East Asia"]
+        APEX["✅ 既存 3: Southeast Asia /&lt;br/&gt;Australia East / Central India"]
+    end
+
+    LB --> AM
+    LB --> EU
+    LB --> AP
+            </pre>
+        </div>
+        <p>今回の拡大で 4 リージョン (🆕) が追加され、Lakebase の提供リージョンは 3 つの地理エリアで合計 18 となった。特に欧州大陸と東アジアのカバレッジ強化により、データレジデンシーとレイテンシーの選択肢が広がった。</p>
+    </section>
+
+    <!-- ===== サービスアップデートの詳細 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔍</span>サービスアップデートの詳細</h2>
+
+        <h3>追加された 4 リージョン</h3>
+        <div class="table-wrap">
+            <table>
+                <tr><th>リージョン</th><th>場所</th><th>意義</th></tr>
+                <tr>
+                    <td><code class="inline">northcentralus</code></td>
+                    <td>North Central US (米国イリノイ州)</td>
+                    <td>米国内のデプロイオプションが 7 リージョンに拡大</td>
+                </tr>
+                <tr>
+                    <td><code class="inline">francecentral</code></td>
+                    <td>France Central (フランス・パリ)</td>
+                    <td>フランス国内のデータレジデンシー要件に対応</td>
+                </tr>
+                <tr>
+                    <td><code class="inline">germanywestcentral</code></td>
+                    <td>Germany West Central (ドイツ・フランクフルト)</td>
+                    <td>ドイツ国内のデータレジデンシー要件に対応</td>
+                </tr>
+                <tr>
+                    <td><code class="inline">eastasia</code></td>
+                    <td>East Asia (香港)</td>
+                    <td>東アジア近傍の低レイテンシーアクセスを実現</td>
+                </tr>
+            </table>
+        </div>
+
+        <h3>Lakebase の主要機能 (再掲)</h3>
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <div class="feature-content">
+                <h4>オートスケーリング</h4>
+                <ul>
+                    <li>ワークロードの需要に応じてコンピュートリソースを自動調整</li>
+                    <li>最大 64 CU までオートスケーリングに対応 (0.5 CU、以降 1 CU 刻み)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💤</div>
+            <div class="feature-content">
+                <h4>Scale-to-Zero</h4>
+                <ul>
+                    <li>非アクティブなコンピュートを自動サスペンドしコストを最小化</li>
+                    <li>サスペンドまでの時間は最小 60 秒から最大 7 日まで設定可能 (新規プロジェクトの production ブランチはデフォルト 24 時間)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌿</div>
+            <div class="feature-content">
+                <h4>ブランチ (インスタントクローン)</h4>
+                <ul>
+                    <li>開発・テスト用の分離されたブランチを Copy-on-Write で瞬時に作成</li>
+                    <li>プロジェクトあたり最大 500 ブランチ</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⏪</div>
+            <div class="feature-content">
+                <h4>インスタントリストア (ポイントインタイムリストア)</h4>
+                <ul>
+                    <li>ヒストリーウィンドウ (2〜30 日、デフォルト 7 日) 内の任意の時点から新しいブランチを作成可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📖</div>
+            <div class="feature-content">
+                <h4>Read Replica / 高可用性</h4>
+                <ul>
+                    <li>ブランチあたり最大 6 つの Read Replica で読み取りをスケールアウト</li>
+                    <li>自動フェイルオーバーによる高可用性構成をサポート</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🗂️</div>
+            <div class="feature-content">
+                <h4>Unity Catalog 統合</h4>
+                <ul>
+                    <li>Lakebase データベースを Unity Catalog に登録し統合ガバナンスを実現</li>
+                    <li>Synced Tables (Lakehouse データの低レイテンシー配信)、Lakebase Change Data Feed (Postgres 変更の Delta テーブル化、Public Preview) に対応</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>利用可能リージョン数</td><td>18 (今回 4 リージョン追加)</td></tr>
+                <tr><td>PostgreSQL 互換バージョン</td><td>PostgreSQL 16 / 17 (デフォルト) / 18</td></tr>
+                <tr><td>Compute Unit (CU)</td><td>1 CU = 2 GB RAM</td></tr>
+                <tr><td>コンピュートサイズ</td><td>0.5 CU 〜 112 CU (オートスケーリングは最大 64 CU、固定サイズは 112 CU まで)</td></tr>
+                <tr><td>Scale-to-Zero</td><td>最小 60 秒 〜 最大 7 日</td></tr>
+                <tr><td>データベースストレージクォータ</td><td>16 TB / ブランチ</td></tr>
+                <tr><td>ブランチ数上限</td><td>500 / プロジェクト</td></tr>
+                <tr><td>同時アクティブコンピュート数</td><td>20 / プロジェクト (デフォルトブランチは対象外)</td></tr>
+                <tr><td>ヒストリー保持期間</td><td>最大 30 日</td></tr>
+                <tr><td>プロジェクト数上限</td><td>1,000 / ワークスペース</td></tr>
+                <tr><td>デプロイ先</td><td>Databricks ワークスペースのリージョンに作成 (リージョン指定は不可)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-text">対象リージョン (今回追加の 4 リージョンを含む 18 リージョンのいずれか) に Azure Databricks ワークスペースが存在すること</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-text">Lakebase プロジェクトはワークスペースのリージョンに作成され、リージョンの個別指定はできない</div>
+            </div>
+        </div>
+
+        <h3>Databricks CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Databricks CLI</span></div>
+            <pre><code class="language-bash"># Lakebase プロジェクトを作成 (ワークスペースのリージョンに作成される)
+databricks postgres create-project my-app \
+  --json '{
+    "spec": {
+      "display_name": "My Application",
+      "pg_version": 17
+    }
+  }'</code></pre>
+        </div>
+
+        <h3>UI</h3>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-text">ワークスペース右上のアプリスイッチャーから Lakebase App を開く</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-text"><strong>New project</strong> をクリック</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-text">表示名、Postgres バージョンなどを設定して作成 (リージョンはワークスペースのリージョンに固定)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== メリット / デメリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">👍</span>メリット</h2>
+
+        <h3>ビジネス面</h3>
+        <div class="merit-card"><strong>データレジデンシー対応</strong>: フランス (France Central)・ドイツ (Germany West Central) 国内にデータを保持したまま Lakebase を採用可能となり、GDPR や国内規制への対応が容易になる</div>
+        <div class="merit-card"><strong>デプロイオプションの拡大</strong>: 既存の Databricks ワークスペースのリージョンを変更することなく、Lakebase を追加導入できる顧客が増加</div>
+        <div class="merit-card"><strong>エンドユーザー体験の向上</strong>: 東アジア (香港) 近傍のアプリケーションに対する低レイテンシーな OLTP アクセスを実現</div>
+
+        <h3>技術面</h3>
+        <div class="merit-card"><strong>既存ワークスペースとの同一リージョン配置</strong>: Lakebase はワークスペースのリージョンに作成されるため、Lakehouse (Delta Lake) と OLTP 間のデータ連携 (Synced Tables、Change Data Feed) を同一リージョン内で完結できる</div>
+        <div class="merit-card"><strong>機能は既存リージョンと同等</strong>: PostgreSQL 16/17/18 対応、オートスケーリング (最大 64 CU)、ブランチ、インスタントリストアなどの機能が新規リージョンでも利用可能</div>
+    </section>
+
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-card"><strong>リージョンの個別指定は不可</strong>: Lakebase プロジェクトはワークスペースのリージョンに作成されるため、ワークスペースと異なるリージョンへの配置はできない</div>
+        <div class="caution-card"><strong>周辺機能のリージョン差異に注意</strong>: Microsoft Learn のリージョン別機能サポート表では、サーバーレス系機能 (Databricks Apps、Model Training など) のリージョン対応状況に差異があるため、Lakebase と組み合わせる機能ごとに対象リージョンでの提供状況を確認する必要がある</div>
+        <div class="caution-card"><strong>日本リージョンは未対応</strong>: Japan East / Japan West は現時点で利用可能リージョンに含まれていない。日本国内のデータレジデンシー要件がある場合は引き続き利用できず、近傍では East Asia または Southeast Asia が選択肢となる</div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 1</span>🇩🇪 欧州大陸のデータレジデンシー要件を持つ OLTP アプリケーション</h4>
+            <p><strong>シナリオ</strong>: ドイツの金融・製造業の顧客が、データをドイツ国内に保持する要件のもとで、Lakehouse 分析基盤と統合された低レイテンシーな業務アプリケーションを構築する。</p>
+            <p><strong>実装例</strong>:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">構成</span></div>
+                <pre><code class="language-plaintext">構成:
+- Germany West Central の Databricks ワークスペースに Lakebase プロジェクトを作成
+- production ブランチ: オートスケーリング (8 - 16 CU)、高可用性 (自動フェイルオーバー) 有効
+- Unity Catalog に登録し、Synced Tables で Delta テーブルを Postgres に同期</code></pre>
+            </div>
+            <div class="effect-box"><strong>効果</strong>: データをドイツ国内に保持したまま、Lakehouse データを低レイテンシーでアプリケーションに提供できる。従来必要だった国外リージョン (West Europe など) への配置が不要になる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 2</span>🇭🇰 東アジア向けアプリケーションのレイテンシー改善</h4>
+            <p><strong>シナリオ</strong>: 香港・華南地域のユーザー向けアプリケーションのバックエンドを、従来の Southeast Asia (シンガポール) 配置から East Asia (香港) に移す。</p>
+            <p><strong>実装例</strong>:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">移行手順</span></div>
+                <pre><code class="language-plaintext">移行手順:
+1. East Asia のワークスペースに新しい Lakebase プロジェクトを作成
+2. pg_dump / pg_restore で既存データベースから移行
+3. アプリケーションの接続文字列を切り替え</code></pre>
+            </div>
+            <div class="effect-box"><strong>効果</strong>: ユーザー近傍への配置によりネットワークレイテンシーを削減し、リアルタイムアプリケーションの応答性を改善できる。</div>
+        </div>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌐</span>利用可能リージョン</h2>
+        <p>今回の拡大後の Lakebase Postgres 利用可能リージョン (18 リージョン、<span class="new-tag">NEW</span> は今回追加):</p>
+        <div class="table-wrap">
+            <table>
+                <tr><th>地域</th><th>リージョン</th></tr>
+                <tr>
+                    <td>米国</td>
+                    <td><code class="inline">eastus</code>, <code class="inline">eastus2</code>, <code class="inline">centralus</code>, <code class="inline">northcentralus</code><span class="new-tag">NEW</span>, <code class="inline">southcentralus</code>, <code class="inline">westus</code>, <code class="inline">westus2</code></td>
+                </tr>
+                <tr>
+                    <td>カナダ / 南米</td>
+                    <td><code class="inline">canadacentral</code>, <code class="inline">brazilsouth</code></td>
+                </tr>
+                <tr>
+                    <td>ヨーロッパ</td>
+                    <td><code class="inline">northeurope</code>, <code class="inline">westeurope</code>, <code class="inline">uksouth</code>, <code class="inline">francecentral</code><span class="new-tag">NEW</span>, <code class="inline">germanywestcentral</code><span class="new-tag">NEW</span></td>
+                </tr>
+                <tr>
+                    <td>アジア太平洋</td>
+                    <td><code class="inline">southeastasia</code>, <code class="inline">eastasia</code><span class="new-tag">NEW</span>, <code class="inline">australiaeast</code>, <code class="inline">centralindia</code></td>
+                </tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>Unity Catalog</strong>Lakebase データベースの登録、データガバナンス、アクセス制御の統合管理</div>
+            <div class="related-card"><strong>Synced Tables</strong>Unity Catalog テーブルを Lakebase Postgres に同期し、アプリケーションから低レイテンシーで読み取り</div>
+            <div class="related-card"><strong>Lakebase Change Data Feed (Public Preview)</strong>Postgres テーブルの行レベル変更を Unity Catalog の Delta テーブルとして保存し、下流パイプラインや監査に活用</div>
+            <div class="related-card"><strong>Databricks Apps</strong>Lakebase をマネージド Postgres バックエンドとしたインタラクティブアプリケーションの構築</div>
+            <div class="related-card"><strong>Feature Store / Model Serving</strong>Lakebase を ML モデル向けの低レイテンシーなオンライン Feature Store として利用</div>
+            <div class="related-card"><strong>Agent State 管理</strong>LangGraph や OpenAI Agents SDK で構築したエージェントの短期・長期メモリを Lakebase に永続化</div>
+            <div class="related-card"><strong>Azure Database for PostgreSQL</strong>Azure ネイティブのマネージド PostgreSQL。Lakebase は Databricks プラットフォーム統合と Copy-on-Write ブランチ機能で差別化</div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <p>Azure Databricks Lakebase の 4 リージョン追加 (North Central US、France Central、Germany West Central、East Asia) は、2026 年 3 月の GA 以降で初の大きなリージョン拡大であり、提供リージョンは合計 18 となった。特にフランス・ドイツのデータレジデンシー要件への対応と、東アジア近傍の低レイテンシー OLTP の実現は、欧州・アジアの顧客にとって Lakebase 採用の障壁を大きく下げるものである。</p>
+
+        <h3>Solutions Architect としての推奨アクション</h3>
+        <div class="action-card">
+            <div class="action-num">1</div>
+            <div class="action-text"><strong>リージョン制約で見送っていた案件の再評価</strong>: France Central / Germany West Central / East Asia / North Central US のワークスペースを利用中で Lakebase の採用を見送っていた場合、再評価を開始する</div>
+        </div>
+        <div class="action-card">
+            <div class="action-num">2</div>
+            <div class="action-text"><strong>データレジデンシー要件の確認</strong>: フランス・ドイツ国内へのデータ保持要件がある案件では、国外リージョンへの回避策が不要になったことを設計に反映する</div>
+        </div>
+        <div class="action-card">
+            <div class="action-num">3</div>
+            <div class="action-text"><strong>周辺機能のリージョン対応確認</strong>: Databricks Apps や Model Serving など組み合わせる機能ごとに、対象リージョンでの提供状況を Microsoft Learn のリージョン別機能サポート表で確認する</div>
+        </div>
+        <div class="action-card">
+            <div class="action-num">4</div>
+            <div class="action-text"><strong>日本リージョンの動向注視</strong>: Japan East / Japan West は未対応のため、日本国内要件がある場合は今後のリージョン拡大を注視する</div>
+        </div>
+
+        <div class="tags">
+            <span class="tag">#AzureDatabricks</span>
+            <span class="tag">#Lakebase</span>
+            <span class="tag">#PostgreSQL</span>
+            <span class="tag">#OLTP</span>
+            <span class="tag">#リージョン拡大</span>
+            <span class="tag">#GA</span>
+            <span class="tag">#DataResidency</span>
+            <span class="tag">#AI</span>
+            <span class="tag">#Analytics</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <h4>📚 出典・参考リンク</h4>
+        <ul>
+            <li>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=569684" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=569684</a></li>
+            <li>Microsoft Learn - Lakebase Postgres: <a href="https://learn.microsoft.com/en-us/azure/databricks/oltp/" target="_blank" rel="noopener">https://learn.microsoft.com/en-us/azure/databricks/oltp/</a></li>
+            <li>Microsoft Learn - Manage projects (Region availability): <a href="https://learn.microsoft.com/en-us/azure/databricks/oltp/projects/manage-projects#region-availability" target="_blank" rel="noopener">https://learn.microsoft.com/en-us/azure/databricks/oltp/projects/manage-projects#region-availability</a></li>
+            <li>Microsoft Learn - Features with limited regional availability: <a href="https://learn.microsoft.com/en-us/azure/databricks/resources/feature-region-support" target="_blank" rel="noopener">https://learn.microsoft.com/en-us/azure/databricks/resources/feature-region-support</a></li>
+            <li>過去レポート - Lakebase Postgres GA (2026-03-02): reports/2026/2026-03-02-azure-databricks-lakebase.md</li>
+        </ul>
+        <p class="credit">ソース: Azure News Summary レポート (reports/2026/2026-08-19-databricks-lakebase-four-regions.md) | リリース日: 2026-08-19 | ステータス: Launched (GA)</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

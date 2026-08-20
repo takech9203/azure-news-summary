@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure ExpressRoute / VPN Gateway: 集約ゲートウェイプレフィックスによるルート広報が GA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "";
+    position: absolute;
+    right: -80px;
+    top: -80px;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: rgba(80, 230, 255, 0.15);
+}
+.header::before {
+    content: "";
+    position: absolute;
+    right: 40px;
+    bottom: -100px;
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+}
+.header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+.header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 20px;
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+}
+.header .meta span {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 14px;
+    border-radius: 6px;
+}
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+.section-title .icon {
+    font-size: 24px;
+}
+.section p { margin: 12px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box code, p code, li code, td code {
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 6px;
+}
+.feature-content p { font-size: 14px; margin: 4px 0; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content li { margin: 4px 0; }
+
+/* Tables */
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.info-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+.info-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+.info-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+.info-table td:first-child {
+    font-weight: 500;
+    color: var(--azure-dark-blue);
+    white-space: nowrap;
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+.figure-caption {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* Pros / Cons */
+.pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.pros-card, .cons-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.pros-card {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+}
+.cons-card {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+}
+.pros-card h4 { color: var(--ms-green); margin-bottom: 10px; }
+.cons-card h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.pros-card h5 { color: var(--azure-dark-blue); margin: 10px 0 4px; font-size: 14px; }
+.pros-card ul, .cons-card ul { padding-left: 20px; }
+.pros-card li, .cons-card li { margin: 6px 0; font-size: 14px; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--azure-blue);
+    font-size: 17px;
+    margin-bottom: 12px;
+}
+.usecase-num {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+}
+.usecase-step {
+    display: flex;
+    gap: 10px;
+    margin: 8px 0;
+    font-size: 14px;
+}
+.usecase-step .label {
+    min-width: 92px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px;
+}
+.related-card h4 { color: var(--azure-blue); font-size: 15px; margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.link-list { padding-left: 20px; }
+.link-list li { margin: 8px 0; font-size: 14px; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    background: transparent;
+    border-radius: 0;
+}
+
+/* Tags */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+.footer a { word-break: break-all; }
+.footer p { margin: 6px 0; }
+
+@media (max-width: 700px) {
+    .before-after, .pros-cons { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="header-badges">
+            <span class="service-badge">Azure ExpressRoute</span>
+            <span class="service-badge">Azure VPN Gateway</span>
+            <span class="service-badge">Azure Virtual Network</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>集約ゲートウェイプレフィックスによるルート広報<br>(Summarized Advertised Gateway Prefixes) が GA</h1>
+        <p class="subtitle">Summarized advertised gateway prefixes for route advertisement — ハブ &amp; スポーク構成の広報ルートを集約 CIDR で大幅削減</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-08-20</span>
+            <span>🏷️ Networking / Hybrid + multicloud</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure のハイブリッド接続ゲートウェイ (ExpressRoute Gateway / VPN Gateway) からオンプレミスネットワークへ広報するルートを、<strong>集約 (サマライズ) されたプレフィックス</strong>として指定できる機能が一般提供 (GA) となりました。仮想ネットワークの <code>summarizedGatewayPrefixes</code> プロパティに集約 CIDR のリストを設定すると、既定の「すべての個別プレフィックスを広報する」動作に代わって、指定した集約プレフィックスが広報されます。</p>
+        <div class="highlight-box">
+            従来、ゲートウェイはハブ仮想ネットワークとピアリングされたすべてのスポーク仮想ネットワークのアドレス空間を個別にオンプレミスへ広報していました。大規模なハブ &amp; スポーク構成ではスポークの追加に伴い広報プレフィックス数が増加し、ExpressRoute の広報プレフィックス上限 (IPv4: 1,000 / IPv6: 100) に近づくという課題がありました。本機能により、例えば <code>10.0.0.0/16</code> のような包括的プレフィックス 1 つで数百のスポークプレフィックスを置き換えられ、アドレス計画の再設計や仮想ネットワークの分割なしに環境を拡張し続けられます。<strong>ExpressRoute Gateway と VPN Gateway の両方、IPv4 / IPv6 の両アドレス空間に対応</strong>します。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">1,000 件</div>
+                <div class="stat-label">ExpressRoute IPv4 広報プレフィックス上限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">100 件</div>
+                <div class="stat-label">ExpressRoute IPv6 広報プレフィックス上限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">数百 → 1</div>
+                <div class="stat-label">集約 CIDR 1 つで置き換え可能なスポークプレフィックス</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">Route Server 不要</div>
+                <div class="stat-label">VNet プロパティ設定のみで実現</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>ゲートウェイはハブおよびピアリングされた全スポーク仮想ネットワークのアドレス空間を個別にオンプレミスへ広報するため、スポーク数の増加に伴い広報ルート数が増大していた</li>
+                    <li>大規模なハブ &amp; スポーク構成では ExpressRoute の広報プレフィックス上限 (IPv4: 1,000 / IPv6: 100) に近づき、拡張を続けるにはアドレス計画の再設計や仮想ネットワークの分割が必要になるケースがあった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>集約プレフィックス (例: <code>10.0.0.0/16</code>) を指定することで、多数の個別プレフィックス (例: 複数の <code>/24</code>) の広報を 1 つに集約でき、広報ルート数を大幅に削減できる</li>
+                    <li>集約プレフィックスに含まれないスポークのアドレス空間は引き続き個別に広報されるため、機能を有効化しても既存の接続性は維持される</li>
+                    <li>Azure Route Server を導入することなく、仮想ネットワークのプロパティ設定のみでルート集約を実現できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph Hub["🌐 ハブ VNet (10.0.0.0/24)&lt;br/&gt;summarizedGatewayPrefixes: 10.0.0.0/16"]
+            GW["🚪 ExpressRoute / VPN Gateway"]
+        end
+        S1["📦 スポーク VNet A&lt;br/&gt;10.0.1.0/24 (集約範囲内)"]
+        S2["📦 スポーク VNet B&lt;br/&gt;10.0.2.0/24 (集約範囲内)"]
+        S3["📦 スポーク VNet C&lt;br/&gt;10.1.0.0/24 (集約範囲外)"]
+        S1 -.ピアリング.- Hub
+        S2 -.ピアリング.- Hub
+        S3 -.ピアリング.- Hub
+    end
+    GW --&gt;|"広報ルート: 10.0.0.0/16 と 10.1.0.0/24 の 2 件のみ"| OnPrem(["🏢 オンプレミス ネットワーク"])
+            </pre>
+        </div>
+        <p class="figure-caption">ハブ VNet に集約プレフィックス <code>10.0.0.0/16</code> を設定すると、その範囲内のハブ・スポークの個別プレフィックスは広報されず集約ルート 1 件に置き換わり、範囲外のスポーク (10.1.0.0/24) は従来どおり個別に広報されます。</p>
+    </section>
+
+    <!-- サービスアップデートの詳細 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>サービスアップデートの詳細</h2>
+        <h3 style="color: var(--azure-dark-blue); margin-bottom: 8px;">主要機能</h3>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧮</div>
+            <div class="feature-content">
+                <h4>1. 集約プレフィックスの広報 (<code>summarizedGatewayPrefixes</code>)</h4>
+                <ul>
+                    <li>ゲートウェイを持つ仮想ネットワーク (ハブ) に集約 CIDR のリストを設定すると、既定の広報動作に代わって集約プレフィックスがオンプレミスへ広報される</li>
+                    <li>ハブのアドレス空間およびピアリングされたスポークのアドレス空間のうち、集約プレフィックスに包含されるものは個別広報が抑制される</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛟</div>
+            <div class="feature-content">
+                <h4>2. カバーされないプレフィックスのフォールバック広報</h4>
+                <p>集約プレフィックスに包含されないアドレス空間は引き続き個別に広報されるため、設定漏れによる接続断のリスクが低減される</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>3. ExpressRoute Gateway / VPN Gateway と IPv4 / IPv6 の両対応</h4>
+                <p>ハイブリッド接続の両ゲートウェイタイプで利用でき、IPv4・IPv6 双方のアドレス空間をカバーする</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📝</div>
+            <div class="feature-content">
+                <h4>4. 事前設定のサポート</h4>
+                <p>ゲートウェイサブネットやゲートウェイが存在しない仮想ネットワークにもプロパティを設定可能 (ゲートウェイサブネットとゲートウェイが作成されるまでは効果を発揮しない)</p>
+            </div>
+        </div>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 20px 0 8px;">動作の仕組み</h3>
+        <table class="info-table">
+            <tr><th>動作</th><th>内容</th></tr>
+            <tr>
+                <td>既定動作 (未設定時)</td>
+                <td>ハブ VNet の全アドレス空間と、ピアリングされた全スポーク VNet のアドレス空間を個別にオンプレミスへ広報</td>
+            </tr>
+            <tr>
+                <td><code>summarizedGatewayPrefixes</code> 設定時</td>
+                <td>ハブ VNet の集約プレフィックスリストを広報。ハブおよび各スポークのアドレス空間が集約範囲に包含される場合、その個別広報を抑制。包含されない場合は従来どおり広報</td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="info-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>設定対象</td><td>仮想ネットワークのプロパティ <code>summarizedGatewayPrefixes</code></td></tr>
+            <tr><td>有効になる VNet</td><td>ゲートウェイサブネットを含むハブ VNet のみがこのプロパティを読み取る (スポーク VNet に設定しても無視される)</td></tr>
+            <tr><td>対応ゲートウェイ</td><td>Azure ExpressRoute Gateway、Azure VPN Gateway</td></tr>
+            <tr><td>対応アドレス</td><td>IPv4 / IPv6</td></tr>
+            <tr><td>プレフィックスリストの性質</td><td>VNet のアドレス空間とは独立した値であり、VNet のアドレス空間外の CIDR も指定可能</td></tr>
+            <tr><td>リスト内の制約</td><td>リスト内でのプレフィックスの重複 (オーバーラップ) は不可。ピアリングされた VNet のアドレス空間との重複は許容され、ハブ &amp; スポーク設計では想定される動作</td></tr>
+            <tr><td>推奨事項</td><td>集約プレフィックスにはゲートウェイ VNet (ハブ) のアドレス空間を含めること</td></tr>
+            <tr><td>Azure Route Server</td><td>不要 (集約に Route Server は必要ない)</td></tr>
+            <tr><td>関連する上限</td><td>ExpressRoute の広報プレフィックス上限: IPv4 1,000 件 / IPv6 100 件</td></tr>
+        </table>
+    </section>
+
+    <!-- メリット / デメリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚖️</span>メリットとデメリット・制約事項</h2>
+        <div class="pros-cons">
+            <div class="pros-card">
+                <h4>👍 メリット</h4>
+                <h5>ビジネス面</h5>
+                <ul>
+                    <li>ExpressRoute の広報プレフィックス上限を理由としたアドレス計画の再設計や仮想ネットワーク分割が不要になり、大規模環境の拡張を継続できる</li>
+                    <li>オンプレミス側ルーターの経路テーブルが簡素化され、ネットワーク運用の管理負荷を軽減できる</li>
+                </ul>
+                <h5>技術面</h5>
+                <ul>
+                    <li>集約プレフィックス 1 つで数百のスポークプレフィックスを置き換え可能で、広報ルート数を大幅に削減できる</li>
+                    <li>集約範囲外のアドレス空間は自動的に個別広報が継続されるため、段階的な導入が可能</li>
+                    <li>Azure Route Server や NVA を追加導入することなく、VNet プロパティの設定のみで実現できる</li>
+                </ul>
+            </div>
+            <div class="cons-card">
+                <h4>⚠️ デメリット・制約事項</h4>
+                <ul>
+                    <li>ハブ (ゲートウェイサブネットを含む VNet) に設定した場合のみ有効で、スポーク VNet への設定は無視される</li>
+                    <li>プレフィックスリスト内で重複するプレフィックスは使用できない</li>
+                    <li>集約プレフィックスがゲートウェイ VNet のアドレス空間を包含するように設定する必要がある</li>
+                    <li>ゲートウェイサブネットとゲートウェイが存在するまでプロパティは効果を発揮しない</li>
+                    <li>集約プレフィックスは VNet のアドレス空間外も指定できるため、実際に存在しないアドレス範囲を広報しないよう設計上の注意が必要</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💼</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-num">1</span>大規模ハブ &amp; スポーク環境での ExpressRoute 広報上限の回避</h4>
+            <div class="usecase-step"><span class="label">シナリオ</span><span>数百のスポーク VNet (それぞれ <code>/24</code>) をハブにピアリングしている企業が、ExpressRoute の広報プレフィックス上限 (IPv4: 1,000) に近づいており、今後のスポーク追加が制限されそうになっている。</span></div>
+            <div class="usecase-step"><span class="label">実装方針</span><span>スポーク群のアドレス空間を包含する集約 CIDR (例: <code>10.0.0.0/16</code>) をハブ VNet の <code>summarizedGatewayPrefixes</code> に設定する。</span></div>
+            <div class="usecase-step"><span class="label">効果</span><span>数百件の個別プレフィックス広報が集約ルート 1 件に置き換わり、上限を気にせずスポークを追加し続けられる。集約範囲外のスポークは個別広報が維持されるため接続性も損なわれない。</span></div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-num">2</span>オンプレミスルーターの経路テーブル簡素化</h4>
+            <div class="usecase-step"><span class="label">シナリオ</span><span>ExpressRoute / VPN 経由で Azure から受信する経路数が多く、オンプレミス側ルーターの経路管理・トラブルシューティングが煩雑になっている。</span></div>
+            <div class="usecase-step"><span class="label">実装方針</span><span>環境のアドレス計画に沿った集約プレフィックスをハブ VNet に設定し、Azure から広報される経路を集約する。</span></div>
+            <div class="usecase-step"><span class="label">効果</span><span>オンプレミス側で受信する経路が集約され、経路テーブルの可読性と運用性が向上する。</span></div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>本アップデートに固有の追加料金情報はアナウンスされていません。ExpressRoute および VPN Gateway 自体の料金は以下を参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/expressroute/" target="_blank" rel="noopener">Azure ExpressRoute の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/vpn-gateway/" target="_blank" rel="noopener">Azure VPN Gateway の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>Azure ExpressRoute</h4>
+                <p>広報プレフィックス上限 (IPv4: 1,000 / IPv6: 100) の制約を受けるプライベート接続サービス。本機能により大規模環境での上限到達を回避できる</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure VPN Gateway</h4>
+                <p>サイト間 VPN 接続でも同様に集約プレフィックス広報が利用可能</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Virtual Network (VNet ピアリング)</h4>
+                <p>ハブ &amp; スポーク構成の基盤。スポークのアドレス空間が集約範囲に包含されるかどうかで広報動作が決まる</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Route Server</h4>
+                <p>BGP による動的ルーティングを提供するサービス。本機能による集約に Route Server は不要であり、シンプルな代替手段となる</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📌</span>まとめ</h2>
+        <div class="summary-box">
+            大規模なハブ &amp; スポーク構成を運用する組織にとって、ExpressRoute の広報プレフィックス上限は拡張性のボトルネックでした。本機能の GA により、ハブ VNet の <code>summarizedGatewayPrefixes</code> プロパティを設定するだけで広報ルートを集約でき、アドレス再設計や Route Server の導入なしにこの課題を解決できます。スポーク数が多い環境や今後の拡張を見込む環境では、アドレス計画を確認のうえ、集約プレフィックスの導入を検討することを推奨します。集約範囲外のプレフィックスは自動的に個別広報が継続されるため、段階的な適用も可能です。
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure ExpressRoute</span>
+            <span class="tag">VPN Gateway</span>
+            <span class="tag">Virtual Network</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Hybrid + multicloud</span>
+            <span class="tag">Security</span>
+            <span class="tag">BGP</span>
+            <span class="tag">Route Advertisement</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク / フッター -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=569743" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/virtual-network/advertised-gateway-prefixes-overview" target="_blank" rel="noopener">Microsoft Learn: Advertised gateway prefixes in Azure virtual networks</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/expressroute/" target="_blank" rel="noopener">Azure ExpressRoute の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/vpn-gateway/" target="_blank" rel="noopener">Azure VPN Gateway の料金</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=569743" target="_blank" rel="noopener">Azure Updates - Summarized advertised gateway prefixes for route advertisement (GA)</a></p>
+        <p><a href="https://learn.microsoft.com/en-us/azure/virtual-network/advertised-gateway-prefixes-overview" target="_blank" rel="noopener">Microsoft Learn: Advertised gateway prefixes in Azure virtual networks</a></p>
+        <p>リリース日: 2026-08-20 | 本インフォグラフィックは Azure News Summary レポート (2026-08-20) を基に生成されています</p>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
