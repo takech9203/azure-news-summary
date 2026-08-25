@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-08-24 - Azure Kubernetes Service (AKS): Advanced Container Networking Services の eBPF Host Routing が一般提供 (GA)](2026/2026-08-24-aks-acns-ebpf-host-routing.md)
+- [2026-08-24 - Azure Database for PostgreSQL Flexible Server: Extended Support の発表](2026/2026-08-24-postgresql-flexible-server-extended-support.md)
 - [2026-08-24 - Azure App Service: Node 22 LTS サポート終了 (2027 年 4 月 30 日)](2026/2026-08-24-app-service-node-22-retirement.md)
 - [2026-08-24 - Azure Web Application Firewall (Application Gateway): カスタムブロック応答コード・ボディの一般提供開始](2026/2026-08-24-app-gateway-waf-custom-block-response.md)
 - [2026-08-20 - Azure ExpressRoute / VPN Gateway: 集約ゲートウェイプレフィックスによるルート広報 (Summarized Advertised Gateway Prefixes) が GA](2026/2026-08-20-expressroute-vpn-gateway-summarized-prefixes.md)
