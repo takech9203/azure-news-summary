@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SRE Agent: VNet 統合が一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "🔒";
+    position: absolute;
+    font-size: 140px;
+    right: 24px;
+    bottom: -30px;
+    opacity: 0.15;
+}
+.hero .meta-badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+.hero h1 {
+    font-size: 34px;
+    font-weight: 900;
+    line-height: 1.3;
+    margin-bottom: 12px;
+}
+.hero .subtitle { font-size: 17px; opacity: 0.95; max-width: 780px; }
+.hero .release-date { margin-top: 16px; font-size: 14px; opacity: 0.9; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--ms-blue-200);
+}
+.section-title .icon { font-size: 26px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--ms-blue-800); }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before, .after { border-radius: 8px; padding: 18px; }
+.before { background: #FFEBEE; border: 2px solid var(--ms-red); }
+.after { background: #E8F5E9; border: 2px solid var(--ms-green); }
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Mode cards */
+.mode-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+.mode-card {
+    border-radius: 10px;
+    padding: 18px;
+    border: 2px solid var(--ms-border);
+    background: var(--ms-surface);
+}
+.mode-card h4 { font-size: 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.mode-card p { font-size: 13.5px; color: var(--ms-text-secondary); }
+.mode-card.unrestricted { border-color: var(--ms-orange); }
+.mode-card.unrestricted h4 { color: var(--ms-orange); }
+.mode-card.limited { border-color: var(--ms-yellow); }
+.mode-card.limited h4 { color: #9a7400; }
+.mode-card.vnet { border-color: var(--azure-blue); background: var(--ms-blue-100); }
+.mode-card.vnet h4 { color: var(--azure-blue); }
+.mode-tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-left: auto;
+}
+.mode-tag.default { background: var(--ms-surface-tertiary); color: var(--ms-text-secondary); }
+.mode-tag.recommended { background: var(--ms-green); color: #fff; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 20px; margin-top: 6px; }
+.feature-content li { margin: 4px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+/* Table */
+.spec-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+.spec-table th, .spec-table td { border: 1px solid var(--ms-border); padding: 10px 14px; text-align: left; vertical-align: top; }
+.spec-table th { background: var(--ms-blue-100); color: var(--ms-blue-800); white-space: nowrap; }
+.spec-table td code { background: var(--ms-surface-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+.spec-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* Steps */
+.steps { counter-reset: step; list-style: none; margin: 16px 0; }
+.steps li {
+    position: relative;
+    padding: 12px 16px 12px 56px;
+    margin: 10px 0;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: #fff;
+    font-weight: 700;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.steps code { background: var(--ms-surface-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+
+/* Pros / Cons */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-box {
+    background: #E8F5E9;
+    border-radius: 10px;
+    padding: 18px;
+    border-top: 4px solid var(--ms-green);
+}
+.merit-box.tech { background: var(--ms-blue-100); border-top-color: var(--azure-blue); }
+.merit-box h4 { margin-bottom: 10px; font-size: 16px; }
+.merit-box.biz h4 { color: var(--ms-green); }
+.merit-box.tech h4 { color: var(--azure-blue); }
+.merit-box ul { padding-left: 20px; }
+.merit-box li { margin: 8px 0; font-size: 14px; }
+
+.caution-list { list-style: none; }
+.caution-list li {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.caution-list strong { color: var(--ms-red); }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-card .uc-label { font-weight: 700; color: var(--ms-text-primary); margin-top: 12px; font-size: 14px; }
+.usecase-card p, .usecase-card ol { font-size: 14px; color: var(--ms-text-secondary); }
+.usecase-card ol { padding-left: 22px; margin-top: 6px; }
+.usecase-card li { margin: 5px 0; }
+.usecase-card code { background: var(--ms-surface-tertiary); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Pricing */
+.pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+.pricing-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.pricing-card .p-value { font-size: 26px; font-weight: 900; }
+.pricing-card .p-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+}
+.related-item {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13.5px;
+}
+.related-item strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; font-size: 14px; }
+
+/* Links */
+.link-list { list-style: none; }
+.link-list li { margin: 8px 0; font-size: 14px; padding-left: 24px; position: relative; }
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), #FFFFFF);
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+footer a { word-break: break-all; }
+
+@media (max-width: 720px) {
+    .before-after, .two-col { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 26px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Hero -->
+    <header class="hero">
+        <div class="meta-badges">
+            <span class="service-badge">🤖 Azure SRE Agent</span>
+            <span class="service-badge">VNet Integration (仮想ネットワーク統合)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Azure SRE Agent: VNet 統合が一般提供開始 (GA)</h1>
+        <p class="subtitle">SRE Agent が NSG・プライベート DNS・ファイアウォールポリシーなど既存のネットワーク制御の内側で動作可能に。プライベートエンドポイント背後のリソースやオンプレミスにも、ネットワーク境界を変更せずに到達。</p>
+        <p class="release-date">📅 リリース日: 2026-08-26</p>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure SRE Agent の VNet 統合が一般提供 (GA) となった。VNet 統合により、SRE Agent は既存のネットワーク制御 — Network Security Group (NSG)、プライベート DNS、ファイアウォールポリシーなど — の内側で動作できるようになる。エージェントの<strong>非プラットフォーム系送信トラフィック</strong>は、顧客の仮想ネットワーク内の<strong>委任サブネット</strong>を経由してルーティングされ、他のワークロードと同じ NSG ルール、ファイアウォールポリシー、カスタム DNS、ネットワークログの対象となる。</p>
+        <div class="highlight-box" style="margin-top:16px;">
+            パブリックアクセスを無効化した <strong>Log Analytics ワークスペース</strong>や <strong>Key Vault</strong> など、プライベートエンドポイントの背後にあるリソースに対しても、<strong>ネットワーク境界を変更することなく</strong>インシデント調査や緩和策の実行が可能に。<strong>ExpressRoute / VPN</strong> で接続されたオンプレミスシステムにも、ネットワークのルートとルールが許可する範囲でアクセスできる。
+        </div>
+        <p>SRE Agent には 3 つのネットワーク制御モード (<strong>Unrestricted / Limited / Azure VNet</strong>) が用意されており、セキュリティ要件に応じて選択できる。セキュリティ・コンプライアンス要件の厳しいエンタープライズ環境の本番デプロイには <strong>Azure VNet モードが推奨</strong>される。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>送信トラフィックはパブリックインターネット経由で流れており、企業のネットワーク制御 (NSG、ファイアウォール、カスタム DNS) を適用できなかった</li>
+                    <li>パブリックアクセスを無効化しプライベートエンドポイントの背後に配置したリソース (Log Analytics、Key Vault、データベースなど) にエージェントが到達できず、セキュリティ要件の厳しい環境で採用しにくかった</li>
+                    <li>エージェントの送信ネットワークアクティビティを自社のネットワークログで監査できなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>非プラットフォーム系の送信トラフィックが顧客 VNet 内の委任サブネットを経由し、NSG ルール・ファイアウォールポリシー・プライベート DNS・ネットワークログがすべて適用される</li>
+                    <li>プライベートエンドポイント背後のリソース、内部サービス、ExpressRoute/VPN 経由のオンプレミスシステムにアクセスできる</li>
+                    <li>ネットワーク境界の変更なしに、既存のネットワーク・セキュリティ・コンプライアンス制御を維持したまま SRE Agent を導入できる</li>
+                    <li>Azure Policy でインフラネットワークバイパスのトグルを制限・無効化でき、トラフィックが VNet の外に出ないことを組織として担保できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    User(["運用チーム"]) -- "チャット / 承認" --> Agent["🤖 Azure SRE Agent<br/>(推論エンジン + サンドボックス)"]
+
+    subgraph Infra["⚙️ SRE Agent インフラネットワーク (Microsoft 管理)"]
+        Platform["プラットフォームサービス<br/>(オーケストレーション / モデル / テレメトリ)"]
+    end
+
+    subgraph VNet["🔒 顧客 VNet (ネットワーク境界)"]
+        Subnet["委任サブネット<br/>(/27 以上, Microsoft.App/environments)"]
+        Controls["🛡️ NSG / ファイアウォールポリシー<br/>プライベート DNS / ネットワークログ"]
+        PE["🔗 プライベートエンドポイント<br/>(Log Analytics / Key Vault / DB)"]
+    end
+
+    OnPrem["🏭 オンプレミス<br/>(ExpressRoute / VPN)"]
+
+    Agent -- "プラットフォーム通信<br/>(構成不可・常時)" --> Platform
+    Agent -- "非プラットフォーム送信トラフィック" --> Subnet
+    Subnet --> Controls
+    Controls --> PE
+    Controls -.->|"ルートが許可する場合"| OnPrem
+            </pre>
+        </div>
+        <p class="diagram-note">Azure VNet モードでは、エージェントの非プラットフォーム系送信トラフィックが顧客 VNet 内の委任サブネットを経由し、NSG・ファイアウォール・プライベート DNS の制御下でプライベートエンドポイント背後のリソースやオンプレミスに到達する。プラットフォームサービスへの通信のみ Microsoft 管理のインフラネットワークを経由する。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎛️</div>
+            <div class="feature-content">
+                <h4>1. 3 つのネットワーク制御モード</h4>
+                <div class="mode-grid">
+                    <div class="mode-card unrestricted">
+                        <h4>🌐 Unrestricted <span class="mode-tag default">デフォルト</span></h4>
+                        <p>ネットワーク制限なし。エージェントは任意のインターネットエンドポイントに到達可能。開発・テスト・非機密ワークロード向け。</p>
+                    </div>
+                    <div class="mode-card limited">
+                        <h4>📃 Limited</h4>
+                        <p>ワイルドカードベースの URL 許可リストで到達可能なエンドポイントを制御。VNet ルーティングなしでホストレベルの制御が必要な場合向け。</p>
+                    </div>
+                    <div class="mode-card vnet">
+                        <h4>🔒 Azure VNet <span class="mode-tag recommended">本番推奨</span></h4>
+                        <p>非プラットフォーム系送信トラフィックをすべて顧客 VNet 経由でルーティングし、独自の DNS・ファイアウォールルールを適用。本番エンタープライズデプロイに推奨。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>2. 既存ネットワーク制御の適用</h4>
+                <ul>
+                    <li>委任サブネット上の他のワークロードと同様に、NSG ルール、ファイアウォールポリシー、カスタム DNS、ネットワークログがエージェントに適用される</li>
+                    <li>エージェントはサブネットが到達できる範囲にのみ到達でき、それ以上のアクセスはできない</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>3. プライベートリソースへのアクセス</h4>
+                <ul>
+                    <li>プライベートエンドポイント背後のリソース (AMPLS 経由の Log Analytics ワークスペースなど)、内部サービス、ExpressRoute/VPN 接続のオンプレミスシステムにアクセス可能</li>
+                    <li>VNet 接続時に「Use VNet's private DNS」オプションが自動で有効化され、プライベートエンドポイントのホスト名解決が可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>4. インフラネットワークバイパスのトグル制御</h4>
+                <ul>
+                    <li>パッケージレジストリ (PyPI、npm、NuGet、Ubuntu apt)、コードリポジトリ (GitHub、GitHub Enterprise、Azure DevOps)、リモート MCP サーバー、追加ホストの各カテゴリを、Microsoft 管理のインフラネットワーク経由にするか VNet 経由にするかを個別に選択できる</li>
+                    <li>トグルをオフにした場合、VNet 側で FQDN ベースのファイアウォールルール (Azure Firewall Premium など) を用意すれば VNet 経由で到達可能</li>
+                    <li>Azure Policy でトグルを制限・無効化でき、運用者がトラフィックを VNet 外にルーティングすることを防止できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-content">
+                <h4>5. ネットワーク監査 (Network audit)</h4>
+                <ul>
+                    <li><strong>Settings &gt; Workspace configuration &gt; Inspect</strong> で、エージェントからの送信リクエストの許可/拒否をホスト・メソッド・パス・判定とともに確認できる</li>
+                    <li>Limited / Azure VNet ポリシーによってブロックされた宛先の特定に利用できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3 style="font-size:17px; color:var(--ms-blue-800); margin:20px 0 8px;">🚧 ネットワークがアクセスをブロックした場合の動作</h3>
+        <div class="highlight-box">
+            NSG ルールで拒否された、またはルートが存在しない送信リクエストは、同じサブネット上の他のワークロードと同様のネットワークエラーとなる。エージェントは調査アウトプットに失敗を報告し (例: 「Log Analytics ワークスペースに到達できませんでした: 接続タイムアウト」)、<strong>到達可能なツールとデータで調査を継続</strong>する。重要なデータソースに到達できない場合は、<strong>調査が不完全である旨を報告</strong>する。
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>ネットワーク制御モード</td><td>Unrestricted (デフォルト) / Limited / Azure VNet</td></tr>
+            <tr><td>サブネットサイズ</td><td>/27 以上</td></tr>
+            <tr><td>サブネット委任</td><td><code>Microsoft.App/environments</code> への委任が必須</td></tr>
+            <tr><td>サブネットのリージョン</td><td>SRE Agent リソースと同一リージョン</td></tr>
+            <tr><td>サブネットの共有</td><td>不可 (専用サブネットが必要)</td></tr>
+            <tr><td>通信方向</td><td>送信 (Egress) のみ。プライベートネットワークからエージェントへの受信 (プライベートエンドポイント) は非サポート</td></tr>
+            <tr><td>プラットフォームサービス通信</td><td>オーケストレーション / モデルエンドポイント / テレメトリは常に Microsoft 管理インフラ経由 (構成不可)</td></tr>
+            <tr><td>コネクタトラフィック</td><td>パブリックインターネット経由 (VNet 経由にはならない)</td></tr>
+            <tr><td>プライベート DNS</td><td>VNet 接続時に「Use VNet's private DNS」が自動有効化。Private DNS ゾーン (例: <code>privatelink.ods.opinsights.azure.com</code>) の VNet リンクが必要</td></tr>
+            <tr><td>ガバナンス</td><td>バイパストグルの操作は SRE Agent Administrator ロールにスコープ。Azure Policy による制限が可能</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 style="font-size:17px; color:var(--ms-blue-800); margin-bottom:8px;">✅ 前提条件</h3>
+        <ol class="steps">
+            <li><strong>Running</strong> 状態の SRE Agent</li>
+            <li>/27 以上のサブネットを持つ Azure Virtual Network (サブネットは <code>Microsoft.App/environments</code> に委任済みであること)</li>
+            <li>対象サブネットに対する <strong>Network Contributor</strong> ロール (または <code>Microsoft.Network/virtualNetworks/subnets/join/action</code> を含む同等の権限)</li>
+            <li>エージェントリソースに対する <strong>SRE Agent Administrator</strong> ロール</li>
+        </ol>
+
+        <h3 style="font-size:17px; color:var(--ms-blue-800); margin:20px 0 8px;">🖥️ Azure Portal での手順</h3>
+        <ol class="steps">
+            <li>Azure Portal でエージェントを開き、<strong>Settings</strong> &gt; <strong>Workspace configuration</strong> を選択する</li>
+            <li><strong>Networking</strong> タブを選択し、Egress モードとして <strong>Azure VNet</strong> を選択する</li>
+            <li><strong>Browse subnets...</strong> を選択し、<strong>サブスクリプション</strong>、<strong>リソースグループ</strong>、<strong>仮想ネットワーク</strong>、<strong>サブネット</strong> を選択して <strong>Connect</strong> を選択する (「Use VNet's private DNS」オプションが自動で有効化される)</li>
+            <li><strong>On the infra network</strong> セクションで、インフラネットワーク経由にする公共サービスカテゴリ (MCP サーバー、パッケージレジストリ、コードリポジトリ、追加ホスト) のトグルを設定する</li>
+            <li><strong>Save</strong> を選択する。Azure VNet カードに <strong>Connected</strong> バッジが表示される</li>
+            <li>プライベートエンドポイント背後のリソース (パブリックアクセス無効の Log Analytics ワークスペースなど) への問い合わせをエージェントに依頼し、VNet ルーティングが機能していることを確認する</li>
+        </ol>
+
+        <h3 style="font-size:17px; color:var(--ms-blue-800); margin:20px 0 8px;">📌 補足</h3>
+        <ul class="caution-list">
+            <li>プライベートエンドポイント解決には、対象の Azure Private DNS ゾーン (例: Log Analytics は <code>privatelink.ods.opinsights.azure.com</code>、Key Vault は <code>privatelink.vaultcore.azure.net</code>) を VNet にリンクしておく必要がある。DNS が未構成の場合、エージェントはパブリックエンドポイントにフォールバックするか、接続に失敗する可能性がある</li>
+            <li>VNet 接続中は Unrestricted / Limited モードのカードが無効化される。Egress モードを切り替えるには、先に VNet を切断する必要がある</li>
+            <li>サブネットを変更するには、VNet をいったん切断して再接続する</li>
+        </ul>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="two-col">
+            <div class="merit-box biz">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>セキュリティ・コンプライアンス要件の厳しい環境 (機密データ・規制対象データを扱うワークロード) でも SRE Agent を導入でき、AI 運用自動化の適用範囲が広がる</li>
+                    <li>ネットワーク境界を変更せずに既存のセキュリティ統制を維持できるため、セキュリティ審査・承認プロセスの負担を軽減できる</li>
+                    <li>送信ネットワークアクティビティの監査証跡を自社のネットワークログで確保でき、コンプライアンス対応が容易になる</li>
+                </ul>
+            </div>
+            <div class="merit-box tech">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>プライベートエンドポイント背後のリソース (AMPLS 配下の Log Analytics、Key Vault、データベースなど) をエージェントが直接調査・操作できる</li>
+                    <li>ExpressRoute / VPN 経由でオンプレミスシステムにも到達でき、ハイブリッド環境の運用を統合できる</li>
+                    <li>NSG・Azure Firewall・プライベート DNS など既存のネットワークスキルと資産をそのまま適用できる</li>
+                    <li>Azure Policy とロールベースの制御により、ネットワーク経路のガバナンスを組織として強制できる</li>
+                    <li>実行中のエージェントでモードを切り替えられ、設定はモード変更後も保持される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li><strong>送信 (Egress) のみ</strong>: VNet 統合が制御するのは送信トラフィックのみで、プライベートネットワーク内からエージェントへの受信接続 (プライベートエンドポイント経由のインバウンド) はサポートされない</li>
+            <li><strong>コネクタトラフィックは VNet を経由しない</strong>: コネクタの通信はパブリックインターネット経由となる</li>
+            <li><strong>プラットフォームサービス通信は構成不可</strong>: オーケストレーション、モデルエンドポイント、テレメトリは常に Microsoft 管理のインフラネットワークを経由する</li>
+            <li><strong>専用サブネットが必要</strong>: /27 以上のサブネットを他のサービスと共有せずに割り当て、<code>Microsoft.App/environments</code> に委任する必要がある</li>
+            <li><strong>パブリックサービス依存機能の考慮</strong>: パッケージインストール、コードリポジトリアクセス、リモート MCP サーバーなどはパブリックサービスへの到達が必要であり、バイパストグルをオフにする場合は FQDN ベースのファイアウォールルール (Azure Firewall Premium など) を VNet 側に用意しないと該当機能が利用不可になる</li>
+            <li><strong>ネットワーク監査は完全な監査証跡ではない</strong>: Network audit はエージェントの egress ポリシー判定のみを対象とし、ランタイム・コネクタ・プラットフォーム・ファイアウォール・DNS・プロキシのすべてのイベントを含むわけではない</li>
+        </ul>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>📊 ユースケース 1: パブリックアクセス無効の Log Analytics ワークスペースの調査</h4>
+            <p class="uc-label">シナリオ</p>
+            <p>セキュリティポリシーにより、Log Analytics ワークスペースを AMPLS (Azure Monitor Private Link Scope) 配下に置きパブリックアクセスを無効化している環境で、SRE Agent によるインシデント調査を行いたい。</p>
+            <p class="uc-label">実装例</p>
+            <ol>
+                <li><code>Microsoft.App/environments</code> に委任した /27 以上の専用サブネットを VNet に作成</li>
+                <li><code>privatelink.ods.opinsights.azure.com</code> などの Private DNS ゾーンを VNet にリンク</li>
+                <li>エージェントの <strong>Workspace configuration &gt; Networking</strong> で <strong>Azure VNet</strong> モードを選択し、サブネットを接続</li>
+                <li>エージェントにパブリックアクセス無効のワークスペースへのクエリを依頼し、到達性を検証</li>
+            </ol>
+            <div class="usecase-effect"><strong>効果</strong>: ネットワーク境界を緩めることなく、プライベート化された監視データに対する AI 主導のインシデント調査が可能になる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🏛️ ユースケース 2: エンタープライズガバナンス下でのエージェント egress 統制</h4>
+            <p class="uc-label">シナリオ</p>
+            <p>規制業種の企業で、運用エージェントの送信トラフィックをすべて自社ファイアウォール経由にし、例外経路を組織的に禁止したい。</p>
+            <p class="uc-label">実装例</p>
+            <ol>
+                <li>Azure VNet モードでエージェントを構成し、送信トラフィックを Azure Firewall Premium 経由にルーティング</li>
+                <li>GitHub や PyPI など必要なパブリックサービスは FQDN ルールで許可し、インフラネットワークバイパスのトグルはオフに設定</li>
+                <li>Azure Policy でバイパストグルを制限し、運用者が VNet 外への経路を有効化できないよう強制</li>
+                <li><strong>Network audit</strong> で許可/拒否された送信リクエストを定期レビュー</li>
+            </ol>
+            <div class="usecase-effect"><strong>効果</strong>: エージェントのすべての非プラットフォームトラフィックが自社のホスト名ベース egress フィルタリングと監査の対象となり、コンプライアンス要件を満たしながら運用自動化を実現できる。</div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>VNet 統合自体の追加料金に関する記載は、現時点の公式ドキュメントでは確認できなかった。</p>
+        <p style="margin-top:10px;">Azure SRE Agent 本体の利用料金は <strong>Azure Agent Unit (AAU)</strong> で計測され、以下の合計で課金される。</p>
+        <div class="pricing-grid">
+            <div class="pricing-card">
+                <div class="p-value">4 AAU / エージェント時間</div>
+                <div class="p-label">Always-on flow: エージェント存続中の固定料金</div>
+            </div>
+            <div class="pricing-card">
+                <div class="p-value">Active flow</div>
+                <div class="p-label">使用モデルとトークン量に応じた AAU (変動料金)</div>
+            </div>
+        </div>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/sre-agent/" target="_blank" rel="noopener">Azure SRE Agent 料金ページ</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/sre-agent/pricing-billing" target="_blank" rel="noopener">Pricing and billing for Azure SRE Agent</a></li>
+        </ul>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p>VNet 統合では、サブネットが SRE Agent リソースと<strong>同一リージョン</strong>にある必要がある。SRE Agent の利用可能リージョンは公式ドキュメントを参照。</p>
+        <ul class="link-list" style="margin-top:10px;">
+            <li><a href="https://learn.microsoft.com/en-us/azure/sre-agent/supported-regions" target="_blank" rel="noopener">Supported regions</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-item"><strong>Azure Virtual Network (VNet)</strong>エージェントの送信トラフィックをルーティングする委任サブネットをホストするネットワーク基盤</div>
+            <div class="related-item"><strong>Network Security Group (NSG)</strong>委任サブネット上のエージェントトラフィックに適用されるレイヤー 4 のアクセス制御</div>
+            <div class="related-item"><strong>Azure Firewall (Premium)</strong>FQDN ベースのルールにより、GitHub や PyPI などパブリックサービスへのエージェントトラフィックを VNet 経由で許可するホスト名認識型 egress フィルタリング</div>
+            <div class="related-item"><strong>Azure Private DNS / Private Link</strong>プライベートエンドポイントのホスト名解決に必要な Private DNS ゾーン (VNet へのリンクが必要)</div>
+            <div class="related-item"><strong>Azure Monitor Private Link Scope (AMPLS)</strong>プライベート化された Log Analytics / Application Insights へのエージェントアクセスを実現する構成</div>
+            <div class="related-item"><strong>Azure Policy</strong>インフラネットワークバイパストグルの制限・無効化により、組織的なネットワークガバナンスを強制</div>
+            <div class="related-item"><strong>Azure ExpressRoute / VPN Gateway</strong>オンプレミスシステムへのエージェント到達を可能にするハイブリッド接続</div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure SRE Agent の VNet 統合 GA は、AI 運用エージェントをエンタープライズのセキュリティ統制の内側に取り込むための重要なマイルストーンである。送信トラフィックが顧客 VNet の委任サブネットを経由することで、NSG・ファイアウォール・プライベート DNS・ネットワークログといった既存の制御がそのまま適用され、プライベートエンドポイント背後のリソースやオンプレミスシステムへの調査・緩和が可能になる。</p>
+            <p style="margin-top:12px;">これまでネットワーク要件を理由に SRE Agent の導入を見送っていた組織は、まず開発環境で Azure VNet モードの動作 (特に Private DNS ゾーンのリンクと FQDN ベースの egress フィルタリング) を検証し、本番導入時には Azure Policy によるバイパストグルの統制を組み合わせることを推奨する。ただし、<strong>VNet 統合は送信のみを制御し、コネクタトラフィックは VNet を経由しない</strong>点には留意が必要である。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">#Azure</span>
+            <span class="tag">#SREAgent</span>
+            <span class="tag">#VNetIntegration</span>
+            <span class="tag">#GA</span>
+            <span class="tag">#Networking</span>
+            <span class="tag">#Security</span>
+            <span class="tag">#NSG</span>
+            <span class="tag">#PrivateDNS</span>
+            <span class="tag">#AzureFirewall</span>
+            <span class="tag">#PrivateEndpoint</span>
+            <span class="tag">#AI</span>
+            <span class="tag">#Operations</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=569695" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://techcommunity.microsoft.com/blog/appsonazureblog/azure-sre-agent-vnet-integration-is-now-generally-available/4549774" target="_blank" rel="noopener">Azure SRE Agent VNet integration is now generally available (Tech Community Blog)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/sre-agent/network-integration" target="_blank" rel="noopener">Azure SRE Agent Network Integration (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/sre-agent/configure-network-controls" target="_blank" rel="noopener">Configure Network Controls for Azure SRE Agent (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/sre-agent/security-overview" target="_blank" rel="noopener">Security overview for Azure SRE Agent (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/sre-agent/" target="_blank" rel="noopener">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <footer>
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=569695" target="_blank" rel="noopener">Azure Updates - Azure SRE Agent: VNet Integration (GA)</a> / <a href="https://learn.microsoft.com/en-us/azure/sre-agent/network-integration" target="_blank" rel="noopener">Microsoft Learn - Azure SRE Agent Network Integration</a></p>
+        <p style="margin-top:8px;">本インフォグラフィックは Azure News Summary プロジェクトのレポート (2026-08-26) に基づいて生成されました。</p>
+    </footer>
+
+</div>
+
+<script>
+mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+        primaryColor: '#0078D4',
+        primaryTextColor: '#323130',
+        primaryBorderColor: '#0078D4',
+        lineColor: '#0078D4',
+        secondaryColor: '#F3F2F1',
+        tertiaryColor: '#FAFAFA',
+        background: '#FFFFFF',
+        mainBkg: '#E6F2FF',
+        nodeBorder: '#0078D4',
+        clusterBkg: '#E6F2FF',
+        clusterBorder: '#0078D4',
+        edgeLabelBackground: '#FFFFFF',
+        textColor: '#323130'
+    }
+});
+hljs.highlightAll();
+</script>
+</body>
+</html>

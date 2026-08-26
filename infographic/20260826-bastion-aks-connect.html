@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Bastion: AKS クラスターへの接続機能が一般提供 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "☸️";
+    position: absolute;
+    right: 24px;
+    bottom: -18px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+.header .meta {
+    font-size: 14px;
+    opacity: 0.95;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.header .meta span { display: inline-flex; align-items: center; gap: 6px; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon { font-size: 24px; }
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 22px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.section p { margin: 10px 0; }
+.section ul { margin: 8px 0 8px 22px; }
+.section li { margin: 6px 0; }
+strong { color: var(--ms-blue-800); }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { margin-left: 20px; }
+.before li, .after li { font-size: 14px; margin: 8px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; background: #FFFFFF; }
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 18px;
+    margin: 14px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { margin-left: 20px; }
+.feature-content li { font-size: 14px; margin: 4px 0; }
+
+/* Table */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+.spec-table td:first-child {
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    white-space: nowrap;
+}
+code.inline {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* Steps */
+.step-list { counter-reset: step; list-style: none; margin: 0 !important; }
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding-left: 46px;
+    margin: 12px 0 !important;
+}
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+    border: 1px solid var(--ms-border);
+    background: var(--ms-surface-secondary);
+}
+.merit-card.business { border-top: 4px solid var(--ms-yellow); }
+.merit-card.tech { border-top: 4px solid var(--azure-blue); }
+.merit-card h4 { margin-bottom: 10px; font-size: 16px; color: var(--ms-blue-800); }
+.merit-card ul { margin-left: 20px; }
+.merit-card li { font-size: 14px; margin: 8px 0; }
+
+.warning-box {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+.warning-box ul { margin-left: 20px; }
+.warning-box li { font-size: 14px; margin: 8px 0; }
+
+/* Use cases */
+.usecase-card {
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    margin: 18px 0;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.usecase-header {
+    background: linear-gradient(90deg, var(--azure-blue), var(--ms-blue-500));
+    color: white;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.usecase-body { padding: 18px 20px; background: var(--ms-surface); }
+.usecase-body .label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-bottom: 6px;
+}
+.usecase-body p { font-size: 14px; margin: 6px 0 14px; }
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+    margin-top: 14px;
+}
+
+/* Pricing */
+.pricing-box {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+}
+.pricing-box ul { margin-left: 20px; }
+.pricing-box li { font-size: 14px; margin: 8px 0; }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+.related-card h4 { font-size: 15px; color: var(--azure-blue); margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+.link-list { list-style: none; margin: 0 !important; }
+.link-list li {
+    margin: 8px 0 !important;
+    padding-left: 24px;
+    position: relative;
+    font-size: 14px;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Summary */
+.summary-section {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+}
+.summary-section p { font-size: 15px; }
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.tag {
+    background: var(--ms-surface);
+    border: 1px solid var(--azure-blue);
+    color: var(--azure-blue);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 12px;
+}
+.footer a { word-break: break-all; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid, .related-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .container { padding: 14px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="badge badge-ga">✅ Launched (GA)</span>
+            <span class="service-badge">Azure Bastion</span>
+            <span class="service-badge">Azure Kubernetes Service (AKS)</span>
+        </div>
+        <h1>Azure Bastion: AKS クラスターへの<br>接続機能が一般提供 (GA)</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-08-26</span>
+            <span>🛡️ Azure Bastion を使用した AKS クラスターへの接続 (Generally Available)</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <div class="highlight-box">
+            <p><strong>Azure Bastion と AKS の統合が一般提供 (GA)</strong> となりました。ローカルマシンから Azure Bastion を経由して AKS クラスターの API サーバーへ<strong>セキュアなトンネル</strong>を確立できます。</p>
+        </div>
+        <p>この統合により、プライベートクラスターの API サーバーエンドポイントをパブリックインターネットに公開することなく、<code class="inline">kubectl</code> や <code class="inline">helm</code> などの標準的な Kubernetes ツールをローカルマシンからそのまま利用できます。Bastion のネイティブクライアントトンネリング機能を利用するため、<strong>追加のクライアントソフトウェアやエージェントのインストールは不要</strong>です。</p>
+        <p>従来、プライベート AKS クラスターの運用アクセスにはジャンプボックス (踏み台 VM) や VPN サーバーの構築・維持が必要でしたが、この統合によりそれらの<strong>追加インフラが不要</strong>になります。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>プライベート AKS クラスターの API サーバーへは、クラスターの VNet 内・ピアリングされたネットワーク・プライベートエンドポイント経由での接続が必要で、VPN や ExpressRoute、ジャンプボックス VM などの追加インフラの構築・維持が必要だった</li>
+                    <li>代替手段の <code class="inline">az aks command invoke</code> (Run command) はクラスター内に一時 Pod を起動してコマンドを実行する方式のため、出力サイズ上限 (512 KB) や Pod スケジューリング依存などの制約があり、プログラムからの継続的なアクセスには不向きだった</li>
+                    <li>ローカルマシンから標準の <code class="inline">kubectl</code> / <code class="inline">helm</code> を直接使ったインタラクティブな操作が困難だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>ローカルマシンから Azure Bastion 経由で AKS API サーバーへのセキュアなトンネルを <code class="inline">az aks bastion</code> コマンド 1 つで確立できるようになった</li>
+                    <li>プライベートクラスターのエンドポイントを公開せずに、標準の Kubernetes ツール (<code class="inline">kubectl</code>、<code class="inline">helm</code> など) をローカルからそのまま利用可能になった</li>
+                    <li>ジャンプボックス、VPN サーバー、追加のアクセスエージェントの導入・維持が不要になり、運用コストと攻撃対象領域を削減できるようになった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph Local["💻 ローカルマシン"]
+        CLI["🔧 az aks bastion&lt;br/&gt;(トンネル確立)"]
+        K["⚙️ kubectl / helm&lt;br/&gt;server: https://localhost:PORT"]
+    end
+
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph VNet["🔒 Virtual Network"]
+            B["🛡️ Azure Bastion&lt;br/&gt;(Standard / Premium SKU)"]
+            API["☸️ AKS プライベートクラスター&lt;br/&gt;API サーバー"]
+        end
+    end
+
+    K --> CLI
+    CLI -- "セキュアトンネル (TLS)" --> B
+    B -- "プライベート接続" --> API
+    X["🌐 パブリックインターネット"] -. "❌ API サーバーは非公開" .-> API
+            </pre>
+        </div>
+        <div class="diagram-note">
+            ローカルマシンの <code class="inline">kubectl</code> は localhost のトンネルポートに接続し、Azure Bastion がプライベート API サーバーへの通信を中継します。API サーバーのエンドポイントはインターネットに公開されません。
+        </div>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>1. Bastion ネイティブクライアントトンネリングによる API サーバー接続</h4>
+                <ul>
+                    <li><code class="inline">az aks bastion</code> コマンドでローカルマシンと AKS API サーバー間のセキュアなトンネルを確立</li>
+                    <li>KUBECONFIG のサーバーアドレスを <code class="inline">https://localhost:&lt;ポート&gt;</code> に向けることで、標準ツールがトンネル経由で動作</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>2. プライベートクラスターの安全な運用アクセス</h4>
+                <ul>
+                    <li>API サーバーエンドポイントをパブリックに公開せずにクラスターを操作可能</li>
+                    <li>VNet 内にデプロイ済みの Bastion から、同一 VNet または到達可能な (ピアリングされた) VNet 内の AKS クラスターに接続可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧹</div>
+            <div class="feature-content">
+                <h4>3. 追加インフラの排除</h4>
+                <ul>
+                    <li>ジャンプボックス VM、VPN サーバー、専用アクセスエージェントが不要</li>
+                    <li>既存の Azure Bastion (Standard 以上) を VM 接続と共用できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>必要な Bastion SKU</td><td>Standard または Premium (ネイティブクライアントサポートの有効化が必要)</td></tr>
+            <tr><td>接続コマンド</td><td><code class="inline">az aks bastion --name &lt;クラスター名&gt; --resource-group &lt;RG&gt; --bastion &lt;Bastion リソース ID&gt;</code></td></tr>
+            <tr><td>対象クラスター</td><td>同一 VNet または Bastion から到達可能な VNet 内の AKS クラスター</td></tr>
+            <tr><td>必要なロール</td><td>AKS クラスター、Bastion リソース、(ピアリング構成の場合) 対象 VNet に対する Reader ロール</td></tr>
+            <tr><td>接続方式</td><td>ローカルの kubeconfig を <code class="inline">https://localhost:&lt;トンネルポート&gt;</code> に向けて接続</td></tr>
+            <tr><td>パブリッククラスターでの利用</td><td>API サーバー承認済み IP 範囲を使用している場合、Bastion のパブリック IP を承認済み IP 範囲に追加する必要あり</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+        <h3 class="subsection-title">📌 前提条件</h3>
+        <ul class="step-list">
+            <li>AKS クラスターと同じ VNet (または到達可能な VNet) に Azure Bastion ホストがデプロイ済みであること</li>
+            <li>Bastion の SKU が Standard または Premium で、構成設定でネイティブクライアントサポートが有効になっていること</li>
+            <li>AKS クラスター・Bastion リソース・(ピアリング構成の場合) 対象 VNet に対する Reader ロールが付与されていること</li>
+        </ul>
+        <h3 class="subsection-title">💻 Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI での接続手順</span></div>
+            <pre><code class="language-bash"># 1. Azure にサインインし、サブスクリプションを選択
+az login
+az account set --subscription &lt;サブスクリプション ID&gt;
+
+# 2. AKS クラスターの資格情報を取得
+az aks get-credentials --admin --name &lt;AKSクラスター名&gt; --resource-group &lt;リソースグループ名&gt;
+
+# 3. Bastion 経由のトンネルを確立
+az aks bastion --name &lt;AKSクラスター名&gt; --resource-group &lt;リソースグループ名&gt; \
+  --admin --bastion &lt;Bastion リソース ID&gt;
+
+# 4. KUBECONFIG をトンネルの localhost ポートに向ける
+export BASTION_PORT=$(ps aux | sed -n 's/.*--port \([0-9]*\).*/\1/p' | head -1)
+sed -i "s|server: https://.*|server: https://localhost:${BASTION_PORT}|" $KUBECONFIG
+
+# 5. 標準ツールでクラスターを操作
+kubectl get nodes</code></pre>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">👍</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>ジャンプボックス VM や VPN サーバーの構築・パッチ適用・監視といった維持コストを削減できる</li>
+                    <li>API サーバーを非公開に保つことで攻撃対象領域を縮小し、セキュリティ・コンプライアンス要件を満たしやすくなる</li>
+                    <li>GA となったため、本番環境での利用が SLA の対象となり安心して採用できる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>ローカルマシンから標準の <code class="inline">kubectl</code> / <code class="inline">helm</code> をそのまま利用でき、開発者のワークフローを変えずにプライベートクラスターへアクセスできる</li>
+                    <li>追加のクライアントソフトウェアやエージェントのインストールが不要</li>
+                    <li><code class="inline">az aks command invoke</code> と異なり、出力サイズ制限やクラスター内 Pod のスケジューリングに依存しない対話的な接続が可能</li>
+                    <li>VM への接続に使用している既存の Bastion デプロイメントを AKS アクセスにも共用できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>Bastion の Basic / Developer SKU では利用できず、<strong>Standard または Premium SKU が必要</strong> (Basic からのアップグレードによるコスト増の可能性)</li>
+                <li>Bastion 側で<strong>ネイティブクライアントサポートを有効化</strong>する必要がある</li>
+                <li>API サーバー承認済み IP 範囲を使用しているパブリッククラスターでは、Bastion のパブリック IP を承認済み IP 範囲に追加する追加設定が必要</li>
+                <li>トンネル確立後、KUBECONFIG のサーバーアドレスを localhost のトンネルポートに手動で書き換える手順が必要</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🔍 ユースケース 1: プライベート AKS クラスターの日常運用</div>
+            <div class="usecase-body">
+                <span class="label">シナリオ</span>
+                <p>セキュリティ要件により API サーバーを非公開にしたプライベート AKS クラスターに対して、運用チームがローカルマシンからトラブルシューティングやデプロイ作業を行いたい。従来はジャンプボックス VM を経由していた。</p>
+                <span class="label">実装例</span>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">bash</span></div>
+                    <pre><code class="language-bash"># Bastion 経由でトンネルを確立し、そのままローカルの kubectl で運用
+az aks bastion --name prod-aks --resource-group rg-prod \
+  --admin --bastion /subscriptions/&lt;subId&gt;/resourceGroups/rg-network/providers/Microsoft.Network/bastionHosts/bastion-hub
+
+kubectl get pods -A
+helm upgrade my-app ./chart -n app</code></pre>
+                </div>
+                <div class="usecase-effect"><strong>✅ 効果</strong>: ジャンプボックス VM を廃止でき、VM の維持管理コストとセキュリティリスクを削減。運用者はローカル環境のツールチェーン (kubectl プラグイン、エディタ連携など) をそのまま活用できる。</div>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🌐 ユースケース 2: ハブ &amp; スポーク構成での集中アクセス管理</div>
+            <div class="usecase-body">
+                <span class="label">シナリオ</span>
+                <p>ハブ VNet に Bastion を配置し、ピアリングされたスポーク VNet 内の複数のプライベート AKS クラスターへのアクセスを一元管理したい。</p>
+                <span class="label">実装例</span>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">bash</span></div>
+                    <pre><code class="language-bash"># ハブ VNet の Bastion から、ピアリングされたスポーク VNet 内のクラスターへ接続
+# (対象 VNet への Reader ロールが必要)
+az aks bastion --name spoke1-aks --resource-group rg-spoke1 \
+  --bastion /subscriptions/&lt;subId&gt;/resourceGroups/rg-hub/providers/Microsoft.Network/bastionHosts/bastion-hub</code></pre>
+                </div>
+                <div class="usecase-effect"><strong>✅ 効果</strong>: 1 つの Bastion デプロイメントで複数クラスターへのアクセス経路を集約し、アクセス制御 (RBAC) と監査を一元化できる。</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Azure Bastion 自体の料金が適用されます。本機能には <strong>Standard または Premium SKU</strong> が必要です。</p>
+        <div class="pricing-box">
+            <ul>
+                <li>Bastion はデプロイからリソース削除まで、SKU・スケールユニット数に基づき<strong>時間単位で課金</strong>されます (Standard / Premium は基本料金に 2 インスタンスを含み、追加インスタンスは別料金)</li>
+                <li>アウトバウンドデータ転送は<strong>月間最初の 5 GB が無料</strong>で、以降は従量課金となります</li>
+            </ul>
+        </div>
+        <p style="font-size: 14px;">具体的な単価はリージョンにより異なるため、<a href="https://azure.microsoft.com/pricing/details/azure-bastion/" target="_blank" rel="noopener">Azure Bastion 料金ページ</a> を参照してください。</p>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p>公式アップデートにリージョン情報の記載はありません。最新の提供状況は <a href="https://learn.microsoft.com/en-us/azure/bastion/bastion-connect-to-aks-private-cluster" target="_blank" rel="noopener">Microsoft Learn ドキュメント</a> および <a href="https://azure.microsoft.com/global-infrastructure/services/" target="_blank" rel="noopener">リージョン別の利用可能な製品ページ</a> を確認してください。</p>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>☸️ AKS プライベートクラスター</h4>
+                <p>API サーバーをプライベートエンドポイント経由でのみ公開するクラスター構成。本機能の主な接続対象。</p>
+            </div>
+            <div class="related-card">
+                <h4>📟 az aks command invoke (Run command)</h4>
+                <p>クラスター内に一時 Pod を起動してコマンドを実行するプライベートクラスターへの代替アクセス手段。単発コマンド向けで、対話的・継続的なアクセスには Bastion 統合が適する。</p>
+            </div>
+            <div class="related-card">
+                <h4>🔌 Azure VPN Gateway / ExpressRoute</h4>
+                <p>オンプレミスや拠点からの恒常的なネットワーク接続手段。Bastion 統合は個別ユーザーのアドホックな管理アクセスを補完する。</p>
+            </div>
+            <div class="related-card">
+                <h4>🚧 API サーバー承認済み IP 範囲 (Authorized IP ranges)</h4>
+                <p>パブリッククラスターで API サーバーへのアクセス元 IP を制限する機能。Bastion 経由で接続する場合は Bastion のパブリック IP の追加が必要。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://takech9203.github.io/azure-news-summary/20260826-bastion-aks-connect.html" target="_blank" rel="noopener">インフォグラフィック</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=570030" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/bastion/bastion-connect-to-aks-private-cluster" target="_blank" rel="noopener">Microsoft Learn: Connect to AKS Private Cluster Using Azure Bastion</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/aks/private-clusters" target="_blank" rel="noopener">Microsoft Learn: AKS プライベートクラスターの作成</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/aks/access-private-cluster" target="_blank" rel="noopener">Microsoft Learn: command invoke によるプライベートクラスターへのアクセス</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-bastion/" target="_blank" rel="noopener">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section summary-section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <p>Azure Bastion と AKS の統合 GA により、プライベート AKS クラスターへの管理アクセスが<strong>ジャンプボックスや VPN なし</strong>で実現できるようになりました。API サーバーを非公開に保ちながらローカルの標準 Kubernetes ツールをそのまま使えるため、<strong>セキュリティと運用効率を両立</strong>できます。プライベートクラスターを運用中で踏み台 VM や VPN を管理アクセス用に維持しているチームは、Bastion (Standard 以上) への移行によるインフラ簡素化を検討する価値があります。既存の Bastion が Basic SKU の場合は、SKU アップグレードのコストを含めて評価してください。</p>
+        <div class="tags">
+            <span class="tag">Azure Bastion</span>
+            <span class="tag">Azure Kubernetes Service</span>
+            <span class="tag">AKS</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">Compute</span>
+            <span class="tag">Containers</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>:
+            <a href="https://azure.microsoft.com/updates?id=570030" target="_blank" rel="noopener">Azure Updates (ID: 570030)</a> /
+            <a href="https://learn.microsoft.com/en-us/azure/bastion/bastion-connect-to-aks-private-cluster" target="_blank" rel="noopener">Microsoft Learn: Connect to AKS Private Cluster Using Azure Bastion</a>
+        </p>
+        <p>ソースレポート: reports/2026/2026-08-26-bastion-aks-connect.md | 生成日: 2026-08-26 | Azure News Summary</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

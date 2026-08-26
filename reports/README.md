@@ -5,6 +5,14 @@
 
 ## 2026 年
 
+- [2026-08-26 - Azure SRE Agent: Live Reports (Public Preview)](2026/2026-08-26-sre-agent-live-reports.md)
+- [2026-08-26 - Azure SRE Agent: VNet 統合が一般提供開始 (GA)](2026/2026-08-26-sre-agent-vnet-integration.md)
+- [2026-08-26 - Azure Bastion: IPv6 デュアルスタック対応 (Public Preview)](2026/2026-08-26-bastion-ipv6-dual-stack.md)
+- [2026-08-26 - Azure Bastion: AKS クラスターへの接続機能が一般提供 (GA)](2026/2026-08-26-bastion-aks-connect.md)
+- [2026-08-26 - Azure Bastion: 共有可能リンク (Shareable Link) の有効期限設定が一般提供開始](2026/2026-08-26-bastion-shareable-link-expiration.md)
+- [2026-08-26 - Azure SRE Agent: 30 日間トライアルの一般提供開始](2026/2026-08-26-sre-agent-30-day-trial.md)
+- [2026-08-25 - Aspire: Aspire 13.5 リリース](2026/2026-08-25-aspire-13-5.md)
+- [2026-08-25 - Azure Virtual Machines: D/E v7 シリーズ 248 / 372 vCPU サイズの一般提供開始](2026/2026-08-25-d-e-v7-248-372-vcpu.md)
 - [2026-08-24 - Azure Kubernetes Service (AKS): Advanced Container Networking Services の eBPF Host Routing が一般提供 (GA)](2026/2026-08-24-aks-acns-ebpf-host-routing.md)
 - [2026-08-24 - Azure Database for PostgreSQL Flexible Server: Extended Support の発表](2026/2026-08-24-postgresql-flexible-server-extended-support.md)
 - [2026-08-24 - Azure App Service: Node 22 LTS サポート終了 (2027 年 4 月 30 日)](2026/2026-08-24-app-service-node-22-retirement.md)
