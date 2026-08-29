@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure VM Image Builder: ソブリンクラウド・エアギャップクラウドで GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "🛠️";
+    position: absolute;
+    right: 24px;
+    bottom: -10px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+    max-width: 780px;
+}
+
+.header .date {
+    margin-top: 16px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+.section h3 {
+    color: var(--ms-blue-700);
+    font-size: 17px;
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong { color: var(--azure-dark-blue); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before, .after {
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 6px;
+    font-size: 16px;
+}
+
+.feature-content p, .feature-content ul {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content ul { padding-left: 18px; margin-top: 4px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+td code, li code, p code {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--ms-blue-800);
+}
+
+/* ===== Code Blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+    border: 1px solid var(--ms-border);
+}
+
+.merit-card.business { background: var(--ms-blue-100); border-top: 4px solid var(--azure-blue); }
+.merit-card.technical { background: #F3EDF9; border-top: 4px solid var(--ms-purple); }
+
+.merit-card h4 { margin-bottom: 10px; }
+.merit-card.business h4 { color: var(--azure-dark-blue); }
+.merit-card.technical h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 8px 0; font-size: 14px; }
+
+.warning-box {
+    background: #FFF8E7;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+.warning-box h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Use Case ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    margin: 16px 0;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.usecase-header {
+    background: linear-gradient(90deg, var(--ms-blue-800), var(--azure-blue));
+    color: #FFFFFF;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.usecase-body { padding: 16px 20px; }
+
+.usecase-body .label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 4px;
+    padding: 2px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    margin: 8px 0 4px;
+}
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0 4px;
+    font-size: 14px;
+}
+
+/* ===== Region ===== */
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.region-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-800));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+}
+
+.region-card .region-icon { font-size: 28px; margin-bottom: 6px; }
+.region-card .region-name { font-size: 16px; font-weight: 700; }
+.region-card .region-desc { font-size: 12px; opacity: 0.85; margin-top: 4px; }
+
+/* ===== Related Services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--azure-dark-blue); display: block; margin-bottom: 4px; }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); }
+
+.link-list { list-style: none; padding: 0; }
+
+.link-list li {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 10px 16px;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* ===== Tags ===== */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 16px;
+    padding: 4px 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 8px;
+}
+
+.footer a { color: var(--azure-blue); }
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">Azure VM Image Builder</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>ソブリンクラウド・エアギャップクラウドで一般提供開始</h1>
+        <p class="subtitle">Azure Government、China North 3、Azure Government Secret / Top Secret で GA。グローバル Azure と同じフルマネージドのイメージビルドサービスを、主権・分離要件の厳しい環境でも利用可能に。</p>
+        <div class="date">📅 リリース日: 2026-08-28 | サービス: Azure VM Image Builder | 機能: ソブリンクラウド・エアギャップクラウドでの一般提供 (GA)</div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure VM Image Builder が、<strong>Azure Government、China North 3、Azure Government Secret、Azure Government Top Secret</strong> で一般提供 (GA) となりました。これにより、グローバル Azure で利用しているものと同じマネージドイメージビルドサービスを、ソブリンクラウドおよびエアギャップ (物理的に隔離された) 環境でも利用できるようになりました。</p>
+        <div class="highlight-box">
+            <strong>Azure VM Image Builder とは</strong>: HashiCorp Packer をベースとしたフルマネージドのイメージビルドサービス。イメージの構成 (ソースイメージ、カスタマイズ内容、配布先) をテンプレートとして定義しサービスに送信するだけで、イメージのビルドと配布が自動的に行われます。ビルド用のインフラストラクチャを自前で構築・運用する必要はありません。
+        </div>
+        <p>今回の GA により、規制産業や政府・公共部門など、データレジデンシー、主権、分離に関する厳格な要件を持つ組織が、ローカルのコンプライアンス管理を維持したまま、標準化されたゴールデンイメージのパイプラインをクラウド全体で統一して運用できるようになります。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>ソブリンクラウドやエアギャップ環境では VM Image Builder が利用できず (米国政府向け Fairfax リージョンではパブリックプレビュー扱い)、カスタムイメージ作成には自前のビルドインフラ (Packer 実行環境など) の構築・パッチ適用・運用が必要だった</li>
+                    <li>グローバル Azure とソブリンクラウドでイメージ作成のツールやプロセスが分断され、同一のテンプレート定義やワークフローを使い回せなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Azure Government、China North 3、Azure Government Secret、Azure Government Top Secret で、グローバル Azure と同じマネージドイメージビルドサービスが GA として利用可能になった</li>
+                    <li>同一のイメージテンプレート定義とワークフローをグローバル Azure・Azure Government・ソブリンクラウド間で共通化でき、OS 構成・セキュリティベースライン・コンプライアンスチェックの反復可能なハードニング/検証ワークフローを構築できるようになった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    User([👤 管理者 / CI-CD パイプライン]) -->|イメージテンプレート送信| AIB
+
+    subgraph Sovereign["🏛️ ソブリン / エアギャップクラウド (Azure Government, China North 3, Gov Secret / Top Secret)"]
+        AIB["🛠️ Azure VM Image Builder<br>(フルマネージドサービス)"]
+        Source["📀 ソースイメージ<br>(Marketplace / カスタムイメージ)"]
+        Staging["📦 ステージングリソースグループ<br>(IT_xxx: ビルド VM・スクリプト)"]
+        Custom["⚙️ カスタマイズ<br>(Shell / PowerShell / File)"]
+        Gallery[("🗂️ Azure Compute Gallery<br>(同一クラウド内リージョンへ複製)")]
+        Managed["💿 マネージドイメージ / VHD"]
+    end
+
+    Source --> AIB
+    AIB --> Staging
+    Staging --> Custom
+    Custom -->|ビルド完了| Gallery
+    Custom -->|ビルド完了| Managed
+            </pre>
+        </div>
+        <p>管理者や CI/CD パイプラインがイメージテンプレートを送信すると、VM Image Builder がサブスクリプション内のステージングリソースグループに一時的なビルド VM を作成してカスタマイズを実行し、完成したイメージを Azure Compute Gallery やマネージドイメージ/VHD として配布します。今回の GA により、このパイプライン全体をソブリン/エアギャップクラウド内で完結できます。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🏛️</div>
+            <div class="feature-content">
+                <h4>1. ソブリン/エアギャップクラウドでの GA</h4>
+                <ul>
+                    <li>Azure Government、China North 3、Azure Government Secret、Azure Government Top Secret で一般提供開始</li>
+                    <li>セルフホストのビルドインフラの展開・パッチ適用・運用が不要な、セキュアなフルマネージドサービスとしてイメージカスタマイズを自動化</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>2. クラウド間で一貫したイメージパイプライン</h4>
+                <ul>
+                    <li>グローバル Azure、Azure Government、ソブリンクラウドで同一のテンプレート定義とワークフローを利用可能</li>
+                    <li>イメージ作成プロセスの標準化により、環境ごとのツール分断を解消</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>3. ハードニング・検証ワークフローの反復実行</h4>
+                <ul>
+                    <li>OS 構成、セキュリティベースライン、コンプライアンスチェックを反復可能なワークフローとして構築可能</li>
+                    <li>最新パッチ適用済みソースイメージからゴールデンイメージを迅速に再ビルド</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗂️</div>
+            <div class="feature-content">
+                <h4>4. Azure Compute Gallery への配布</h4>
+                <ul>
+                    <li>ビルド成果物を Azure Compute Gallery に発行し、同一クラウド内のリージョン間で複製可能</li>
+                    <li>マネージドイメージや VHD としての配布にも対応</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <tr><th style="width: 30%;">項目</th><th>詳細</th></tr>
+            <tr><td>基盤技術</td><td>HashiCorp Packer ベースのフルマネージドサービス</td></tr>
+            <tr><td>対応 OS</td><td>Azure Marketplace のすべてのベース OS イメージ (Windows / Linux)</td></tr>
+            <tr><td>ソースイメージ</td><td>Azure Marketplace イメージ、既存カスタムイメージ (TrustedLaunchSupported / ConfidentialVMSupported はソースとしてサポート)</td></tr>
+            <tr><td>配布先</td><td>Azure Compute Gallery、マネージドイメージ、VHD</td></tr>
+            <tr><td>Hyper-V 世代</td><td>Gen1 / Gen2 (配布イメージはソースと同一世代)</td></tr>
+            <tr><td>ビルド VM の既定サイズ</td><td>Standard_D1_v2 (Gen1) / Standard_D2ds_v4 (Gen2)</td></tr>
+            <tr><td>ステージングリソース</td><td><code>IT_&lt;DestinationResourceGroup&gt;_&lt;TemplateName&gt;_(GUID)</code> 形式のリソースグループをサブスクリプション内に作成</td></tr>
+            <tr><td>ネットワーク</td><td>既存 VNet への接続に対応 (Private Link 経由、パブリック IP 不要)。DSC / Chef / Puppet などの構成サーバーとの通信が可能</td></tr>
+            <tr><td>認証・アクセス制御</td><td>ユーザー割り当てマネージド ID + Azure RBAC でカスタマイズ成果物や Key Vault などのリソースへ最小権限アクセス</td></tr>
+            <tr><td>操作方法</td><td>Azure PowerShell、Azure CLI、ARM テンプレート、Azure Portal、DevOps タスク</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol style="padding-left: 24px;">
+            <li>対象クラウド (Azure Government、China North 3 など) のサブスクリプション</li>
+            <li><code>Microsoft.VirtualMachineImages</code> リソースプロバイダーの登録</li>
+            <li>イメージ配布 (マネージドイメージ / Compute Gallery) への読み取り・書き込み権限を持つユーザー割り当てマネージド ID</li>
+        </ol>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+<pre><code class="language-bash"># リソースプロバイダーの登録
+az provider register --namespace Microsoft.VirtualMachineImages
+
+# イメージテンプレートの作成 (テンプレート JSON を使用)
+az image builder create \
+  --resource-group myResourceGroup \
+  --name myImageTemplate \
+  --image-source "MicrosoftWindowsServer:WindowsServer:2022-datacenter:latest" \
+  --managed-image-destinations myImage=eastus \
+  --identity myIdentity
+
+# イメージビルドの実行
+az image builder run --resource-group myResourceGroup --name myImageTemplate</code></pre>
+        </div>
+
+        <h3>Azure Portal</h3>
+        <p>Azure Portal からもイメージテンプレートの作成・ビルド・検証が可能です (Image Template リソースの作成)。</p>
+    </section>
+
+    <!-- ===== メリット / デメリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>規制産業・政府/公共部門でも、データレジデンシーや主権要件を満たしながらイメージ作成を自動化できる</li>
+                    <li>自前のイメージビルドインフラの構築・運用コストを削減できる</li>
+                    <li>グローバル Azure とソブリンクラウドでプロセスを統一でき、運用の学習コストと分断を解消できる</li>
+                </ul>
+            </div>
+            <div class="merit-card technical">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>テンプレート定義 (Infrastructure as Code) をクラウド間で再利用でき、環境ドリフトを防止できる</li>
+                    <li>マネージド ID + RBAC によりカスタマイズ成果物を公開せずに安全に取得できる</li>
+                    <li>Azure Compute Gallery との統合により、バージョン管理・複製・大規模配布が容易</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ デメリット・制約事項</h4>
+            <ul>
+                <li>イメージの複製 (レプリケーション) は同一クラウド内のリージョン間に限られる (アップデート記載より)</li>
+                <li>イメージテンプレートリソースは不変 (immutable) であり、リソースの移動はサポートされない</li>
+                <li>TrustedLaunch / ConfidentialVM の SecurityType イメージはソースイメージとしてサポートされない (TrustedLaunchSupported / ConfidentialVMSupported はサポート)</li>
+                <li>ビルド VM に対する Azure ハイブリッド特典 (Windows Server) は現時点で非対応</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">ユースケース 1: 政府機関向けゴールデンイメージパイプラインの統一</div>
+            <div class="usecase-body">
+                <span class="label">シナリオ</span>
+                <p>政府機関がグローバル Azure と Azure Government の両方でワークロードを運用しており、セキュリティベースラインを適用したゴールデンイメージを両環境で一貫して維持したい。</p>
+                <span class="label">実装例</span>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">bash</span></div>
+<pre><code class="language-bash"># 同一のイメージテンプレート定義 (JSON) を Azure Government 側でも適用
+az cloud set --name AzureUSGovernment
+az login
+az image builder create \
+  --resource-group govImageRG \
+  --name goldenImageTemplate \
+  --defer  # 共通テンプレート JSON を利用
+az image builder run --resource-group govImageRG --name goldenImageTemplate</code></pre>
+                </div>
+                <div class="effect-box"><strong>効果</strong>: グローバル Azure で検証済みのテンプレート定義とワークフローをそのまま Azure Government に展開でき、環境ごとの個別作り込みを排除して、コンプライアンス準拠のゴールデンイメージを迅速に再ビルドできる。</div>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">ユースケース 2: エアギャップ環境でのセキュリティハードニング自動化</div>
+            <div class="usecase-body">
+                <span class="label">シナリオ</span>
+                <p>Azure Government Secret / Top Secret 環境で、OS 構成・セキュリティベースライン・コンプライアンスチェックを組み込んだイメージを、自前のビルドインフラなしで定期的に更新したい。</p>
+                <div class="effect-box"><strong>効果</strong>: 隔離された環境内でフルマネージドのビルドパイプラインが完結し、最新パッチ適用済みのソースイメージからハードニング済みイメージを反復的に再生成できる。セルフホストのビルドサーバーの維持管理 (デプロイ・パッチ・運用) が不要になる。</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>VM Image Builder 自体に追加のサービス料金はなく、イメージの作成・ビルド・保存の過程で使用されるコンピューティング、ネットワーク、ストレージのリソースに対して、通常の Azure 料金が課金されます。</p>
+        <table>
+            <tr><th style="width: 45%;">項目</th><th>料金</th></tr>
+            <tr><td>ビルド VM (ビルド実行中のみ)</td><td>Standard_D1_v2 (Gen1) / Standard_D2ds_v4 (Gen2) の VM 料金</td></tr>
+            <tr><td>ステージングリソースグループのストレージ</td><td>少額のストレージ料金 (テンプレート削除で解放可能)</td></tr>
+            <tr><td>イメージ配布</td><td>配布先リージョンへのネットワーク Egress 料金が発生する場合あり</td></tr>
+        </table>
+        <div class="highlight-box">
+            ビルド用リソースはビルドプロセスの間のみ存在し、完了後に削除されます (ステージングリソースグループとストレージアカウントを除く)。なお、ソブリンクラウドの料金はグローバル Azure と異なる場合があるため、各クラウドの料金体系を確認してください。
+        </div>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p>今回 GA となったクラウド/リージョン:</p>
+        <div class="region-grid">
+            <div class="region-card">
+                <div class="region-icon">🇺🇸</div>
+                <div class="region-name">Azure Government</div>
+                <div class="region-desc">米国政府向けクラウド</div>
+            </div>
+            <div class="region-card">
+                <div class="region-icon">🇨🇳</div>
+                <div class="region-name">China North 3</div>
+                <div class="region-desc">中国リージョン</div>
+            </div>
+            <div class="region-card">
+                <div class="region-icon">🔒</div>
+                <div class="region-name">Azure Government Secret</div>
+                <div class="region-desc">エアギャップ環境</div>
+            </div>
+            <div class="region-card">
+                <div class="region-icon">🔐</div>
+                <div class="region-name">Azure Government Top Secret</div>
+                <div class="region-desc">エアギャップ環境</div>
+            </div>
+        </div>
+        <p>このほか、グローバル Azure では East US、West Europe、Japan East など多数のリージョンで提供済みです。最新のリージョン一覧は <a href="https://learn.microsoft.com/azure/virtual-machines/image-builder-overview#regions" target="_blank" rel="noopener">VM Image Builder overview</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>🗂️ Azure Compute Gallery</strong>ビルドしたイメージの配布先。バージョン管理・リージョン間複製・大規模共有を担う</div>
+            <div class="related-card"><strong>🖥️ Azure Virtual Machines / VM Scale Sets</strong>作成したカスタムイメージからのデプロイ対象</div>
+            <div class="related-card"><strong>🖱️ Azure Virtual Desktop</strong>VM Image Builder でセッションホスト用イメージを構築可能</div>
+            <div class="related-card"><strong>🪪 マネージド ID (Microsoft Entra ID)</strong>カスタマイズ成果物や Key Vault などへの安全なアクセスに使用</div>
+            <div class="related-card"><strong>🚀 Azure DevOps</strong>VM Image Builder サービス DevOps タスクによる CI/CD パイプライン統合</div>
+            <div class="related-card"><strong>🏢 Azure Stack</strong>VHD 形式で出力したイメージを Azure Stack で利用可能</div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure VM Image Builder が Azure Government、China North 3、Azure Government Secret、Azure Government Top Secret で GA となり、ソブリン/エアギャップ環境でもグローバル Azure と同じマネージドイメージビルドサービスを利用できるようになりました。規制産業や政府・公共部門で厳格なデータレジデンシー・主権・分離要件を持つ組織にとって、自前のビルドインフラなしで標準化されたゴールデンイメージパイプラインを構築できる重要なアップデートです。該当環境でカスタムイメージを手動または自前の Packer 環境で作成している場合は、VM Image Builder への移行を検討することを推奨します。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Compute</span>
+            <span class="tag">Azure VM Image Builder</span>
+            <span class="tag">Azure Government</span>
+            <span class="tag">Sovereign Cloud</span>
+            <span class="tag">Air-gapped</span>
+            <span class="tag">Compute Gallery</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li>📢 <a href="https://azure.microsoft.com/updates?id=570105" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/virtual-machines/image-builder-overview" target="_blank" rel="noopener">Azure VM Image Builder overview (Microsoft Learn)</a></li>
+            <li>📄 <a href="https://learn.microsoft.com/azure/virtual-machines/linux/image-builder-json" target="_blank" rel="noopener">イメージテンプレートの作成 (スキーマリファレンス)</a></li>
+            <li>💻 <a href="https://github.com/azure/azvmimagebuilder" target="_blank" rel="noopener">クイックスタートとサンプル (GitHub)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=570105" target="_blank" rel="noopener">Azure Updates — VM Image Builder in Sovereign and Air-gapped Clouds (GA)</a></p>
+        <p>レポート日: 2026-08-28 | インフォグラフィック生成日: 2026-08-29 | Azure News Summary Project</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

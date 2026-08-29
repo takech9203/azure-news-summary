@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS: Azure Files CSI ドライバー (SMB) の Workload Identity サポートが GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "☁️";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+
+.header .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.meta-item {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+}
+
+.meta-item .meta-label {
+    opacity: 0.8;
+    font-size: 12px;
+    display: block;
+}
+
+.meta-item .meta-value {
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--azure-dark-blue);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--ms-blue-200);
+}
+
+.section-title .icon {
+    font-size: 26px;
+    background: var(--ms-blue-100);
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; font-size: 15px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+.keyword {
+    background: var(--ms-blue-200);
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+    color: var(--ms-blue-900);
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+.arrow-divider {
+    text-align: center;
+    font-size: 28px;
+    color: var(--azure-blue);
+    margin: -8px 0;
+}
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content ul {
+    padding-left: 20px;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content li { margin: 4px 0; }
+
+/* ===== Tables ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th, .spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.spec-table th {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    white-space: nowrap;
+    width: 38%;
+}
+
+.spec-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+.spec-table code, .inline-code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--ms-blue-900);
+}
+
+/* ===== Steps ===== */
+.steps {
+    counter-reset: step;
+    margin: 16px 0;
+}
+
+.step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 12px 0;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+}
+
+.step::before {
+    counter-increment: step;
+    content: counter(step);
+    background: var(--azure-blue);
+    color: white;
+    font-weight: 700;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+.code-title { color: #A19F9D; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+    border: 2px solid var(--ms-blue-300);
+    background: var(--ms-blue-100);
+}
+
+.merit-card h4 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: var(--ms-blue-800);
+}
+
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin: 8px 0; }
+
+.constraint-list {
+    list-style: none;
+    margin: 12px 0;
+}
+
+.constraint-list li {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 12px;
+}
+
+.usecase-row {
+    display: flex;
+    gap: 10px;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.usecase-label {
+    flex-shrink: 0;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    height: fit-content;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13px;
+}
+
+.related-card h4 {
+    font-size: 14px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+/* ===== Links / footer ===== */
+.link-list { list-style: none; }
+
+.link-list li {
+    margin: 10px 0;
+    padding: 10px 16px;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+}
+
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 40px;
+}
+
+.footer a { font-size: 13px; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Kubernetes Service (AKS)</span>
+            <span class="service-badge">Azure Files</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Azure Files CSI ドライバー (SMB) の<br>Workload Identity サポートが一般提供 (GA)</h1>
+        <p class="subtitle">ストレージ アカウント キーにもノード ID にも依存しない、Pod レベルの最小権限アクセスを実現</p>
+        <div class="meta-grid">
+            <div class="meta-item"><span class="meta-label">リリース日</span><span class="meta-value">2026-08-28</span></div>
+            <div class="meta-item"><span class="meta-label">サービス</span><span class="meta-value">AKS / Azure Files</span></div>
+            <div class="meta-item"><span class="meta-label">機能</span><span class="meta-value">Azure Files CSI ドライバー (SMB) の Workload Identity サポート</span></div>
+            <div class="meta-item"><span class="meta-label">ステータス</span><span class="meta-value">Launched (GA)</span></div>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Kubernetes Service (AKS) の <span class="keyword">Azure Files Container Storage Interface (CSI) ドライバー</span>が、SMB ファイル共有への <span class="keyword">Pod レベル認証</span>として <span class="keyword">Workload Identity</span> をサポートし、一般提供 (GA) になりました。</p>
+        <p>これまでも AKS のマネージド ID サポートにより、ストレージ アカウント キーを使わずに Azure Files をマウントすることは可能でしたが、その場合の認証はノード レベル (kubelet identity) の権限に依存していました。今回の Workload Identity サポートにより、アプリケーション Pod ごとに<span class="keyword">最小権限のアクセス</span>を構成できるようになり、Pod がアクセスできるデータを「その Pod が必要とするデータのみ」に厳密にスコープできます。厳格なコンプライアンス要件下で運用される規制業界にとって、粒度の細かいセキュリティ制御を実現する機能です。</p>
+        <div class="highlight-box">🌍 この機能は、<strong>Azure Files と AKS をサポートするすべての Azure リージョン</strong>で利用可能です。</div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>ストレージ アカウント キーを使わない認証はノード レベルのマネージド ID (kubelet identity) に依存しており、同一ノード上のワークロードに対してアクセス権限を Pod 単位で分離できなかった</li>
+                    <li>アクセス権限がノードのライフサイクルに紐付いており、アプリケーション単位の最小権限アクセスを実現しにくかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Microsoft Entra Workload ID を利用した Pod レベルの認証で、Azure Files (SMB) をストレージ アカウント キーなしでマウント可能になった</li>
+                    <li>ServiceAccount とフェデレーション資格情報の組み合わせにより、Pod のアクセス範囲を必要なデータのみに限定する最小権限アクセスを構成できるようになった</li>
+                    <li>規制業界などの厳格なコンプライアンス要件に対応する、粒度の細かいセキュリティ制御が可能になった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph AKS["☁️ AKS クラスター (OIDC Issuer 有効 / v1.35.0 以降)"]
+        POD(["📦 アプリケーション Pod"])
+        SA["🪪 Kubernetes ServiceAccount"]
+        CSI["🔌 Azure Files CSI ドライバー<br/>(mountWithWorkloadIdentityToken: true)"]
+        POD --> SA
+    end
+    ENTRA["🔐 Microsoft Entra ID"]
+    UAMI["🆔 ユーザー割り当てマネージド ID<br/>(Storage File Data SMB MI Admin ロール)"]
+    FILES[("📁 Azure Files<br/>SMB ファイル共有")]
+
+    SA -- "① OIDC トークン提示" --> ENTRA
+    ENTRA -- "② フェデレーション資格情報で検証" --> UAMI
+    ENTRA -- "③ Entra トークン発行" --> CSI
+    CSI -- "④ トークンで SMB マウント<br/>(ストレージ アカウント キー不要)" --> FILES
+            </pre>
+        </div>
+        <p>Pod に紐付く ServiceAccount の OIDC トークンを Microsoft Entra ID がフェデレーション資格情報で検証し、マネージド ID のトークンを発行します。CSI ドライバーはこのトークンを使って SMB 共有をマウントするため、<strong>ストレージ アカウント キーやノード レベルの ID に依存しません</strong>。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>1. Pod レベルの最小権限アクセス</h4>
+                <ul>
+                    <li>Microsoft Entra Workload ID により、ノード単位ではなく Pod (ServiceAccount) 単位で Azure Files へのアクセス権限を付与</li>
+                    <li>フェデレーション資格情報で Kubernetes ServiceAccount とユーザー割り当てマネージド ID を紐付け</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-content">
+                <h4>2. 動的プロビジョニング (Dynamic PV) での利用</h4>
+                <ul>
+                    <li>StorageClass のパラメーターに <span class="inline-code">mountWithWorkloadIdentityToken: "true"</span> を指定</li>
+                    <li><span class="inline-code">clientID</span> でマネージド ID のクライアント ID を指定可能 (省略時は kubelet identity を使用)</li>
+                    <li>CSI ドライバーのコントロール プレーン ID には対象ストレージ アカウントに対する <span class="inline-code">Storage Account Contributor</span> ロールが必要 (既定では AKS コントロール プレーン ID にノード リソース グループへの同ロールが割り当て済み)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📌</div>
+            <div class="feature-content">
+                <h4>3. 静的プロビジョニング (Static PV) での利用</h4>
+                <ul>
+                    <li>ストレージ アカウントで SMB OAuth を有効化 (<span class="inline-code">--enable-smb-oauth true</span>) した上で、PV の <span class="inline-code">volumeAttributes</span> に <span class="inline-code">mountWithWorkloadIdentityToken: "true"</span> を指定</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔑</div>
+            <div class="feature-content">
+                <h4>4. キーレス認証のためのロール</h4>
+                <ul>
+                    <li>マネージド ID に <span class="inline-code">Storage File Data SMB MI Admin</span> ロールを付与することで、ストレージ アカウント キーに依存せず Workload Identity トークンのみで Azure Files をマウント可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>対象サービス</th><td>Azure Kubernetes Service (AKS)、Azure Files</td></tr>
+            <tr><th>プロトコル</th><td>SMB</td></tr>
+            <tr><th>必要な AKS バージョン</th><td>1.35.0 以降</td></tr>
+            <tr><th>対象ノード OS</th><td>Linux ノード</td></tr>
+            <tr><th>認証方式</th><td>Microsoft Entra Workload ID (OIDC フェデレーション)</td></tr>
+            <tr><th>必要な RBAC ロール (マウント用 ID)</th><td>Storage File Data SMB MI Admin</td></tr>
+            <tr><th>必要な RBAC ロール (動的プロビジョニング)</th><td>Storage Account Contributor (CSI ドライバー コントロール プレーン ID に対して)</td></tr>
+            <tr><th>静的 PV の追加要件</th><td>ストレージ アカウントで SMB OAuth の有効化</td></tr>
+            <tr><th>主要パラメーター</th><td><code>mountWithWorkloadIdentityToken: "true"</code>、<code>clientID</code> (省略可、既定は kubelet identity)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <div class="steps">
+            <div class="step">OIDC Issuer を有効化した AKS クラスター (<span class="inline-code">--enable-oidc-issuer</span>)、バージョン 1.35.0 以降</div>
+            <div class="step">Azure ストレージ アカウントとファイル共有 (新規作成または既存)</div>
+            <div class="step">ユーザー割り当てマネージド ID (新規作成または既存の再利用)</div>
+            <div class="step">マネージド ID への <span class="inline-code">Storage File Data SMB MI Admin</span> ロールの付与</div>
+            <div class="step">Kubernetes ServiceAccount とフェデレーション資格情報の作成</div>
+        </div>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-title">Azure CLI によるセットアップ</span></div>
+            <pre><code class="language-bash"># 1. ユーザー割り当てマネージド ID を作成
+az identity create --name $UAMI --resource-group $RESOURCE_GROUP
+export USER_ASSIGNED_CLIENT_ID="$(az identity show -g $RESOURCE_GROUP --name $UAMI --query 'clientId' -o tsv)"
+
+# 2. ストレージ アカウントに対して Storage File Data SMB MI Admin ロールを付与
+export ACCOUNT_SCOPE=$(az storage account show --name $ACCOUNT --query id -o tsv)
+az role assignment create \
+  --role "Storage File Data SMB MI Admin" \
+  --assignee $USER_ASSIGNED_CLIENT_ID \
+  --scope $ACCOUNT_SCOPE
+
+# 3. フェデレーション資格情報を作成 (ServiceAccount とマネージド ID を紐付け)
+export AKS_OIDC_ISSUER="$(az aks show --resource-group $RESOURCE_GROUP --name $CLUSTER_NAME --query "oidcIssuerProfile.issuerUrl" -o tsv)"
+az identity federated-credential create --name $FEDERATED_IDENTITY_NAME \
+  --identity-name $UAMI \
+  --resource-group $RESOURCE_GROUP \
+  --issuer $AKS_OIDC_ISSUER \
+  --subject system:serviceaccount:${SERVICE_ACCOUNT_NAMESPACE}:${SERVICE_ACCOUNT_NAME}
+
+# 4. (静的 PV の場合) ストレージ アカウントで SMB OAuth を有効化
+az storage account update --name $ACCOUNT --resource-group $STORAGE_RESOURCE_GROUP --enable-smb-oauth true</code></pre>
+        </div>
+
+        <h3>動的プロビジョニング用 StorageClass の例</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">yaml</span><span class="code-title">StorageClass (Dynamic PV)</span></div>
+            <pre><code class="language-yaml">apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: azurefile-csi-wi
+provisioner: file.csi.azure.com
+parameters:
+  storageAccount: EXISTING_STORAGE_ACCOUNT_NAME # 省略時は新規アカウントを作成
+  mountWithWorkloadIdentityToken: "true"
+  clientID: "&lt;managed-identity-client-id&gt;"      # 省略時は kubelet identity を使用
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+mountOptions:
+  - dir_mode=0777
+  - file_mode=0777
+  - mfsymlinks
+  - cache=strict
+  - nosharesock
+  - actimeo=30
+  - nobrl</code></pre>
+        </div>
+
+        <h3>静的プロビジョニング用 PV の例 (抜粋)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">yaml</span><span class="code-title">PersistentVolume (Static PV)</span></div>
+            <pre><code class="language-yaml">apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-azurefile
+spec:
+  capacity:
+    storage: 100Gi
+  accessModes:
+    - ReadWriteMany
+  storageClassName: azurefile-csi
+  csi:
+    driver: file.csi.azure.com
+    volumeHandle: "{resource-group-name}#{account-name}#{file-share-name}"
+    volumeAttributes:
+      storageAccount: EXISTING_STORAGE_ACCOUNT_NAME
+      shareName: EXISTING_FILE_SHARE_NAME
+      mountWithWorkloadIdentityToken: "true"
+      clientID: "&lt;managed-identity-client-id&gt;"</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>規制業界 (金融、医療など) の厳格なコンプライアンス要件に対応できる粒度の細かいアクセス制御を実現</li>
+                    <li>ストレージ アカウント キーの管理・ローテーション運用から脱却でき、キー漏えいリスクを低減</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🖥️ 技術面</h4>
+                <ul>
+                    <li>アプリケーション ID がノードのライフサイクルに紐付かず、Pod (ServiceAccount) 単位で最小権限アクセスを構成可能</li>
+                    <li>動的・静的の両方のプロビジョニング方式に対応し、既存の PV/PVC 運用に組み込みやすい</li>
+                    <li>ノード レベルの ID を共有する構成と異なり、同一ノード上の別ワークロードへの権限波及を防止</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="constraint-list">
+            <li>AKS バージョン <strong>1.35.0 以降</strong>が必要</li>
+            <li><strong>Linux ノードのみ</strong>対応</li>
+            <li>対象プロトコルは <strong>SMB</strong> (今回の GA は SMB ファイル共有への認証が対象)</li>
+            <li>静的 PV で利用する場合、ストレージ アカウントで <strong>SMB OAuth の有効化</strong>が必要</li>
+            <li>OIDC Issuer の有効化、フェデレーション資格情報の作成など、<strong>事前セットアップの手順が従来のキー ベース認証より多い</strong></li>
+        </ul>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🏢 ユースケース 1: マルチテナント クラスターでのデータ分離</h4>
+            <div class="usecase-row"><span class="usecase-label">シナリオ</span><span>複数チームのアプリケーションが同居する AKS クラスターで、チームごとに異なる Azure Files 共有を利用し、他チームのデータへのアクセスを禁止したい。</span></div>
+            <div class="usecase-row"><span class="usecase-label">実装例</span><span>チームごとに ServiceAccount とユーザー割り当てマネージド ID を用意し、それぞれのストレージ アカウント (または共有) スコープにのみ <span class="inline-code">Storage File Data SMB MI Admin</span> ロールを付与。StorageClass / PV の <span class="inline-code">clientID</span> に各チームのマネージド ID を指定する。</span></div>
+            <div class="usecase-row"><span class="usecase-label">効果</span><span>ノード レベルの ID を共有する構成と異なり、Pod 単位でアクセス可能なファイル共有を厳密に分離できる。</span></div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🔒 ユースケース 2: ストレージ アカウント キー廃止によるセキュリティ強化</h4>
+            <div class="usecase-row"><span class="usecase-label">シナリオ</span><span>セキュリティ ポリシーによりストレージ アカウント キーの利用が禁止されており、Kubernetes Secret にキーを保存せずに Azure Files をマウントしたい。</span></div>
+            <div class="usecase-row"><span class="usecase-label">実装例</span><span>前提条件のセットアップ後、<span class="inline-code">mountWithWorkloadIdentityToken: "true"</span> を指定した StorageClass でステートフル ワークロードをデプロイする。</span></div>
+            <div class="usecase-row"><span class="usecase-label">効果</span><span>キーの保管・ローテーションが不要になり、Microsoft Entra ID ベースのトークン認証に一本化できる。</span></div>
+        </div>
+    </section>
+
+    <!-- ===== 料金・リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金・利用可能リージョン</h2>
+        <h3>料金</h3>
+        <p>このアップデートに関する追加料金の情報はアナウンスに記載されていません。Azure Files および AKS の料金の詳細は以下の料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li>💵 <a href="https://azure.microsoft.com/pricing/details/storage/files/" target="_blank" rel="noopener">Azure Files の料金</a></li>
+            <li>💵 <a href="https://azure.microsoft.com/pricing/details/kubernetes-service/" target="_blank" rel="noopener">Azure Kubernetes Service (AKS) の料金</a></li>
+        </ul>
+        <h3>利用可能リージョン</h3>
+        <div class="highlight-box">🌍 Azure Files と AKS をサポートする<strong>すべての Azure リージョン</strong>で利用可能です。</div>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🪪 Microsoft Entra Workload ID</h4>
+                <p>本機能の基盤となる認証の仕組み。Kubernetes ServiceAccount の OIDC トークンとマネージド ID をフェデレーション資格情報で紐付ける</p>
+            </div>
+            <div class="related-card">
+                <h4>📁 Azure Files</h4>
+                <p>マウント対象の SMB ファイル共有を提供するマネージド ファイル ストレージ サービス</p>
+            </div>
+            <div class="related-card">
+                <h4>🛡️ Azure RBAC</h4>
+                <p><span class="inline-code">Storage File Data SMB MI Admin</span> ロールなどにより、ID ベースのアクセス制御を実現</p>
+            </div>
+            <div class="related-card">
+                <h4>🎫 AKS OIDC Issuer</h4>
+                <p>Workload Identity の前提となる、クラスターの OIDC トークン発行機能</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>AKS の Azure Files CSI ドライバー (SMB) が Workload Identity に対応したことで、<strong>ストレージ アカウント キーにもノード レベルのマネージド ID にも依存しない、Pod 単位の最小権限アクセスが GA</strong> として利用可能になりました。規制業界などコンプライアンス要件の厳しい環境で AKS + Azure Files を利用している場合は特に有用です。AKS 1.35.0 以降の Linux ノードが前提となるため、まずクラスターのバージョンと OIDC Issuer の有効化状況を確認した上で、<span class="inline-code">Storage File Data SMB MI Admin</span> ロールとフェデレーション資格情報を用いた構成への移行を検討することを推奨します。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">#Azure Kubernetes Service</span>
+            <span class="tag">#Azure Files</span>
+            <span class="tag">#CSI Driver</span>
+            <span class="tag">#Workload Identity</span>
+            <span class="tag">#Microsoft Entra ID</span>
+            <span class="tag">#SMB</span>
+            <span class="tag">#Security</span>
+            <span class="tag">#Storage</span>
+            <span class="tag">#Containers</span>
+            <span class="tag">#GA</span>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li>📰 <a href="https://azure.microsoft.com/updates?id=570120" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/aks/create-volume-azure-files#use-workload-identity-to-access-azure-files-storage" target="_blank" rel="noopener">Create and manage persistent volumes with Azure Files in AKS - Use workload identity (Microsoft Learn)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/entra/workload-id/workload-identities-overview" target="_blank" rel="noopener">Workload identities - Microsoft Entra Workload ID (Microsoft Learn)</a></li>
+            <li>💵 <a href="https://azure.microsoft.com/pricing/details/storage/files/" target="_blank" rel="noopener">Azure Files の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=570120" target="_blank" rel="noopener">Azure Updates - Azure Files CSI driver (SMB) Workload Identity support (ID: 570120)</a></p>
+        <p>リリース日: 2026-08-28 | インフォグラフィック生成日: 2026-08-29 | Azure News Summary Project</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
