@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-08-31 - Azure Multicloud Interconnect: パブリックプレビュー開始 (AWS とのプライベート接続)](2026/2026-08-31-azure-multicloud-interconnect.md)
 - [2026-08-28 - Azure Kubernetes Service (AKS): Azure Files CSI ドライバー (SMB) の Workload Identity サポートが一般提供 (GA)](2026/2026-08-28-aks-azure-files-csi-workload-identity.md)
 - [2026-08-28 - Azure VM Image Builder: ソブリンクラウドおよびエアギャップクラウドでの一般提供開始](2026/2026-08-28-vm-image-builder-sovereign-clouds.md)
 - [2026-08-26 - Azure SRE Agent: Live Reports (Public Preview)](2026/2026-08-26-sre-agent-live-reports.md)
