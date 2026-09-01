@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Monitor: Auxiliary Logs プラン GA アップデート | Azure テーブル対応・プラン切り替え・ソブリンクラウド対応</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "🧊";
+    position: absolute;
+    right: 24px;
+    bottom: -10px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+.header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.92;
+}
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.date-badge {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--azure-dark-blue);
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* ===== Section / Card ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section h2 {
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+.section p { margin: 10px 0; font-size: 15px; }
+.section ul { margin: 10px 0 10px 22px; font-size: 15px; }
+.section li { margin: 6px 0; }
+.note {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+}
+
+/* ===== Update cards ===== */
+.update-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+.update-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+.update-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+.update-card .update-id {
+    display: inline-block;
+    background: var(--azure-blue);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 2px 10px;
+    margin-bottom: 8px;
+}
+.update-card p { font-size: 13.5px; margin: 4px 0; }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 8px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; }
+.before ul, .after ul { margin-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* ===== Highlight box ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14.5px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 6px;
+}
+.feature-content ul { margin: 6px 0 0 20px; font-size: 14px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    background: var(--ms-surface);
+}
+table.info-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+table.info-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+table.info-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+table.info-table td:first-child { font-weight: 500; }
+.ok { color: var(--ms-green); font-weight: 700; }
+.ng { color: var(--ms-red); font-weight: 700; }
+.new-tag {
+    display: inline-block;
+    background: var(--ms-orange);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 1px 8px;
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: var(--ms-blue-800);
+}
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 10px 0;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14.5px;
+}
+.step::before {
+    counter-increment: step;
+    content: counter(step);
+    background: var(--azure-blue);
+    color: #fff;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* ===== Pros / Cons ===== */
+.pros-cons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 12px 0;
+}
+.pros-card, .cons-card {
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+.pros-card {
+    background: #E8F5E9;
+    border: 1px solid var(--ms-green);
+}
+.cons-card {
+    background: #FFF4E5;
+    border: 1px solid var(--ms-orange);
+}
+.pros-card h4 { color: var(--ms-green); margin-bottom: 8px; }
+.cons-card h4 { color: var(--ms-orange); margin-bottom: 8px; }
+.pros-card ul, .cons-card ul { margin-left: 20px; font-size: 13.5px; }
+.pros-card li, .cons-card li { margin: 6px 0; }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 14px 0;
+}
+.usecase-card h4 {
+    color: var(--ms-purple);
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+.usecase-label {
+    font-weight: 700;
+    color: var(--ms-text-primary);
+}
+
+/* ===== Related / links ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+}
+.related-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13.5px;
+}
+.related-card strong { color: var(--azure-dark-blue); display: block; margin-bottom: 4px; }
+
+a { color: var(--azure-blue); }
+
+.link-list { list-style: none; margin: 8px 0 0 0 !important; }
+.link-list li {
+    margin: 6px 0;
+    padding-left: 22px;
+    position: relative;
+    font-size: 13.5px;
+    word-break: break-all;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-size: 15px;
+}
+.summary-box ol { margin: 10px 0 10px 22px; }
+.summary-box li { margin: 6px 0; }
+
+/* ===== Tags ===== */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    font-size: 12px;
+    padding: 3px 12px;
+    border-radius: 14px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 12.5px;
+    padding: 20px 12px 32px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 28px;
+}
+.footer a { word-break: break-all; }
+.footer p { margin: 4px 0; }
+
+@media (max-width: 720px) {
+    .header h1 { font-size: 22px; }
+    .before-after, .update-grid, .pros-cons-grid { grid-template-columns: 1fr; }
+    .section { padding: 18px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="header-meta">
+            <span class="service-badge">Azure Monitor (Log Analytics)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="date-badge">📅 2026-09-01</span>
+        </div>
+        <h1>Auxiliary Logs プラン<br>Azure テーブル対応・プラン切り替え・ソブリンクラウド対応が GA</h1>
+        <p class="subtitle">監査・コンプライアンス用の大量ログを最小コストで最長 12 年保持 — 標準 Azure テーブルのまま低コスト化、Analytics ⇔ Auxiliary をインプレースで可逆切り替え、Azure Government / China でも利用可能に</p>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Monitor Logs の <strong>Auxiliary テーブルプラン</strong>に関する 2 つのアップデートが同時に一般提供 (GA) されました。Auxiliary プランは、コンプライアンスや監査目的で保持するがほとんどクエリしない、大量・冗長なログを<strong>低コストで取り込み・保持</strong>するためのテーブルプランです。</p>
+
+        <div class="update-grid">
+            <div class="update-card">
+                <span class="update-id">Updates ID: 569899</span>
+                <h4>🌏 アップデート 1: ソブリンクラウド対応</h4>
+                <p>Auxiliary Logs プランがソブリンクラウドである <strong>Azure Government (Fairfax)</strong> および <strong>China リージョン</strong>で一般提供。政府機関や中国リージョンを利用する組織でも、監査・コンプライアンス用ログの低コスト保持が利用可能に。</p>
+            </div>
+            <div class="update-card">
+                <span class="update-id">Updates ID: 569904</span>
+                <h4>🗄️ アップデート 2: Azure テーブル対応とプラン切り替え</h4>
+                <p>(1) 従来の DCR ベースのカスタムテーブル (<code class="inline">_CL</code>) に加えて、<strong>標準 Azure テーブルの一部で Auxiliary プランが利用可能</strong>に。低価値データをカスタムパイプラインで変換することなく、テーブル名・スキーマ・既存クエリを維持して低コストプランに移行可能。</p>
+                <p>(2) 既存テーブルを <strong>Analytics ⇔ Auxiliary でインプレースに切り替え可能</strong>に。履歴・スキーマ・インテグレーションを維持したまま切り替えでき、完全に元に戻すことも可能。</p>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Auxiliary プランは DCR ベースのカスタムテーブル (<code class="inline">_CL</code>) のみ対応。標準 Azure テーブルのデータを低コストで保持するには、カスタムパイプラインを構築してデータを再形成 (カスタムテーブルへ転送) する必要があった</li>
+                    <li>既存テーブルのプランを Analytics から Auxiliary に (またはその逆に) 変更する手段がなく、テーブルの再作成が必要だった</li>
+                    <li>Auxiliary プランはソブリンクラウド (Azure Government / China) では利用できなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>標準 Azure テーブルの一部 (AuditLogs、CommonSecurityLog、AKSAudit、AWSCloudTrail など) を Auxiliary プランで直接運用でき、テーブル名・スキーマ・既存クエリを維持したまま低コスト化が可能</li>
+                    <li>Analytics ⇔ Auxiliary のプラン切り替えがインプレースで可能になり、履歴・スキーマ・インテグレーションを維持しつつ、完全に可逆的に変更できる</li>
+                    <li>Azure Government (Fairfax) と China リージョンで Auxiliary Logs が GA となり、ソブリンクラウドでも利用可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">2 件</div>
+                <div class="stat-label">同時 GA アップデート</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最長 12 年</div>
+                <div class="stat-label">合計保持期間</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">週 1 回</div>
+                <div class="stat-label">プラン切り替え上限 / テーブル</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最小</div>
+                <div class="stat-label">取り込みコスト</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    SRC([📡 ログソース&lt;br/&gt;Azure リソース / カスタムアプリ]) --> DCR[⚙️ データ収集&lt;br/&gt;診断設定 / DCR / Ingestion API]
+    subgraph LAW["🗄️ Log Analytics ワークスペース"]
+        AN[("📊 Analytics プラン&lt;br/&gt;フル機能・リアルタイム分析")]
+        BA[("📁 Basic プラン&lt;br/&gt;トラブルシューティング用")]
+        AUX[("🧊 Auxiliary プラン&lt;br/&gt;監査・コンプライアンス / 最小コスト&lt;br/&gt;🆕 標準 Azure テーブル対応")]
+        AN <-- "🔄 プラン切り替え 🆕&lt;br/&gt;(インプレース・可逆)" --> AUX
+    end
+    DCR --> AN
+    DCR --> BA
+    DCR --> AUX
+    AN --> ALERT[🚨 アラート / Insights / ダッシュボード]
+    AUX --> QRY[🔍 単一テーブル KQL / Search Job&lt;br/&gt;最長 12 年保持]
+            </pre>
+        </div>
+        <p class="note">3 つのテーブルプランへのデータフローと、今回 GA になった Analytics ⇔ Auxiliary のインプレースなプラン切り替えを示しています。Auxiliary プランは監査・コンプライアンス用途向けに最小コストで最長 12 年のデータ保持が可能です。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2>⭐ サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗄️</div>
+            <div class="feature-content">
+                <h4>1. 標準 Azure テーブルの Auxiliary プラン対応</h4>
+                <ul>
+                    <li>従来は DCR ベースのカスタムテーブル (<code class="inline">_CL</code>) のみが対象だったが、標準 Azure テーブルの一部でも Auxiliary プランを選択可能になった</li>
+                    <li>テーブル名・スキーマ・既存クエリをそのまま維持できるため、カスタムパイプラインでデータを再形成する必要がない</li>
+                    <li>対応テーブルの例: <code class="inline">AuditLogs</code> (Entra ID 監査ログ)、<code class="inline">AADManagedIdentitySignInLogs</code>、<code class="inline">CommonSecurityLog</code> (CEF)、<code class="inline">AKSAudit</code>、<code class="inline">AWSCloudTrail</code>、<code class="inline">AZFWNetworkRule</code>、<code class="inline">DeviceEvents</code> など (対応状況はテーブルごとに異なる。<a href="https://learn.microsoft.com/azure/azure-monitor/reference/tables-features" target="_blank" rel="noopener">Logs table feature support</a> を参照)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>2. プラン切り替え (Plan Switching)</h4>
+                <ul>
+                    <li>既存テーブルを Analytics プランと Auxiliary プランの間で、テーブルを再作成せずにインプレースで切り替え可能</li>
+                    <li>履歴データ・スキーマ・インテグレーションを維持したまま変更でき、完全に可逆的</li>
+                    <li>切り替えは <strong>1 テーブルあたり週 1 回まで</strong> に制限される</li>
+                    <li>Azure Portal / Azure CLI / PowerShell / REST API で変更可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌏</div>
+            <div class="feature-content">
+                <h4>3. ソブリンクラウド対応</h4>
+                <ul>
+                    <li>Azure Government (Fairfax) および China リージョンで Auxiliary Logs プランが GA</li>
+                    <li>Auxiliary プランの利用可能リージョンは、Qatar Central を除き Log Analytics の提供リージョンと一致</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <p>Analytics / Basic / Auxiliary プランの機能比較 (Microsoft Learn より):</p>
+        <div class="table-wrap">
+            <table class="info-table">
+                <thead>
+                    <tr><th>項目</th><th>Analytics</th><th>Basic</th><th>Auxiliary / Lake</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>主な用途</td><td>継続監視・リアルタイム検知・高度な分析</td><td>トラブルシューティング・インシデント対応</td><td>監査・コンプライアンス用の低頻度アクセスデータ</td></tr>
+                    <tr><td>対応テーブル</td><td>すべて</td><td>対応 Azure テーブル + DCR ベースカスタムテーブル</td><td>対応 Azure テーブル + DCR ベースカスタムテーブル <span class="new-tag">NEW</span></td></tr>
+                    <tr><td>取り込みコスト</td><td>標準</td><td>低減</td><td><strong>最小</strong></td></tr>
+                    <tr><td>クエリ料金</td><td>込み</td><td>別途 (スキャン GB 単位)</td><td>別途 (スキャン GB 単位)</td></tr>
+                    <tr><td>クエリ性能</td><td>最適化済み</td><td>最適化済み</td><td>低速 (リアルタイム分析には非推奨)</td></tr>
+                    <tr><td>クエリ機能</td><td>フル KQL</td><td>単一テーブル KQL (Analytics テーブルとの <code class="inline">lookup</code> 可)</td><td>単一テーブル KQL (Analytics テーブルとの <code class="inline">lookup</code> 可)</td></tr>
+                    <tr><td>アラート</td><td class="ok">✅</td><td class="ok">✅ (Simple Log Alerts)</td><td class="ng">❌</td></tr>
+                    <tr><td>Insights / Restore / データエクスポートルール</td><td class="ok">✅</td><td>一部対応</td><td class="ng">❌</td></tr>
+                    <tr><td>Microsoft Sentinel / Search Job</td><td class="ok">✅</td><td class="ok">✅</td><td class="ok">✅</td></tr>
+                    <tr><td>Summary Rules</td><td class="ok">✅</td><td class="ok">✅ (単一テーブル KQL)</td><td class="ok">✅ (単一テーブル KQL)</td></tr>
+                    <tr><td>合計保持期間</td><td>最長 12 年</td><td>最長 12 年</td><td>最長 12 年</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>⚠️ プラン切り替え時の考慮事項</h3>
+        <div class="table-wrap">
+            <table class="info-table">
+                <thead>
+                    <tr><th>切り替え</th><th>考慮事項</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Analytics → Auxiliary</td><td>アラートが動作しなくなる。クエリに追加課金 (Summary Rule クエリ含む)。リソースクエリスコープを使用する Summary Rule は動作しなくなる</td></tr>
+                    <tr><td>Auxiliary → Analytics</td><td>フル機能が利用可能になるが、コストは増加する</td></tr>
+                    <tr><td>頻度制限</td><td>プラン変更は 1 テーブルあたり週 1 回まで</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>💾 プラン切り替え後のデータアクセス (データ継続性)</h3>
+        <div class="highlight-box">
+            <ul style="margin-left: 20px;">
+                <li>切り替え前に取り込まれたデータは削除・移動されず、保持期間中保持される</li>
+                <li><strong>Analytics → Auxiliary</strong>: Analytics 期間中のデータは対話型クエリで引き続き参照可能 (切り替え日をまたぐクエリは部分的な結果になる場合があり、警告が表示される)</li>
+                <li><strong>Auxiliary → Analytics</strong>: Auxiliary 期間中のデータは対話型クエリでは参照不可。Search Job または <code class="inline">search</code> REST API でアクセスする</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2>⚙️ 設定方法</h2>
+
+        <h3>✔️ 前提条件</h3>
+        <div class="steps">
+            <div class="step">プラン変更には <code class="inline">Microsoft.OperationalInsights/workspaces/write</code> および <code class="inline">microsoft.operationalinsights/workspaces/tables/write</code> 権限が必要 (例: Log Analytics Contributor ロール)</div>
+            <div class="step">対象テーブルが Auxiliary プランをサポートしていること (<a href="https://learn.microsoft.com/azure/azure-monitor/reference/tables-features" target="_blank" rel="noopener">Logs table feature support</a> で確認)</div>
+            <div class="step">Basic / Auxiliary プランはレガシー価格レベルのワークスペースでは利用不可</div>
+        </div>
+
+        <h3>🌐 REST API</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">HTTP / JSON</span><span>テーブルプランを Auxiliary に変更</span></div>
+            <pre><code class="language-http"># テーブルプランを Auxiliary に変更
+PATCH https://management.azure.com/subscriptions/{SubscriptionId}/resourceGroups/{ResourceGroupName}/providers/Microsoft.OperationalInsights/workspaces/{WorkspaceName}/tables/{TableName}?api-version={ApiVersion}
+
+{
+  "properties": {
+    "plan": "Auxiliary"
+  }
+}</code></pre>
+        </div>
+        <p>Azure CLI では <code class="inline">az monitor log-analytics workspace table update --plan</code> で変更できます。</p>
+
+        <h3>🖥️ Azure Portal</h3>
+        <div class="steps">
+            <div class="step"><strong>Log Analytics ワークスペース</strong> メニューから <strong>テーブル</strong> を選択</div>
+            <div class="step">対象テーブルのコンテキストメニューから <strong>テーブルの管理</strong> を選択</div>
+            <div class="step"><strong>テーブルプラン</strong> ドロップダウンから <strong>Analytics</strong> / <strong>Basic</strong> / <strong>Auxiliary / Lake</strong> を選択 (選択したテーブルで利用可能なプランのみ表示される)</div>
+            <div class="step"><strong>保存</strong> を選択</div>
+        </div>
+    </section>
+
+    <!-- ===== メリット / デメリット ===== -->
+    <section class="section">
+        <h2>⚖️ メリットとデメリット・制約事項</h2>
+        <div class="pros-cons-grid">
+            <div class="pros-card">
+                <h4>👍 メリット (ビジネス面)</h4>
+                <ul>
+                    <li>監査・コンプライアンス用の大量ログを最小コストで最長 12 年保持でき、ログ保持コストを大幅に削減できる</li>
+                    <li>Azure Government / China リージョンの GA により、政府機関や中国でビジネスを行う組織もコンプライアンス要件を低コストで満たせる</li>
+                    <li>プラン切り替えが可逆的なため、ロックインなしにコスト最適化を試行できる</li>
+                </ul>
+            </div>
+            <div class="pros-card">
+                <h4>🛠️ メリット (技術面)</h4>
+                <ul>
+                    <li>標準 Azure テーブルをそのまま Auxiliary プランで運用でき、カスタムパイプラインの構築・維持が不要になる</li>
+                    <li>テーブル名・スキーマ・既存クエリ・インテグレーションを維持したままプランを変更できるため、移行に伴う改修コストが最小限</li>
+                    <li>Microsoft Sentinel、Search Job、Summary Rules との連携は Auxiliary プランでも利用可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="cons-card">
+            <h4>⚠️ デメリット・制約事項</h4>
+            <ul>
+                <li>Auxiliary プランではアラート、Insights、Restore、データエクスポートルール、Customer Lockbox、ワークスペースレプリケーションが利用できない</li>
+                <li>クエリは単一テーブルの KQL に限定され (Analytics テーブルとの <code class="inline">lookup</code> は可)、クエリ性能は最適化されておらず低速。クエリはスキャンした GB 単位で別途課金される</li>
+                <li>プラン切り替えは 1 テーブルあたり週 1 回まで</li>
+                <li>Auxiliary → Analytics へ戻した場合、Auxiliary 期間中に取り込んだデータは対話型クエリでは参照できず、Search Job 等が必要</li>
+                <li>Azure テーブルの Auxiliary プラン対応はテーブルごとに異なる (例: <code class="inline">AzureActivity</code>、<code class="inline">AzureDiagnostics</code>、<code class="inline">ContainerLogV2</code> などは非対応)</li>
+                <li>レガシー価格レベルのワークスペースでは利用不可</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🛡️ ユースケース 1: セキュリティ監査ログの長期保持コスト最適化</h4>
+            <p><span class="usecase-label">シナリオ:</span> Microsoft Sentinel を利用する SOC で、<code class="inline">CommonSecurityLog</code> (CEF ログ) や <code class="inline">AWSCloudTrail</code> などの大量の監査ログを規制要件により数年間保持する必要があるが、日常的にクエリするのはごく一部。</p>
+            <p><span class="usecase-label">実装例:</span></p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">HTTP / JSON</span><span>CommonSecurityLog を Auxiliary プランへ切り替え</span></div>
+                <pre><code class="language-http"># CommonSecurityLog テーブルを Auxiliary プランへ切り替え (REST API)
+# 履歴・スキーマ・既存の Sentinel 連携を維持したまま取り込みコストを最小化
+PATCH .../workspaces/{WorkspaceName}/tables/CommonSecurityLog?api-version={ApiVersion}
+{ "properties": { "plan": "Auxiliary" } }</code></pre>
+            </div>
+            <p><span class="usecase-label">効果:</span> テーブルを再作成せず、既存のスキーマとクエリ資産を維持したまま、取り込み・保持コストを最小化。必要時は Search Job や単一テーブル KQL で調査可能。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🏛️ ユースケース 2: Azure Government / China でのコンプライアンス対応</h4>
+            <p><span class="usecase-label">シナリオ:</span> Azure Government (Fairfax) や China リージョンで運用する組織が、監査ログの長期保持要件 (最長 12 年) を低コストで満たしたい。</p>
+            <p><span class="usecase-label">効果:</span> これまで商用クラウドのみで利用可能だった Auxiliary プランをソブリンクラウドでも利用でき、コンプライアンス用ログ保持のコスト構造を商用クラウドと統一できる。</p>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Azure Monitor 料金ページで確認できた Auxiliary Logs の料金体系の概要 (具体的な単価は料金ページでリージョン・通貨を選択して確認):</p>
+        <div class="table-wrap">
+            <table class="info-table">
+                <thead>
+                    <tr><th>項目</th><th>料金体系</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>取り込み</td><td>GB 単位 (最小コスト)。ログ処理 (log processing) 料金が別途 GB 単位で課金</td></tr>
+                    <tr><td>保持</td><td>30 日分は取り込みに込み。長期保持 (最長 12 年) は GB/月 単位</td></tr>
+                    <tr><td>クエリ</td><td>スキャンしたデータ GB 単位で課金 (Analytics プランのクエリは無料)</td></tr>
+                    <tr><td>Search Job</td><td>スキャンした GB 単位 + 結果テーブルへの取り込み分は通常の取り込み料金</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="highlight-box">
+            Microsoft Sentinel が有効なワークスペースでは、Auxiliary / Basic の取り込みは Sentinel のメーターで課金されます。最新の単価は <a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank" rel="noopener">Azure Monitor 料金ページ</a> を参照してください。
+        </div>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2>🗺️ 利用可能リージョン</h2>
+        <ul>
+            <li><strong>ソブリンクラウド</strong>: Azure Government (Fairfax) および China リージョンで GA (今回のアップデート) <span class="new-tag">NEW</span></li>
+            <li><strong>その他</strong>: Auxiliary テーブルプランの提供リージョンは、Qatar Central を除き Log Analytics の提供リージョンと一致 (Microsoft Learn より)</li>
+        </ul>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>Log Analytics ワークスペース</strong>Auxiliary プランはワークスペース内のテーブル単位で設定するテーブルプランの 1 つ</div>
+            <div class="related-card"><strong>Microsoft Sentinel</strong>Auxiliary プランのテーブルも Sentinel から利用可能。Sentinel Datalake への Lake-only ingestion にも対応</div>
+            <div class="related-card"><strong>Search Job</strong>Auxiliary プランのデータに対する大規模検索や、プラン切り替え前の Auxiliary データへのアクセスに使用</div>
+            <div class="related-card"><strong>Summary Rules</strong>Auxiliary テーブルの生データを集約して Analytics テーブルに保存し、アラートやダッシュボードに活用するパターンに対応 (単一テーブル KQL に限定)</div>
+            <div class="related-card"><strong>データ収集ルール (DCR)</strong>DCR ベースのカスタムテーブル (<code class="inline">_CL</code>) は引き続き Auxiliary プランに対応</div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Monitor Auxiliary Logs プランの 2 つの GA アップデートにより、次の 3 点が実現しました。</p>
+            <ol>
+                <li>標準 Azure テーブルを<strong>再形成なし</strong>で低コストプランに移行可能</li>
+                <li>Analytics ⇔ Auxiliary のプラン切り替えが<strong>インプレース・可逆</strong>で可能</li>
+                <li><strong>Azure Government / China リージョン</strong>でも利用可能</li>
+            </ol>
+            <p>大量の監査・コンプライアンスログを保持している組織にとって、ログコスト最適化の選択肢が大きく広がるアップデートです。まずは <a href="https://learn.microsoft.com/azure/azure-monitor/reference/tables-features" target="_blank" rel="noopener">Logs table feature support</a> で保有テーブルの Auxiliary 対応状況を確認し、クエリ頻度が低い大容量テーブルからプラン切り替えを検討することを推奨します。切り替え前には、<strong>アラート非対応・クエリ課金・週 1 回の切り替え制限</strong>などの制約を必ず確認してください。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Monitor</span>
+            <span class="tag">Log Analytics</span>
+            <span class="tag">Auxiliary Logs</span>
+            <span class="tag">テーブルプラン</span>
+            <span class="tag">コスト最適化</span>
+            <span class="tag">コンプライアンス</span>
+            <span class="tag">Azure Government</span>
+            <span class="tag">China</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク / Footer ===== -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=569899" target="_blank" rel="noopener">公式アップデート情報: Auxiliary Logs Plan in Azure Government and China regions</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=569904" target="_blank" rel="noopener">公式アップデート情報: Auxiliary Logs Plan support for Azure tables and plan switching</a></li>
+            <li><a href="https://techcommunity.microsoft.com/blog/azureobservabilityblog/azure-monitor-auxiliary-logs-expands-with-azure-tables-support-plan-switching-an/4525206" target="_blank" rel="noopener">Tech Community Blog: Azure Monitor Auxiliary Logs expands with Azure tables support, plan switching, and sovereign clouds</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-monitor/logs/data-platform-logs" target="_blank" rel="noopener">Microsoft Learn: Azure Monitor Logs の概要とテーブルプラン比較</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-monitor/logs/logs-table-plans" target="_blank" rel="noopener">Microsoft Learn: テーブルプランの構成・変更</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-monitor/reference/tables-features" target="_blank" rel="noopener">Microsoft Learn: Logs table feature support (プラン対応テーブル一覧)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank" rel="noopener">Azure Monitor 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p><strong>出典:</strong></p>
+        <p>Azure Updates (ID: 569899): <a href="https://azure.microsoft.com/updates?id=569899" target="_blank" rel="noopener">Auxiliary Logs Plan in Azure Government and China regions</a></p>
+        <p>Azure Updates (ID: 569904): <a href="https://azure.microsoft.com/updates?id=569904" target="_blank" rel="noopener">Auxiliary Logs Plan support for Azure tables and plan switching</a></p>
+        <p>Tech Community Blog: <a href="https://techcommunity.microsoft.com/blog/azureobservabilityblog/azure-monitor-auxiliary-logs-expands-with-azure-tables-support-plan-switching-an/4525206" target="_blank" rel="noopener">Azure Monitor Auxiliary Logs expands with Azure tables support, plan switching, and sovereign clouds</a></p>
+        <p>Microsoft Learn: <a href="https://learn.microsoft.com/azure/azure-monitor/logs/data-platform-logs" target="_blank" rel="noopener">Azure Monitor Logs</a> / <a href="https://learn.microsoft.com/azure/azure-monitor/logs/logs-table-plans" target="_blank" rel="noopener">テーブルプランの構成・変更</a></p>
+        <p style="margin-top: 10px;">レポート日: 2026-09-01 | 本インフォグラフィックは Azure News Summary レポートを基に生成されています</p>
+    </footer>
+
+</div>
+
+<!-- Mermaid.js -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+
+<!-- highlight.js -->
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

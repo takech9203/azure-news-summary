@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Firewall: Auto-learn SNAT routes の一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 61, 105, 0.25);
+}
+
+.header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.header .release-date {
+    margin-top: 14px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.15);
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 16px;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1.3;
+}
+
+.stat-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 6px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    font-size: 16px;
+    margin-bottom: 6px;
+}
+
+.feature-content ul {
+    padding-left: 20px;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content li { margin: 4px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+td code, li code, p code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Steps */
+.step-list {
+    counter-reset: step;
+    list-style: none;
+    margin: 12px 0;
+}
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 12px 10px 52px;
+    margin: 10px 0;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Merit / limitation lists */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.merit-card.business {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--ms-blue-500);
+}
+
+.merit-card.tech {
+    background: #F3EEF9;
+    border: 2px solid var(--ms-purple);
+}
+
+.merit-card h4 { margin-bottom: 10px; }
+.merit-card.business h4 { color: var(--ms-blue-800); }
+.merit-card.tech h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin: 8px 0; }
+
+.limitation-list { list-style: none; margin: 12px 0; }
+
+.limitation-list li {
+    background: #FFF8F0;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-label {
+    display: inline-block;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-right: 4px;
+    font-weight: 500;
+}
+
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card h4 {
+    color: var(--ms-blue-800);
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+/* Links */
+a { color: var(--azure-blue); }
+
+.link-list { list-style: none; margin: 12px 0; }
+.link-list li {
+    padding: 8px 12px;
+    margin: 6px 0;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.link-list li::before { content: "🔗 "; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    border: 1px solid var(--ms-border);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px;
+    border-top: 2px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-badges">
+            <span class="service-badge">🛡️ Azure Firewall</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Auto-learn SNAT routes (SNAT ルートの自動学習) が一般提供開始</h1>
+        <div class="subtitle">登録済み・プライベートの宛先 IP プレフィックスを 30 分ごとに自動学習し、No-SNAT 範囲として自動適用 — 送信元 IP を保持</div>
+        <div class="release-date">📅 リリース日: 2026-09-01</div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Firewall の <strong>Auto-learn SNAT routes (SNAT ルートの自動学習)</strong> 機能が一般提供 (GA) となりました。この機能を有効にすると、Azure Firewall は登録済み (registered) およびプライベートの宛先 IP プレフィックスを <strong>30 分ごとに定期的に自動学習</strong>し、それらを <strong>No-SNAT 範囲</strong>として適用します。学習された範囲宛てのトラフィックは SNAT されないため、<strong>元の送信元 IP アドレスが保持</strong>されます。</p>
+        <div class="highlight-box">
+            Azure Firewall は既定では、宛先 IP が IANA <strong>RFC 1918</strong> (プライベートアドレス) または <strong>RFC 6598</strong> (共有アドレス空間) の範囲内にある場合、ネットワークルールで処理されるトラフィックを SNAT しません。しかし、組織が RFC 1918 / RFC 6598 以外の登録済み IP アドレス範囲を内部ネットワークとして利用している場合、既定ではそれらの宛先へのトラフィックがファイアウォールのプライベート IP に SNAT されてしまい、送信元が隠蔽されるという課題がありました。
+        </div>
+        <p>Auto-learn SNAT routes は <strong>Azure Route Server との連携</strong>により BGP で学習したプレフィックスを内部ネットワークとして扱うことで、この SNAT 除外設定を自動化します。仮想ネットワーク (VNet) デプロイとセキュリティで保護された仮想ハブ (vHub) デプロイの両方でサポートされます。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">30 分</div>
+                <div class="stat-label">ごとにプレフィックスを自動学習</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">No-SNAT</div>
+                <div class="stat-label">学習済み範囲宛ては送信元 IP を保持</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2 モデル</div>
+                <div class="stat-label">VNet / vHub デプロイの両方に対応</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>RFC 1918 / RFC 6598 以外の登録済み IP 範囲を内部ネットワークとして使う場合、SNAT を回避するには管理者が SNAT プライベート IP 範囲 (例: <code>x.x.x.x/24</code>) を手動で指定・維持する必要があった</li>
+                    <li>ネットワーク構成の変更 (オンプレミス側のプレフィックス追加など) のたびに、ファイアウォールポリシーの SNAT 範囲リストを更新する運用負荷が発生していた</li>
+                    <li>SNAT により元の送信元 IP が隠蔽され、宛先側でのアクセス制御やログ分析に支障が出るケースがあった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>登録済み・プライベートの宛先プレフィックスを 30 分ごとに自動学習し、No-SNAT 範囲として自動適用</li>
+                    <li>学習済み範囲宛てのトラフィックで元の送信元 IP アドレスが保持される</li>
+                    <li>SNAT 除外リストの手動メンテナンスが不要になり、SNAT 管理が簡素化される</li>
+                    <li>VNet デプロイと vHub (secured virtual hub) デプロイの両方に対応</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph FwVNet["🌐 ファイアウォール VNet / vHub"]
+            AFW["🛡️ Azure Firewall"]
+            ARS["📡 Azure Route Server<br>(RouteServerSubnet /27 以上)"]
+        end
+        Policy["📋 Firewall Policy<br>Auto-learn IP prefixes: 有効"]
+        VM(["🖥️ ワークロード"])
+    end
+    OnPrem["🏢 オンプレミス / 登録済み IP 範囲<br>(BGP で広報されたプレフィックス)"]
+    Internet["🌍 インターネット"]
+
+    Policy -- "SNAT 設定を適用" --> AFW
+    ARS -- "30 分ごとにプレフィックスを学習" --> AFW
+    VM -- "送信トラフィック" --> AFW
+    AFW -- "学習済み範囲宛て: No-SNAT ✅<br>(送信元 IP を保持)" --> OnPrem
+    AFW -- "その他の宛先: SNAT 🔁" --> Internet
+            </pre>
+        </div>
+        <div class="diagram-caption">
+            Azure Route Server が BGP で受信したプレフィックスを Azure Firewall が定期的に学習し、学習済み範囲宛てのトラフィックは SNAT せずに元の送信元 IP のまま転送します。それ以外の宛先 (インターネットなど) は従来どおり SNAT されます。
+        </div>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>1. 登録済み・プライベートプレフィックスの自動学習</h4>
+                <ul>
+                    <li>Azure Firewall が 30 分ごとに登録済み (registered) およびプライベートの IP アドレス範囲を自動学習する</li>
+                    <li>学習されたアドレス範囲はネットワーク内部として扱われ、その範囲宛てのトラフィックは SNAT されない</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📡</div>
+            <div class="feature-content">
+                <h4>2. Azure Route Server との連携</h4>
+                <ul>
+                    <li>自動学習には Azure Firewall と Azure Route Server の関連付けが必須</li>
+                    <li>VNet デプロイでは、ファイアウォールと同じ仮想ネットワークに Azure Route Server をデプロイする</li>
+                    <li>vHub デプロイでは Azure Route Server が既定でデプロイ・関連付け済みのため、ポリシーで有効化するだけでよい</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📋</div>
+            <div class="feature-content">
+                <h4>3. Firewall Policy での有効化</h4>
+                <ul>
+                    <li>どちらのデプロイモデルでも、関連付け完了後に Azure Firewall Policy で auto-learn を有効化する</li>
+                    <li>ポータルの「Learned SNAT IP Prefixes」ブレードで学習済みプレフィックスを確認できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <thead>
+                <tr><th style="width: 35%;">項目</th><th>詳細</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>学習間隔</td><td>30 分ごと</td></tr>
+                <tr><td>学習対象</td><td>登録済み (registered) およびプライベートの IP アドレス範囲</td></tr>
+                <tr><td>学習後の動作</td><td>学習済み範囲宛てのトラフィックは SNAT されない (No-SNAT)</td></tr>
+                <tr><td>対象デプロイモデル</td><td>VNet デプロイ、セキュリティで保護された仮想ハブ (vHub) デプロイ</td></tr>
+                <tr><td>必須コンポーネント</td><td>Azure Route Server との関連付け</td></tr>
+                <tr><td>VNet デプロイの要件</td><td>ファイアウォールの VNet 内に <strong>RouteServerSubnet</strong> (最小 /27) と Azure Route Server が必要</td></tr>
+                <tr><td>有効化の場所</td><td>Azure Firewall Policy の SNAT 設定 (<code>autoLearnPrivateRanges: Enabled</code>)</td></tr>
+                <tr><td>設定手段</td><td>Azure portal、Azure PowerShell、ARM テンプレート (<strong>Azure CLI は非対応</strong>)</td></tr>
+                <tr><td>SNAT 除外の適用範囲</td><td>ネットワークルールのみ (アプリケーションルールは常に SNAT)</td></tr>
+                <tr><td>学習済みプレフィックスの確認</td><td><code>Get-AzFirewallLearnedIpPrefix</code> またはポータルの「Learned SNAT IP Prefixes」</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>Azure Firewall と Azure Route Server の関連付けが必要</li>
+            <li>VNet デプロイの場合: ファイアウォールの仮想ネットワーク内に <strong>RouteServerSubnet</strong> という名前のサブネット (サイズ /27 以上) を作成し、同じ VNet に Azure Route Server をデプロイする</li>
+            <li>vHub デプロイの場合: Azure Route Server は既定でデプロイ・関連付け済みのため、追加のデプロイは不要</li>
+            <li>関連付け完了後、Azure Firewall Policy で auto-learn SNAT を有効化する</li>
+        </ol>
+
+        <h3>Azure PowerShell (VNet デプロイの例)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">PowerShell</span></div>
+            <pre><code class="language-powershell"># Route Server を既存のファイアウォールに関連付け
+$routeServerId = "/subscriptions/&lt;sub-id&gt;/resourceGroups/&lt;rg&gt;/providers/Microsoft.Network/virtualHubs/&lt;route-server-name&gt;"
+$azFirewall = Get-AzFirewall -Name $azureFirewallName -ResourceGroupName $rgname
+$azFirewall.RouteServerId = $routeServerId
+Set-AzFirewall -AzureFirewall $azFirewall
+
+# Firewall Policy で auto-learn を有効化
+$snat = New-AzFirewallPolicySnat -PrivateRange $privateRange -AutoLearnPrivateRange
+$azureFirewallPolicy.Snat = $snat
+Set-AzFirewallPolicy -InputObject $azureFirewallPolicy
+
+# 学習済みプレフィックスの確認
+Get-AzFirewallLearnedIpPrefix -Name $azureFirewallName -ResourceGroupName $rgname</code></pre>
+        </div>
+
+        <h3>ARM テンプレート (Firewall Policy)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">JSON</span></div>
+            <pre><code class="language-json">{
+   "type": "Microsoft.Network/firewallPolicies",
+   "apiVersion": "2024-05-01",
+   "properties": {
+      "snat": {
+         "autoLearnPrivateRanges": "Enabled"
+      }
+   }
+}</code></pre>
+        </div>
+
+        <h3>Azure Portal — VNet ファイアウォールの場合</h3>
+        <ol class="step-list">
+            <li>ファイアウォールを選択し、「Learned SNAT IP Prefixes」で Route Server を追加する</li>
+            <li>ファイアウォールポリシーの「Private IP ranges (SNAT)」で「Auto-learn IP prefixes」を有効にして「Apply」を選択する</li>
+            <li>ファイアウォールの「Learned SNAT IP Prefixes」で学習済みルートを確認する</li>
+        </ol>
+
+        <h3>Azure Portal — vHub ファイアウォールの場合</h3>
+        <ol class="step-list">
+            <li>ファイアウォールポリシーの「Private IP ranges (SNAT)」で「Auto-learn IP prefixes」を有効にして「Apply」を選択する</li>
+            <li>ファイアウォールの「Learned SNAT IP Prefixes」で学習済みルートを確認する</li>
+        </ol>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌟</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>SNAT 除外リストの手動メンテナンスが不要になり、ネットワーク運用の負荷とヒューマンエラーのリスクを削減できる</li>
+                    <li>GA となったため、本番環境で SLA の対象として安心して利用できる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>元の送信元 IP アドレスが保持されるため、宛先側 (オンプレミスのファイアウォールやサーバー) での送信元ベースのアクセス制御・監査ログ分析が正確に行える</li>
+                    <li>RFC 1918 / RFC 6598 以外の登録済み IP 範囲を内部ネットワークとして使う環境でも、SNAT 動作を自動的に最適化できる</li>
+                    <li>ネットワーク構成の変更 (プレフィックスの追加・削除) が BGP 経由で 30 分ごとに自動反映される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="limitation-list">
+            <li><strong>Azure Route Server が必須</strong>: VNet デプロイでは、ファイアウォールと同じ VNet に RouteServerSubnet (最小 /27) と Azure Route Server を追加でデプロイする必要がある</li>
+            <li><strong>Azure CLI 非対応</strong>: auto-learn SNAT routes の構成は Azure CLI ではサポートされず、ARM テンプレート、Azure PowerShell、Azure portal を使用する必要がある</li>
+            <li><strong>ネットワークルールのみに適用</strong>: SNAT 除外 (プライベート範囲設定) はネットワークルールにのみ適用され、アプリケーションルールは宛先にかかわらず常に SNAT される</li>
+            <li><strong>学習間隔は 30 分</strong>: プレフィックスの学習は 30 分ごとの定期実行であり、即時反映ではない</li>
+            <li>Firewall Policy に関連付けられたファイアウォールでは、SNAT 範囲はポリシー側で指定する必要がある (ファイアウォールの <code>PrivateRange</code> / <code>AdditionalProperties</code> は無視される)</li>
+        </ul>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🏢 ユースケース 1: 登録済みパブリック IP 範囲を内部ネットワークとして使用するハイブリッド環境</h4>
+            <p><span class="usecase-label">シナリオ</span> オンプレミスネットワークで RFC 1918 以外の自社登録済み IP 範囲を使用しており、Azure からオンプレミスへの通信で送信元 IP を保持したい。従来はこれらの範囲を SNAT プライベート範囲として手動登録・更新する必要があった。</p>
+            <p><span class="usecase-label">実装例</span></p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">PowerShell</span></div>
+                <pre><code class="language-powershell"># Route Server 関連付け後、ポリシーで auto-learn を有効化
+$snat = New-AzFirewallPolicySnat -PrivateRange @("IANAPrivateRanges") -AutoLearnPrivateRange
+$policy = Get-AzFirewallPolicy -Name "hub-fw-policy" -ResourceGroupName "rg-network"
+$policy.Snat = $snat
+Set-AzFirewallPolicy -InputObject $policy</code></pre>
+            </div>
+            <div class="usecase-effect"><strong>✅ 効果</strong>: オンプレミス側で BGP 広報されたプレフィックスが自動的に No-SNAT 範囲として学習され、手動メンテナンスなしで送信元 IP が保持される。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🌐 ユースケース 2: Virtual WAN (secured virtual hub) での SNAT 管理の簡素化</h4>
+            <p><span class="usecase-label">シナリオ</span> Azure Virtual WAN のセキュリティで保護された仮想ハブに Azure Firewall をデプロイしており、複数の拠点・VNet のプレフィックスに対する SNAT 除外を一元管理したい。</p>
+            <p><span class="usecase-label">実装例</span> vHub では Azure Route Server が既定で関連付け済みのため、ファイアウォールポリシーの「Private IP ranges (SNAT)」で「Auto-learn IP prefixes」を有効化するだけでよい。</p>
+            <div class="usecase-effect"><strong>✅ 効果</strong>: 拠点の追加やアドレス変更のたびにポリシーを編集する必要がなくなり、Virtual WAN 全体の SNAT 管理が簡素化される。</div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Auto-learn SNAT routes 機能自体に関する追加料金の記載は確認できませんでした。Azure Firewall の料金は、固定料金 (デプロイ時間単価) と従量料金 (データ処理量あたりの GB 単価) の組み合わせで構成されます。</p>
+        <table>
+            <thead>
+                <tr><th>項目</th><th>Basic</th><th>Standard</th><th>Premium</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>デプロイ料金</td><td>時間単価</td><td>時間単価</td><td>時間単価</td></tr>
+                <tr><td>データ処理料金</td><td>GB 単価</td><td>GB 単価</td><td>GB 単価</td></tr>
+                <tr><td>キャパシティユニット (オプション)</td><td>提供なし</td><td>時間単価</td><td>時間単価</td></tr>
+            </tbody>
+        </table>
+        <div class="highlight-box">
+            具体的な単価はリージョンにより異なるため、<a href="https://azure.microsoft.com/pricing/details/azure-firewall/" target="_blank" rel="noopener">Azure Firewall 料金ページ</a>を参照してください。なお、VNet デプロイで auto-learn を利用する場合は Azure Route Server のデプロイが別途必要となるため、<a href="https://azure.microsoft.com/pricing/details/route-server/" target="_blank" rel="noopener">Azure Route Server の料金</a>も考慮してください。
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>📡 Azure Route Server</h4>
+                <p>auto-learn SNAT routes の必須コンポーネント。BGP でプレフィックスを学習し、Azure Firewall に提供する。VNet デプロイでは同一 VNet へのデプロイが必要</p>
+            </div>
+            <div class="related-card">
+                <h4>🌐 Azure Virtual WAN (secured virtual hub)</h4>
+                <p>vHub デプロイでは Azure Route Server が既定で関連付け済みのため、ポリシーでの有効化のみで利用可能</p>
+            </div>
+            <div class="related-card">
+                <h4>🗂️ Azure Firewall Manager</h4>
+                <p>VNet / vHub のアーキテクチャ選択とファイアウォールポリシーの一元管理に利用</p>
+            </div>
+            <div class="related-card">
+                <h4>📋 Azure Firewall Policy</h4>
+                <p>auto-learn の有効化 (<code>autoLearnPrivateRanges</code>) や SNAT プライベート範囲の設定を行う管理リソース</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=570474" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/firewall/snat-private-range" target="_blank" rel="noopener">Microsoft Learn: Azure Firewall SNAT private IP address ranges</a></li>
+            <li><a href="https://learn.microsoft.com/azure/route-server/quickstart-configure-route-server-portal" target="_blank" rel="noopener">Microsoft Learn: Azure Route Server の構成 (クイックスタート)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/firewall-manager/vhubs-and-vnets" target="_blank" rel="noopener">Microsoft Learn: Azure Firewall Manager のアーキテクチャオプション</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-firewall/" target="_blank" rel="noopener">Azure Firewall 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            Azure Firewall の Auto-learn SNAT routes が GA となり、登録済み・プライベートの宛先プレフィックスを 30 分ごとに自動学習して No-SNAT 範囲として適用できるようになりました。RFC 1918 以外の IP 範囲を内部ネットワークとして使うハイブリッド環境や Virtual WAN 環境で、SNAT 除外リストの手動メンテナンスを不要にし、送信元 IP の保持を自動化できます。Azure Route Server との関連付けが必須である点、Azure CLI では構成できない点、SNAT 除外がネットワークルールにのみ適用される点に留意しつつ、SNAT 範囲を手動管理している環境では本機能への移行を検討することを推奨します。
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Firewall</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">SNAT</span>
+            <span class="tag">Azure Route Server</span>
+            <span class="tag">Virtual WAN</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>:
+            <a href="https://azure.microsoft.com/updates?id=570474" target="_blank" rel="noopener">Azure Updates (ID: 570474)</a> /
+            <a href="https://learn.microsoft.com/azure/firewall/snat-private-range" target="_blank" rel="noopener">Microsoft Learn: Azure Firewall SNAT private IP address ranges</a> /
+            <a href="https://learn.microsoft.com/azure/route-server/quickstart-configure-route-server-portal" target="_blank" rel="noopener">Microsoft Learn: Azure Route Server</a> /
+            <a href="https://learn.microsoft.com/azure/firewall-manager/vhubs-and-vnets" target="_blank" rel="noopener">Microsoft Learn: Azure Firewall Manager</a>
+        </p>
+        <p>このインフォグラフィックは Azure News Summary レポート (2026-09-01) を基に生成されました。</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
