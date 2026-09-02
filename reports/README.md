@@ -5,10 +5,16 @@
 
 ## 2026 年
 
+- [2026-09-02 - Azure Front Door: プロファイルレベル / ルートレベル WAF ポリシー (Public Preview)](2026/2026-09-02-front-door-waf-profile-route-policies.md)
+- [2026-09-02 - Azure Database for MySQL: Reader Endpoint (Public Preview)](2026/2026-09-02-mysql-reader-endpoint.md)
 - [2026-09-01 - Azure Monitor: Auxiliary Logs プランの Azure テーブル対応・プラン切り替え・ソブリンクラウド対応が GA](2026/2026-09-01-azure-monitor-auxiliary-logs-ga-updates.md)
+- [2026-09-01 - Microsoft Defender for Cloud: Azure Container Apps サポート (Serverless Containers Posture) の一般提供開始](2026/2026-09-01-defender-container-apps-posture.md)
+- [2026-09-01 - Azure Kubernetes Service (AKS): Windows Server 2025 サポートの一般提供 (GA)](2026/2026-09-01-aks-windows-server-2025.md)
 - [2026-09-01 - Azure Firewall: Auto-learn SNAT routes の一般提供開始 (GA)](2026/2026-09-01-azure-firewall-auto-learn-snat-routes.md)
+- [2026-09-01 - Azure Kubernetes Service (AKS): Azure Linux 向け Confidential VM の一般提供開始](2026/2026-09-01-aks-confidential-vms-azure-linux.md)
 - [2026-09-01 - Microsoft Marketplace: 購入注文書 (Purchase Order) マッピングの一般提供開始](2026/2026-09-01-marketplace-purchase-order-mapping.md)
 - [2026-09-01 - Azure Monitor / Azure Copilot: Observability Agent が Basic・Auxiliary テーブルプランに対応](2026/2026-09-01-azure-copilot-observability-agent-table-plans.md)
+- [2026-09-01 - Azure Kubernetes Service (AKS): Artifact Streaming の一般提供開始 (GA)](2026/2026-09-01-aks-artifact-streaming.md)
 - [2026-08-31 - Azure Disk Storage: Azure VM のディスク単位の回復性 (Per-disk resiliency) パブリックプレビュー](2026/2026-08-31-per-disk-resiliency-azure-vms.md)
 - [2026-08-31 - Azure Multicloud Interconnect: パブリックプレビュー開始 (AWS とのプライベート接続)](2026/2026-08-31-azure-multicloud-interconnect.md)
 - [2026-08-28 - Azure Kubernetes Service (AKS): Azure Files CSI ドライバー (SMB) の Workload Identity サポートが一般提供 (GA)](2026/2026-08-28-aks-azure-files-csi-workload-identity.md)

@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Database for MySQL: Reader Endpoint (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+
+    /* Database category color */
+    --db-yellow: #FFB900;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--ms-blue-900), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.header h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle { font-size: 16px; opacity: 0.9; }
+.header .meta { margin-top: 16px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 16px; opacity: 0.95; }
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(255,255,255,0.6);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.section h2 {
+    font-size: 22px;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; }
+.section ul { margin: 8px 0 12px 24px; }
+.section li { margin-bottom: 8px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.keyword {
+    background: var(--ms-blue-200);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { margin-left: 20px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p { margin-bottom: 4px; font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { font-size: 14px; color: var(--ms-text-secondary); margin: 4px 0 4px 20px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Table */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+}
+.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+.spec-table td:first-child { font-weight: 500; white-space: nowrap; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* Code blocks (highlight.js) */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* Use case cards */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--db-yellow);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 { color: var(--ms-blue-800); margin-bottom: 10px; font-size: 16px; }
+.usecase-row { margin-bottom: 8px; font-size: 14px; }
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-right: 8px;
+}
+
+/* Merit / limitation */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+    border-left: 4px solid var(--ms-green);
+}
+.merit-card.tech { border-left-color: var(--azure-blue); }
+.merit-card h4 { margin-bottom: 10px; color: var(--ms-blue-900); }
+.merit-card ul { margin-left: 20px; font-size: 14px; }
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.warning-box h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.warning-box ul { margin-left: 20px; font-size: 14px; }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px;
+}
+.related-card h4 { color: var(--azure-blue); font-size: 15px; margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+a { color: var(--azure-blue); }
+.link-list li { margin-bottom: 6px; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* Tags */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    border: 1px solid var(--ms-border);
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Title -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Database for MySQL - Flexible Server</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Reader Endpoint (リーダーエンドポイント)</h1>
+        <p class="subtitle">複数の読み取りレプリカへの接続を、単一の DNS エンドポイントで自動負荷分散するマネージド機能がパブリックプレビューに</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-02</span>
+            <span>🗄️ サービス: Azure Database for MySQL - Flexible Server</span>
+            <span>🏷️ ステータス: Public Preview</span>
+        </div>
+    </header>
+
+    <!-- Overview -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>
+            Azure Database for MySQL - Flexible Server で、複数の読み取りレプリカ利用時の接続管理を簡素化する
+            <span class="keyword">リーダーエンドポイント (Reader Endpoint)</span> のパブリックプレビューが発表されました。
+            読み取り専用の接続トラフィックを複数のレプリカ間で自動的に負荷分散する<strong>単一の DNS エンドポイント</strong>を提供します。
+        </p>
+        <p>
+            Azure Database for MySQL はプライマリサーバーごとに<strong>最大 10 個</strong>の読み取りレプリカをサポートしています。
+            読み取り専用トラフィックをリーダーエンドポイント経由でルーティングすることで、個々のレプリカエンドポイントを管理することなく、
+            接続を効率的に管理しパフォーマンスを最適化できます。アプリケーションアーキテクチャがシンプルになり、スケーラビリティと耐障害性の両方が向上します。
+        </p>
+        <div class="highlight-box">
+            リーダーエンドポイントは<strong>レプリカの可用性とレプリケーションラグを継続的に監視</strong>し、
+            利用不可になったレプリカや設定された最大許容レプリケーションラグを超えたレプリカを、自動的にルーティング対象から除外します。
+            ルーティングは<strong>接続レベル</strong>で行われ、個々のクエリの検査や書き込みトラフィックのルーティングは行いません。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">1</div>
+                <div class="stat-label">読み取り用 DNS エンドポイント</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最大 10</div>
+                <div class="stat-label">プライマリごとの読み取りレプリカ数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2 種類</div>
+                <div class="stat-label">ルーティング方式 (Rotational / Performance)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">複数</div>
+                <div class="stat-label">同一サーバーに作成可能なリーダーエンドポイント</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>複数の読み取りレプリカを使用する場合、アプリケーション側で各レプリカの個別エンドポイント (ホスト名) を管理する必要があった</li>
+                    <li>読み取りトラフィックの負荷分散には、ProxySQL のような接続プロキシの導入やマイクロサービスパターンでの作り込みなど、アプリケーション側での対応が必要だった</li>
+                    <li>レプリカの障害やレプリケーション遅延が発生した際、そのレプリカを読み取り対象から外す処理をアプリケーション側で実装する必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>単一の DNS エンドポイントで読み取り接続を受け付け、複数レプリカへ自動的に負荷分散されるため、アプリケーションアーキテクチャが簡素化された</li>
+                    <li>レプリカの可用性とレプリケーションラグを継続監視し、条件を満たさないレプリカを自動的にルーティングから除外することで耐障害性が向上した</li>
+                    <li>ラウンドロビン (Rotational) とネットワーク遅延ベース (Performance) の 2 種類のルーティング方式を選択できるようになった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    App(["🖥️ アプリケーション"])
+
+    subgraph Azure["☁️ Azure Cloud"]
+        RE["🔀 リーダーエンドポイント&lt;br/&gt;(単一 DNS エンドポイント)"]
+        Primary[("🗄️ プライマリサーバー&lt;br/&gt;(読み取り/書き込み)")]
+        R1[("📖 読み取りレプリカ 1")]
+        R2[("📖 読み取りレプリカ 2")]
+        R3[("📖 読み取りレプリカ N&lt;br/&gt;(最大 10 個)")]
+    end
+
+    App -- "✍️ 書き込み" --> Primary
+    App -- "📖 読み取り" --> RE
+    RE -- "負荷分散" --> R1
+    RE -- "負荷分散" --> R2
+    RE -- "負荷分散" --> R3
+    Primary -. "非同期レプリケーション (binlog)" .-> R1
+    Primary -. "非同期レプリケーション (binlog)" .-> R2
+    Primary -. "非同期レプリケーション (binlog)" .-> R3
+            </pre>
+        </div>
+        <p>
+            アプリケーションは書き込みをプライマリサーバーへ、読み取りをリーダーエンドポイントへ送信します。
+            リーダーエンドポイントは可用性とレプリケーションラグを監視しながら、新規の読み取り接続を適格なレプリカへ自動的に振り分けます。
+        </p>
+    </section>
+
+    <!-- Key features -->
+    <section class="section">
+        <h2>⚙️ サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>1. 単一 DNS エンドポイントによる読み取り接続の負荷分散</h4>
+                <ul>
+                    <li>複数の読み取りレプリカに対する新規接続を、単一の DNS エンドポイント経由で自動的に分散</li>
+                    <li>接続レベルのルーティングであり、個々のクエリの検査や書き込みトラフィックのルーティングは行わない</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🩺</div>
+            <div class="feature-content">
+                <h4>2. レプリカの健全性の継続監視と自動除外</h4>
+                <ul>
+                    <li>レプリカの可用性とレプリケーションラグを継続的に監視</li>
+                    <li>利用不可のレプリカや、設定した最大許容レプリケーションラグを超えたレプリカは自動的にルーティング対象から除外</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>3. 2 種類のルーティング方式</h4>
+                <ul>
+                    <li><strong>Rotational</strong>: 適格なレプリカ間でラウンドロビン方式により新規接続を分散</li>
+                    <li><strong>Performance</strong>: ネットワーク遅延情報を使用し、クライアントに最も近いと予想される適格なレプリカリージョンを選択</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛠️</div>
+            <div class="feature-content">
+                <h4>4. 柔軟な構成オプション</h4>
+                <ul>
+                    <li>ルーティングに参加する読み取りレプリカの選択</li>
+                    <li>適格なレプリカとみなす最大許容レプリケーションラグ</li>
+                    <li>DNS TTL (選択されたレプリカの DNS マッピングをキャッシュできる時間)</li>
+                    <li>適格なレプリカが存在しない場合にプライマリサーバーで読み取りを処理するかどうか</li>
+                    <li>新規作成したレプリカを自動的にリーダーエンドポイントへアタッチするかどうか</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>5. 複数リーダーエンドポイントの作成</h4>
+                <ul>
+                    <li>同一ソースサーバーに対して複数のリーダーエンドポイントを作成可能</li>
+                    <li>アプリケーションやワークロードごとに、異なるレプリカ選択、ルーティング方式、レプリケーションラグしきい値、DNS TTL を使い分けられる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech spec -->
+    <section class="section">
+        <h2>📐 技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象サービス</td><td>Azure Database for MySQL - Flexible Server</td></tr>
+            <tr><td>読み取りレプリカ数</td><td>プライマリサーバーごとに最大 10 個</td></tr>
+            <tr><td>ルーティング方式</td><td>Rotational (ラウンドロビン) / Performance (ネットワーク遅延ベース)</td></tr>
+            <tr><td>ルーティングレベル</td><td>接続レベル (クエリ検査・書き込みルーティングは非対応)</td></tr>
+            <tr><td>レプリケーション方式</td><td>MySQL ネイティブの binlog によるファイル位置ベースの非同期レプリケーション</td></tr>
+            <tr><td>レプリカ対応価格レベル</td><td>General Purpose / Memory Optimized (Burstable は読み取りレプリカ非対応)</td></tr>
+            <tr><td>監視</td><td>Azure Monitor の「Replication lag in seconds」メトリックなど</td></tr>
+        </table>
+    </section>
+
+    <!-- Setup -->
+    <section class="section">
+        <h2>🔧 設定方法</h2>
+        <h3>前提条件</h3>
+        <ul>
+            <li>Azure Database for MySQL - Flexible Server のソースサーバーが <span class="keyword">General Purpose</span> または <span class="keyword">Memory Optimized</span> 価格レベルであること (読み取りレプリカの要件)</li>
+            <li>読み取りレプリカが作成済みであること</li>
+        </ul>
+        <div class="highlight-box">
+            パブリックプレビュー時点では <strong>Azure CLI はサポートされていない</strong>ため、<strong>Azure Portal</strong> から構成します。
+            作成時にルーティング方式、参加するレプリカ、最大許容レプリケーションラグ、DNS TTL などを構成できます。
+            詳細な手順は <a href="https://learn.microsoft.com/azure/mysql/flexible-server/concepts-read-replicas" target="_blank" rel="noopener">読み取りレプリカのドキュメント</a> を参照してください。
+        </div>
+    </section>
+
+    <!-- Merits -->
+    <section class="section">
+        <h2>💡 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>アプリケーション側の接続管理・負荷分散ロジックの開発・運用コストを削減できる</li>
+                    <li>レプリカの追加・削除時にアプリケーションの接続設定を変更する必要がなく、読み取りスケールアウトの運用が容易になる</li>
+                    <li>ProxySQL などの外部プロキシを別途構築・運用せずに読み取り負荷分散を実現できる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>単一 DNS エンドポイントにより接続文字列の管理がシンプルになる</li>
+                    <li>障害やレプリケーション遅延が発生したレプリカを自動的に除外することで、古いデータの読み取りや接続エラーのリスクを低減できる</li>
+                    <li>複数のリーダーエンドポイントを作成し、ワークロード特性 (レポーティング、BI、API など) に応じたルーティングポリシーを使い分けられる</li>
+                    <li>Performance ルーティングにより、クライアントに近いリージョンのレプリカへ接続を誘導できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Limitations -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <h4>パブリックプレビュー期間中の制限</h4>
+            <ul>
+                <li>geo レプリカ (リージョン間レプリカ) は未サポート</li>
+                <li>作成後にルーティング方式を変更できない</li>
+                <li>Azure CLI は未サポート</li>
+                <li><code>VERIFY_IDENTITY</code> モードの SSL 接続はリーダーエンドポイント経由で使用不可 (他の SSL モードはサポート)</li>
+            </ul>
+        </div>
+        <div class="warning-box">
+            <h4>読み取りレプリカ機能自体の考慮事項</h4>
+            <ul>
+                <li>レプリケーションは非同期であり、ソースとレプリカ間に遅延が発生する (結果整合性)。遅延を許容できるワークロード向け</li>
+                <li>リーダーエンドポイントは接続レベルのルーティングであり、書き込みトラフィックの振り分けやクエリ単位の読み書き分離は行わない</li>
+                <li>読み取りレプリカは Burstable 価格レベルでは利用できない</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Use cases -->
+    <section class="section">
+        <h2>🎯 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>📈 ユースケース 1: 読み取り集約型 Web アプリケーションのスケールアウト</h4>
+            <div class="usecase-row"><span class="usecase-label">シナリオ</span>EC サイトやニュースポータルなど読み取りが支配的なワークロードで、複数の読み取りレプリカに負荷を分散したい。</div>
+            <div class="usecase-row"><span class="usecase-label">実装例</span>アプリケーションの読み取り用接続文字列をリーダーエンドポイントに設定し、書き込み用接続文字列はプライマリサーバーに設定する。Rotational ルーティングでレプリカ間に接続を均等分散する。</div>
+            <div class="usecase-row"><span class="usecase-label">効果</span>レプリカの追加・削除時もアプリケーション変更が不要になり、読み取りスループットを柔軟にスケールできる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>📊 ユースケース 2: BI・分析ワークロードの分離</h4>
+            <div class="usecase-row"><span class="usecase-label">シナリオ</span>本番トランザクションに影響を与えずに、BI や分析レポートのクエリを実行したい。</div>
+            <div class="usecase-row"><span class="usecase-label">実装例</span>分析用に別のリーダーエンドポイントを作成し、分析ワークロードが許容できるレプリケーションラグしきい値と対象レプリカを個別に構成する。</div>
+            <div class="usecase-row"><span class="usecase-label">効果</span>本番用と分析用でルーティングポリシーを分離し、プライマリサーバーへの負荷を回避しながらレポーティングを実行できる。</div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>
+            リーダーエンドポイントには<strong>追加料金が発生</strong>します。適用されるコストの見積もりには
+            <a href="https://azure.microsoft.com/pricing/calculator/" target="_blank" rel="noopener">Azure 料金計算ツール</a> を使用してください。
+        </p>
+        <p>
+            また、読み取りレプリカ自体は新しいサーバーとして扱われ、プロビジョニングされたコンピューティング (vCore) とストレージ (GB/月) に基づいて
+            <strong>レプリカごとに課金</strong>されます。レプリカの実行コストはレプリカが稼働するリージョンによって異なります。
+        </p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/mysql/" target="_blank" rel="noopener">Azure Database for MySQL 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Related services -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>読み取りレプリカ (Read Replicas)</h4>
+                <p>リーダーエンドポイントの前提となる機能。binlog ベースの非同期レプリケーションで最大 10 個のレプリカへデータを複製する</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Monitor</h4>
+                <p>「Replication lag in seconds」メトリックでレプリケーションラグを監視し、しきい値超過時のアラートを設定可能</p>
+            </div>
+            <div class="related-card">
+                <h4>ProxySQL</h4>
+                <p>従来から読み取り負荷分散に利用されてきた軽量接続プロキシ。リーダーエンドポイントはマネージドな代替手段となる</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure App Service / AKS / Virtual Machine Scale Sets</h4>
+                <p>アプリケーション層のスケールアウト基盤。データベース層の読み取りスケールと組み合わせて全体のスケーラビリティを確保する</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reference links -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=569653" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li><a href="https://learn.microsoft.com/azure/mysql/flexible-server/concepts-read-replicas" target="_blank" rel="noopener">Microsoft Learn: Read Replicas - Azure Database for MySQL</a></li>
+            <li><a href="https://learn.microsoft.com/azure/mysql/flexible-server/whats-new" target="_blank" rel="noopener">Microsoft Learn: What's new in Azure Database for MySQL</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/mysql/" target="_blank" rel="noopener">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Summary -->
+    <section class="section summary-box">
+        <h2>📝 まとめ</h2>
+        <p>
+            Azure Database for MySQL - Flexible Server のリーダーエンドポイントは、複数の読み取りレプリカ利用時に必要だった接続管理と負荷分散の作り込みを、
+            <strong>単一のマネージド DNS エンドポイント</strong>に置き換えるアップデートです。
+            レプリカの健全性監視と自動除外、2 種類のルーティング方式、ワークロードごとの複数エンドポイント構成など、
+            読み取りスケールアウトの実運用に必要な機能が揃っています。
+        </p>
+        <p>
+            読み取り集約型ワークロードで ProxySQL などの独自プロキシを運用している場合や、レプリカのエンドポイント管理が煩雑になっている場合は、
+            <strong>パブリックプレビュー段階での評価を推奨</strong>します。
+            なお、プレビュー期間中は geo レプリカ非対応、Azure CLI 非対応、ルーティング方式の作成後変更不可などの制限がある点に留意してください。
+        </p>
+        <div class="tag-list">
+            <span class="tag">Azure Database for MySQL</span>
+            <span class="tag">Flexible Server</span>
+            <span class="tag">Reader Endpoint</span>
+            <span class="tag">Read Replica</span>
+            <span class="tag">Load Balancing</span>
+            <span class="tag">Databases</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong></p>
+        <p>
+            <a href="https://azure.microsoft.com/updates?id=569653" target="_blank" rel="noopener">Azure Updates: Reader Endpoint for Azure Database for MySQL (Public Preview)</a> ·
+            <a href="https://learn.microsoft.com/azure/mysql/flexible-server/concepts-read-replicas" target="_blank" rel="noopener">Microsoft Learn: Read Replicas</a>
+        </p>
+        <p>ソースレポート: reports/2026/2026-09-02-mysql-reader-endpoint.md (Azure News Summary プロジェクト) · 生成日: 2026-09-02</p>
+    </footer>
+
+</div>
+
+<!-- Mermaid.js -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+
+<!-- highlight.js -->
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Front Door: プロファイルレベル / ルートレベル WAF ポリシー (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+}
+
+.hero .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+.hero h1 {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.hero .subtitle { font-size: 16px; opacity: 0.9; }
+
+.hero .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 26px; }
+
+h3.sub-title {
+    font-size: 17px;
+    color: var(--ms-blue-700);
+    margin: 20px 0 10px;
+}
+
+p { margin: 10px 0; }
+
+ul.plain { margin: 8px 0 8px 24px; }
+ul.plain li { margin: 6px 0; }
+
+ol.steps { margin: 8px 0 8px 24px; }
+ol.steps li { margin: 8px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.note-box {
+    background: #FFF8E7;
+    border-left: 4px solid var(--ms-yellow);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { margin-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Priority flow ===== */
+.priority-flow {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 20px 0;
+}
+
+.priority-step {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+    border-radius: 10px;
+    padding: 14px 18px;
+    text-align: center;
+    flex: 1;
+    min-width: 180px;
+}
+
+.priority-step .rank {
+    display: inline-block;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.priority-step strong { display: block; color: var(--azure-dark-blue); }
+.priority-step span { font-size: 13px; color: var(--ms-text-secondary); }
+
+.priority-arrow {
+    display: flex;
+    align-items: center;
+    font-size: 24px;
+    color: var(--azure-blue);
+    font-weight: 700;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { color: var(--azure-dark-blue); margin-bottom: 6px; }
+.feature-content p { margin: 4px 0; font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+}
+
+td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin-right: 6px;
+}
+
+.usecase-card p { font-size: 14px; }
+.usecase-card ol, .usecase-card ul { margin: 8px 0 8px 24px; font-size: 14px; }
+.usecase-card li { margin: 5px 0; }
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* ===== Pros / Cons ===== */
+.pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.pros-card, .cons-card {
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.pros-card { background: #E8F5E9; border: 1px solid var(--ms-green); }
+.cons-card { background: #FFF4E5; border: 1px solid var(--ms-orange); }
+.pros-card h4 { color: var(--ms-green); margin-bottom: 8px; }
+.cons-card h4 { color: var(--ms-orange); margin-bottom: 8px; }
+.pros-card ul, .cons-card ul { margin-left: 20px; font-size: 14px; }
+.pros-card li, .cons-card li { margin: 6px 0; }
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--azure-dark-blue); display: block; margin-bottom: 4px; }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+ul.links { margin: 8px 0 8px 24px; }
+ul.links li { margin: 8px 0; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* ===== Tags ===== */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+.tag {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 13px;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* ===== Footer ===== */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 12px;
+}
+
+footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .pros-cons { grid-template-columns: 1fr; }
+    .priority-flow { flex-direction: column; }
+    .priority-arrow { justify-content: center; transform: rotate(90deg); }
+    .hero h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title Area ===== -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure Front Door</span>
+            <span class="service-badge">Azure Web Application Firewall (WAF)</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>プロファイルレベル / ルートレベル WAF ポリシー関連付け<br>(Public Preview)</h1>
+        <p class="subtitle">WAF ポリシーを「プロファイル」「ドメイン」「ルート」の 3 スコープで柔軟に関連付け</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-02</span>
+            <span>🧩 機能: プロファイルレベルおよびルートレベルの WAF ポリシー関連付け</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Front Door の Web Application Firewall (WAF) が、<strong>プロファイルレベルおよびルートレベルでの WAF ポリシー関連付け</strong>をパブリックプレビューでサポートした。これにより、WAF ポリシーは「プロファイル」「ドメイン」「ルート」の 3 つのスコープで関連付けできるようになった。</p>
+        <p>この機能により、Azure Front Door プロファイル全体に共通のベースライン保護を適用しつつ、<strong>サインイン・チェックアウト・API といった機密性の高い特定のルートには個別のポリシーを適用</strong>する、といった柔軟なセキュリティ構成が可能になる。ポリシーの重複を削減しながら、必要な箇所ではより細かいセキュリティ設定を実現できる。</p>
+        <div class="highlight-box">
+            複数のスコープが同一リクエストに該当する場合は、<strong>最も具体的なスコープのポリシー</strong>が適用される (ルートレベル &gt; ドメインレベル &gt; プロファイルレベル)。
+        </div>
+
+        <div class="priority-flow">
+            <div class="priority-step">
+                <span class="rank">1</span>
+                <strong>🛣️ ルートレベル</strong>
+                <span>最優先 (最も具体的)</span>
+            </div>
+            <div class="priority-arrow">›</div>
+            <div class="priority-step">
+                <span class="rank">2</span>
+                <strong>🌐 ドメインレベル</strong>
+                <span>従来からの方式</span>
+            </div>
+            <div class="priority-arrow">›</div>
+            <div class="priority-step">
+                <span class="rank">3</span>
+                <strong>☁️ プロファイルレベル</strong>
+                <span>共通ベースライン</span>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>WAF ポリシーはドメイン (フロントエンドホスト) 単位での関連付けが基本で、プロファイル全体への一括適用や、特定ルートのみへの適用ができなかった</li>
+                    <li>ドメイン数が多い環境では、同じベースライン保護を適用するために類似ポリシーの関連付けを繰り返す必要があり、ポリシーの重複が発生しやすかった</li>
+                    <li>サインインやチェックアウト、API など特定のパスだけに厳格なルールを適用したい場合、ルート単位での制御手段がなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>プロファイルレベルのポリシーで、Azure Front Door プロファイル全体に共通のベースライン保護を一括適用できるようになった</li>
+                    <li>ルートレベルのポリシーで、特定のルート (パス) に対して個別の詳細な保護を適用できるようになった</li>
+                    <li>スコープは単独でも組み合わせても利用でき、「最も具体的なポリシーが勝つ」という明確な優先順位 (ルート &gt; ドメイン &gt; プロファイル) で動作する</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Client([🌐 クライアント]) --> AFD
+
+    subgraph Azure["☁️ Azure Front Door プロファイル"]
+        AFD{🚦 リクエスト評価&lt;br/&gt;最も具体的なスコープを適用}
+        AFD -->|"① ルートに一致"| RoutePolicy["🛡️ ルートレベル WAF ポリシー&lt;br/&gt;(例: /checkout, /api 向け厳格ルール)"]
+        AFD -->|"② ドメインに一致"| DomainPolicy["🛡️ ドメインレベル WAF ポリシー&lt;br/&gt;(特定ドメイン向け)"]
+        AFD -->|"③ それ以外"| ProfilePolicy["🛡️ プロファイルレベル WAF ポリシー&lt;br/&gt;(共通ベースライン保護)"]
+    end
+
+    RoutePolicy --> Origin[🖥️ オリジン]
+    DomainPolicy --> Origin
+    ProfilePolicy --> Origin
+            </pre>
+        </div>
+        <p>リクエストに複数スコープのポリシーが該当する場合、<strong>ルートレベル &gt; ドメインレベル &gt; プロファイルレベル</strong>の優先順位で、最も具体的なポリシーが 1 つ適用される。</p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">☁️</div>
+            <div class="feature-content">
+                <h4>1. プロファイルレベルのポリシー関連付け</h4>
+                <p>Azure Front Door プロファイル全体に共有のベースラインポリシーを適用する。</p>
+                <p>プロファイル配下の全トラフィックに共通の保護を一括で展開できる。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛣️</div>
+            <div class="feature-content">
+                <h4>2. ルートレベルのポリシー関連付け</h4>
+                <p>選択したルートに最も具体的なポリシーを適用する。</p>
+                <p>サインイン、チェックアウト、API など機密性の高いパスに個別の厳格なルールを設定できる。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>3. ドメインレベルのポリシー関連付け (従来からの方式)</h4>
+                <p>プロファイル内の特定ドメインにポリシーを適用する。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>4. 明確なポリシー優先順位</h4>
+                <p>複数スコープが該当する場合、「ルートレベル → ドメインレベル → プロファイルレベル」の順で最も具体的なポリシーが適用される。</p>
+                <p>例: プロファイルレベルとルートレベルの両方に一致するリクエストには、ルートレベルのポリシーが適用される。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Technical Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <thead>
+                <tr><th style="width: 30%;">項目</th><th>詳細</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>ステータス</strong></td><td>Public Preview (2026 年 9 月開始、GA 時期は未定)</td></tr>
+                <tr><td><strong>関連付けスコープ</strong></td><td>プロファイル / ドメイン / ルートの 3 種類 (単独・組み合わせ両方可)</td></tr>
+                <tr><td><strong>ポリシー優先順位</strong></td><td>ルートレベル &gt; ドメインレベル &gt; プロファイルレベル (最も具体的なスコープが適用)</td></tr>
+                <tr><td><strong>対象 SKU</strong></td><td>Azure Front Door Standard / Premium (Standard はカスタムルールのみ、マネージドルールは Premium で利用可能)</td></tr>
+                <tr><td><strong>WAF モード</strong></td><td>Detection (検出のみ) / Prevention (ブロック)</td></tr>
+                <tr><td><strong>ルールアクション</strong></td><td>Allow / Block / Log / Redirect / Anomaly score (DRS 2.0 以降)</td></tr>
+                <tr><td><strong>構成手段</strong></td><td>Azure Portal、REST API、ARM テンプレート、Azure PowerShell、Azure Firewall Manager</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 class="sub-title">前提条件</h3>
+        <ol class="steps">
+            <li>Azure Front Door Standard または Premium のプロファイルを作成済みであること</li>
+            <li>WAF ポリシーを作成する権限があること</li>
+        </ol>
+
+        <h3 class="sub-title">Azure Portal での手順</h3>
+        <ol class="steps">
+            <li><strong>リソースの作成</strong> から <strong>Web Application Firewall (WAF)</strong> を検索し、<strong>作成</strong> を選択</li>
+            <li><strong>Basics</strong> タブで <strong>Policy for</strong> に <strong>Global WAF (Front Door)</strong> を選択し、Front Door のティア (Standard / Premium)、サブスクリプション、リソースグループ、ポリシー名を指定</li>
+            <li><strong>Association</strong> タブで <strong>Associate a Front door profile</strong> を選択し、以下を設定して <strong>Add</strong>:
+                <ul class="plain">
+                    <li><strong>Front door profile</strong>: 対象の Azure Front Door プロファイル</li>
+                    <li><strong>Association scope</strong>: <strong>Profile</strong> / <strong>Domain</strong> / <strong>Route</strong> から選択</li>
+                    <li><strong>Domain</strong> または <strong>Route</strong> を選択した場合は、対象のドメイン (およびルート) を選択</li>
+                </ul>
+            </li>
+            <li>必要に応じて関連付けを追加し、<strong>Review + create</strong> &gt; <strong>Create</strong> で作成</li>
+        </ol>
+
+        <div class="note-box">
+            <strong>💡 補足</strong>: 既に別の WAF ポリシーに関連付けられているドメインはグレーアウト表示される。別のポリシーに関連付けるには、既存の関連付けを先に削除する必要がある。
+        </div>
+    </section>
+
+    <!-- ===== Pros / Cons ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚖️</span>メリット / デメリット・制約事項</h2>
+        <div class="pros-cons">
+            <div class="pros-card">
+                <h4>✅ メリット</h4>
+                <p style="font-size: 13px; font-weight: 700; margin: 8px 0 4px;">ビジネス面</p>
+                <ul>
+                    <li>プロファイル全体への一括適用により、セキュリティベースラインの展開・運用工数を削減できる</li>
+                    <li>決済・認証など重要な機能に対して的を絞った保護を適用でき、コンプライアンス要件への対応がしやすくなる</li>
+                </ul>
+                <p style="font-size: 13px; font-weight: 700; margin: 10px 0 4px;">技術面</p>
+                <ul>
+                    <li>類似ポリシーの重複を削減し、WAF ポリシーの管理をシンプルにできる</li>
+                    <li>「プロファイルでベースライン + 必要なルートのみ個別ポリシー」という段階的な構成が可能</li>
+                    <li>優先順位のルールが明確 (最も具体的なスコープが勝つ) で、動作を予測しやすい</li>
+                </ul>
+            </div>
+            <div class="cons-card">
+                <h4>⚠️ デメリット・制約事項</h4>
+                <ul>
+                    <li>パブリックプレビューであり、GA 時期は未定。本番環境での利用は SLA などの観点から注意が必要</li>
+                    <li>1 つのリクエストに適用される WAF ポリシーは 1 つのみ (複数スコープのポリシーが合成されるわけではない)</li>
+                    <li>マネージドルールセットは Azure Front Door Premium (および Classic) のみサポート。Standard はカスタムルールのみ</li>
+                    <li>ドメインを別のポリシーに関連付け直すには、既存の関連付けを先に削除する必要がある</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💼</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🛒 ユースケース 1: 共通ベースライン + 機密ルートの強化</h4>
+            <p><span class="usecase-label">シナリオ</span>EC サイトで、サイト全体にはマネージドルールセットによる標準的な保護を適用しつつ、<code>/checkout</code> や <code>/signin</code> などの機密ルートにはレート制限や厳格なカスタムルールを追加したい。</p>
+            <p><span class="usecase-label">実装例</span></p>
+            <ol>
+                <li>プロファイルレベルのポリシーとしてマネージドルールセット (DRS) を有効にしたベースラインポリシーを関連付ける</li>
+                <li><code>/checkout</code>、<code>/signin</code> に対応するルートに、レート制限ルールや地理ベースのアクセス制御を含む個別ポリシーをルートレベルで関連付ける</li>
+                <li>該当ルートへのリクエストにはルートレベルポリシーが適用され、それ以外はプロファイルレベルポリシーが適用される</li>
+            </ol>
+            <div class="effect-box"><strong>効果</strong>: ポリシーの重複を減らしながら、リスクの高い経路に対してのみ強い保護を適用できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🌍 ユースケース 2: マルチドメイン環境のポリシー統合</h4>
+            <p><span class="usecase-label">シナリオ</span>1 つの Front Door プロファイルで多数のドメインを配信しており、これまでドメインごとに同じ内容のポリシー関連付けを繰り返していた。</p>
+            <p><span class="usecase-label">実装例</span></p>
+            <ol>
+                <li>共通の保護要件をまとめたポリシーをプロファイルレベルで 1 回だけ関連付ける</li>
+                <li>要件が異なるドメインのみ、ドメインレベルまたはルートレベルのポリシーで上書きする</li>
+            </ol>
+            <div class="effect-box"><strong>効果</strong>: ポリシー数と関連付け作業を削減し、設定漏れのリスクを低減できる。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Azure Front Door Standard / Premium の料金体系 (料金ページより、米ドル):</p>
+        <table>
+            <thead>
+                <tr><th>項目</th><th>Standard</th><th>Premium</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>基本料金</strong></td><td>月額 $35</td><td>月額 $330</td></tr>
+                <tr><td><strong>リクエスト料金 (1 万リクエストあたり、Zone 2: アジア太平洋・日本含む)</strong></td><td>$0.0108</td><td>$0.0168</td></tr>
+                <tr><td><strong>WAF / Private Link</strong></td><td>基本的なセキュリティ機能のみ</td><td>追加料金なしで含まれる</td></tr>
+            </tbody>
+        </table>
+        <ul class="plain">
+            <li>Premium では WAF と Private Link の利用が追加料金なしで含まれる</li>
+            <li>WAF アドオンの CAPTCHA は 1,000 CAPTCHA セッションあたり $0.4</li>
+            <li>Front Door (classic) の WAF はポリシーとルール構成に基づく別課金</li>
+        </ul>
+        <p>最新の料金は <a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">Azure Front Door 料金ページ</a> を参照。</p>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>🛡️ Azure Web Application Firewall</strong>
+                本アップデートの対象。Front Door のほか Application Gateway (リージョナル WAF) でも利用できる。
+            </div>
+            <div class="related-card">
+                <strong>🚪 Azure Front Door Standard / Premium</strong>
+                WAF ポリシーの関連付け先。マネージドルールセットのフル機能は Premium で利用可能。
+            </div>
+            <div class="related-card">
+                <strong>🧭 Azure Firewall Manager</strong>
+                WAF ポリシーを大規模に一元管理するための統合が提供されている。
+            </div>
+            <div class="related-card">
+                <strong>📊 Azure Monitor / Log Analytics</strong>
+                WAF のログ・メトリック監視に統合されており、トラフィック傾向やアラートを追跡できる。
+            </div>
+            <div class="related-card">
+                <strong>🌊 Azure DDoS Protection</strong>
+                Web ワークロードでは WAF と併用が推奨されている。
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Reference Links ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="links">
+            <li><a href="https://takech9203.github.io/azure-news-summary/20260902-front-door-waf-profile-route-policies.html" target="_blank" rel="noopener">インフォグラフィック</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=569804" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li><a href="https://learn.microsoft.com/azure/web-application-firewall/afds/afds-overview" target="_blank" rel="noopener">Azure Web Application Firewall on Azure Front Door の概要 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/web-application-firewall/afds/waf-front-door-create-portal" target="_blank" rel="noopener">チュートリアル: Azure Front Door 用 WAF ポリシーの作成 (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Front Door WAF のポリシー関連付けが、従来のドメイン単位に加えて<strong>プロファイルレベル・ルートレベル</strong>に対応した (パブリックプレビュー)。「プロファイルでベースライン保護を一括適用し、必要なドメイン・ルートのみ個別ポリシーで上書きする」という運用が可能になり、<strong>ポリシーの重複削減と機密ルートの保護強化を両立</strong>できる。</p>
+            <p>多数のドメイン・ルートを 1 つの Front Door プロファイルで運用している組織や、決済・認証パスに厳格な保護を求める組織は、まず検証環境でプロファイルレベルのベースラインポリシーとルートレベルポリシーの組み合わせ、および優先順位 (ルート &gt; ドメイン &gt; プロファイル) の動作を確認することを推奨する。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Front Door</span>
+            <span class="tag">Web Application Firewall</span>
+            <span class="tag">WAF</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <p><strong>出典</strong>:
+            <a href="https://azure.microsoft.com/updates?id=569804" target="_blank" rel="noopener">Azure Updates (ID: 569804)</a> /
+            <a href="https://learn.microsoft.com/azure/web-application-firewall/afds/afds-overview" target="_blank" rel="noopener">Microsoft Learn: Azure WAF on Azure Front Door</a> /
+            <a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">Azure Front Door 料金ページ</a>
+        </p>
+        <p>ソースレポート: reports/2026/2026-09-02-front-door-waf-profile-route-policies.md (Azure News Summary)</p>
+        <p>生成日: 2026-09-02 | このインフォグラフィックは Azure ニュースレポートを基に自動生成されています</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

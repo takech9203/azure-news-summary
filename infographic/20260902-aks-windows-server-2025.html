@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS: Windows Server 2025 サポートの一般提供 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+code.inline {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.merit-card h4 { color: var(--ms-blue-800); margin-bottom: 10px; }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 14px; margin-bottom: 8px; }
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin-bottom: 8px; font-size: 14px; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h3 {
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-purple);
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+}
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { list-style: none; padding: 0; }
+
+.link-list li {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    font-size: 14px;
+}
+
+.link-list li:last-child { border-bottom: none; }
+.link-list li::before { content: "🔗 "; }
+
+.related-list { padding-left: 20px; }
+.related-list li { margin-bottom: 10px; font-size: 14px; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 24px 12px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer a { word-break: break-all; }
+
+.tags { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 12px;
+}
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Kubernetes Service (AKS)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Windows Server 2025 on AKS が一般提供 (GA)</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-01</span>
+            <span>🧩 機能: Windows Server 2025 ノードプールの一般提供</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Kubernetes Service (AKS) で <strong>Windows Server 2025 ノードプールの一般提供 (GA)</strong> が発表されました。旧バージョンの Windows Server のサポート終了が近づく中、AKS 上で Windows ベースのワークロードを実行する組織にはモダナイズへの対応が求められており、本 GA はその移行先となる最新の <strong>LTSC (Long Term Servicing Channel)</strong> オプションを提供するものです。</p>
+        <p>Windows Server 2025 ノードプールでは、<strong>安定版 ABI (Stable ABI)</strong>、<strong>第 2 世代 (Generation 2) VM のデフォルト化</strong>、<strong>containerd 2.0</strong>、<strong>FIPS のデフォルト有効化</strong>といった改善が含まれます。Microsoft Learn のベストプラクティスでは、Windows Server 2025 はセキュリティとパフォーマンスが向上しており、AKS の Windows ノードプールで推奨される OS と位置付けられています。</p>
+        <div class="highlight-box">
+            <strong>⚠️ 既存バージョンのリタイア時期に注意</strong><br>
+            Windows Server 2019 は Kubernetes 1.33 以降でサポートされず、Windows Server 2022 は 2028 年 6 月 30 日にサポート終了 (Kubernetes 1.37 以降では利用不可)、Windows Server Annual Channel (プレビュー) は 2026 年 5 月 15 日にサポートが終了しています。Windows ワークロードを AKS で運用している場合、Windows Server 2025 への計画的な移行が重要です。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">5 年間</div>
+                <div class="stat-label">LTSC サポート期間<br>(3 年ごとにリリース)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">K8s 1.32+</div>
+                <div class="stat-label">サポート対象バージョン<br>(1.36+ でデフォルト OS)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">containerd 2.0</div>
+                <div class="stat-label">コンテナランタイム</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">Gen 2 VM</div>
+                <div class="stat-label">デフォルトの VM 世代</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before: アップデート前の課題</h4>
+                <ul>
+                    <li>Windows Server 2019 は Kubernetes 1.33 以降でサポートされず、Windows Server 2022 も 2028 年 6 月 30 日のリタイアが予告されており、長期的な移行先となる GA 版の最新 OS 選択肢が必要だった</li>
+                    <li>Windows Server Annual Channel (プレビュー) は 2026 年 5 月 15 日にサポートが終了し、2027 年 5 月 15 日には既存ノードイメージが削除されるため、LTSC への移行が推奨されていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After: アップデート後の改善</h4>
+                <ul>
+                    <li>Windows Server 2025 が GA となり、LTSC (3 年ごとにリリース、5 年間サポート) の最新バージョンとして本番環境で利用可能になった</li>
+                    <li>Generation 2 VM がデフォルトになり、containerd 2.0 を採用、FIPS がデフォルトで有効化されるなど、セキュリティとパフォーマンスが向上した</li>
+                    <li>Kubernetes 1.36 以降では Windows Server 2025 が Windows ノードプールのデフォルト OS となり、将来にわたる継続的な運用パスが明確になった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🕐 Before: 従来の Windows ノードプール"]
+        WS2019["🪟 Windows Server 2019<br/>K8s 1.33 以降サポート外"]
+        WS2022["🪟 Windows Server 2022<br/>2028/6/30 リタイア予定"]
+        AC["🪟 Annual Channel (Preview)<br/>2026/5/15 サポート終了"]
+    end
+
+    subgraph After["✅ After: Windows Server 2025 (GA)"]
+        WS2025["🪟 Windows Server 2025 ノードプール<br/>K8s 1.32+ / 1.36+ でデフォルト"]
+        F1["⚙️ containerd 2.0"]
+        F2["🖥️ Generation 2 VM デフォルト"]
+        F3["🔐 FIPS デフォルト有効"]
+        WS2025 --> F1
+        WS2025 --> F2
+        WS2025 --> F3
+    end
+
+    WS2019 -.->|"新規ノードプール作成 + 移行"| WS2025
+    WS2022 -.->|"新規ノードプール作成 + 移行"| WS2025
+    AC -.->|"LTSC へ移行"| WS2025
+            </pre>
+        </div>
+        <p>従来の Windows Server 2019/2022 および Annual Channel のノードプールから、GA となった Windows Server 2025 ノードプールへの移行パスを示しています。移行は新しいノードプールを作成してワークロードを移し、旧ノードプールを廃止する方式で行います。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⚡ サービスアップデートの詳細: 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🧱</div>
+            <div class="feature-content">
+                <h4>1. 安定版 ABI (Stable ABI)</h4>
+                <p>Windows Server 2025 の改善点として、安定版 ABI が提供されます。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>2. Generation 2 VM のデフォルト化</h4>
+                <p>Windows での Generation 2 VM サポートは Windows Server 2022 から開始されましたが、Windows Server 2025 ではデフォルトになりました。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-content">
+                <h4>3. containerd 2.0 の採用</h4>
+                <p>Windows Server 2025 ノードプールではコンテナランタイムとして containerd 2.0 が使用されます。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>4. FIPS のデフォルト有効化</h4>
+                <p>Windows Server 2025 では FIPS が必須であり、ノードプール作成時に <code class="inline">--enable-fips-image</code> を指定します。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>5. Kubernetes 1.36 以降でのデフォルト OS 化</h4>
+                <p>Windows Server 2022 は Kubernetes 1.25〜1.35 のデフォルト、Windows Server 2025 は Kubernetes 1.36 以降のデフォルト OS です。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>詳細</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>OsType / OsSku</td><td><code class="inline">windows</code> / <code class="inline">Windows2025</code></td></tr>
+                    <tr><td>サポート対象 Kubernetes バージョン</td><td>1.32 以降 (1.36 以降ではデフォルト OS)</td></tr>
+                    <tr><td>コンテナランタイム</td><td>containerd 2.0</td></tr>
+                    <tr><td>VM 世代</td><td>Generation 2 VM がデフォルト</td></tr>
+                    <tr><td>FIPS</td><td>必須 (ノードプール作成時に <code class="inline">--enable-fips-image</code> を指定)</td></tr>
+                    <tr><td>サービスチャネル</td><td>LTSC (3 年ごとにリリース、5 年間サポート)</td></tr>
+                    <tr><td>分離モード</td><td>プロセス分離のみサポート</td></tr>
+                    <tr><td>ネットワーク</td><td>Azure CNI が必須 (kubenet は Windows 非対応)。Azure CNI Overlay が推奨</td></tr>
+                    <tr><td>サポートされるボリューム</td><td>Azure Disks、Azure Files (NTFS ボリュームとしてアクセス)</td></tr>
+                    <tr><td>コンテナイメージ</td><td>ホスト OS バージョンと一致するイメージが必要 (Windows Server 2022 以降ベースのイメージ)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>📆 Windows Server バージョン別サポート状況</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>バージョン</th><th>Kubernetes 対応</th><th>リタイア時期</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Windows Server 2025</strong></td><td>1.32 以降 (1.36 以降でデフォルト)</td><td>LTSC として 5 年間サポート</td></tr>
+                    <tr><td>Windows Server 2022</td><td>1.25〜1.35 でデフォルト、1.37 以降は利用不可</td><td>2028 年 6 月 30 日 (ノードイメージは 2029 年 6 月 30 日に削除)</td></tr>
+                    <tr><td>Windows Server 2019</td><td>1.33 以降はサポート外 (新規ノードプール作成不可)</td><td>-</td></tr>
+                    <tr><td>Annual Channel (Preview)</td><td>-</td><td>2026 年 5 月 15 日サポート終了 (ノードイメージは 2027 年 5 月 15 日に削除)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+        <h3>前提条件</h3>
+        <ul class="related-list">
+            <li>Azure CLI 2.87.0 以降</li>
+            <li>Windows ノードプールをサポートするため、クラスターは Azure CNI ネットワークプラグインを使用すること</li>
+            <li>Windows Server ノードの管理者資格情報 (<code class="inline">--windows-admin-username</code> / <code class="inline">--windows-admin-password</code>、パスワードは 14 文字以上で複雑性要件を満たすこと)</li>
+        </ul>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Windows Server 2025 ノードプールの作成</span></div>
+            <pre><code class="language-bash"># Windows ノードプール対応の AKS クラスターを作成 (Azure CNI を使用)
+az aks create \
+    --resource-group $RESOURCE_GROUP \
+    --name $CLUSTER_NAME \
+    --node-count 2 \
+    --generate-ssh-keys \
+    --windows-admin-username $WINDOWS_USERNAME \
+    --windows-admin-password $WINDOWS_PASSWORD \
+    --vm-set-type VirtualMachineScaleSets \
+    --network-plugin azure
+
+# Windows Server 2025 ノードプールを追加 (FIPS 有効イメージが必要)
+az aks nodepool add \
+    --resource-group $RESOURCE_GROUP \
+    --cluster-name $CLUSTER_NAME \
+    --os-type Windows \
+    --os-sku Windows2025 \
+    --enable-fips-image \
+    --name npwin \
+    --node-count 1</code></pre>
+        </div>
+        <div class="highlight-box">
+            Kubernetes 1.36 以降のクラスターでは、OS SKU を指定しない場合でも Windows Server 2025 がデフォルトで使用されます。
+        </div>
+
+        <h3>Windows ノードへのワークロード配置</h3>
+        <p>Windows ノードで Pod を実行するには、マニフェストに nodeSelector を指定します。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">yaml</span><span>nodeSelector の指定</span></div>
+            <pre><code class="language-yaml">spec:
+  nodeSelector:
+    "kubernetes.io/os": windows</code></pre>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>💡 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>Windows Server 2019/2022 のサポート終了を見据えた、長期サポート (LTSC、5 年間) 付きの移行先が本番利用可能になった</li>
+                    <li>.NET Framework など Windows ネイティブアプリケーションのコンテナ化・モダナイズを、最新 OS 上で継続できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>containerd 2.0、Generation 2 VM デフォルト化によるプラットフォームの最新化</li>
+                    <li>FIPS デフォルト有効化によるコンプライアンス・セキュリティ強化</li>
+                    <li>Kubernetes 1.36 以降でデフォルト OS となるため、クラスターアップグレードとの整合が取りやすい</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>Windows Server 2025 ノードプールは FIPS 有効イメージが必須 (<code class="inline">--enable-fips-image</code> の指定が必要)</li>
+                <li>AKS はプロセス分離のみをサポートし、ホスト OS バージョンと一致するコンテナイメージが必要 (OS バージョン移行時はコンテナイメージの更新も必要)</li>
+                <li>Windows ノードプールは Azure CNI が必須 (kubenet は非対応)</li>
+                <li>ノード OS バージョンのアップグレードはインプレースでは行えず、新ノードプール作成 → ワークロード移行 → 旧ノードプール廃止の手順が必要</li>
+                <li>Windows ノードではクライアントソース IP の保持が非サポート、External Traffic Policy が "Cluster" の場合はクラスターあたり約 500 サービスでポート枯渇の可能性があるなど、Windows 固有の制約は引き続き適用される</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>🎯 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h3><span class="usecase-label">CASE 1</span> Windows Server 2019/2022 ノードプールからの移行</h3>
+            <p><strong>シナリオ</strong>: Kubernetes バージョンアップグレード (1.33 以降で WS2019 不可、1.37 以降で WS2022 不可) やリタイア時期 (WS2022 は 2028 年 6 月 30 日) に備え、既存の Windows ワークロードを Windows Server 2025 に移行する。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>移行手順の実装例</span></div>
+                <pre><code class="language-bash"># 1. Windows Server 2025 の新ノードプールを作成
+az aks nodepool add \
+    --resource-group $RESOURCE_GROUP \
+    --cluster-name $CLUSTER_NAME \
+    --os-type Windows \
+    --os-sku Windows2025 \
+    --enable-fips-image \
+    --name npwin25 \
+    --node-count 2
+
+# 2. Windows Server 2025 対応のコンテナイメージでワークロードを新ノードプールへデプロイ
+# 3. 動作確認後、旧ノードプールを削除
+az aks nodepool delete \
+    --resource-group $RESOURCE_GROUP \
+    --cluster-name $CLUSTER_NAME \
+    --name npwin22</code></pre>
+            </div>
+            <div class="effect-box">
+                <strong>効果</strong>: サポート終了前に計画的に最新 OS へ移行し、セキュリティパッチの継続提供とスケール操作の失敗リスク回避を実現できる。
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <h3><span class="usecase-label">CASE 2</span> .NET Framework アプリケーションのモダナイズ</h3>
+            <p><strong>シナリオ</strong>: オンプレミスの Windows Server 上で稼働する .NET Framework アプリケーションをコンテナ化し、AKS の Windows Server 2025 ノードプールで運用する。</p>
+            <div class="effect-box">
+                <strong>効果</strong>: Linux ノードプール (システムサービスや NGINX などのインフラコンポーネント) と Windows ノードプールを同一クラスターに共存させ、ハイブリッドなワークロードを一元管理できる。
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>このアップデートに固有の料金情報は公式発表に記載されていません。Windows ノードプールのノード VM は通常の AKS の料金体系に従います。詳細は料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/kubernetes-service/" target="_blank" rel="noopener">AKS 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <ul class="related-list">
+            <li><strong>Azure CNI (Overlay / Dynamic IP Allocation)</strong>: Windows ノードプールに必須のネットワークプラグイン。Azure CNI Overlay が推奨モード</li>
+            <li><strong>Azure Disks / Azure Files</strong>: Windows コンテナーでサポートされる永続ボリューム (NTFS としてマウント)</li>
+            <li><strong>Managed Prometheus / Managed Grafana</strong>: Windows Exporter により Windows ノード・Pod のメトリックを監視 (<code class="inline">--enable-windows-recording-rules</code> の指定が必要)</li>
+            <li><strong>gMSA (Group Managed Service Accounts)</strong>: Windows コンテナーの Active Directory 認証をサポート (GA)</li>
+            <li><strong>AKS release tracker / AKS release notes</strong>: 月次の Windows ノードイメージ更新とリタイア情報の追跡</li>
+        </ul>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=570090" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/aks/windows-best-practices" target="_blank" rel="noopener">Windows containers のベストプラクティス (Windows OS version)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/aks/windows-faq" target="_blank" rel="noopener">Windows Server on AKS FAQ</a></li>
+            <li><a href="https://learn.microsoft.com/azure/aks/learn/quick-windows-container-deploy-cli" target="_blank" rel="noopener">クイックスタート: Windows Server コンテナーのデプロイ (Azure CLI)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=ws2022-retirement-aks" target="_blank" rel="noopener">Windows Server 2022 リタイア発表 (Azure Updates)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/kubernetes-service/" target="_blank" rel="noopener">AKS 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section summary-box">
+        <h2>📝 まとめ</h2>
+        <p>Windows Server 2025 が AKS で GA となり、Windows ワークロードの長期的な移行先が確定しました。containerd 2.0、Generation 2 VM デフォルト化、FIPS デフォルト有効化などプラットフォームの近代化が図られており、Kubernetes 1.36 以降ではデフォルト OS となります。</p>
+        <p>Windows Server 2019 は Kubernetes 1.33 以降で利用できず、Windows Server 2022 も 2028 年 6 月 30 日にリタイア、Annual Channel (プレビュー) は既にサポート終了しているため、AKS で Windows ワークロードを運用している組織は、<strong>Windows Server 2025 ノードプールへの移行計画 (新ノードプール作成、コンテナイメージ更新、旧プール廃止) の策定を早期に開始する</strong>ことを推奨します。</p>
+        <div class="tags">
+            <span class="tag">Azure Kubernetes Service</span>
+            <span class="tag">AKS</span>
+            <span class="tag">Windows Server 2025</span>
+            <span class="tag">Windows Containers</span>
+            <span class="tag">Compute</span>
+            <span class="tag">Containers</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=570090" target="_blank" rel="noopener">Azure Updates - Windows Server 2025 on AKS (ID: 570090)</a></p>
+        <p>参照ドキュメント: <a href="https://learn.microsoft.com/azure/aks/windows-best-practices" target="_blank" rel="noopener">Microsoft Learn - Windows containers best practices</a> / <a href="https://learn.microsoft.com/azure/aks/windows-faq" target="_blank" rel="noopener">Windows Server on AKS FAQ</a></p>
+        <p>ソースレポート: reports/2026/2026-09-01-aks-windows-server-2025.md | 生成日: 2026-09-02 | Azure News Summary</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

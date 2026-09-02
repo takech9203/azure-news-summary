@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS Artifact Streaming GA | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 14px;
+}
+
+.header .meta span {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 14px;
+    border-radius: 16px;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+.header .service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* Sections / Cards */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin: 10px 0; font-size: 15px; }
+
+.card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { padding-left: 20px; font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content li { margin: 4px 0; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin: 4px 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 32px; font-weight: bold; }
+.stat-label { font-size: 14px; opacity: 0.9; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-tertiary); }
+td code, li code, p code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Lists */
+.section ul, .section ol { padding-left: 24px; font-size: 15px; }
+.section li { margin: 8px 0; }
+
+/* Pros / Cons */
+.pros-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.pros-card {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.pros-card h4 { color: var(--ms-green); font-size: 16px; margin-bottom: 8px; }
+.cons-card {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+.cons-card ul { padding-left: 20px; font-size: 14px; }
+.cons-card li { margin: 8px 0; }
+.pros-card ul { padding-left: 20px; font-size: 14px; }
+.pros-card li { margin: 8px 0; }
+
+/* Steps */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 14px;
+    margin: 10px 0;
+    align-items: flex-start;
+}
+.step-num {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 2px;
+}
+.step-body { font-size: 14.5px; }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    border-top: 3px solid var(--azure-blue);
+    font-size: 14px;
+}
+.related-card h4 { color: var(--ms-blue-800); font-size: 15px; margin-bottom: 6px; }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.links-list { list-style: none; padding-left: 0 !important; }
+.links-list li {
+    padding: 8px 12px;
+    border-left: 3px solid var(--ms-blue-400);
+    background: var(--ms-surface-tertiary);
+    border-radius: 0 6px 6px 0;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 12px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+.footer a { word-break: break-all; }
+
+@media (max-width: 640px) {
+    .before-after, .pros-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="service-badge">Azure Kubernetes Service (AKS)</span>
+            <span class="service-badge">Azure Container Registry (ACR)</span>
+        </div>
+        <h1>AKS Artifact Streaming が一般提供開始 (GA)</h1>
+        <div class="subtitle">イメージプルの完了を待たずに Pod を起動 — OverlayBD によるブロックレベルのオンデマンドストリーミング</div>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-01</span>
+            <span>⚙️ 機能: Artifact Streaming on AKS</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Kubernetes Service (AKS) 上のコンテナー化ワークロードを、Azure Container Registry (ACR) の <strong>Artifact Streaming</strong> 機能で高速化できるようになりました。イメージがノードに完全にプルされるのを待たずにワークロードをスケールできます。Azure Updates の情報によると、GA は 2026 年 7 月に開始され、2026 年 9 月 1 日にアナウンスされました。</p>
+        <div class="highlight-box">
+            Artifact Streaming は、コンテナーイメージのレイヤーを仮想ブロックデバイスに変換する OSS 技術「<strong>OverlayBD</strong>」を利用。イメージ全体をダウンロードするのではなく、Pod の初期起動に必要なレイヤー (ブロック) のみを取得し、残りは実行時にオンデマンドで取得します。これにより、特に大きなイメージにおける <strong>time-to-pod readiness</strong> を短縮できます。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">15%+</div>
+                <div class="stat-label">time-to-pod readiness 短縮<br>(イメージサイズに依存)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">30 GB 超</div>
+                <div class="stat-label">大規模イメージで特に効果的</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">フラグ 1 つ</div>
+                <div class="stat-label">ノードプール単位で有効化<br><code style="background:rgba(255,255,255,0.2);color:#fff;">--enable-artifact-streaming</code></div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Kubernetes がワークロード開始前に<strong>すべてのイメージレイヤーをダウンロード</strong>する必要があり、大きなイメージや多数の Pod の同時起動時にデプロイが遅延</li>
+                    <li>スケールアウト時に新規ノードでのイメージプル完了を待つ必要があり、迅速なスケーリングの妨げに</li>
+                    <li>マルチリージョン展開ではイメージのレプリケーションに時間とリソースが必要</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>初期起動に<strong>必要なレイヤーのみを取得</strong>して起動を開始、残りはオンデマンド取得。イメージプルの完了を待たずにスケール可能</li>
+                    <li>単一の ACR から<strong>複数リージョンの AKS クラスターへストリーミング可能</strong> (geo レプリケーションの有無に関わらず動作、プライベートエンドポイントとも併用可)</li>
+                    <li>ノードプール単位のフラグ <code>--enable-artifact-streaming</code> で簡単に有効化</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    Dev([👤 開発者]) -->|"1. イメージ push / import"| ACR
+    subgraph ACR["📦 Azure Container Registry (Premium)"]
+        IMG["🐳 元イメージ"] -->|"2. az acr artifact-streaming create<br/>(OverlayBD 変換)"| SA["⚡ ストリーミングアーティファクト"]
+    end
+    subgraph AKS["☸️ AKS クラスター"]
+        NP["🖥️ ノードプール<br/>(--enable-artifact-streaming)"] --> POD["🚀 Pod (即時起動)"]
+    end
+    SA -->|"3. 起動に必要なブロックのみプル"| NP
+    SA -.->|"4. 残りはオンデマンド取得"| NP
+            </pre>
+        </div>
+        <p>ACR 上でイメージをストリーミングアーティファクトに変換し、AKS ノードは Pod の起動に必要なブロックのみを取得して即座に起動します。残りのデータは実行時に必要に応じてストリーミングされます。</p>
+    </section>
+
+    <!-- サービスアップデートの詳細 -->
+    <section class="section">
+        <h2>⚙️ サービスアップデートの詳細</h2>
+        <h3>主要機能</h3>
+        <div class="feature-card">
+            <div class="feature-icon">🧱</div>
+            <div class="feature-content">
+                <h4>ブロックレベルのイメージストリーミング (OverlayBD)</h4>
+                <ul>
+                    <li>コンテナーイメージのレイヤーを仮想ブロックデバイスに変換し、ランタイムがブロックレベルでデータにアクセス</li>
+                    <li>起動時・実行時にアクセスされたブロックのみを取得。アプリケーションがイメージの一部しか使わない場合はその部分のみがプルされる</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>ノードプール単位での有効化</h4>
+                <ul>
+                    <li><code>az aks nodepool add</code> / <code>az aks nodepool update</code> の <code>--enable-artifact-streaming</code> フラグで新規・既存ノードプールに対して有効化可能</li>
+                    <li>Node Auto Provisioning (NAP) 有効クラスターでは、AKSNodeClass CRD の <code>spec.artifactStreaming.enabled</code> フィールドで有効化可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <div class="feature-content">
+                <h4>ACR 側でのストリーミングアーティファクト管理</h4>
+                <ul>
+                    <li>リポジトリ単位・タグ単位でストリーミングアーティファクトを生成可能</li>
+                    <li>リポジトリを「アクティブ」状態にすると、新しくプッシュされた互換イメージが自動的に変換される</li>
+                    <li>元イメージとストリーミングアーティファクトは同一レジストリ内に共存し、機能を無効化した後も両方にアクセス可能</li>
+                </ul>
+            </div>
+        </div>
+        <h3>効果 (ACR ドキュメントより)</h3>
+        <ul>
+            <li><strong>time-to-pod readiness を 15% 以上短縮</strong> (イメージサイズに依存)</li>
+            <li><strong>30 GB を超える大きなイメージ</strong>で特に効果が高い</li>
+        </ul>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔬 技術仕様</h2>
+        <table>
+            <tr><th style="width:32%;">項目</th><th>詳細</th></tr>
+            <tr><td>基盤技術</td><td>OverlayBD (containerd プロジェクトの OSS)</td></tr>
+            <tr><td>プル方式</td><td>ブロックレベルのオンデマンド取得 (タグ指定のプルのみ対応)</td></tr>
+            <tr><td>必要な ACR SKU</td><td><strong>Premium のみ</strong></td></tr>
+            <tr><td>対応アーキテクチャ</td><td>Linux AMD64 のみ (Windows / ARM64 は非対応)</td></tr>
+            <tr><td>マルチアーキイメージ</td><td>AMD64 のみ対応</td></tr>
+            <tr><td>Kubernetes バージョン</td><td>1.25 以降 (AKS ドキュメント)、ACR ドキュメントでは 1.26 以降と記載</td></tr>
+            <tr><td>ノード OS</td><td>Ubuntu ベースのノードプールは Ubuntu 20.04 以降</td></tr>
+            <tr><td>Azure CLI</td><td>2.87.0 以降 (AKS 側)、2.54.0 以降 (ACR 側)</td></tr>
+            <tr><td>必要ロール</td><td>Azure Kubernetes Service Contributor Role (ノードプール構成の変更に必要)</td></tr>
+            <tr><td>geo レプリケーション</td><td>不要 (リージョンをまたいで動作)。プライベートエンドポイントとの併用可</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+        <h3>前提条件</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-body">Premium SKU の ACR (AKS クラスターと統合済みであること)</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-body">Kubernetes バージョン 1.25 以降の AKS クラスター</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-body">Azure CLI 2.87.0 以降</div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-body">Azure Kubernetes Service Contributor ロール</div></div>
+        </div>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Artifact Streaming の有効化手順</span></div>
+            <pre><code class="language-bash"># 1. Premium SKU の ACR を作成 (既存の Premium レジストリがある場合は不要)
+az acr create --resource-group myStreamingTest --name mystreamingtest --sku Premium
+
+# 2. イメージをインポート (または push)
+az acr import --source docker.io/jupyter/all-spark-notebook --repository jupyter/all-spark-notebook
+
+# 3. ストリーミングアーティファクトを作成
+az acr artifact-streaming create --image jupyter/all-spark-notebook:latest
+
+# 4. ストリーミングアーティファクトの生成を確認
+az acr manifest list-referrers --name jupyter/all-spark-notebook:latest
+
+# 5. 新しくプッシュされるイメージの自動変換を有効化 (任意)
+az acr artifact-streaming update --repository jupyter/all-spark-notebook --enable-streaming true
+
+# 6a. 新規ノードプールで Artifact Streaming を有効化
+az aks nodepool add \
+    --resource-group myResourceGroup \
+    --cluster-name myAKSCluster \
+    --name myNodePool \
+    --enable-artifact-streaming
+
+# 6b. 既存ノードプールで有効化する場合
+az aks nodepool update \
+    --resource-group myResourceGroup \
+    --cluster-name myAKSCluster \
+    --name myNodePool \
+    --enable-artifact-streaming
+
+# 7. 有効化状態の確認
+az aks nodepool show \
+    --resource-group myResourceGroup \
+    --cluster-name myAKSCluster \
+    --name myNodePool \
+    --query artifactStreamingProfile</code></pre>
+        </div>
+
+        <h3>Azure Portal</h3>
+        <p>ACR 側は Azure Portal からも操作できます。</p>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-body">Azure Portal で対象の ACR に移動</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-body">サービスメニューの <strong>Services</strong> &gt; <strong>Repositories</strong> を選択</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-body"><strong>Start artifact streaming</strong> を選択 (以降、リポジトリに push された互換イメージは自動変換される)</div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-body">既存イメージを変換する場合は、対象イメージを選択して <strong>Create streaming artifact</strong> を選択</div></div>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>✅ メリット</h2>
+        <div class="pros-grid">
+            <div class="pros-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>Pod 起動の高速化により、スパイク時のスケールアウトが迅速になり、ユーザー体験や SLA の維持に寄与</li>
+                    <li>単一レジストリからのマルチリージョン展開により、イメージレプリケーションにかかる時間とリソースを削減</li>
+                    <li>大規模イメージ (AI/ML、Java/C# などの依存関係が大きいワークロード) のデプロイ時間短縮</li>
+                </ul>
+            </div>
+            <div class="pros-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>time-to-pod readiness を 15% 以上短縮 (イメージサイズに依存、30 GB 超のイメージで特に有効)</li>
+                    <li>多数の Pod を同時に作成・スケールする際の起動遅延を削減</li>
+                    <li>起動時に不要なレイヤーを持つイメージ (依存関係を焼き込んだイメージなど) の初期化時間を最適化</li>
+                    <li>ノードプール単位のフラグ 1 つで有効化でき、既存クラスターにも適用可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="cons-card">
+            <ul>
+                <li><strong>Premium SKU の ACR のみ対応</strong> (Basic / Standard は不可)</li>
+                <li><strong>Linux AMD64 イメージのみ対応</strong>。Windows ベースのイメージと ARM64 イメージは非対応 (マルチアーキイメージも AMD64 のみ)</li>
+                <li><strong>タグ指定のイメージプルのみ対応</strong>。ダイジェスト指定のプルでは Artifact Streaming を利用できない</li>
+                <li>CMK (カスタマーマネージドキー) 対応レジストリは非対応</li>
+                <li>Kubernetes の <code>regcred</code> (<code>imagePullSecrets</code>) は非対応。非 Entra のスコープマップトークンや ACR 管理者ユーザー資格情報でのプルは、ストリーミングが有効でも通常のプルにフォールバックする</li>
+                <li>Ubuntu ベースのノードプールは Ubuntu 20.04 以降が必要</li>
+                <li>起動時に大きなファイル (30 GB 超) を読み込む read-heavy なイメージでは効果がない。そのようなファイルはイメージレイヤーではなくボリュームとしてマウントすることが推奨される (起動に必須の場合はノードが輻輳する)</li>
+                <li>Soft Delete ポリシーと併用時、アーティファクトを削除すると元イメージとストリーミング版の両方が削除されるが、保持期間中に表示・復元できるのは元イメージのみ</li>
+                <li>ストリーミングアーティファクトの保存によりレジストリのストレージ消費が増加する (元イメージと変換後イメージの両方を保存するため)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Artifact Streaming 機能自体の追加料金は公式ドキュメントに記載されていませんが、以下のコスト影響があります。</p>
+        <table>
+            <tr><th style="width:25%;">項目</th><th>内容</th></tr>
+            <tr><td>ACR SKU</td><td>Premium SKU が必須 (500 GiB のストレージを含む)</td></tr>
+            <tr><td>ストレージ</td><td>ストリーミングアーティファクトの保存によりストレージ消費が増加。Premium SKU に含まれる 500 GiB を超えた分は 1 GB あたりの日額料金で追加課金</td></tr>
+        </table>
+        <p>具体的な料金はリージョンにより異なります。詳細は <a href="https://azure.microsoft.com/pricing/details/container-registry/" target="_blank" rel="noopener">ACR 料金ページ</a> を参照してください。</p>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>📦 Azure Container Registry (ACR)</h4>
+                本機能の中核。Premium SKU でストリーミングアーティファクトの生成・保存を行う
+            </div>
+            <div class="related-card">
+                <h4>🤖 AKS Node Auto Provisioning (NAP)</h4>
+                AKSNodeClass CRD の <code>spec.artifactStreaming.enabled</code> フィールドで NAP 管理ノードにも Artifact Streaming を適用可能
+            </div>
+            <div class="related-card">
+                <h4>🌏 ACR geo レプリケーション</h4>
+                Artifact Streaming は geo レプリケーションの有無に関わらずリージョンをまたいで動作するが、併用も可能
+            </div>
+            <div class="related-card">
+                <h4>🔒 プライベートエンドポイント</h4>
+                Artifact Streaming はプライベートエンドポイント経由でも利用可能
+            </div>
+            <div class="related-card">
+                <h4>🧩 OverlayBD (containerd)</h4>
+                イメージレイヤーを仮想ブロックデバイスに変換する基盤 OSS 技術
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="links-list">
+            <li>📊 <a href="https://takech9203.github.io/azure-news-summary/20260901-aks-artifact-streaming.html" target="_blank" rel="noopener">インフォグラフィック</a></li>
+            <li>📰 <a href="https://azure.microsoft.com/updates?id=570095" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/aks/artifact-streaming-overview" target="_blank" rel="noopener">Microsoft Learn: Artifact Streaming on AKS の概要</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/aks/artifact-streaming" target="_blank" rel="noopener">Microsoft Learn: AKS で Artifact Streaming を有効化する</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/container-registry/container-registry-artifact-streaming" target="_blank" rel="noopener">Microsoft Learn: ACR の Artifact Streaming</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/container-registry/" target="_blank" rel="noopener">ACR 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>AKS の Artifact Streaming が GA となり、大きなコンテナーイメージのプル待ち時間がスケーリングのボトルネックになっていたワークロードを、<strong>ノードプールのフラグ 1 つで高速化</strong>できるようになりました。特に <strong>30 GB 超の大規模イメージ</strong>や、<strong>多数の Pod を同時にスケールさせるシナリオ</strong>で効果が高く、AI/ML や Java/C# 系の重いイメージを運用しているチームは検証の価値があります。</p>
+            <p>ただし、<strong>Premium SKU の ACR が必須</strong>であること、<strong>Linux AMD64 のみの対応</strong>であること、<strong>タグ指定プルのみ対応</strong>といった制約があるため、既存のイメージ管理・デプロイフロー (ダイジェスト固定運用など) との整合性を確認した上での導入を推奨します。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">AKS</span>
+            <span class="tag">Azure Kubernetes Service</span>
+            <span class="tag">Azure Container Registry</span>
+            <span class="tag">ACR</span>
+            <span class="tag">Artifact Streaming</span>
+            <span class="tag">OverlayBD</span>
+            <span class="tag">Containers</span>
+            <span class="tag">Compute</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>:
+            <a href="https://azure.microsoft.com/updates?id=570095" target="_blank" rel="noopener">Azure Updates (ID: 570095)</a> /
+            <a href="https://learn.microsoft.com/azure/aks/artifact-streaming-overview" target="_blank" rel="noopener">Microsoft Learn: Artifact Streaming on AKS</a> /
+            <a href="https://learn.microsoft.com/azure/container-registry/container-registry-artifact-streaming" target="_blank" rel="noopener">Microsoft Learn: ACR Artifact Streaming</a>
+        </p>
+        <p>ソースレポート: reports/2026/2026-09-01-aks-artifact-streaming.md (Azure News Summary プロジェクト)</p>
+        <p>生成日: 2026-09-02</p>
+    </footer>
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

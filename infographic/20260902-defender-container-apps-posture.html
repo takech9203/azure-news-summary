@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microsoft Defender for Cloud: Azure Container Apps サポート (Serverless Containers Posture) GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "🛡️";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.95;
+}
+
+.header .date-info {
+    margin-top: 16px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 26px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong { color: var(--azure-dark-blue); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 17px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 17px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.feature-content p {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+/* ===== Tables ===== */
+.table-wrapper { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+.ok { color: var(--ms-green); font-weight: 700; }
+.ng { color: var(--ms-red); font-weight: 700; }
+.na { color: var(--ms-text-disabled); font-weight: 700; }
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; list-style: none; margin: 16px 0; }
+
+.steps li {
+    position: relative;
+    padding: 12px 16px 12px 56px;
+    margin-bottom: 10px;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--ms-border);
+    font-size: 14px;
+}
+
+.steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* ===== Benefit / Constraint columns ===== */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.benefit-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.benefit-card h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.benefit-card ul { padding-left: 20px; }
+.benefit-card li { font-size: 14px; margin-bottom: 8px; }
+
+.warning-box {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+}
+
+.warning-box ul { padding-left: 20px; }
+.warning-box li { font-size: 14px; margin-bottom: 8px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Related services ===== */
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--azure-dark-blue); }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: var(--ms-surface-secondary);
+    border-radius: 6px;
+    font-size: 14px;
+}
+.link-list li::before { content: "🔗 "; }
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* ===== Tags ===== */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer a { word-break: break-all; }
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+    .before-after, .two-col { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">Microsoft Defender for Cloud</span>
+            <span class="service-badge">Azure Container Apps</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Serverless Containers Posture が Azure Container Apps をサポート</h1>
+        <p class="subtitle">Defender CSPM のポスチャ管理が Kubernetes からサーバーレスコンテナーまで拡張。単一ワークフローでコンテナー資産全体のインベントリ・ポスチャ評価・攻撃パス分析を実現</p>
+        <p class="date-info">📅 リリース日: 2026-09-01 (GA 提供開始: 2026 年 7 月・プレビュー期間なしで GA)</p>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Microsoft Defender for Cloud の「<strong>Serverless Containers Posture</strong>」に Azure Container Apps 環境を取り込めるようになり、一般提供 (GA) が開始されました。セキュリティチームは単一のワークフローから、AKS などの Kubernetes 環境だけでなくサーバーレスコンテナー環境まで含めたコンテナー資産全体のポスチャ管理を実施できます。</p>
+        <div class="highlight-box">
+            本機能は Defender for Cloud の <strong>CSPM (Cloud Security Posture Management)</strong> 機能の一部として提供され、Azure Container Apps ワークロードに対する<strong>インベントリ</strong>、<strong>ポスチャ評価</strong>、<strong>攻撃パス分析 (Attack Path Analysis)</strong> を提供します。ID、ネットワーク、コンテナー/イメージ構成などの領域でリスク評価が可能になり、潜在的な露出をより迅速に特定できます。
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure Container Apps は Defender for Cloud のコンテナーポスチャ管理の対象外であり、Kubernetes 環境 (AKS など) とサーバーレスコンテナー環境でセキュリティ管理のワークフローが分断されていた</li>
+                    <li>Container Apps リソースの ID・ネットワーク・コンテナー構成に関するリスクを、Defender for Cloud の統一されたビューで評価できなかった</li>
+                    <li>Container Apps を経由する攻撃経路を攻撃パス分析で可視化できず、露出の特定に手作業が必要だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Azure Container Apps 環境を Defender for Cloud の Serverless Containers Posture に統合し、単一のワークフローでコンテナー資産全体のポスチャ管理を拡張できるようになった</li>
+                    <li>ID、ネットワーキング、コンテナー/イメージ構成などの領域で Container Apps リソースの可視性が向上し、リスク評価が容易になった</li>
+                    <li>攻撃パス分析により潜在的な露出をより迅速に特定でき、統一されたセキュリティポスチャ・手作業の削減・Container Apps デプロイ保護の信頼性向上を実現</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph ACA["📦 Azure Container Apps 環境"]
+            App1["🚀 Container App<br/>(ID / ネットワーク / イメージ構成)"]
+        end
+        subgraph DFC["🛡️ Microsoft Defender for Cloud"]
+            CSPM["🧭 Defender CSPM プラン<br/>(Serverless Containers Posture)"]
+            INV["📋 インベントリ"]
+            REC["✅ セキュリティ推奨事項"]
+            APA["🔀 攻撃パス分析"]
+            CSE["🔍 Cloud Security Explorer"]
+        end
+    end
+    SEC(["👤 セキュリティチーム"])
+
+    App1 -->|"自動検出・継続的な構成評価"| CSPM
+    CSPM --> INV
+    CSPM --> REC
+    CSPM --> APA
+    CSPM --> CSE
+    INV --> SEC
+    REC --> SEC
+    APA --> SEC
+    CSE --> SEC
+            </pre>
+        </div>
+        <p class="diagram-caption">Defender CSPM プランの Serverless Containers Posture が Azure Container Apps 環境を自動検出し、インベントリ・推奨事項・攻撃パス分析・Cloud Security Explorer を通じてセキュリティチームに単一ワークフローでリスク情報を提供する構成です。</p>
+    </section>
+
+    <!-- ===== Details / Key features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>サービスアップデートの詳細</h2>
+        <h3 style="color: var(--azure-dark-blue); margin-bottom: 8px;">主要機能</h3>
+        <div class="feature-card">
+            <div class="feature-icon">📋</div>
+            <div class="feature-content">
+                <h4>1. Azure Container Apps のインベントリ統合</h4>
+                <p>Defender for Cloud のインベントリに Container Apps ワークロードが表示され、他のコンテナー資産と合わせて一元管理できる</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>2. 継続的なポスチャ評価</h4>
+                <p>ID、ネットワーキング、コンテナー/イメージ構成などの領域で Container Apps リソースの構成を評価し、リスクをセキュリティ推奨事項として提示する</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>3. 攻撃パス分析 (Attack Path Analysis)</h4>
+                <p>Container Apps リソースが関与する潜在的な攻撃経路をマッピングし、優先的に対処すべき高リスクの問題を特定できる</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>4. 単一ワークフローによるコンテナー資産全体のカバレッジ拡張</h4>
+                <p>Kubernetes (AKS など) を対象としてきた Defender for Cloud のコンテナーポスチャ管理を、サーバーレスコンテナーである Container Apps にまで拡張し、統一されたセキュリティポスチャを実現する</p>
+            </div>
+        </div>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 24px 0 8px;">Serverless protection におけるポータル別の機能提供状況</h3>
+        <p style="font-size: 14px; color: var(--ms-text-secondary);">Serverless protection の機能は、利用するポータルによって提供状況が異なります (Microsoft Learn「Serverless protection」ドキュメントより)。</p>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>機能</th><th>Defender for Cloud ポータル</th><th>Defender ポータル</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Defender CSPM プランによるオンボーディング</td><td class="ok">対応</td><td class="ng">非対応</td></tr>
+                    <tr><td>誤構成の推奨事項の確認</td><td class="ok">対応</td><td class="ok">対応</td></tr>
+                    <tr><td>Cloud Security Explorer でのクエリ作成</td><td class="ok">対応</td><td class="ng">非対応</td></tr>
+                    <tr><td>Cloud Inventory でのワークロード確認</td><td class="ok">対応</td><td class="ok">対応</td></tr>
+                    <tr><td>攻撃パスの調査</td><td class="ok">対応</td><td class="ok">対応</td></tr>
+                    <tr><td>脆弱性評価</td><td class="na">-</td><td class="ok">対応</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Tech specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th style="width: 30%;">項目</th><th>詳細</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>提供プラン</strong></td><td>Defender CSPM (Defender Cloud Security Posture Management) プラン</td></tr>
+                    <tr><td><strong>有効化方法</strong></td><td>Defender CSPM プランを有効化し、Serverless protection コンポーネントをオンにする</td></tr>
+                    <tr><td><strong>対象リソース</strong></td><td>Azure Container Apps 環境およびワークロード</td></tr>
+                    <tr><td><strong>評価領域</strong></td><td>ID、ネットワーキング、コンテナー/イメージ構成など</td></tr>
+                    <tr><td><strong>提供機能</strong></td><td>インベントリ、ポスチャ評価 (推奨事項)、攻撃パス分析、Cloud Security Explorer</td></tr>
+                    <tr><td><strong>GA 時期</strong></td><td>2026 年 7 月 (プレビュー期間なしで GA)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+        <h3 style="color: var(--azure-dark-blue); margin-bottom: 8px;">前提条件</h3>
+        <div class="highlight-box">
+            <ul style="padding-left: 20px;">
+                <li>対象の Azure サブスクリプションで Defender CSPM プランを有効化できる権限を保有していること</li>
+                <li>Defender CSPM プランの設定を変更する適切なアクセス許可があること</li>
+            </ul>
+        </div>
+        <h3 style="color: var(--azure-dark-blue); margin: 20px 0 8px;">Azure Portal での手順</h3>
+        <ol class="steps">
+            <li><a href="https://portal.azure.com/" target="_blank" rel="noopener">Azure Portal</a> にサインインする</li>
+            <li><strong>Microsoft Defender for Cloud</strong> &gt; <strong>環境設定 (Environment settings)</strong> に移動する</li>
+            <li>Serverless protection を有効化する Azure サブスクリプションを選択する</li>
+            <li><strong>Defender CSPM</strong> を選択し、<strong>Serverless protection</strong> のトグルをオンにする</li>
+            <li><strong>保存して閉じる (Save and close)</strong> を選択する</li>
+        </ol>
+        <p style="font-size: 14px; color: var(--ms-text-secondary);">💡 サーバーレスカバレッジが必要なサブスクリプションごとに上記の手順を繰り返します。</p>
+    </section>
+
+    <!-- ===== Benefits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="two-col">
+            <div class="benefit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>Kubernetes とサーバーレスコンテナーを単一ワークフローで管理でき、セキュリティ運用の手作業を削減できる</li>
+                    <li>コンテナー資産全体で統一されたセキュリティポスチャを実現し、Container Apps デプロイ保護の信頼性が向上する</li>
+                    <li>GA 版として本番環境での利用が正式にサポートされる</li>
+                </ul>
+            </div>
+            <div class="benefit-card">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>ID、ネットワーキング、コンテナー/イメージ構成の各領域で Container Apps リソースの可視性が向上する</li>
+                    <li>攻撃パス分析により、Container Apps を経由する潜在的な露出を迅速に特定・優先順位付けできる</li>
+                    <li>Cloud Security Explorer のクエリ機能でポスチャ問題を能動的にハンティングできる (Defender for Cloud ポータル)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>Serverless protection は無料の Foundational CSPM ではなく、<strong>有償の Defender CSPM プラン</strong>の一部として提供されるため、課金が発生する</li>
+                <li>利用するポータルによって機能の提供状況が異なる (Cloud Security Explorer やオンボーディングは Defender for Cloud ポータルのみ)</li>
+                <li>本機能はポスチャ管理 (CSPM) であり、Defender for Containers が提供するようなランタイム脅威保護 (脅威検出アラート) を Container Apps に提供するものではない点に留意が必要</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Serverless Containers Posture は <strong>Defender CSPM プラン</strong> の一部として提供されます。Defender CSPM はクラウドの規模に応じた課金で、課金対象は Compute、データベース、ストレージ、サーバーレスコンテナーなどのリソースに限定されます。</p>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">2 : 1</div>
+                <div class="stat-label">実行中コンテナー 2 個 = 課金対象リソース 1 個</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8 : 1</div>
+                <div class="stat-label">サーバーレス関数/Web アプリ 8 個 = 課金対象リソース 1 個</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">30 日間</div>
+                <div class="stat-label">Defender for Cloud の無料試用期間 (Malware Scanning を除く)</div>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th style="width: 35%;">項目</th><th>内容</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Foundational CSPM</strong></td><td>無料 (継続的評価、セキュリティ推奨事項、Secure Score など)</td></tr>
+                    <tr><td><strong>Defender CSPM</strong></td><td>有償。課金対象リソース数に応じた課金</td></tr>
+                    <tr><td><strong>サーバーレスコンテナーの換算</strong></td><td>実行中のコンテナー 2 個 = 課金対象リソース 1 個</td></tr>
+                    <tr><td><strong>サーバーレス関数/Web アプリの換算</strong></td><td>8 個 = 課金対象リソース 1 個</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p style="font-size: 14px; color: var(--ms-text-secondary);">具体的な金額はリージョン・通貨によって異なるため、<a href="https://azure.microsoft.com/pricing/details/defender-for-cloud/" target="_blank" rel="noopener">Defender for Cloud 料金ページ</a>または Azure 料金計算ツールで確認してください。Defender for Cloud は最初の 30 日間無料で利用できます (Malware Scanning を除く)。</p>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p>公式アップデート情報および参照したドキュメントにリージョン別の提供状況の記載はありませんでした。最新の提供状況は <a href="https://learn.microsoft.com/azure/defender-for-cloud/support-matrix-defender-for-cloud" target="_blank" rel="noopener">Defender for Cloud のサポートマトリックス</a> を確認してください。</p>
+    </section>
+
+    <!-- ===== Related services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card"><strong>📦 Azure Container Apps</strong>: 本アップデートの保護対象。サーバーレスコンテナー実行環境で、マネージド ID、シークレット管理、ネットワークセキュリティなどの組み込みセキュリティ機能を持つ</div>
+        <div class="related-card"><strong>🧭 Defender CSPM</strong>: 本機能を含むポスチャ管理プラン。攻撃パス分析、Cloud Security Explorer、リスクの優先順位付けなどを提供</div>
+        <div class="related-card"><strong>🛡️ Microsoft Defender for Containers</strong>: Kubernetes クラスター (AKS など)、コンテナーレジストリ、イメージを対象とするコンテナーセキュリティプラン。ポスチャ管理・脆弱性評価・ランタイム脅威保護を提供し、本アップデートによりサーバーレスコンテナーへポスチャ管理のカバレッジが広がる</div>
+        <div class="related-card"><strong>⚡ Serverless protection</strong>: Azure Web Apps、Azure Functions、AWS Lambda を対象とする Defender CSPM のサーバーレス保護機能。Container Apps の Serverless Containers Posture もこの体験に統合される</div>
+        <div class="related-card"><strong>🔭 Microsoft Defender XDR (Defender ポータル)</strong>: 推奨事項の確認、Cloud Inventory、攻撃パス調査、脆弱性評価を Defender ポータルからも利用可能</div>
+    </section>
+
+    <!-- ===== Reference links ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=570282" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/container-apps/security" target="_blank" rel="noopener">Azure Container Apps セキュリティ概要 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/defender-for-cloud/serverless-protection" target="_blank" rel="noopener">Serverless protection とは (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/defender-for-cloud/defender-for-containers-introduction" target="_blank" rel="noopener">Microsoft Defender for Containers の概要 (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/defender-for-cloud/" target="_blank" rel="noopener">料金ページ (Defender for Cloud)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Container Apps が Microsoft Defender for Cloud の Serverless Containers Posture に統合され GA となったことで、Kubernetes 中心だったコンテナーポスチャ管理をサーバーレスコンテナーまで<strong>単一ワークフローで拡張</strong>できるようになりました。Container Apps を本番運用している組織は、<strong>Defender CSPM プランの有効化と Serverless protection コンポーネントのオンボーディング</strong>を検討し、インベントリ・推奨事項・攻撃パス分析による継続的なリスク評価を運用に組み込むことを推奨します。なお、本機能は有償の Defender CSPM プランで提供されるため、実行中コンテナー数に基づく課金 (<strong>2 コンテナー = 1 課金リソース</strong>) を考慮したコスト見積もりも合わせて実施してください。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Microsoft Defender for Cloud</span>
+            <span class="tag">Azure Container Apps</span>
+            <span class="tag">Serverless Containers Posture</span>
+            <span class="tag">CSPM</span>
+            <span class="tag">セキュリティ</span>
+            <span class="tag">コンテナー</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong></p>
+        <p>レポート: reports/2026/2026-09-01-defender-container-apps-posture.md (Azure News Summary)</p>
+        <p>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=570282" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=570282</a></p>
+        <p>Microsoft Learn: <a href="https://learn.microsoft.com/azure/defender-for-cloud/serverless-protection" target="_blank" rel="noopener">Serverless protection</a> / <a href="https://learn.microsoft.com/azure/container-apps/security" target="_blank" rel="noopener">Azure Container Apps セキュリティ概要</a></p>
+        <p style="margin-top: 8px;">生成日: 2026-09-02 | Azure News Summary Infographic</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
