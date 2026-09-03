@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Site Recovery: Linux Azure VM の NVMe ディスクコントローラーサポート (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 26px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ms-blue-700);
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; font-size: 14.5px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14.5px;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0 4px;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 24px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 15px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 15px; }
+
+.before ul, .after ul { padding-left: 20px; font-size: 13.5px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 4px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 15px; margin-bottom: 6px; color: var(--ms-blue-800); }
+.feature-content p { font-size: 13.5px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+}
+
+th {
+    background: var(--ms-blue-800);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.merit-business { background: var(--ms-blue-100); border: 2px solid var(--ms-blue-500); }
+.merit-tech { background: #F3EDF9; border: 2px solid var(--ms-purple); }
+
+.merit-card h4 { font-size: 15px; margin-bottom: 10px; }
+.merit-business h4 { color: var(--ms-blue-800); }
+.merit-tech h4 { color: var(--ms-purple); }
+
+.merit-card ul { padding-left: 20px; font-size: 13.5px; }
+.merit-card li { margin-bottom: 8px; }
+
+.constraint-list { list-style: none; margin: 12px 0; }
+
+.constraint-list li {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    font-size: 13.5px;
+}
+
+.constraint-list li strong { color: var(--ms-red); }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 14px 0;
+}
+
+.usecase-card h4 {
+    font-size: 15px;
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-card p { font-size: 13.5px; margin-bottom: 8px; }
+.usecase-card .label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    border-radius: 4px;
+    padding: 1px 8px;
+    margin-right: 6px;
+}
+.label-scenario { background: var(--ms-blue-600); }
+.label-effect { background: var(--ms-green); }
+
+/* Pricing */
+.free-tier {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 13.5px;
+}
+
+/* Related / links */
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-size: 13.5px;
+}
+
+.related-card strong { color: var(--ms-blue-800); }
+
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 0 8px 26px;
+    border-bottom: 1px dashed var(--ms-border);
+    position: relative;
+    font-size: 13.5px;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+/* Summary / actions */
+.action-list { counter-reset: action; list-style: none; margin: 14px 0; }
+
+.action-list li {
+    counter-increment: action;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 16px 12px 52px;
+    margin-bottom: 10px;
+    position: relative;
+    font-size: 13.5px;
+}
+
+.action-list li::before {
+    content: counter(action);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Tags */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    font-size: 13px;
+    margin-bottom: 24px;
+}
+
+.footer a { color: var(--azure-light-blue); }
+.footer p { margin-bottom: 6px; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 21px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">🔄 Azure Site Recovery</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="service-badge">📅 リリース日: 2026-09-03</span>
+        </div>
+        <h1>Linux Azure VM における NVMe ディスクコントローラーサポートが一般提供 (GA)</h1>
+        <p class="subtitle">NVMe 対応 Gen2 Linux VM (RHEL 9 / SLES 15 / Ubuntu 24) の Azure-to-Azure レプリケーションとディザスタリカバリが正式サポートに</p>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Site Recovery が、NVMe ディスクコントローラーを搭載した第 2 世代 (Gen2) Linux Azure Virtual Machines に対する Azure-to-Azure シナリオでのレプリケーションおよびディザスタリカバリ (DR) の一般提供 (GA) を発表した。対象となる VM ファミリーには Da/Ea/Fa v6 シリーズや Ebsv5/Ebdsv5 シリーズなど、NVMe インターフェースを使用する VM が含まれる。本機能は 2026 年 5 月にプレビューが開始され、2026 年 8 月に GA に到達した。</p>
+        <p>NVMe (Non-Volatile Memory Express) ディスクコントローラーは、従来の SCSI コントローラーと比較して高いストレージ I/O パフォーマンスを提供する次世代のディスクインターフェースであり、Azure の v6 シリーズなど新世代 VM ファミリーではデフォルトのディスクコントローラーとして採用されている。NVMe ディスクコントローラーの Site Recovery サポートは、2026 年 4 月に Windows VM 向けのパブリックプレビューが発表されており、今回のアップデートで Linux VM (RHEL 9、SLES 15、Ubuntu 24) にも正式に拡大された。</p>
+        <div class="highlight-box">
+            💡 高性能・I/O 集約型のワークロードを NVMe 対応 Linux VM 上で稼働させながら、Azure Site Recovery によるリージョン間のディザスタリカバリを構成できるようになった (データ変更率は ASR のチャーンサポート範囲内に限定される)。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">対応 Linux ディストリビューション<br>(RHEL 9 / SLES 15 / Ubuntu 24)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">Gen2</div>
+                <div class="stat-label">対象 VM 世代</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">全リージョン</div>
+                <div class="stat-label">Azure パブリッククラウド</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2026/08</div>
+                <div class="stat-label">GA 到達<br>(プレビュー: 2026/05)</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>NVMe ディスクコントローラーを使用する Linux Azure VM は Azure Site Recovery によるレプリケーションがサポートされていなかった (NVMe サポートは Windows VM のプレビューのみ)</li>
+                    <li>Da/Ea/Fa v6 シリーズや Ebsv5/Ebdsv5 シリーズなどの NVMe 対応 VM で Linux ワークロードを稼働させる場合、Azure-to-Azure の DR 構成ができなかった</li>
+                    <li>Linux ワークロードの新世代 VM ファミリーへの移行において、DR 要件がブロッカーとなることがあった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>NVMe 対応 Gen2 Linux VM (RHEL 9、SLES 15、Ubuntu 24) に対する Azure-to-Azure レプリケーションが GA として利用可能になった</li>
+                    <li>すべての Azure パブリッククラウドリージョンでサポートされる</li>
+                    <li>Linux ワークロードでも新世代 NVMe 対応 VM ファミリーへの移行と DR 戦略を両立できるようになった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph Source["🌏 ソースリージョン"]
+        VM_S["🐧 Linux VM (Gen2)<br/>RHEL 9 / SLES 15 / Ubuntu 24<br/>NVMe ディスクコントローラー"]
+        Disk_S["💾 NVMe マネージドディスク<br/>(OS + データディスク)"]
+        Cache["🗄️ キャッシュ<br/>ストレージアカウント"]
+        VM_S --> Disk_S
+        Disk_S -->|変更データ追跡| Cache
+    end
+
+    subgraph ASR["🔄 Azure Site Recovery"]
+        Vault["🔐 Recovery Services Vault<br/>+ レプリケーションポリシー"]
+    end
+
+    subgraph Target["🌏 ターゲットリージョン"]
+        Disk_T["💾 レプリカ<br/>マネージドディスク"]
+        VM_T["🐧 フェイルオーバー VM<br/>(NVMe 構成を維持)"]
+        Disk_T -->|フェイルオーバー時に起動| VM_T
+    end
+
+    Cache -->|レプリケーション| Vault
+    Vault -->|データ書き込み| Disk_T
+
+    style Source fill:#e3f2fd,color:#333
+    style Target fill:#e8f5e9,color:#333
+    style ASR fill:#fff3e0,color:#333
+            </pre>
+        </div>
+        <p class="diagram-caption">ソースリージョンの NVMe 対応 Linux VM のディスク変更データがキャッシュストレージアカウント経由で追跡され、Recovery Services Vault を通じてターゲットリージョンのレプリカディスクにレプリケーションされる。フェイルオーバー時にはターゲットリージョンで NVMe 構成を維持した VM が起動される。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⚡ サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>1. NVMe 対応 Linux VM の Azure-to-Azure レプリケーション (GA)</h4>
+                <p>NVMe ディスクコントローラーを使用する Gen2 Linux Azure VM のレプリケーションとディザスタリカバリを正式サポート。Da/Ea/Fa v6 シリーズ、Ebsv5/Ebdsv5 シリーズなど NVMe インターフェースを使用する VM ファミリーが対象 (サポートマトリクスでは Ddsv6、Edsv6 も記載)。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🐧</div>
+            <div class="feature-content">
+                <h4>2. 対応 Linux ディストリビューション</h4>
+                <p>RHEL 9、SLES 15、Ubuntu 24 の 3 ディストリビューションをサポート。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>3. 高性能ワークロードへの対応</h4>
+                <p>高性能・I/O 集約型ワークロードに対応 (データ変更率は ASR のチャーンサポート範囲内に限定)。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <table>
+            <tr><th style="width: 40%;">項目</th><th>詳細</th></tr>
+            <tr><td>サポート対象 OS</td><td>Linux: RHEL 9、SLES 15、Ubuntu 24</td></tr>
+            <tr><td>サポート対象 VM ファミリー</td><td>Da/Ea/Fa v6 シリーズ、Ddsv6、Edsv6、Ebsv5/Ebdsv5 シリーズなど NVMe インターフェースを使用する VM</td></tr>
+            <tr><td>VM 世代</td><td>第 2 世代 (Gen2) のみ</td></tr>
+            <tr><td>サポート対象シナリオ</td><td>Azure-to-Azure</td></tr>
+            <tr><td>ステータス</td><td>一般提供 (GA)。プレビュー開始: 2026 年 5 月、GA: 2026 年 8 月</td></tr>
+            <tr><td>エフェメラル OS ディスク</td><td>非サポート</td></tr>
+            <tr><td>ローカル NVMe ディスク</td><td>非サポート</td></tr>
+            <tr><td>混合コントローラー VM (SCSI + NVMe)</td><td>非サポート (Lsv3 などの混合 SKU は対象外)</td></tr>
+            <tr><td>利用可能リージョン</td><td>すべての Azure パブリッククラウドリージョン</td></tr>
+        </table>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>👍 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li><strong>Linux ワークロードの新世代 VM への移行促進</strong>: NVMe 対応 VM への移行において DR 要件がブロッカーにならなくなり、最新の高性能 VM ファミリーの採用を推進できる</li>
+                    <li><strong>事業継続性の確保</strong>: NVMe 対応 Linux VM を使用するワークロードに対しても Azure-to-Azure のディザスタリカバリ戦略を適用できる</li>
+                    <li><strong>GA による本番適用</strong>: プレビューではなく GA のため、本番環境の DR 構成に正式に組み込める</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li><strong>高パフォーマンス VM での DR サポート</strong>: NVMe の高 I/O パフォーマンスの恩恵を受けつつ、DR 構成を維持できる</li>
+                    <li><strong>Windows / Linux 両対応</strong>: NVMe サポートが Windows (2026 年 4 月プレビュー発表) に続き Linux にも拡大され、混在環境でも一貫した DR 戦略を取れる</li>
+                    <li><strong>全パブリックリージョン対応</strong>: リージョンを問わず NVMe 対応 Linux VM の DR を構成できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <ul class="constraint-list">
+            <li><strong>対応 Linux ディストリビューションの限定</strong>: RHEL 9、SLES 15、Ubuntu 24 の 3 ディストリビューションに限定される</li>
+            <li><strong>Gen2 VM のみ</strong>: 第 1 世代 (Gen1) VM は対象外</li>
+            <li><strong>Azure-to-Azure シナリオのみ</strong>: オンプレミスから Azure へのシナリオは対象外</li>
+            <li><strong>エフェメラル OS ディスク非サポート</strong>: エフェメラル OS ディスクを使用する NVMe VM はレプリケーションできない</li>
+            <li><strong>ローカル NVMe ディスク非サポート</strong>: ローカル NVMe ディスクはレプリケーション対象外</li>
+            <li><strong>混合コントローラー VM 非サポート</strong>: Lsv3 シリーズのように SCSI と NVMe の混合コントローラーを持つ VM SKU はサポートされない</li>
+            <li><strong>チャーンサポートの制限</strong>: 高性能ワークロードへの対応は ASR のチャーン (データ変更率) サポート範囲内に限定される</li>
+        </ul>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+        <div class="usecase-card">
+            <h4>📈 ユースケース 1: v6 シリーズへの Linux ワークロード移行と DR 構成</h4>
+            <p><span class="label label-scenario">シナリオ</span>企業が RHEL 9 上で稼働するデータベースワークロードを既存の v5 シリーズ VM から Da/Ea v6 シリーズへ移行したいが、これまで NVMe 対応 VM では Linux の DR がサポートされておらず移行のブロッカーとなっていた。</p>
+            <p><span class="label label-effect">効果</span>v6 シリーズの高パフォーマンス NVMe ディスク I/O を活用しつつ、Azure Site Recovery による Azure-to-Azure DR 構成を維持できる。GA のため本番環境にも正式に適用可能。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>🔀 ユースケース 2: Windows / Linux 混在環境での一貫した DR 戦略</h4>
+            <p><span class="label label-scenario">シナリオ</span>NVMe 対応 VM 上で Windows と Linux (Ubuntu 24) のワークロードが混在する環境において、統一的な DR 戦略を構築したい。</p>
+            <p><span class="label label-effect">効果</span>NVMe ディスクコントローラーのサポートが Windows と Linux の両方に提供されたことで、Recovery Services Vault を中心とした一貫したレプリケーション・フェイルオーバー運用を構成できる。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Azure Site Recovery の料金は、保護対象インスタンス数に基づく月額課金である。NVMe 対応 Linux VM に対しても従来と同じ料金体系が適用される。</p>
+        <table>
+            <tr><th style="width: 50%;">項目</th><th>料金</th></tr>
+            <tr><td>Azure VM の保護 (Azure-to-Azure)</td><td>保護インスタンスあたり月額課金 (月間の 1 日平均保護インスタンス数で計算)</td></tr>
+            <tr><td>レプリカストレージ / ストレージトランザクション / リージョン間送信データ転送</td><td>別途発生</td></tr>
+        </table>
+        <div class="free-tier">
+            🎁 <strong>無料枠</strong>: 各保護インスタンスは最初の 31 日間無料 (32 日目から課金開始)。ただし無料期間中もストレージやデータ転送などの関連費用は発生する。詳細は <a href="https://azure.microsoft.com/pricing/details/site-recovery/" target="_blank">Azure Site Recovery の料金ページ</a>を参照。
+        </div>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2>🌏 利用可能リージョン</h2>
+        <div class="highlight-box">
+            すべての Azure パブリッククラウドリージョンでサポートされる。
+        </div>
+    </section>
+
+    <!-- 関連サービス -->
+    <section class="section">
+        <h2>🧩 関連サービス・機能</h2>
+        <div class="related-card">
+            <strong><a href="https://learn.microsoft.com/azure/site-recovery/" target="_blank">Azure Site Recovery</a></strong>: Azure VM、オンプレミス VM、物理サーバーのディザスタリカバリを提供するサービス。今回の NVMe Linux サポートはこのサービスの機能拡張
+        </div>
+        <div class="related-card">
+            <strong><a href="https://learn.microsoft.com/azure/virtual-machines/" target="_blank">Azure Virtual Machines v6 シリーズ</a></strong>: Da/Ea/Fa v6 シリーズなど NVMe をデフォルトのディスクコントローラーとして採用する最新世代の VM ファミリー
+        </div>
+        <div class="related-card">
+            <strong><a href="https://learn.microsoft.com/azure/virtual-machines/managed-disks-overview" target="_blank">Azure Managed Disks</a></strong>: Site Recovery によるレプリケーション対象となるマネージドディスク。NVMe インターフェースのマネージドディスクがサポート対象
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <p>Azure Site Recovery が NVMe ディスクコントローラーを使用する Gen2 Linux VM (RHEL 9、SLES 15、Ubuntu 24) の Azure-to-Azure レプリケーションを一般提供 (GA) とした。2026 年 4 月に発表された Windows VM 向け NVMe サポートのプレビューに続き、Linux にも対象が拡大され、Da/Ea/Fa v6 シリーズや Ebsv5/Ebdsv5 シリーズなどの新世代 NVMe 対応 VM 上の Linux ワークロードに対してディザスタリカバリが構成可能になった。</p>
+        <h3>Solutions Architect としての推奨アクション</h3>
+        <ol class="action-list">
+            <li><strong>NVMe 対応 VM への Linux ワークロード移行を計画している場合</strong>: DR 要件がブロッカーでなくなったため、v6 シリーズなどへの移行計画を推進できる</li>
+            <li><strong>対応ディストリビューションの確認</strong>: RHEL 9、SLES 15、Ubuntu 24 に限定されるため、対象ワークロードの OS バージョンを事前に確認する</li>
+            <li><strong>非対応構成の把握</strong>: エフェメラル OS ディスク、ローカル NVMe ディスク、混合コントローラー VM (Lsv3 など) はサポート対象外である点に留意する</li>
+            <li><strong>チャーンレートの確認</strong>: 高 I/O ワークロードでは、データ変更率が ASR のチャーンサポート範囲内に収まるかを事前に評価する</li>
+        </ol>
+        <div class="tag-list">
+            <span class="tag">Azure Site Recovery</span>
+            <span class="tag">NVMe</span>
+            <span class="tag">Linux</span>
+            <span class="tag">RHEL 9</span>
+            <span class="tag">SLES 15</span>
+            <span class="tag">Ubuntu 24</span>
+            <span class="tag">Gen2 VM</span>
+            <span class="tag">ディザスタリカバリ</span>
+            <span class="tag">Azure-to-Azure</span>
+            <span class="tag">GA</span>
+            <span class="tag">Da/Ea/Fa v6</span>
+            <span class="tag">Ebsv5</span>
+            <span class="tag">Ebdsv5</span>
+            <span class="tag">レプリケーション</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>📚 出典・参考リンク</strong></p>
+        <p>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=565103" target="_blank">https://azure.microsoft.com/updates?id=565103</a></p>
+        <p>Microsoft Learn - Azure VM ディザスタリカバリのサポートマトリクス: <a href="https://learn.microsoft.com/azure/site-recovery/azure-to-azure-support-matrix" target="_blank">https://learn.microsoft.com/azure/site-recovery/azure-to-azure-support-matrix</a></p>
+        <p>詳細情報: <a href="https://aka.ms/AsrNvmeLinuxSupport" target="_blank">aka.ms/AsrNvmeLinuxSupport</a></p>
+        <p>料金ページ: <a href="https://azure.microsoft.com/pricing/details/site-recovery/" target="_blank">https://azure.microsoft.com/pricing/details/site-recovery/</a></p>
+        <p style="margin-top: 12px; opacity: 0.8;">本インフォグラフィックは Azure News Summary レポート (2026-09-03) を基に生成されました。</p>
+    </footer>
+
+</div>
+</body>
+</html>

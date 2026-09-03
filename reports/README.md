@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-09-03 - Azure Virtual Network Manager: IPAM が Azure Government / 中国リージョンで一般提供 (GA)](2026/2026-09-03-vnet-manager-ipam-gov-china-regions.md)
+- [2026-09-03 - Azure Site Recovery: Linux Azure VM における NVMe ディスクコントローラーサポート (GA)](2026/2026-09-03-site-recovery-nvme-linux-vms.md)
 - [2026-09-02 - Azure Front Door: プロファイルレベル / ルートレベル WAF ポリシー (Public Preview)](2026/2026-09-02-front-door-waf-profile-route-policies.md)
 - [2026-09-02 - Azure Database for MySQL: Reader Endpoint (Public Preview)](2026/2026-09-02-mysql-reader-endpoint.md)
 - [2026-09-01 - Azure Monitor: Auxiliary Logs プランの Azure テーブル対応・プラン切り替え・ソブリンクラウド対応が GA](2026/2026-09-01-azure-monitor-auxiliary-logs-ga-updates.md)

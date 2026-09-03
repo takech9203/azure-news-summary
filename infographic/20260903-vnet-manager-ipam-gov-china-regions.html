@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Virtual Network Manager: IPAM が Azure Government / 中国リージョンで GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    /* Networking category color */
+    --networking-green: #00A651;
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    box-shadow: 0 4px 16px rgba(0, 61, 105, 0.25);
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-category { background: var(--networking-green); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle { font-size: 16px; opacity: 0.95; }
+.header .meta { margin-top: 16px; font-size: 14px; opacity: 0.9; display: flex; flex-wrap: wrap; gap: 20px; }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.section p { margin-bottom: 12px; }
+.section p:last-child { margin-bottom: 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+strong { color: var(--azure-dark-blue); }
+
+/* Region cards */
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.region-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 16px 12px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 120, 212, 0.3);
+}
+
+.region-card .flag { font-size: 26px; margin-bottom: 6px; }
+.region-card .name { font-size: 15px; font-weight: 700; }
+.region-card .cloud { font-size: 12px; opacity: 0.9; margin-top: 4px; }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.feature-content h4 { color: var(--azure-dark-blue); font-size: 16px; margin-bottom: 6px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); margin: 0; }
+.feature-content ul { padding-left: 18px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* Table */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 700;
+}
+
+.spec-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+.spec-table td:first-child { font-weight: 700; color: var(--azure-dark-blue); white-space: nowrap; }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Merit columns */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.merit-business {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+}
+
+.merit-tech {
+    background: #F3EEF9;
+    border: 2px solid var(--ms-purple);
+}
+
+.merit-card h4 { font-size: 16px; margin-bottom: 12px; }
+.merit-business h4 { color: var(--azure-dark-blue); }
+.merit-tech h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 14px; margin-bottom: 8px; }
+
+/* Pricing */
+.pricing-box {
+    background: #FFF8E7;
+    border: 2px solid var(--ms-yellow);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.pricing-box h4 { color: var(--ms-orange); margin-bottom: 10px; font-size: 16px; }
+.pricing-box p { font-size: 14px; }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 10px;
+    padding: 16px;
+    border-top: 4px solid var(--networking-green);
+}
+
+.related-card h4 { color: var(--azure-dark-blue); font-size: 15px; margin-bottom: 8px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+.link-list { list-style: none; padding: 0; }
+.link-list li {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+.link-list li::before { content: "🔗 "; }
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* Tags */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    padding: 4px 14px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 12px;
+}
+.footer p { margin-bottom: 6px; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Virtual Network Manager</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="badge badge-category">Networking</span>
+        </div>
+        <h1>IPAM (IP アドレス管理) が Azure Government / 中国リージョンで一般提供 (GA)</h1>
+        <p class="subtitle">ソブリンクラウド環境でも IP アドレス空間の一元管理が可能に</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-03</span>
+            <span>🛠️ 機能: IP アドレス管理 (IPAM) の追加リージョン一般提供</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Virtual Network Manager の IP アドレス管理 (IPAM) 機能が、以下の追加リージョンで一般提供 (GA) となりました。</p>
+
+        <div class="region-grid">
+            <div class="region-card">
+                <div class="flag">🏛️</div>
+                <div class="name">US Gov Virginia</div>
+                <div class="cloud">Azure Government</div>
+            </div>
+            <div class="region-card">
+                <div class="flag">🏛️</div>
+                <div class="name">US Gov Texas</div>
+                <div class="cloud">Azure Government</div>
+            </div>
+            <div class="region-card">
+                <div class="flag">🏛️</div>
+                <div class="name">US Gov Arizona</div>
+                <div class="cloud">Azure Government</div>
+            </div>
+            <div class="region-card">
+                <div class="flag">🇨🇳</div>
+                <div class="name">China North 3</div>
+                <div class="cloud">21Vianet 運営</div>
+            </div>
+            <div class="region-card">
+                <div class="flag">🇨🇳</div>
+                <div class="name">China East 3</div>
+                <div class="cloud">21Vianet 運営</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>IPAM</strong> は、複雑なネットワーク環境における IP アドレスの計画と割り当てを一元管理する機能です。重複しない CIDR の自動割り当てにより、Azure・オンプレミス・マルチクラウド間のアドレス空間の競合を防止し、ネットワークリソース全体の IP 使用状況と割り当てを可視化します。Azure Policy との統合により、指定された IP プールを使用した仮想ネットワークの作成を強制でき、意図しないプレフィックスの重複を新規・既存の両方で防止できます。</p>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure Government および中国リージョンでは Azure Virtual Network Manager の IPAM が利用できなかった</li>
+                    <li>政府機関や中国でビジネスを展開する組織は、IP アドレス管理をスプレッドシートやサードパーティ製 IPAM ツールなどで個別に行う必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Azure Government (US Gov Virginia / US Gov Texas / US Gov Arizona) および中国 (China North 3 / China East 3) の各リージョンで、商用クラウドと同様の IPAM 機能が GA として利用可能に</li>
+                    <li>ソブリンクラウド環境でも、IP プールによる一元的なアドレス計画、重複しない CIDR の自動割り当て、使用状況の可視化が利用可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Admin([🧑‍💼 ネットワーク管理者])
+    subgraph Azure["☁️ Azure Cloud (Gov / China リージョンでも GA)"]
+        AVNM["🛠️ Azure Virtual Network Manager"]
+        Root["📦 ルート IP プール<br>(組織全体のアドレス空間)"]
+        Child1["📁 子プール: 本番"]
+        Child2["📁 子プール: 開発"]
+        VNet1["🌐 VNet A<br>(CIDR 自動割り当て)"]
+        VNet2["🌐 VNet B<br>(CIDR 自動割り当て)"]
+        Static["📌 静的 CIDR 予約<br>(オンプレミス用など)"]
+    end
+    Admin -->|プール作成・権限委任| AVNM
+    AVNM --> Root
+    Root --> Child1
+    Root --> Child2
+    Child1 -->|重複しない CIDR| VNet1
+    Child2 -->|重複しない CIDR| VNet2
+    Root --> Static
+            </pre>
+        </div>
+        <p>IPAM ではルートプールから階層的に子プール (最大 7 階層) を作成し、仮想ネットワーク作成時に重複しない CIDR を自動割り当てします。オンプレミスなど Azure 外で使用中のアドレス空間は静的 CIDR として予約し、競合を防止できます。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細: 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <div class="feature-content">
+                <h4>1. IP アドレスプールによる一元管理</h4>
+                <ul>
+                    <li>IP アドレス計画のためのプールを作成し、CIDR グループを論理的に整理</li>
+                    <li>ルートプールと子プールによる階層構造 (最大 7 階層) で、きめ細かなアドレス空間の管理が可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>2. 重複しない CIDR の自動割り当て</h4>
+                <ul>
+                    <li>仮想ネットワークなどの CIDR 対応リソース作成時に、選択したプールから重複しない CIDR を自動割り当て</li>
+                    <li>Azure・オンプレミス・マルチクラウド間のアドレス空間の競合を防止</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📌</div>
+            <div class="feature-content">
+                <h4>3. 静的 CIDR の予約</h4>
+                <ul>
+                    <li>Azure 外で使用中、または IPAM が未対応のリソースが使用する CIDR をプール内で予約可能</li>
+                    <li>関連リソースの削除時には CIDR がプールに自動返却される</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>4. 使用状況の監視と可視化</h4>
+                <ul>
+                    <li>プール内の IP 総数、割り当て済み領域の割合などの使用状況統計を確認可能</li>
+                    <li>プールに関連付けられたリソースの一覧により IP 使用状況を全体的に把握</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔑</div>
+            <div class="feature-content">
+                <h4>5. 権限の委任</h4>
+                <ul>
+                    <li>IPAM Pool User ロールにより、他のユーザーへプール利用権限を委任可能</li>
+                    <li>プールと仮想ネットワークの完全な可視性のためには Network Manager Read 権限の付与も必要</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>6. Azure Policy との統合</h4>
+                <ul>
+                    <li>指定された IP プールを使用した仮想ネットワーク作成を強制し、意図しないプレフィックス重複を防止</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌍</div>
+            <div class="feature-content">
+                <h4>7. クロスリージョン関連付け</h4>
+                <ul>
+                    <li>単一の IPAM プールを複数リージョンの仮想ネットワークに関連付け可能</li>
+                    <li>Azure PowerShell / Azure CLI により、異なるリージョンのプールとの関連付けをサポート</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>プール階層</td><td>ルートプール + 子プール (最大 7 階層)</td></tr>
+            <tr><td>対応アドレス</td><td>IPv4 および IPv6 アドレスプール</td></tr>
+            <tr><td>割り当て方式</td><td>自動割り当て (重複しない CIDR) / 静的 CIDR 予約</td></tr>
+            <tr><td>クロスリージョン</td><td>単一プールを複数リージョンの VNet に関連付け可能</td></tr>
+            <tr><td>必要なロール</td><td>IPAM Pool User (委任時)、Network Manager Read (プール・VNet の完全な可視性に必要)</td></tr>
+            <tr><td>ポリシー統合</td><td>Azure Policy により指定プールの使用を強制可能</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💻</span>設定方法</h2>
+        <h3 style="color: var(--azure-dark-blue); margin-bottom: 8px;">Azure CLI</h3>
+        <p>異なるリージョンの IPAM プールから CIDR を自動割り当てして仮想ネットワークを作成する例:</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span style="color:#A19F9D;">Azure CLI</span></div>
+            <pre><code class="language-bash"># IPAM プールから 100 個の IP アドレスを割り当てて VNet を作成
+ipamAllocation='[{
+  "numberOfIpAddresses": 100,
+  "id": "/subscriptions/&lt;subscription-id&gt;/resourceGroups/&lt;resource-group-name&gt;/providers/Microsoft.Network/networkManagers/&lt;network-manager-name&gt;/ipamPools/&lt;ipam-pool-name&gt;"
+}]'
+
+az network vnet create \
+    --name "&lt;virtual-network-name&gt;" \
+    --resource-group "&lt;resource-group-name&gt;" \
+    --ipam-allocations "$ipamAllocation" \
+    --location "&lt;region&gt;"</code></pre>
+        </div>
+        <div class="highlight-box">
+            <p>既存の仮想ネットワークを IPAM プールに関連付ける場合は <strong><code>az network vnet update</code></strong> に <code>--ipam-allocations</code> を指定します。</p>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>政府機関 (Azure Government) や中国でビジネスを展開する組織が、コンプライアンス要件を満たすソブリンクラウド環境内で IP アドレス管理を完結できる</li>
+                    <li>スプレッドシート管理やサードパーティ IPAM ツールへの依存を削減し、運用コストとヒューマンエラーのリスクを低減</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>重複しない CIDR の自動割り当てにより、VNet ピアリングやハイブリッド接続時のアドレス競合を未然に防止</li>
+                    <li>Azure Policy 統合により、ガバナンスを強制しつつセルフサービスでの VNet 作成を実現</li>
+                    <li>クロスリージョン関連付けにより、グローバルなアドレス空間の計画と統制が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="pricing-box">
+            <h4>アクティブ IP アドレスごとの時間課金</h4>
+            <p>Azure Virtual Network Manager の IPAM は、<strong>IPAM が管理するアクティブ IP アドレスごとの時間課金</strong>です。「アクティブ IP アドレス」は、IPAM プールに関連付けられた仮想ネットワーク内のネットワークインターフェイスに紐づく IP アドレスを指します (プールに登録しただけの未使用アドレス空間は課金対象外)。</p>
+            <p style="margin-top: 10px;">具体的な単価はリージョンにより異なるため、料金ページおよび料金計算ツールで確認してください。</p>
+        </div>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-network-manager/" target="_blank">Azure Virtual Network Manager の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌐</span>利用可能リージョン</h2>
+        <p>今回新たに GA となったリージョン:</p>
+        <div class="region-grid">
+            <div class="region-card"><div class="flag">🏛️</div><div class="name">US Gov Virginia</div></div>
+            <div class="region-card"><div class="flag">🏛️</div><div class="name">US Gov Texas</div></div>
+            <div class="region-card"><div class="flag">🏛️</div><div class="name">US Gov Arizona</div></div>
+            <div class="region-card"><div class="flag">🇨🇳</div><div class="name">China North 3</div></div>
+            <div class="region-card"><div class="flag">🇨🇳</div><div class="name">China East 3</div></div>
+        </div>
+        <p>その他の利用可能リージョンは <a href="https://azure.microsoft.com/explore/global-infrastructure/products-by-region/?products=virtual-network-manager" target="_blank">リージョン別の利用可能な製品</a> を参照してください。</p>
+    </section>
+
+    <!-- 関連サービス -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🌐 Azure Virtual Network</h4>
+                <p>IPAM プールから CIDR を自動割り当てして VNet を作成・関連付けする対象リソース</p>
+            </div>
+            <div class="related-card">
+                <h4>🛡️ Azure Policy</h4>
+                <p>指定された IP プールを使用した VNet 作成を強制し、プレフィックス重複を防止</p>
+            </div>
+            <div class="related-card">
+                <h4>🔑 Azure RBAC</h4>
+                <p>IPAM Pool User / Network Manager Read ロールによるプール利用権限の委任</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=570557" target="_blank">公式アップデート情報</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-network-manager/concept-ip-address-management" target="_blank">Microsoft Learn: What is IP address management (IPAM) in Azure Virtual Network Manager?</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-network-manager/" target="_blank">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">✅</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Virtual Network Manager の IPAM が <strong>Azure Government (US Gov Virginia / Texas / Arizona)</strong> および <strong>中国 (China North 3 / China East 3)</strong> の各リージョンで GA となり、ソブリンクラウド環境でも IP アドレス空間の一元管理が可能になりました。</p>
+            <p style="margin-top: 12px;">政府機関や中国リージョンを利用する組織で、VNet の増加に伴うアドレス管理の複雑化や重複リスクに課題がある場合は、<strong>IPAM プールの導入と Azure Policy によるプール使用の強制</strong>を検討することを推奨します。課金はアクティブ IP アドレス単位の時間課金のため、導入前に対象 VNet 内の NIC 数をもとにコストを見積もってください。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Networking</span>
+            <span class="tag">Azure Virtual Network Manager</span>
+            <span class="tag">IPAM</span>
+            <span class="tag">Features</span>
+            <span class="tag">Management</span>
+            <span class="tag">Regions &amp; Datacenters</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典:</strong></p>
+        <p><a href="https://azure.microsoft.com/updates?id=570557" target="_blank">Azure Updates: https://azure.microsoft.com/updates?id=570557</a></p>
+        <p><a href="https://learn.microsoft.com/azure/virtual-network-manager/concept-ip-address-management" target="_blank">Microsoft Learn: https://learn.microsoft.com/azure/virtual-network-manager/concept-ip-address-management</a></p>
+        <p style="margin-top: 12px;">リリース日: 2026-09-03 | インフォグラフィック生成日: 2026-09-03 | Azure News Summary</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
