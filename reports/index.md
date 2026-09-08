@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-09-08 - Azure Developer CLI: Extension Framework の一般提供開始 (GA)](2026/2026-09-08-azd-extension-framework.md)
+- [2026-09-08 - Azure App Testing: Playwright Workspaces が Australia East、Japan East、Switzerland North で一般提供開始](2026/2026-09-08-playwright-workspaces-new-regions.md)
 - [2026-09-03 - Azure Site Recovery: Linux Azure VM における NVMe ディスクコントローラーサポート (GA)](2026/2026-09-03-site-recovery-nvme-linux-vms.md)
 - [2026-09-03 - Azure Virtual Network Manager: IPAM が Azure Government / 中国リージョンで一般提供 (GA)](2026/2026-09-03-vnet-manager-ipam-gov-china-regions.md)
 - [2026-09-02 - Azure Database for MySQL: Reader Endpoint (Public Preview)](2026/2026-09-02-mysql-reader-endpoint.md)
