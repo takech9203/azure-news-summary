@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Storage: ユーザーバウンド ユーザー委任 SAS が一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--ms-blue-900), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+.header .meta span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong { color: var(--ms-blue-800); }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content ul { padding-left: 20px; }
+.feature-content li { font-size: 14px; margin-bottom: 4px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Tables */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) { background: var(--ms-surface-secondary); }
+
+.spec-table code, p code, li code, td code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    background: transparent;
+    border-radius: 0;
+    display: block;
+}
+
+/* Steps */
+.step-list { counter-reset: step; list-style: none; margin: 16px 0; }
+
+.step-list > li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 16px 12px 56px;
+    margin-bottom: 12px;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+}
+
+.step-list > li::before {
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 12px;
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-box {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.merit-box h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.merit-box ul { padding-left: 20px; }
+.merit-box li { font-size: 14px; margin-bottom: 8px; }
+
+.caution-box {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+.caution-box ul { padding-left: 20px; }
+.caution-box li { margin-bottom: 8px; font-size: 14px; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--ms-purple);
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.usecase-card p { font-size: 14px; margin-bottom: 8px; }
+.usecase-card .uc-label { font-weight: 700; color: var(--ms-blue-800); }
+
+/* RBAC role chips */
+.role-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.role-chip {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 5px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.related-card h4 {
+    color: var(--azure-blue);
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 0 8px 28px;
+    border-bottom: 1px dashed var(--ms-border);
+    position: relative;
+    font-size: 14px;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.summary-box p { font-size: 15px; }
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    border: 1px solid var(--ms-border);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 20px 0 40px;
+}
+
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .container { padding: 12px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Title area -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">☁️ Azure Storage (Azure Blob Storage)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>ユーザーバウンド ユーザー委任 SAS<br>(User-Bound User Delegation SAS) が一般提供開始</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-09</span>
+            <span>🔧 機能: User-bound user delegation SAS</span>
+            <span>🌍 すべてのパブリックリージョンで利用可能</span>
+        </div>
+    </header>
+
+    <!-- Overview -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Storage の「ユーザーバウンド ユーザー委任 SAS (User-Bound User Delegation SAS)」が一般提供 (GA) となった。本機能は、<strong>ユーザー委任 SAS (User Delegation SAS) の柔軟性</strong>と <strong>Microsoft Entra ID のユーザーバウンドアクセス</strong>を組み合わせた、強化されたセキュア認証機能である。すべてのパブリックリージョンで利用可能となっている。</p>
+        <div class="highlight-box">
+            <p style="margin: 0;">ユーザー委任 SAS は、SAS トークンの発行者 (delegator) が Entra ID で本人確認を行って作成するセキュアな SAS であり、トークンは<strong>発行者まで追跡可能</strong>で有効期間は<strong>最大 7 日間</strong>に制限される。ユーザー委任 SAS 自体は Azure Blobs、Azure Files、Azure Tables、Azure Queues で既に一般提供されており、ユーザーバウンド ユーザー委任 SAS はその拡張機能として位置づけられる。</p>
+        </div>
+        <p>ユーザーバウンド ユーザー委任 SAS では、SAS トークンの使用を<strong>特定のエンドユーザーの Entra ID アイデンティティに制限</strong>できる。これにより、アカウント SAS・サービス SAS・通常のユーザー委任 SAS よりもセキュアな SAS トークンを作成でき、SAS トークンが意図したユーザーのみによって使用されることを強制できる。本機能は 2026 年 2 月にパブリックプレビューとして発表されており、今回 GA に昇格した。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">sduoid</div>
+                <div class="stat-label">特定 Entra ID ユーザーに使用を限定</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最大 7 日</div>
+                <div class="stat-label">ユーザー委任キーの有効期間</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">追加料金なし</div>
+                <div class="stat-label">標準トランザクションコストのみ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">全リージョン</div>
+                <div class="stat-label">すべてのパブリックリージョンで GA</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>従来のユーザー委任 SAS は Entra ID 資格情報で署名されるものの、生成された SAS トークンを入手した任意のクライアントがトークン単体でリソースにアクセスできた (トークンの持ち出し・漏洩リスク)</li>
+                    <li>SAS トークン漏洩時、有効期限内であれば誰でもリソースにアクセス可能であった</li>
+                    <li>本機能は 2026 年 2 月からパブリックプレビュー段階であり、本番環境での利用は推奨されなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>SAS トークンの使用を <code>signedDelegatedUserObjectId</code> (<code>sduoid</code>) で指定した特定の Entra ID ユーザーに限定でき、指定ユーザー以外はトークンを使用できなくなった</li>
+                    <li>SAS トークン使用時に Entra ID ログイン (Bearer トークン) による本人確認が必須となり、トークン漏洩時の不正利用を防止できるようになった</li>
+                    <li>GA となり、すべてのパブリックリージョンで本番環境向けに利用可能になった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Issuer([👤 SAS 発行者<br/>アプリ / 管理者]) -->|1️⃣ Entra ID 認証| Entra[🔐 Microsoft Entra ID]
+    Issuer -->|2️⃣ Get User Delegation Key| Storage[(☁️ Azure Blob Storage)]
+    Issuer -->|3️⃣ sduoid を指定して SAS 生成| SAS[🎫 ユーザーバウンド SAS]
+    SAS -->|4️⃣ トークン配布| User([👥 エンドユーザー<br/>oid = sduoid])
+    User -->|5️⃣ ログインし Bearer トークン取得| Entra
+    User -->|6️⃣ SAS + Bearer トークンでアクセス| Storage
+    Storage -->|7️⃣ oid / tid クレームを照合し許可 ✅| User
+    Attacker([🕵️ 攻撃者<br/>SAS トークンのみ所持]) -.->|❌ Bearer トークンなし → 拒否| Storage
+            </pre>
+        </div>
+        <p>SAS 発行者は Entra ID 認証を経てユーザー委任キーを取得し、エンドユーザーのオブジェクト ID (<code>sduoid</code>) を埋め込んだ SAS トークンを生成する。エンドユーザーは SAS トークンに加えて自身の Entra ID Bearer トークンを提示する必要があり、<strong>SAS トークンだけを入手した攻撃者はアクセスできない</strong>。</p>
+    </section>
+
+    <!-- Key features -->
+    <section class="section">
+        <h2>⭐ サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🎫</div>
+            <div class="feature-content">
+                <h4>1. ユーザーバウンド SAS トークン (<code>sduoid</code>)</h4>
+                <ul>
+                    <li>SAS トークン作成時に <code>signedDelegatedUserObjectId</code> (<code>sduoid</code>) フィールドでエンドユーザーの Entra ID オブジェクト ID を指定する</li>
+                    <li>SAS トークン使用時、エンドユーザーは Entra ID ログイン (Bearer トークン) による本人確認が必要</li>
+                    <li>Azure Storage は Bearer トークンの <code>oid</code> クレームと SAS の <code>sduoid</code> 値を照合し、一致しない場合はアクセスを拒否する</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>2. クロステナント対応 (<code>skdutid</code>)</h4>
+                <ul>
+                    <li><code>signedKeyDelegatedUserTenantId</code> (<code>skdutid</code>) フィールドにより、ストレージアカウントとは異なる Entra テナントに属するエンドユーザーへの SAS 発行が可能</li>
+                    <li>Bearer トークンの <code>tid</code> クレームと <code>skdutid</code> 値が照合される</li>
+                    <li><code>skdutid</code> を使用する場合、<code>Get User Delegation Key</code> API 呼び出し時に <code>DelegatedUserTid</code> を指定する必要がある</li>
+                    <li>クロステナントのユーザーバウンド SAS はデフォルトで許可されておらず、ストレージアカウントの <code>allowCrossTenantDelegationSas</code> プロパティを <code>true</code> に設定する必要がある</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-content">
+                <h4>3. 発行者への追跡可能性 (ユーザー委任 SAS の特性)</h4>
+                <ul>
+                    <li>ユーザー委任 SAS は発行者 (delegator) が Entra ID で本人確認を行って作成するため、トークンを発行者まで追跡できる</li>
+                    <li>トークンの有効期間は最大 7 日間に制限される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical specs -->
+    <section class="section">
+        <h2>⚙️ 技術仕様</h2>
+        <table class="spec-table">
+            <tr><th style="width: 38%;">項目</th><th>詳細</th></tr>
+            <tr><td>必要な認可バージョン</td><td><code>sv=2025-07-05</code> 以降</td></tr>
+            <tr><td>SAS パラメータ (エンドユーザー OID)</td><td><code>sduoid</code> (signedDelegatedUserObjectId) — Bearer トークンの <code>oid</code> クレームと照合</td></tr>
+            <tr><td>SAS パラメータ (エンドユーザーテナント ID)</td><td><code>skdutid</code> (signedKeyDelegatedUserTenantId) — Bearer トークンの <code>tid</code> クレームと照合。クロステナント時のみ必要</td></tr>
+            <tr><td>ユーザー委任キーの最大有効期間</td><td>7 日間</td></tr>
+            <tr><td>認証方式</td><td>SAS トークン + Entra ID Bearer トークン (併用必須)</td></tr>
+            <tr><td>クロステナント対応</td><td><code>allowCrossTenantDelegationSas</code> ストレージアカウントプロパティで制御 (デフォルト無効)</td></tr>
+            <tr><td>同一テナント時の要件</td><td><code>skdutid</code> 未指定の場合、エンドユーザーはストレージアカウントと同一の Entra テナントに属している必要がある</td></tr>
+            <tr><td>ベースとなるユーザー委任 SAS の対応サービス</td><td>Azure Blobs / Azure Files / Azure Tables / Azure Queues (いずれも GA 済み)</td></tr>
+        </table>
+
+        <h3>🔑 必要な RBAC ロール</h3>
+        <p>ユーザー委任キーを要求するセキュリティプリンシパルには、<code>Microsoft.Storage/storageAccounts/{serviceType}/generateUserDelegationKey</code> アクションを含むロールが必要である。以下の組み込みロールが該当する。</p>
+        <div class="role-chips">
+            <span class="role-chip">Contributor</span>
+            <span class="role-chip">Storage Account Contributor</span>
+            <span class="role-chip">Storage Blob Data Contributor</span>
+            <span class="role-chip">Storage Blob Data Owner</span>
+            <span class="role-chip">Storage Blob Data Reader</span>
+            <span class="role-chip">Storage Blob Delegator</span>
+            <span class="role-chip">Storage Queue Delegator</span>
+            <span class="role-chip">Storage Table Delegator</span>
+            <span class="role-chip">Storage File Delegator</span>
+        </div>
+        <div class="highlight-box">
+            <p style="margin: 0;"><code>Get User Delegation Key</code> 操作はストレージアカウントレベルで動作するため、当該アクションは<strong>ストレージアカウント、リソースグループ、またはサブスクリプションのスコープ</strong>で割り当てる必要がある。</p>
+        </div>
+    </section>
+
+    <!-- Setup -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>SAS 発行者となるセキュリティプリンシパルに、ユーザー委任キーを要求できる RBAC ロール (上記) を割り当てる</li>
+            <li>クロステナントでの利用が必要な場合、ストレージアカウントの <code>allowCrossTenantDelegationSas</code> プロパティを <code>true</code> に設定する</li>
+            <li>クライアント (SDK / ツール) が認可バージョン <code>2025-07-05</code> 以降に対応していることを確認する</li>
+        </ol>
+
+        <h3>利用手順 (REST API)</h3>
+        <ol class="step-list">
+            <li>Microsoft Entra ID から OAuth 2.0 トークンを取得する</li>
+            <li><code>Get User Delegation Key</code> 操作でユーザー委任キーを取得する (クロステナントの場合は <code>DelegatedUserTid</code> を指定)</li>
+        </ol>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">HTTP — Get User Delegation Key</span></div>
+            <pre><code class="language-http">POST https://{account}.blob.core.windows.net/?restype=service&amp;comp=userdelegationkey
+Authorization: Bearer {OAuth token}
+x-ms-version: 2025-07-05
+
+&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;KeyInfo&gt;
+    &lt;Start&gt;2026-09-09T00:00:00Z&lt;/Start&gt;
+    &lt;Expiry&gt;2026-09-10T00:00:00Z&lt;/Expiry&gt;
+    &lt;DelegatedUserTid&gt;{end-user-tenant-id}&lt;/DelegatedUserTid&gt;
+&lt;/KeyInfo&gt;</code></pre>
+        </div>
+        <ol class="step-list" style="counter-reset: step 2;">
+            <li>ユーザー委任キーを使用して SAS トークンを生成する。このとき <code>sduoid</code> にエンドユーザーの Entra ID オブジェクト ID を指定する (クロステナントの場合は <code>skdutid</code> も指定)</li>
+            <li>エンドユーザーは SAS トークンと自身の Entra ID Bearer トークンを併せて提示してリソースにアクセスする</li>
+        </ol>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">HTTP — Blob へのアクセス (SAS + Bearer トークン)</span></div>
+            <pre><code class="language-http">GET https://{account}.blob.core.windows.net/{container}/{blob}?{sas-token}
+Authorization: Bearer {end-user-entra-token}</code></pre>
+        </div>
+    </section>
+
+    <!-- Merits -->
+    <section class="section">
+        <h2>💡 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-box">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li><strong>トークン漏洩リスクの低減</strong>: SAS トークン単体では使用できないため、漏洩時の被害を大幅に限定でき、セキュリティインシデントの影響を最小化できる</li>
+                    <li><strong>監査性・トレーサビリティの向上</strong>: トークンは発行者まで追跡可能であり、使用者も特定の Entra ID ユーザーに限定されるため、データアクセスの説明責任を果たしやすい</li>
+                    <li><strong>追加コストなしで導入可能</strong>: 本機能の利用に追加料金は発生しない</li>
+                </ul>
+            </div>
+            <div class="merit-box">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li><strong>既存 SAS より高いセキュリティ</strong>: アカウント SAS、サービス SAS、通常のユーザー委任 SAS のいずれよりもセキュアな SAS トークンを作成できる</li>
+                    <li><strong>既存ワークフローとの互換性</strong>: 既存のユーザー委任 SAS の発行フローに <code>sduoid</code> (必要に応じて <code>skdutid</code>) パラメータを追加するだけで導入でき、大規模な設計変更は不要</li>
+                    <li><strong>クロステナントシナリオ対応</strong>: 異なるテナントのユーザーに対しても、ストレージアカウント側の明示的なオプトインを前提に安全な委任が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Limitations -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li><strong>API バージョン要件</strong>: 認可バージョン <code>sv=2025-07-05</code> 以降が必要であり、古い SDK やツールでは利用できない場合がある</li>
+                <li><strong>クライアント実装の追加</strong>: エンドユーザー側は SAS トークンに加えて Entra ID の Bearer トークンを提示する必要があり、匿名クライアントへの配布という従来の SAS の使い方はできない (これは本機能の意図的な設計である)</li>
+                <li><strong>クロステナントはデフォルト無効</strong>: クロステナントのユーザーバウンド SAS を利用するには <code>allowCrossTenantDelegationSas</code> プロパティの明示的な有効化が必要</li>
+                <li><strong>ユーザー委任キーの有効期間制限</strong>: ユーザー委任 SAS の有効期間は最大 7 日間であり、長期のアクセス委任には定期的な再発行が必要</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Use cases -->
+    <section class="section">
+        <h2>🎯 ユースケース</h2>
+        <div class="usecase-card">
+            <h4>ユースケース 1: 外部パートナーの特定ユーザーへの一時的なデータ共有 🤝</h4>
+            <p><span class="uc-label">シナリオ:</span> パートナー企業の特定ユーザーにのみ Blob へのアクセスを許可したい。トークンの転送・漏洩による第三者アクセスは防止したい。</p>
+            <p><span class="uc-label">実装例:</span> <code>allowCrossTenantDelegationSas</code> を有効化したうえで、パートナーユーザーのテナント ID (<code>DelegatedUserTid</code> / <code>skdutid</code>) とオブジェクト ID (<code>sduoid</code>) を指定してユーザーバウンド SAS を発行する。</p>
+            <p><span class="uc-label">効果:</span> SAS トークンが漏洩しても、指定されたユーザーの Entra ID Bearer トークンがなければアクセスできない。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>ユースケース 2: 規制産業でのユーザー単位のアクセス管理 🏥🏦</h4>
+            <p><span class="uc-label">シナリオ:</span> 金融・医療などの規制産業で、ストレージへのアクセスを個人レベルで制御・追跡する必要がある。</p>
+            <p><span class="uc-label">実装例:</span> エンドユーザーごとに <code>sduoid</code> を指定した個別のユーザーバウンド SAS を発行し、SAS の権限スコープと有効期限を最小限に設定する。</p>
+            <p><span class="uc-label">効果:</span> SAS の柔軟な権限制御 (権限スコープ、有効期限、IP 制限) と Entra ID のアイデンティティベース認証を組み合わせた多層的なアクセス制御を実現できる。</p>
+        </div>
+    </section>
+
+    <!-- Pricing / Regions -->
+    <section class="section">
+        <h2>💰 料金・利用可能リージョン</h2>
+        <div class="highlight-box">
+            <p style="margin: 0;"><strong>料金</strong>: ユーザーバウンド ユーザー委任 SAS の利用に<strong>追加料金は発生しない</strong>。料金はストレージアカウントの種類に応じた標準のトランザクションコストに基づく。詳細は <a href="https://azure.microsoft.com/pricing/details/storage/blobs/" target="_blank">Azure Storage の価格</a> を参照のこと。</p>
+        </div>
+        <div class="highlight-box">
+            <p style="margin: 0;"><strong>利用可能リージョン</strong>: すべてのパブリックリージョンで利用可能。</p>
+        </div>
+    </section>
+
+    <!-- Related services -->
+    <section class="section">
+        <h2>🧩 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🔐 Microsoft Entra ID</h4>
+                <p>エンドユーザーの本人確認と Bearer トークン (<code>oid</code> / <code>tid</code> クレーム) の発行に使用される</p>
+            </div>
+            <div class="related-card">
+                <h4>🎫 ユーザー委任 SAS (User Delegation SAS)</h4>
+                <p>本機能の基盤となる既存機能。Azure Blobs、Azure Files、Azure Tables、Azure Queues で一般提供済み</p>
+            </div>
+            <div class="related-card">
+                <h4>🛡️ Azure RBAC</h4>
+                <p>ユーザー委任キーの要求に必要な権限 (<code>generateUserDelegationKey</code> アクション) の管理に使用される</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reference links -->
+    <section class="section">
+        <h2>🔗 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=569241" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://techcommunity.microsoft.com/blog/azurestorageblog/generally-available-restrict-usage-of-user-delegation-sas-to-an-entra-id-identit/4554967" target="_blank">発表ブログ (Azure Storage Blog)</a></li>
+            <li><a href="https://learn.microsoft.com/rest/api/storageservices/create-user-delegation-sas" target="_blank">Create a user delegation SAS (REST API)</a></li>
+            <li><a href="https://learn.microsoft.com/rest/api/storageservices/get-user-delegation-key" target="_blank">Get User Delegation Key (REST API)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/storage/blobs/" target="_blank">Azure Storage の価格</a></li>
+            <li><a href="https://takech9203.github.io/azure-news-summary/20260226-blob-storage-user-bound-delegation-sas.html" target="_blank">Preview 時のレポート (2026-02-26)</a></li>
+        </ul>
+    </section>
+
+    <!-- Summary -->
+    <section class="section summary-box">
+        <h2>📝 まとめ</h2>
+        <p>ユーザーバウンド ユーザー委任 SAS の GA により、SAS トークンの<strong>「持ち出せば誰でも使える」という長年の課題</strong>に対する解決策が本番環境で利用可能になった。SAS トークンの使用を特定の Entra ID ユーザーに限定し、使用時に Bearer トークンによる本人確認を必須とすることで、アカウント SAS・サービス SAS・通常のユーザー委任 SAS のいずれよりも高いセキュリティを実現する。追加料金は不要で、すべてのパブリックリージョンで利用できる。</p>
+        <p>Solutions Architect としては、SAS を利用した外部共有やエンドユーザーへの直接アクセス提供を行っているワークロードにおいて、認可バージョン <code>2025-07-05</code> 以降への対応を確認のうえ、<code>sduoid</code> パラメータの追加によるユーザーバウンド化を推奨したい。特に規制産業やクロステナントのデータ共有シナリオでは、<strong>ゼロトラストの原則</strong>に沿ったアクセス制御の強化策として優先的に検討する価値がある。</p>
+        <div class="tags">
+            <span class="tag">Azure Storage</span>
+            <span class="tag">Azure Blob Storage</span>
+            <span class="tag">Security</span>
+            <span class="tag">SAS</span>
+            <span class="tag">User Delegation SAS</span>
+            <span class="tag">Microsoft Entra ID</span>
+            <span class="tag">Authentication</span>
+            <span class="tag">GA</span>
+            <span class="tag">ゼロトラスト</span>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=569241" target="_blank">Azure Updates (ID: 569241)</a> ・ <a href="https://techcommunity.microsoft.com/blog/azurestorageblog/generally-available-restrict-usage-of-user-delegation-sas-to-an-entra-id-identit/4554967" target="_blank">Azure Storage Blog</a></p>
+        <p>Azure News Summary — レポート日: 2026-09-09 / インフォグラフィック生成日: 2026-09-10</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure VM: Ephemeral OS Disk with Full Caching が一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .date {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+}
+
+.section p { margin: 10px 0; }
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 32px;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content p, .feature-content ul {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content ul { padding-left: 20px; margin-top: 4px; }
+.feature-content li { margin: 4px 0; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+td code, li code, p code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    background: #1E1E1E;
+    display: block;
+}
+
+/* Lists */
+.section ul.plain-list { padding-left: 24px; margin: 10px 0; }
+.section ul.plain-list li { margin: 8px 0; }
+.section ul.plain-list ul { padding-left: 20px; }
+
+/* Merit / demerit */
+.merit-demerit {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-col {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.merit-col h4 { color: var(--ms-green); margin-bottom: 10px; }
+.merit-col ul { padding-left: 20px; }
+.merit-col li { margin: 8px 0; font-size: 14px; }
+
+/* Use case cards */
+.usecase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.usecase-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.usecase-card h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 8px;
+    font-size: 15px;
+}
+
+.usecase-card p {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+/* Steps */
+.step-list { counter-reset: step; list-style: none; margin: 16px 0; }
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 12px 12px 56px;
+    margin: 10px 0;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--ms-border);
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* Warning box */
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box h4 { color: var(--ms-orange); margin-bottom: 8px; }
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin: 6px 0; font-size: 14px; }
+
+/* Region box */
+.region-box {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--ms-blue-800); }
+
+/* Links */
+a { color: var(--azure-blue); }
+
+.link-list { padding-left: 24px; }
+.link-list li { margin: 8px 0; }
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0;
+}
+
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-demerit, .usecase-grid, .related-grid {
+        grid-template-columns: 1fr;
+    }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">Azure Virtual Machines / VMSS</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>💾 Ephemeral OS Disk with Full Caching が一般提供開始 (GA)</h1>
+        <div class="date">📅 リリース日: 2026-09-09 | 機能: Ephemeral OS Disk with Full Caching</div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Ephemeral OS Disk の <strong>Full Caching (完全キャッシュ) モード</strong>が、新規の Azure Virtual Machines (VM) および Virtual Machine Scale Sets (VMSS) 向けに<strong>一般提供 (GA)</strong> となった。2026 年 3 月のパブリックプレビュー発表を経て、<strong>すべての Azure パブリックリージョン</strong>で本番利用が可能になった。</p>
+        <div class="highlight-box">
+            Full Caching は、<strong>OS イメージ全体を VM のローカルストレージ</strong> (キャッシュディスク、リソースディスク、または NVMe ディスク) にキャッシュする機能。キャッシュ完了後はリモートストレージへの読み取りが完全に排除され、一貫して高速な<strong>ミリ秒未満クラスの OS ディスクアクセス</strong>、<strong>最大 10 倍の I/O パフォーマンス向上</strong>、ストレージ障害時の高い回復性を実現する。キャッシュ処理は VM 起動後にバックグラウンドで非同期に実行されるため、VM のプロビジョニング時間には影響しない。
+        </div>
+        <p>AI のトレーニング・推論、クォーラムベースのデータベース、リアルタイム分析、大規模サービスなど、<strong>I/O センシティブなステートレスワークロード</strong>向けに設計されている。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">最大 10 倍</div>
+                <div class="stat-label">I/O パフォーマンス向上</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">&lt; 1 ms</div>
+                <div class="stat-label">OS ディスクアクセス</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">追加料金なし</div>
+                <div class="stat-label">標準 VM・ディスクコストのみ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">全リージョン</div>
+                <div class="stat-label">Azure パブリックリージョン</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (Preview 時点までの課題)</h4>
+                <ul>
+                    <li>従来の Ephemeral OS Disk (Partial Caching、デフォルト) では、OS ディスクがローカルの差分ディスクとマネージドディスク上のベースディスクに分割され、元ファイルの読み取りはリモートのベースディスクから行われるため、<strong>リモートストレージへの依存が残っていた</strong></li>
+                    <li>悪天候や電源障害などに起因するリモートストレージの障害時に、<strong>VM のダウンタイムが発生するリスク</strong>があった</li>
+                    <li>Full Caching はパブリックプレビュー段階であり、本番環境での利用が推奨されなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (GA での改善)</h4>
+                <ul>
+                    <li>OS イメージ全体がローカルストレージにキャッシュされ、定常状態では<strong>リモートストレージへの依存が完全に排除</strong>される</li>
+                    <li>リモートストレージの障害・中断時にも OS ディスクが利用可能であり続け、<strong>VM の回復性が向上</strong>する</li>
+                    <li><strong>最大 10 倍の I/O パフォーマンス向上</strong>と、一貫した低レイテンシの OS ディスクアクセスを実現</li>
+                    <li>キャッシュは起動後に非同期で実行されるため、<strong>VM 作成時間への影響がない</strong></li>
+                    <li>GA となり、すべての Azure パブリックリージョンで<strong>本番利用が可能</strong>になった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["⏮️ Before: Partial Caching (従来・デフォルト)"]
+        VM1["🖥️ Azure VM"]
+        DIFF["💾 ローカル差分ディスク&lt;br/&gt;(書き込み先)"]
+        BASE[("☁️ リモートベースディスク&lt;br/&gt;(元ファイルの読み取り)")]
+        VM1 -->|"書き込み"| DIFF
+        VM1 -->|"読み取り (リモート依存が残る)"| BASE
+    end
+
+    subgraph After["⏭️ After: Full Caching (GA)"]
+        VM2["🖥️ Azure VM"]
+        LOCAL["⚡ ローカルストレージ&lt;br/&gt;OS イメージ全体をキャッシュ&lt;br/&gt;(2 × OS ディスクサイズを使用)"]
+        REMOTE[("☁️ リモートストレージ")]
+        REMOTE -.->|"起動後にバックグラウンドで&lt;br/&gt;非同期キャッシュ"| LOCAL
+        VM2 -->|"全 I/O がローカルで完結&lt;br/&gt;最大 10 倍の I/O 性能"| LOCAL
+    end
+
+    Before ==>|"GA 昇格"| After
+
+    style After fill:#e6f3ff,stroke:#0078d4
+    style LOCAL fill:#0078d4,color:#fff
+    style Before fill:#fff4e6,stroke:#d67f00
+            </pre>
+        </div>
+        <p>この図は、従来の Partial Caching と GA となった Full Caching の違いを示している。Partial Caching では元ファイルの読み取りがリモートのベースディスクに依存していたが、Full Caching では OS イメージ全体が起動後に非同期でローカルストレージにキャッシュされ、定常状態のすべての I/O がローカルで完結する。</p>
+    </section>
+
+    <!-- サービスアップデートの詳細 -->
+    <section class="section">
+        <h2>🔍 サービスアップデートの詳細</h2>
+        <h3>主要機能</h3>
+        <div class="feature-card">
+            <div class="feature-icon">💾</div>
+            <div class="feature-content">
+                <h4>1. OS イメージの完全ローカルキャッシュ</h4>
+                <ul>
+                    <li>OS ディスク全体を VM のキャッシュディスク、リソース (テンプ) ディスク、または NVMe ディスクにキャッシュ</li>
+                    <li>キャッシュ完了後は定常状態でリモートストレージへの読み取り・書き込みレイテンシを排除</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>2. 非同期バックグラウンドキャッシング</h4>
+                <ul>
+                    <li>キャッシュ処理は VM 起動後にバックグラウンドで実行される</li>
+                    <li>VM の作成 (プロビジョニング) 時間に影響を与えない</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>3. リモートストレージ障害への耐性</h4>
+                <ul>
+                    <li>悪天候や電源障害などに起因するリモートストレージの中断時にも OS ディスクが利用可能</li>
+                    <li>汎用 VM および VMSS の回復性を大幅に向上</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>4. VM/VMSS 両対応・広範な VM シリーズサポート</h4>
+                <ul>
+                    <li>8 vCPU 以上の GPU、ストレージ最適化、メモリ最適化、HPC、汎用、コンピューティング最適化の各 VM シリーズで利用可能</li>
+                    <li>Azure CLI、ARM テンプレート、REST API から有効化可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>Preview からの主な変更点</h3>
+        <div class="table-wrap">
+            <table>
+                <tr><th>項目</th><th>Preview (2026-03)</th><th>GA (2026-09)</th></tr>
+                <tr><td><strong>ステータス</strong></td><td>パブリックプレビュー</td><td>一般提供 (本番利用可能)</td></tr>
+                <tr><td><strong>提供リージョン</strong></td><td>限定的</td><td>すべての Azure パブリックリージョン</td></tr>
+                <tr><td><strong>対応 VM シリーズ</strong></td><td>明確化されていなかった</td><td>8 vCPU 以上の N/L/M/H シリーズ全世代、v5/v6/v7 の D/DC/E/Eb/EC シリーズ、v6/v7 の F シリーズ</td></tr>
+                <tr><td><strong>パフォーマンス指標</strong></td><td>明示なし</td><td>最大 10 倍の I/O 性能向上、ミリ秒未満クラスの OS ディスクアクセスと公表</td></tr>
+                <tr><td><strong>料金</strong></td><td>明示なし</td><td>標準の VM・ディスクコスト以外の追加料金なしと明記</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>⚙️ 技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td><strong>ステータス</strong></td><td>一般提供 (GA)</td></tr>
+                <tr><td><strong>対象リソース</strong></td><td>新規の Azure VM、Azure VMSS (Flexible / Uniform)</td></tr>
+                <tr><td><strong>対応 OS</strong></td><td>Linux VM、Windows VM</td></tr>
+                <tr><td><strong>キャッシュ方式</strong></td><td>OS イメージ全体をローカルストレージ (キャッシュ / テンプ / NVMe ディスク) にキャッシュ</td></tr>
+                <tr><td><strong>キャッシュタイミング</strong></td><td>VM 起動後にバックグラウンドで非同期実行</td></tr>
+                <tr><td><strong>ローカル容量要件</strong></td><td>ローカルディスクサイズ &gt; (2 × OS ディスクサイズ + 1 GiB)</td></tr>
+                <tr><td><strong>ローカル容量への影響</strong></td><td>利用可能なローカルストレージが OS ディスクサイズの 2 倍分減少</td></tr>
+                <tr><td><strong>有効化方法</strong></td><td><code>diffDiskSettings</code> の <code>enableFullCaching</code> プロパティを <code>true</code> に設定 (Azure CLI / ARM テンプレート / REST API)</td></tr>
+                <tr><td><strong>必要 API バージョン</strong></td><td><code>2025-04-01</code> 以降</td></tr>
+                <tr><td><strong>提供リージョン</strong></td><td>すべての Azure パブリックリージョン</td></tr>
+                <tr><td><strong>データ永続性</strong></td><td>なし (ローカルストレージのため、Azure Storage には保存されない)</td></tr>
+            </table>
+        </div>
+
+        <h3>対応 VM シリーズ (8 vCPU 以上)</h3>
+        <div class="table-wrap">
+            <table>
+                <tr><th>カテゴリ</th><th>対応シリーズ</th></tr>
+                <tr><td><strong>GPU / ストレージ最適化 / メモリ最適化 / HPC</strong></td><td>すべての N シリーズ、L シリーズ、M シリーズ、H シリーズ</td></tr>
+                <tr><td><strong>汎用 / メモリ最適化 / Confidential</strong></td><td>v5、v6、v7 の D、DC、E、Eb、EC シリーズ</td></tr>
+                <tr><td><strong>コンピューティング最適化</strong></td><td>v6、v7 の F シリーズ</td></tr>
+            </table>
+        </div>
+        <div class="highlight-box">
+            2 vCPU および 4 vCPU の VM への対応は、今後のリリースで予定されている。
+        </div>
+
+        <h3>Ephemeral OS Disk の 2 つのキャッシュモード</h3>
+        <div class="table-wrap">
+            <table>
+                <tr><th>モード</th><th>動作</th><th>用途</th></tr>
+                <tr>
+                    <td><strong>Partial Caching (デフォルト)</strong></td>
+                    <td>OS ディスクをローカルの差分ディスクとマネージドディスクのベースディスクに分割。書き込みは差分ディスク、元ファイルの読み取りはベースディスクから実施</td>
+                    <td>クラウドネイティブ・ステートレスアプリ向け。性能と効率のバランス重視</td>
+                </tr>
+                <tr>
+                    <td><strong>Full Caching (GA)</strong></td>
+                    <td>OS ディスク全体をローカルストレージにキャッシュし、定常状態でリモートストレージ依存を排除</td>
+                    <td>I/O センシティブなステートレスワークロード (AI トレーニング/推論、クォーラム型 DB、データ分析、リアルタイム処理)</td>
+                </tr>
+            </table>
+        </div>
+        <p>既存の Ephemeral VM はすべて Partial Caching モードで作成されている。</p>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>OS ディスクが<strong>ステートレス</strong>であること (Full Caching はステートレスワークロード向けに設計)</li>
+            <li>VM SKU のローカルディスクサイズが <strong>(2 × OS ディスクサイズ + 1 GiB)</strong> より大きいこと</li>
+            <li>API バージョン <code>2025-04-01</code> 以降を使用すること</li>
+            <li>対応 VM シリーズ (<strong>8 vCPU 以上</strong>) を選択すること</li>
+        </ol>
+        <h3>有効化</h3>
+        <p>デプロイテンプレートまたは REST API 呼び出しの <code>diffDiskSettings</code> セクションで <code>enableFullCaching</code> プロパティを <code>true</code> に設定する。Azure CLI、ARM テンプレート、REST API から有効化できる。詳細な手順は <a href="https://learn.microsoft.com/azure/virtual-machines/ephemeral-os-disks-deploy" target="_blank" rel="noopener">Deploy Ephemeral OS disks</a> を参照。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">json</span><span>diffDiskSettings (ARM テンプレート抜粋)</span></div>
+            <pre><code class="language-json">"storageProfile": {
+  "osDisk": {
+    "diffDiskSettings": {
+      "option": "Local",
+      "enableFullCaching": true
+    }
+  }
+}</code></pre>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>✨ メリット</h2>
+        <div class="merit-demerit">
+            <div class="merit-col">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li><strong>本番利用が可能に</strong>: GA となり、すべての Azure パブリックリージョンで本番ワークロードに適用できる</li>
+                    <li><strong>追加コストなし</strong>: 標準の VM・ディスクコスト以外に Full Caching の追加料金は発生しない</li>
+                    <li><strong>可用性の向上</strong>: リモートストレージ障害時にも OS ディスクが利用可能であり続けるため、ダウンタイムリスクを低減できる</li>
+                </ul>
+            </div>
+            <div class="merit-col">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li><strong>最大 10 倍の I/O パフォーマンス</strong>: 一貫して高速なミリ秒未満クラスの OS ディスクアクセスを実現</li>
+                    <li><strong>プロビジョニング時間への影響なし</strong>: キャッシュは起動後にバックグラウンドで非同期実行されるため、VM 作成が遅くならない</li>
+                    <li><strong>リモート依存の排除</strong>: キャッシュ完了後の定常状態では、OS ディスクのすべての読み書きがローカルで完結する</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <h4>知っておくべき制約</h4>
+            <ul>
+                <li><strong>ローカルストレージ消費</strong>: 利用可能なローカルストレージが OS ディスクサイズの 2 倍分減少する (残りローカル容量 = 初期ローカル容量 - 2 × OS イメージサイズ)</li>
+                <li><strong>VM サイズの制限</strong>: 現時点では 8 vCPU 以上の対応シリーズに限定される (2/4 vCPU 対応は今後予定)</li>
+                <li><strong>新規 VM/VMSS のみ</strong>: 新規作成する VM および VMSS が対象</li>
+            </ul>
+        </div>
+        <div class="warning-box">
+            <h4>Ephemeral OS Disk 共通の制約</h4>
+            <ul>
+                <li>データの非永続性 (OS ディスクデータは Azure Storage に保存されない)</li>
+                <li>Stop-deallocate (停止・割り当て解除) 非対応</li>
+                <li>VM イメージキャプチャ、ディスクスナップショット、Azure Disk Encryption、Azure Backup、Azure Site Recovery、OS ディスクスワップ非対応</li>
+                <li>OS ディスクのリサイズは VM 作成時のみ可能</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+        <div class="usecase-grid">
+            <div class="usecase-card">
+                <h4>🤖 1. AI トレーニング・推論</h4>
+                <p>GPU 搭載の N シリーズ VM で、モデルロードや中間データアクセスなど I/O センシティブな処理の OS ディスクレイテンシを最小化</p>
+            </div>
+            <div class="usecase-card">
+                <h4>🗄️ 2. クォーラムベースのデータベース</h4>
+                <p>ノード障害を前提とした分散データベースで、OS ディスクの一貫した低レイテンシとストレージ障害への耐性を確保</p>
+            </div>
+            <div class="usecase-card">
+                <h4>📊 3. リアルタイム分析・データ処理</h4>
+                <p>L シリーズ (ストレージ最適化) などで、リモートストレージ起因のレイテンシ変動を排除し安定した処理性能を実現</p>
+            </div>
+            <div class="usecase-card">
+                <h4>🌐 4. 大規模ステートレスサービス</h4>
+                <p>VMSS で運用する大規模サービスにおいて、リモートストレージ障害時の広域ダウンタイムリスクを低減</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <div class="highlight-box">
+            <strong>Full Caching に追加料金は発生しない。</strong>標準の VM およびディスクコスト以外のコストは不要であることが公式ドキュメントに明記されている。Ephemeral OS Disk 自体も OS ディスクデータをローカル VM ストレージに保存するため、リモートのマネージドディスクに対するストレージ課金は発生しない。
+        </div>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank" rel="noopener">Managed Disks 料金ページ</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-machines/" target="_blank" rel="noopener">Virtual Machines 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2>🌏 利用可能リージョン</h2>
+        <div class="region-box">
+            🌐 すべての Azure パブリックリージョンで利用可能 (対応 VM サイズが提供されているリージョン)
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>Azure Virtual Machines / VMSS</strong><br>Full Caching を利用する基盤コンピューティングサービス</div>
+            <div class="related-card"><strong>Azure Managed Disks</strong><br>Partial Caching のベースディスクや、永続的な OS ディスクが必要な場合の選択肢</div>
+            <div class="related-card"><strong>Trusted Launch</strong><br>Ephemeral OS Disk と併用可能 (VMGS 用に 1 GiB がローカルストレージから予約される)</div>
+            <div class="related-card"><strong>Confidential VMs</strong><br>DC/EC シリーズ (v5/v6/v7) で Full Caching が利用可能</div>
+            <div class="related-card"><strong>SSD ベースディスクサポート</strong><br>ベースディスクに Premium SSD / Standard SSD を選択して SLA を向上可能</div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <p>2026 年 3 月にパブリックプレビューが開始された Ephemeral OS Disk の Full Caching モードが GA となり、すべての Azure パブリックリージョンで本番利用が可能になった。GA に伴い、対応 VM シリーズ (8 vCPU 以上の N/L/M/H 全世代、v5〜v7 の D/DC/E/Eb/EC、v6/v7 の F シリーズ)、最大 10 倍の I/O 性能向上、追加料金なしであることが明確化された。</p>
+        <p>キャッシュは起動後に非同期で実行されるためプロビジョニング時間への影響がなく、リモートストレージ障害時の回復性も向上する。AI トレーニング/推論、クォーラム型データベース、リアルタイム分析などの I/O センシティブなステートレスワークロードを運用している場合は、ローカルディスク容量要件 (2 × OS ディスクサイズ + 1 GiB) と Ephemeral OS Disk 共通の制約 (非永続性、Stop-deallocate 非対応など) を確認した上で、<code>enableFullCaching</code> の有効化を検討することを推奨する。</p>
+        <div class="tags">
+            <span class="tag">#Azure</span>
+            <span class="tag">#VirtualMachines</span>
+            <span class="tag">#VMSS</span>
+            <span class="tag">#EphemeralOSDisk</span>
+            <span class="tag">#FullCaching</span>
+            <span class="tag">#GA</span>
+            <span class="tag">#Compute</span>
+            <span class="tag">#Performance</span>
+            <span class="tag">#Resiliency</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク / フッター -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=570551" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machines/ephemeral-os-disks" target="_blank" rel="noopener">Microsoft Learn - Ephemeral OS disks</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machines/ephemeral-os-disks-deploy" target="_blank" rel="noopener">Microsoft Learn - Deploy Ephemeral OS disks</a></li>
+            <li><a href="https://github.com/takech9203/azure-news-summary/blob/main/reports/2026/2026-03-30-ephemeral-os-disk-full-caching.md" target="_blank" rel="noopener">過去レポート - パブリックプレビュー発表 (2026-03-30)</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=570551" target="_blank" rel="noopener">Azure Updates (ID: 570551)</a> | <a href="https://learn.microsoft.com/azure/virtual-machines/ephemeral-os-disks" target="_blank" rel="noopener">Microsoft Learn - Ephemeral OS disks</a></p>
+        <p>Generated by Azure News Summary | レポート日: 2026-09-09 | インフォグラフィック生成日: 2026-09-10</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

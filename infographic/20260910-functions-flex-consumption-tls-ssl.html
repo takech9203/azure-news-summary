@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Functions: Flex Consumption の TLS/SSL 証明書とエンドツーエンド TLS 暗号化サポートが GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    box-shadow: 0 4px 12px rgba(0, 61, 105, 0.25);
+}
+
+.header .meta-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 26px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 14px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.92;
+}
+
+.release-date {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 14px;
+    margin-top: 12px;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+.section h3 {
+    color: var(--ms-blue-800);
+    font-size: 17px;
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+/* Highlight */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.key-term {
+    background: var(--ms-blue-200);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    color: var(--ms-blue-900);
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+    font-size: 15px;
+}
+
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; margin-top: 6px; }
+.feature-content li { margin: 4px 0; }
+
+.feature-content code, .spec-table code, .usecase-card code, li > code, p > code {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: var(--ms-blue-900);
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Table */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    text-align: left;
+    padding: 10px 14px;
+}
+
+.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+.spec-table td:first-child { font-weight: 700; color: var(--ms-blue-900); white-space: nowrap; }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Steps */
+.step-list {
+    counter-reset: step;
+    list-style: none;
+    margin: 12px 0;
+}
+
+.step-list li {
+    position: relative;
+    padding: 8px 0 8px 44px;
+    counter-increment: step;
+    font-size: 14px;
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-box {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px;
+    border-top: 4px solid var(--azure-blue);
+}
+
+.merit-box h4 { color: var(--ms-blue-800); margin-bottom: 10px; }
+.merit-box ul { padding-left: 20px; }
+.merit-box li { margin: 8px 0; font-size: 14px; }
+
+.warning-box {
+    background: #FFF8E6;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin: 8px 0; font-size: 14px; }
+
+/* Use case */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 6px;
+}
+
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+
+.effect-line {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 14px 16px;
+    border-left: 4px solid var(--ms-purple);
+}
+
+.related-card h4 { color: var(--ms-blue-900); font-size: 14px; margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+.link-list { list-style: none; }
+.link-list li {
+    margin: 8px 0;
+    padding-left: 24px;
+    position: relative;
+    font-size: 14px;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 12px;
+}
+
+.footer a { color: var(--azure-blue); }
+
+/* Responsive */
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 21px; }
+    .container { padding: 14px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="meta-badges">
+            <span class="service-badge">⚡ Azure Functions</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Flex Consumption プランの TLS/SSL 証明書 (サイトスコープ証明書) と<br>エンドツーエンド TLS 暗号化サポートが一般提供 (GA)</h1>
+        <div class="subtitle">カスタムドメインへの証明書バインド・クライアント証明書認証・相互 TLS (mTLS) がサーバーレスで実現可能に</div>
+        <div class="release-date">📅 リリース日: 2026-09-10</div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📰</span>概要</h2>
+        <p>Azure Functions Flex Consumption プランで TLS/SSL 証明書のサポートが一般提供 (GA) となりました。新しい「<span class="key-term">サイトスコープ証明書 (site-scoped certificates)</span>」モデルにより、証明書は同一 Webspace 内のアプリ間で共有されるのではなく、<strong>個々の Function App 単位にスコープ</strong>されます。</p>
+        <p>各 Function App は、直接アップロード、Azure Key Vault からのインポート、または無料の App Service Managed Certificate の発行により、最大 3 つの秘密証明書 (.pfx) と 3 つの公開証明書 (.cer) を保持できます。これにより、Flex Consumption 上で<strong>カスタムドメインへの証明書バインド、クライアント証明書認証、相互 TLS (mTLS) シナリオ</strong>が可能になります。</p>
+        <div class="highlight-box">
+            あわせて、<span class="key-term">エンドツーエンド TLS 暗号化 (E2E TLS)</span> も Flex Consumption で一般提供となりました。プラットフォームのフロントエンドと、関数コードを実行するワーカーとの間のトラフィックを暗号化できます。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">.pfx ×3</div>
+                <div class="stat-label">アプリあたりの秘密証明書上限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">.cer ×3</div>
+                <div class="stat-label">アプリあたりの公開証明書上限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">4 経路</div>
+                <div class="stat-label">証明書の取得方法 (アップロード / Key Vault / Managed / 購入)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">24h 以内</div>
+                <div class="stat-label">Key Vault 更新の自動同期</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Flex Consumption には TLS/SSL 証明書を管理する仕組みがなく、カスタム証明書を利用するシナリオ (カスタムドメインへの独自証明書のバインド、クライアント証明書認証、相互 TLS) に対応できなかった (今回のアップデートで新モデルとして導入。この機能提供前に作成された既存アプリには証明書の移行パスが現時点で存在しないことからも、従来は利用できなかったことが確認できる)</li>
+                    <li>プラットフォームのフロントエンドとワーカー間のトラフィック暗号化 (E2E TLS) は、Flex Consumption では GA 提供されていなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Function App 単位にスコープされたサイトスコープ証明書モデルにより、秘密証明書 (.pfx) 最大 3 つ + 公開証明書 (.cer) 最大 3 つを保持可能に</li>
+                    <li>直接アップロード、Key Vault からのインポート、無料の App Service Managed Certificate、Azure で購入した App Service certificate の 4 つの取得経路に対応</li>
+                    <li>Key Vault で証明書を更新すると、バックグラウンドジョブが 24 時間以内に自動同期 (手動作業不要)</li>
+                    <li><code>endToEndEncryptionEnabled</code> サイトプロパティにより、フロントエンドからワーカーまでのトラフィック暗号化を有効化可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Client([🧑‍💻 クライアント])
+    Client -- "HTTPS (カスタムドメイン + TLS/mTLS)" --> FE
+
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph Flex["⚡ Flex Consumption Function App"]
+            FE["🌐 プラットフォーム フロントエンド"]
+            FE -- "🔒 E2E TLS 暗号化" --> W1["🖥️ ワーカー インスタンス"]
+            Cert["📜 サイトスコープ証明書<br/>(.pfx x3 / .cer x3)"]
+            Cert -. "証明書バインド" .-> FE
+            Cert -. "コードから参照 (/var/ssl/*)" .-> W1
+        end
+        KV[("🔑 Azure Key Vault")]
+        KV -- "インポート / 24h 自動同期" --> Cert
+        MC["🆓 App Service<br/>Managed Certificate"] --> Cert
+        Upload["📤 直接アップロード<br/>(.pfx / .cer)"] --> Cert
+    end
+            </pre>
+        </div>
+        <p>クライアントからフロントエンドまではサイトスコープ証明書による TLS/mTLS、フロントエンドからワーカーまでは E2E TLS 暗号化により、通信経路全体を暗号化できる構成を示しています。証明書は Key Vault インポート・直接アップロード・無料マネージド証明書の 3 経路で Function App 単位に登録します。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⭐</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">📜</div>
+            <div class="feature-content">
+                <h4>1. サイトスコープ証明書 (site-scoped certificates)</h4>
+                <ul>
+                    <li>証明書を Webspace 内で共有するのではなく、個々の Function App にスコープする新しいモデル</li>
+                    <li>カスタムドメイン、クライアント証明書認証、相互 TLS シナリオに対応</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛒</div>
+            <div class="feature-content">
+                <h4>2. 複数の証明書取得経路</h4>
+                <ul>
+                    <li><strong>App Service Managed Certificate</strong>: カスタムドメイン向けにポータルで無料作成 (秘密証明書の上限にカウント)</li>
+                    <li><strong>App Service certificate</strong>: Azure で購入してインポート (秘密証明書の上限にカウント)</li>
+                    <li><strong>Key Vault からのインポート</strong>: PKCS12 証明書をインポート (秘密証明書の上限にカウント)</li>
+                    <li><strong>秘密証明書 (.pfx) の直接アップロード</strong></li>
+                    <li><strong>公開証明書 (.cer) の直接アップロード</strong> (コードから証明書認証が必要なリモートサービスへアクセスする場合に使用)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>3. 証明書の自動更新・同期</h4>
+                <ul>
+                    <li>無料マネージド証明書はプラットフォームが自動更新</li>
+                    <li>Key Vault インポート証明書は、Key Vault 側での更新後 24 時間以内に全インスタンスへ自動同期</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">💻</div>
+            <div class="feature-content">
+                <h4>4. コードからの証明書アクセス</h4>
+                <ul>
+                    <li>「Make accessible to app code」を有効にすると、証明書がファイルとして全インスタンスのランタイム環境にロードされる</li>
+                    <li>公開証明書 (.cer): <code>/var/ssl/certs</code>、秘密証明書 (.pfx): <code>/var/ssl/private</code> にサムプリント名で配置</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>5. エンドツーエンド TLS 暗号化 (E2E TLS)</h4>
+                <ul>
+                    <li>プラットフォームのフロントエンドと、関数を実行するワーカー間のトラフィックを暗号化</li>
+                    <li>ARM / Bicep テンプレートでサイトプロパティ <code>endToEndEncryptionEnabled</code> を <code>true</code> に設定して有効化</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象プラン</td><td>Azure Functions Flex Consumption (Linux ベース)</td></tr>
+            <tr><td>証明書モデル</td><td>サイトスコープ (Function App 単位。Webspace 内での共有なし)</td></tr>
+            <tr><td>秘密証明書 (.pfx) 上限</td><td>アプリあたり最大 3 つ (Managed Certificate / App Service certificate / Key Vault インポート / 直接アップロードの合計)</td></tr>
+            <tr><td>公開証明書 (.cer) 上限</td><td>アプリあたり最大 3 つ</td></tr>
+            <tr><td>秘密証明書の要件</td><td>中間証明書とルート証明書を含むパスワード保護付き PFX 形式でエクスポート</td></tr>
+            <tr><td>ECC 証明書</td><td>PFX としてアップロードすればサポート</td></tr>
+            <tr><td>コードからのアクセス</td><td>Linux のためファイルパス経由 (<code>/var/ssl/certs</code>, <code>/var/ssl/private</code>)。Windows 証明書ストアは使用不可</td></tr>
+            <tr><td>Key Vault 認証</td><td>マネージド ID + RBAC (<code>Key Vault Certificate User</code> ロール) を推奨</td></tr>
+            <tr><td>E2E TLS の有効化方法</td><td>ARM / Bicep のサイトプロパティ <code>endToEndEncryptionEnabled: true</code></td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3>📋 前提条件</h3>
+        <ol class="step-list">
+            <li>Flex Consumption プランの Function App (既存アプリのうち本機能提供前に作成されたものには証明書の移行パスがないため、サイトスコープ証明書を使うには新規に Flex Consumption アプリを作成する必要がある)</li>
+            <li>Key Vault からインポートする場合: Function App のマネージド ID に対して Key Vault の <code>Key Vault Certificate User</code> ロールを付与</li>
+            <li>Key Vault のパブリックアクセスを無効化している場合: 「信頼された Microsoft サービスによるファイアウォールのバイパスを許可」を有効化</li>
+        </ol>
+
+        <h3>🖥️ Azure CLI (Key Vault アクセス用のマネージド ID 設定)</h3>
+        <p>サイトスコープ証明書自体の管理は現時点で Azure CLI 未対応のため、Azure Portal または ARM/Bicep テンプレートを使用します。Key Vault インポートの前提となるマネージド ID の設定は CLI で行えます。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code class="language-bash"># マネージド ID を有効化
+az functionapp identity assign \
+    --resource-group &lt;RESOURCE_GROUP&gt; \
+    --name &lt;APP_NAME&gt;
+
+# マネージド ID のプリンシパル ID を取得
+principalId=$(az functionapp identity show \
+    --resource-group &lt;RESOURCE_GROUP&gt; \
+    --name &lt;APP_NAME&gt; \
+    --query principalId -o tsv)
+
+# Key Vault Certificate User ロールを割り当て
+az role assignment create \
+    --role "Key Vault Certificate User" \
+    --assignee "$principalId" \
+    --scope "/subscriptions/&lt;SUBSCRIPTION_ID&gt;/resourceGroups/&lt;RESOURCE_GROUP&gt;/providers/Microsoft.KeyVault/vaults/&lt;KEY_VAULT_NAME&gt;"</code></pre>
+        </div>
+
+        <h3>🌐 Azure Portal</h3>
+
+        <p><strong>秘密証明書 (.pfx) のアップロード:</strong></p>
+        <ol class="step-list">
+            <li>Azure Portal で Function App を開く</li>
+            <li>左メニューの <strong>設定</strong> &gt; <strong>証明書</strong> を選択</li>
+            <li><strong>Bring your own certificates (.pfx)</strong> &gt; <strong>+ Add certificate</strong> を選択</li>
+            <li><strong>Source</strong> で <strong>Upload certificate (.pfx)</strong> を選択し、.pfx ファイルとパスワードを入力</li>
+            <li>フレンドリ名を入力して追加</li>
+        </ol>
+
+        <p><strong>Key Vault からのインポート:</strong></p>
+        <ol class="step-list">
+            <li><strong>Bring your own certificates (.pfx)</strong> &gt; <strong>+ Add certificate</strong> で <strong>Import from Key Vault</strong> を選択</li>
+            <li>サブスクリプション、Key Vault、証明書を選択し、<strong>Validate</strong> &gt; <strong>Add</strong></li>
+        </ol>
+
+        <p><strong>App Service Managed Certificate (無料) の作成:</strong></p>
+        <ol class="step-list">
+            <li>カスタムドメイン設定で <strong>TLS/SSL certificate</strong> に <strong>App Service Managed Certificate</strong> を選択</li>
+            <li>証明書は自動で作成・バインドされる (発行まで最大 10 分程度)</li>
+        </ol>
+
+        <p><strong>コードから証明書へアクセスする場合:</strong></p>
+        <ol class="step-list">
+            <li><strong>証明書</strong> ブレードで対象証明書の <strong>...</strong> から <strong>Make accessible to app code</strong> を選択</li>
+            <li>証明書が全インスタンスにファイルとしてロードされる</li>
+        </ol>
+
+        <p><strong>E2E TLS 暗号化 (ARM / Bicep):</strong></p>
+        <div class="highlight-box">
+            サイトプロパティ <code>endToEndEncryptionEnabled</code> を <code>true</code> に設定します。
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-box">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>独自ドメイン + 独自証明書を要件とする本番ワークロードを、サーバーレス課金モデルの Flex Consumption で運用可能に</li>
+                    <li>App Service Managed Certificate を使えば証明書を無料で発行・自動更新でき、証明書の調達・更新コストを削減</li>
+                    <li>通信経路全体 (クライアント → フロントエンド → ワーカー) の暗号化により、コンプライアンス要件・セキュリティ監査への対応がしやすくなる</li>
+                </ul>
+            </div>
+            <div class="merit-box">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>証明書が Function App 単位にスコープされるため、Webspace 内の他アプリと共有されず分離性が高い</li>
+                    <li>Key Vault 連携により証明書のライフサイクル管理を一元化でき、更新は 24 時間以内に自動同期</li>
+                    <li>クライアント証明書認証・相互 TLS (mTLS) シナリオを Flex Consumption 上で実装可能</li>
+                    <li>ECC 証明書にも対応 (PFX としてアップロード)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>本機能の提供開始前に作成された既存アプリには、証明書の移行パスが現時点で存在しない。サイトスコープ証明書を使うには新しい Flex Consumption アプリの作成が必要</li>
+                <li>サイトスコープ証明書の管理は Azure CLI 未対応 (Azure Portal または ARM/Bicep テンプレートを使用)</li>
+                <li>証明書の上限はアプリあたり秘密証明書 3 つ + 公開証明書 3 つ</li>
+                <li>秘密証明書は中間証明書・ルート証明書を含むパスワード保護付き PFX でエクスポートする必要がある</li>
+                <li>Flex Consumption は Linux ベースのため、コードからは Windows 証明書ストアではなくファイルパス (<code>/var/ssl/certs</code>, <code>/var/ssl/private</code>) 経由で証明書を読み込む必要がある</li>
+                <li>E2E TLS 暗号化の有効化は ARM / Bicep テンプレート経由 (<code>endToEndEncryptionEnabled</code> プロパティ)</li>
+                <li>直接アップロードした証明書は自動更新されない。新しい証明書をアップロードし、サムプリント参照がある場合はコードやアプリ設定の更新が必要</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🌐 ユースケース 1: カスタムドメイン + 無料マネージド証明書での公開 API</h4>
+            <p><span class="usecase-label">シナリオ</span>Flex Consumption 上の HTTP トリガー関数を独自ドメイン (api.contoso.com) で公開し、無料の App Service Managed Certificate で HTTPS 化する。</p>
+            <p><span class="usecase-label">実装例</span>Azure Portal のカスタムドメイン設定で <strong>App Service Managed Certificate</strong> を選択して自動発行・バインド。</p>
+            <div class="effect-line"><strong>効果</strong>: 証明書の購入・更新作業なしで独自ドメインの HTTPS API を運用できる (自動更新)。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🔑 ユースケース 2: Key Vault で一元管理された証明書による mTLS API</h4>
+            <p><span class="usecase-label">シナリオ</span>社内の証明書ガバナンスに従い、Key Vault で管理する証明書を Function App にインポートし、クライアント証明書認証 (mTLS) で B2B 連携 API を保護する。</p>
+            <p><span class="usecase-label">実装例</span></p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span></div>
+                <pre><code class="language-bash"># マネージド ID に Key Vault Certificate User ロールを付与した上で、
+# Portal の [証明書] > [Import from Key Vault] からインポート
+az functionapp identity assign --resource-group rg-api --name func-b2b-api</code></pre>
+            </div>
+            <div class="effect-line"><strong>効果</strong>: 証明書のローテーションは Key Vault 側で行うだけで、24 時間以内に Function App へ自動同期される。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🏦 ユースケース 3: 規制業界向けのエンドツーエンド暗号化</h4>
+            <p><span class="usecase-label">シナリオ</span>金融・医療など、通信経路全体の暗号化が求められるワークロードで、プラットフォーム内部 (フロントエンド → ワーカー) のトラフィックも暗号化する。</p>
+            <p><span class="usecase-label">実装例</span>Bicep テンプレートでサイトプロパティ <code>endToEndEncryptionEnabled: true</code> を設定してデプロイ。</p>
+            <div class="effect-line"><strong>効果</strong>: クライアントからワーカーまでの通信経路全体が暗号化され、セキュリティ要件・監査要件に対応しやすくなる。</div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>サイトスコープ証明書・E2E TLS 暗号化自体の追加料金に関する情報は、今回のアップデート情報からは確認できませんでした。<strong>App Service Managed Certificate は無料で発行できます。</strong></p>
+        <p>Flex Consumption プランの課金はオンデマンド (実行時間 + 実行回数、月間無料枠あり) と Always Ready (ベースラインメモリ + 実行分、無料枠なし) の 2 モードです。最新の料金は以下の料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/functions/" target="_blank" rel="noopener">Azure Functions 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <p>リージョン固有の情報はアップデート情報からは確認できませんでした。Flex Consumption プラン自体は全リージョンでは提供されていないため、以下のコマンドで対応リージョンを確認できます。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code class="language-bash">az functionapp list-flexconsumption-locations --query "sort_by(@, &amp;name)[].{Region:name}" -o table</code></pre>
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🔑 Azure Key Vault</h4>
+                <p>証明書の一元管理とインポート元。マネージド ID + RBAC (<code>Key Vault Certificate User</code>) でアクセスし、更新は 24 時間以内に自動同期</p>
+            </div>
+            <div class="related-card">
+                <h4>🌐 App Service (Managed Certificate / App Service certificate)</h4>
+                <p>無料マネージド証明書の発行、および Azure で購入する証明書。サイトスコープ証明書モデルは App Service の証明書機能をアプリ単位にスコープしたもの</p>
+            </div>
+            <div class="related-card">
+                <h4>🪪 マネージド ID (Microsoft Entra ID)</h4>
+                <p>Key Vault へのアクセス認証に推奨される方式</p>
+            </div>
+            <div class="related-card">
+                <h4>⚡ Azure Functions Flex Consumption プラン</h4>
+                <p>VNet 統合、Always Ready インスタンス、ゼロスケールなどを備えた推奨サーバーレスホスティングプラン。本アップデートで TLS 関連機能が拡充</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📌</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Flex Consumption プランで TLS/SSL 証明書 (サイトスコープ証明書) とエンドツーエンド TLS 暗号化が GA となり、<strong>カスタムドメインへの独自証明書バインド、クライアント証明書認証、mTLS といったエンタープライズのセキュリティ要件を、サーバーレス課金モデルのまま満たせる</strong>ようになりました。これまでこれらの要件のために Premium プランなどを選択していたワークロードは、Flex Consumption への移行候補となります。</p>
+            <p style="margin-top:12px;">ただし、本機能提供前に作成された既存アプリには証明書の移行パスがないため新規アプリの作成が必要である点、証明書管理が現時点で CLI 未対応 (Portal / ARM / Bicep) である点に注意してください。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure Functions</span>
+            <span class="tag">Flex Consumption</span>
+            <span class="tag">TLS/SSL</span>
+            <span class="tag">証明書</span>
+            <span class="tag">mTLS</span>
+            <span class="tag">Key Vault</span>
+            <span class="tag">セキュリティ</span>
+            <span class="tag">Compute</span>
+            <span class="tag">Containers</span>
+            <span class="tag">IoT</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=570940" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-functions/flex-consumption-how-to#configure-site-scoped-certificates" target="_blank" rel="noopener">サイトスコープ証明書の構成 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-functions/flex-consumption-how-to#configure-end-to-end-tls-encryption" target="_blank" rel="noopener">エンドツーエンド TLS 暗号化の構成 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/azure-functions/functions-infrastructure-as-code#site-scoped-certificates" target="_blank" rel="noopener">Infrastructure as Code でのサイトスコープ証明書 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-functions/functions-scale#certificates" target="_blank" rel="noopener">ホスティングプラン別の証明書サポート比較 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-functions/flex-consumption-plan" target="_blank" rel="noopener">Flex Consumption プランの概要 (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/functions/" target="_blank" rel="noopener">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=570940" target="_blank" rel="noopener">Azure Updates (ID: 570940)</a> / <a href="https://learn.microsoft.com/azure/azure-functions/flex-consumption-how-to" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>リリース日: 2026-09-10 | ステータス: Launched (GA) | サービス: Azure Functions</p>
+        <p>Generated by Azure News Summary</p>
+    </footer>
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

@@ -5,6 +5,10 @@
 
 ## 2026 年
 
+- [2026-09-10 - Azure Copilot: Troubleshooting Agent の一般提供開始 (GA)](2026/2026-09-10-azure-copilot-troubleshooting-agent.md)
+- [2026-09-10 - Azure Functions: Flex Consumption の TLS/SSL 証明書とエンドツーエンド TLS 暗号化サポートが GA](2026/2026-09-10-functions-flex-consumption-tls-ssl.md)
+- [2026-09-09 - Azure Storage: ユーザーバウンド ユーザー委任 SAS (User-Bound User Delegation SAS) が一般提供開始](2026/2026-09-09-storage-user-bound-user-delegation-sas.md)
+- [2026-09-09 - Azure Virtual Machines: Ephemeral OS Disk with Full Caching が一般提供開始 (GA)](2026/2026-09-09-ephemeral-os-disk-full-caching-ga.md)
 - [2026-09-08 - Azure Developer CLI: Extension Framework の一般提供開始 (GA)](2026/2026-09-08-azd-extension-framework.md)
 - [2026-09-08 - Azure App Testing: Playwright Workspaces が Australia East、Japan East、Switzerland North で一般提供開始](2026/2026-09-08-playwright-workspaces-new-regions.md)
 - [2026-09-03 - Azure Site Recovery: Linux Azure VM における NVMe ディスクコントローラーサポート (GA)](2026/2026-09-03-site-recovery-nvme-linux-vms.md)
