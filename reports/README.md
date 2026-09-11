@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-09-11 - Azure Kubernetes Service: Azure Linux with OS Guard の廃止 (Retirement)](2026/2026-09-11-aks-azure-linux-os-guard-retirement.md)
+- [2026-09-11 - Azure Storage Mover: オンプレミス SMB ファイル共有から Azure Files (SMB) へのエージェントレス移行 (Public Preview)](2026/2026-09-11-storage-mover-agentless-smb-migration.md)
 - [2026-09-10 - Azure Copilot: Troubleshooting Agent の一般提供開始 (GA)](2026/2026-09-10-azure-copilot-troubleshooting-agent.md)
 - [2026-09-10 - Azure Functions: Flex Consumption の TLS/SSL 証明書とエンドツーエンド TLS 暗号化サポートが GA](2026/2026-09-10-functions-flex-consumption-tls-ssl.md)
 - [2026-09-09 - Azure Storage: ユーザーバウンド ユーザー委任 SAS (User-Bound User Delegation SAS) が一般提供開始](2026/2026-09-09-storage-user-bound-user-delegation-sas.md)

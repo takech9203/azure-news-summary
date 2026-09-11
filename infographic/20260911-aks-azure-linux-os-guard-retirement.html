@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS: Azure Linux with OS Guard の廃止 | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 240px;
+    height: 240px;
+    background: radial-gradient(circle, rgba(80,230,255,0.25), transparent 70%);
+    border-radius: 50%;
+}
+.hero-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.service-badge {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.45);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-retirement { background: var(--ms-red); }
+.badge-ga { background: var(--ms-green); }
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+.hero .subtitle { font-size: 16px; opacity: 0.92; }
+.hero .date {
+    display: inline-block;
+    margin-top: 16px;
+    background: rgba(255,255,255,0.15);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* ===== Section ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+.section p { margin: 10px 0; }
+.section ul, .section ol { margin: 10px 0 10px 24px; }
+.section li { margin: 6px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+strong { color: var(--azure-dark-blue); }
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: var(--ms-blue-800);
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-card.red { background: linear-gradient(135deg, var(--ms-red), #A22C00); }
+.stat-card.green { background: linear-gradient(135deg, var(--ms-green), #0B5A0B); }
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.92; margin-top: 6px; }
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { margin-left: 20px; }
+
+/* ===== Timeline ===== */
+.timeline { margin: 20px 0; position: relative; padding-left: 30px; }
+.timeline::before {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 8px;
+    bottom: 8px;
+    width: 4px;
+    background: linear-gradient(var(--ms-orange), var(--ms-red));
+    border-radius: 2px;
+}
+.timeline-item { position: relative; margin-bottom: 20px; }
+.timeline-item::before {
+    content: "";
+    position: absolute;
+    left: -28px;
+    top: 6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--ms-surface);
+    border: 4px solid var(--ms-orange);
+}
+.timeline-item.critical::before { border-color: var(--ms-red); }
+.timeline-date {
+    display: inline-block;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--ms-orange);
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+.timeline-item.critical .timeline-date { background: var(--ms-red); }
+.timeline-body {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 4px; font-size: 16px; }
+.feature-content p { margin: 0; font-size: 14.5px; color: var(--ms-text-secondary); }
+
+/* ===== Option cards ===== */
+.option-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.option-card {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 20px;
+}
+.option-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.option-number {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+.option-card ul { margin-left: 20px; font-size: 14.5px; }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14.5px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; background: #FFFFFF; }
+.diagram-caption {
+    text-align: center;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 12px;
+    padding: 18px 20px;
+}
+.merit-card.business { background: var(--ms-blue-100); border: 2px solid var(--ms-blue-400); }
+.merit-card.tech { background: #F3EEFA; border: 2px solid var(--ms-purple); }
+.merit-card h4 { margin-bottom: 10px; font-size: 16px; }
+.merit-card.business h4 { color: var(--ms-blue-800); }
+.merit-card.tech h4 { color: var(--ms-purple); }
+.merit-card ul { margin-left: 20px; font-size: 14.5px; }
+
+.constraint-item {
+    display: flex;
+    gap: 12px;
+    background: #FFF8F5;
+    border: 1px solid #F3D6C6;
+    border-left: 4px solid var(--ms-red);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14.5px;
+}
+.constraint-item .c-icon { font-size: 18px; flex-shrink: 0; }
+
+/* ===== Use case ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 22px;
+    margin: 16px 0;
+}
+.usecase-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.usecase-header .uc-icon {
+    font-size: 22px;
+    background: var(--ms-blue-100);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+}
+.usecase-header h4 { color: var(--azure-dark-blue); font-size: 17px; }
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 14px;
+    font-size: 14.5px;
+}
+
+/* ===== Related / Links ===== */
+.related-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    margin: 8px 0;
+    font-size: 14.5px;
+    align-items: flex-start;
+}
+.related-item .r-icon { font-size: 18px; flex-shrink: 0; }
+.link-list { list-style: none; margin-left: 0 !important; }
+.link-list li {
+    padding: 8px 12px;
+    border-left: 3px solid var(--azure-blue);
+    background: var(--ms-blue-100);
+    border-radius: 0 6px 6px 0;
+    margin: 8px 0;
+    font-size: 14.5px;
+    word-break: break-all;
+}
+a { color: var(--ms-blue-700); }
+
+/* ===== Summary / Footer ===== */
+.summary-section {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--ms-blue-300);
+}
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+}
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 36px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+footer a { color: var(--ms-blue-700); }
+
+/* ===== Steps ===== */
+.step-item {
+    display: flex;
+    gap: 14px;
+    margin: 10px 0;
+    align-items: flex-start;
+}
+.step-num {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+.step-body { font-size: 14.5px; }
+
+@media (max-width: 720px) {
+    .before-after, .option-grid, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+    .container { padding: 14px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Hero ===== -->
+    <header class="hero">
+        <div class="hero-badges">
+            <span class="service-badge">Azure Kubernetes Service (AKS)</span>
+            <span class="badge badge-retirement">Retirement (廃止予告)</span>
+        </div>
+        <h1>Azure Linux with OS Guard (preview) の廃止<br>後継は Azure Container Linux (ACL) へ</h1>
+        <p class="subtitle">Azure Linux with OS Guard (preview) のサポート終了と、AKS v1.34 以降で GA のコンテナ最適化 OS「Azure Container Linux」への移行</p>
+        <span class="date">📅 リリース日: 2026-09-11</span>
+    </header>
+
+    <!-- ===== Key dates ===== -->
+    <div class="stats-grid">
+        <div class="stat-card red">
+            <div class="stat-value">2026/12/10</div>
+            <div class="stat-label">OS Guard (preview) サポート終了<br>新規作成・イメージ提供・パッチ停止</div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-value">2027/3/10</div>
+            <div class="stat-label">ノードイメージ削除<br>スケール・修復操作が失敗</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-value">AKS v1.34+</div>
+            <div class="stat-label">移行先 Azure Container Linux (ACL) が GA</div>
+        </div>
+    </div>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Kubernetes Service (AKS) における <strong>Azure Linux with OS Guard (preview)</strong> のサポートが <strong>2026 年 12 月 10 日</strong>に終了することが発表されました。後継となるのは、AKS v1.34 以降で GA (一般提供) になっているコンテナ最適化 OS の <strong>Azure Container Linux (ACL)</strong> です。</p>
+        <div class="warning-box">
+            2026 年 12 月 10 日以降、Azure Linux with OS Guard (preview) の新規ノードプールは作成できなくなり、既存ノードプール向けの新しいノードイメージの提供およびセキュリティパッチの適用も停止します。さらに <strong>2027 年 3 月 10 日</strong>には Azure Linux with OS Guard のノードイメージ自体が削除され、対象ノードプールではスケーリングや修復操作 (reimage / redeploy を含む) が失敗するようになります。
+        </div>
+        <p>Azure Container Linux は Flatcar Container Linux をベースに、Azure Linux のパッケージ・サービシング・プラットフォーム統合を組み合わせた<strong>不変 (immutable) なコンテナ最適化 OS</strong> です。Microsoft Learn のドキュメントでは、OS Guard (preview) が提供していた Integrity Policy Enforcement (IPE) によるコード整合性などの機能は、将来のリリースで ACL に取り込まれる予定であると説明されています。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before: アップデート前の課題</h4>
+                <ul>
+                    <li>Azure Linux with OS Guard は preview のまま提供されており、GA 相当の長期サポートが約束された選択肢ではなかった</li>
+                    <li>セキュリティ強化 (不変 OS・コード整合性) を求めるユーザー向けの OS オプションが preview 機能に依存していた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After: 移行先の位置づけ</h4>
+                <ul>
+                    <li>後継の Azure Container Linux は AKS v1.34 以降で GA となっており、本番利用可能なサポート対象の OS オプションとして提供される</li>
+                    <li>dm-verity による <code class="inline">/usr</code> の不変化、SELinux (enforcing モード)、Trusted Launch (Secure Boot + vTPM) 必須化など、ハードニングされたセキュリティ機能を標準搭載</li>
+                    <li>週次のノードイメージ更新により、最新のセキュリティパッチが一貫して適用される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture diagram ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗺️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["⚠️ Before: 2026/12/10 サポート終了"]
+        OSG["🐧 Azure Linux with OS Guard (preview) ノードプール"]
+        OSG --> L1["🚫 新規ノードプール作成不可"]
+        OSG --> L2["🚫 新規ノードイメージ提供停止"]
+        OSG --> L3["🚫 セキュリティパッチ停止"]
+        L3 --> RM["🗑️ 2027/3/10 ノードイメージ削除<br/>スケール・修復操作が失敗"]
+    end
+
+    subgraph After["✅ After: Azure Container Linux (GA)"]
+        ACL["🐧 Azure Container Linux ノードプール<br/>(AKS v1.34 以降で GA)"]
+        ACL --> F1["🔒 不変 /usr (dm-verity)"]
+        ACL --> F2["🛡️ SELinux enforcing + Trusted Launch 必須"]
+        ACL --> F3["🔄 週次ノードイメージ更新"]
+    end
+
+    Before -- "in-place OS SKU 移行<br/>または新規ノードプール追加" --> After
+            </pre>
+        </div>
+        <p class="diagram-caption">2026 年 12 月 10 日のサポート終了・2027 年 3 月 10 日のイメージ削除に向けて、Azure Linux with OS Guard ノードプールを Azure Container Linux へ移行する流れ</p>
+    </section>
+
+    <!-- ===== Details ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔎</span>サービスアップデートの詳細</h2>
+
+        <h3>📆 廃止スケジュール</h3>
+        <div class="timeline">
+            <div class="timeline-item">
+                <span class="timeline-date">2026 年 12 月 10 日</span>
+                <div class="timeline-body">Azure Linux with OS Guard (preview) のサポート終了。新規ノードプール作成不可、新規ノードイメージ提供停止、既存ノードプールへのセキュリティパッチ停止</div>
+            </div>
+            <div class="timeline-item critical">
+                <span class="timeline-date">2027 年 3 月 10 日</span>
+                <div class="timeline-body">Azure Linux with OS Guard のノードイメージを削除。以降、対象ノードプールのスケーリングおよび修復操作 (reimage / redeploy を含む) が失敗</div>
+            </div>
+        </div>
+
+        <h3>🔀 移行オプション</h3>
+        <div class="option-grid">
+            <div class="option-card">
+                <h4><span class="option-number">1</span>In-place OS SKU 移行</h4>
+                <ul>
+                    <li>既存の Azure Linux with OS Guard ノードプールの OS SKU を <code class="inline">AzureContainerLinux</code> に変更する方式</li>
+                    <li>標準のノードイメージアップグレード処理としてノードプールが自動的に再イメージ化される</li>
+                    <li>ノードプールの新規作成や名前変更は不要</li>
+                </ul>
+            </div>
+            <div class="option-card">
+                <h4><span class="option-number">2</span>新規 ACL ノードプール追加 + 既存削除</h4>
+                <ul>
+                    <li><code class="inline">--os-sku AzureContainerLinux</code> を指定して新しいノードプールを追加</li>
+                    <li>ワークロードを移行・検証した後に、既存の Azure Linux with OS Guard ノードプールを削除する方式</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>⭐ 移行先: Azure Container Linux (ACL) の主要機能</h3>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>不変性 (Immutability)</h4>
+                <p><code class="inline">/usr</code> ディレクトリは dm-verity で保護された読み取り専用ボリュームとしてマウントされ、カーネルが署名済みルートハッシュを検証して改ざんを検出・ブロック</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>SELinux による強制アクセス制御</h4>
+                <p>SELinux が既定で enforcing モードで動作し、プロセスによるシステムリソースへのアクセスを制限</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>Trusted Launch と Secure Boot</h4>
+                <p>Trusted Launch (Secure Boot + vTPM) が必須。カーネル・initramfs・カーネルコマンドラインを単一の署名済みアーティファクトにまとめた Unified Kernel Image (UKI) によりブートチェーンの整合性を保証</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>自動ノードイメージ更新</h4>
+                <p>週次のイメージベース更新により、最新のセキュリティパッチとバグ修正を配信</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>アーキテクチャ / GPU サポート</h4>
+                <p>AMD64 と ARM64 の両方をサポート (ARM64 は Trusted Launch 互換性のため Cobalt ベースの v6 SKU が必要)。AMD64 では NVIDIA GPU ノードプールをサポート。ノード自動プロビジョニング (NAP) をサポート</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td><strong>廃止対象</strong></td><td>Azure Linux with OS Guard (preview) in AKS</td></tr>
+                <tr><td><strong>移行先</strong></td><td>Azure Container Linux (ACL)。Flatcar Container Linux 由来 + Azure Linux パッケージ / サービシング</td></tr>
+                <tr><td><strong>ACL の GA 対応バージョン</strong></td><td>AKS v1.34 以降</td></tr>
+                <tr><td><strong>ACL の必須要件</strong></td><td>Trusted Launch (Secure Boot + vTPM)。非 Trusted Launch 構成は提供なし</td></tr>
+                <tr><td><strong>OS SKU 指定</strong></td><td><code class="inline">--os-sku AzureContainerLinux</code></td></tr>
+                <tr><td><strong>サポートされる OS アップグレードチャネル</strong></td><td><code class="inline">NodeImage</code> および <code class="inline">None</code> のみ (<code class="inline">Unmanaged</code> / <code class="inline">SecurityPatch</code> は不変 <code class="inline">/usr</code> のため非互換)</td></tr>
+                <tr><td><strong>ACL 非サポート機能</strong></td><td>Artifact Streaming、Pod Sandboxing、Confidential VM (CVM)、Generation 1 VM</td></tr>
+                <tr><td><strong>ノードイメージのバージョン形式</strong></td><td>AKS の日付ベース形式 (例: <code class="inline">AKSAzureContainerLinux-202606.01.0</code>)、週次リリース</td></tr>
+                <tr><td><strong>Azure CLI 要件</strong></td><td>ACL 利用は 2.86.0 以降 (in-place OS SKU 移行の前提条件としては 2.61.0 以降)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法 (移行手順)</h2>
+
+        <h3>✅ 前提条件</h3>
+        <div class="step-item"><span class="step-num">1</span><div class="step-body">Azure CLI 2.86.0 以降 (<code class="inline">az version</code> で確認、<code class="inline">az upgrade</code> で更新)</div></div>
+        <div class="step-item"><span class="step-num">2</span><div class="step-body">ノードプールの VM サイズが Trusted Launch をサポートしていること (非対応の場合はサイズ変更または対応サイズでのノードプール再作成が必要)</div></div>
+        <div class="step-item"><span class="step-num">3</span><div class="step-body">本番クラスターの移行前に、開発 / ステージング環境で ACL 上でのワークロード動作を検証すること</div></div>
+        <div class="step-item"><span class="step-num">4</span><div class="step-body">アップグレード中の Pod 退避に備え、十分な Pod Disruption Budget (PDB) を設定しておくこと</div></div>
+
+        <h3>💻 Azure CLI</h3>
+        <p><strong>オプション 1: In-place OS SKU 移行</strong></p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">既存ノードプールを Azure Container Linux に移行 (ノードプールの再イメージ化が実行される)</span></div>
+            <pre><code class="language-bash">az aks nodepool update \
+    --resource-group $RESOURCE_GROUP \
+    --cluster-name $CLUSTER_NAME \
+    --name &lt;existing-node-pool-name&gt; \
+    --os-sku AzureContainerLinux \
+    --enable-secure-boot \
+    --enable-vtpm</code></pre>
+        </div>
+
+        <p><strong>オプション 2: 新規 ACL ノードプール追加 + 既存ノードプール削除</strong></p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">ACL ノードプールを追加し、検証後に既存ノードプールを削除</span></div>
+            <pre><code class="language-bash"># ACL ノードプールを追加 (System モードの例)
+az aks nodepool add \
+    --resource-group $RESOURCE_GROUP \
+    --cluster-name $CLUSTER_NAME \
+    --name aclsystem \
+    --mode System \
+    --os-sku AzureContainerLinux \
+    --node-count 3
+
+# ワークロードの移行・検証後、既存ノードプールを削除
+az aks nodepool delete \
+    --resource-group $RESOURCE_GROUP \
+    --cluster-name $CLUSTER_NAME \
+    --name &lt;existing-node-pool-name&gt;</code></pre>
+        </div>
+
+        <p><strong>移行後の確認</strong></p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">ノード OS とノードイメージバージョンの確認</span></div>
+            <pre><code class="language-bash"># ノードの OS を確認
+kubectl get nodes -o wide
+
+# ノードイメージバージョンを確認
+az aks nodepool list \
+    --resource-group $RESOURCE_GROUP \
+    --cluster-name $CLUSTER_NAME \
+    --query '[].{name: name, osSku: osSku, nodeImageVersion: nodeImageVersion}'</code></pre>
+        </div>
+
+        <div class="highlight-box">
+            <strong>ロールバック</strong>: 移行で問題が発生した場合は、<code class="inline">az aks nodepool update --os-sku AzureLinux</code> のように OS SKU を以前の値に戻して再デプロイすることで、ノードプールを元の OS SKU に再イメージ化できます。
+        </div>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">👍</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>preview 機能への依存から脱却し、GA としてサポートされる OS オプション (ACL) に移行できる</li>
+                    <li>週次のイメージ更新とサプライチェーンの信頼性 (署名済みパッケージ・署名済み UKI) により、コンプライアンス要件への対応が容易になる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>カーネルレベルで強制される <code class="inline">/usr</code> の不変性により、OS レベルの改ざんリスクを低減</li>
+                    <li>コンテナ実行に必要なコンポーネントのみを含む最小構成で攻撃対象領域を削減</li>
+                    <li>Trusted Launch / Secure Boot / vTPM による測定ブートと構成証明 (attestation) をネイティブサポート</li>
+                    <li>In-place OS SKU 移行を使えばノードプールを作り直さずに移行でき、問題発生時はロールバックも可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="constraint-item"><span class="c-icon">⏰</span><div><strong>移行期限が明確</strong>: 2026 年 12 月 10 日以降はセキュリティパッチが提供されず、2027 年 3 月 10 日以降はスケール・修復操作が失敗するため、それまでの移行が実質必須</div></div>
+        <div class="constraint-item"><span class="c-icon">🧪</span><div><strong>OS Guard 固有機能の提供時期</strong>: Integrity Policy Enforcement (IPE) によるコード整合性などの OS Guard (preview) 機能は、将来のリリースで ACL に取り込まれる予定 (アナウンス時点では ACL に未搭載)</div></div>
+        <div class="constraint-item"><span class="c-icon">🖥️</span><div><strong>Trusted Launch 必須</strong>: ノードプールの VM サイズが Trusted Launch に対応している必要がある。Generation 1 VM は利用不可。ARM64 は Cobalt ベース (v6) SKU が必要</div></div>
+        <div class="constraint-item"><span class="c-icon">🚫</span><div><strong>非サポート機能</strong>: Artifact Streaming、Pod Sandboxing、Confidential VM (CVM) は ACL では利用不可。これらを使用中のクラスターには ACL ノードプールを追加できない場合がある</div></div>
+        <div class="constraint-item"><span class="c-icon">🔁</span><div><strong>アップグレードチャネル制限</strong>: ノード OS アップグレードチャネルは <code class="inline">NodeImage</code> と <code class="inline">None</code> のみ。<code class="inline">SecurityPatch</code> / <code class="inline">Unmanaged</code> は利用不可</div></div>
+        <div class="constraint-item"><span class="c-icon">🧭</span><div>In-place OS SKU 移行は Azure Portal / PowerShell からは実行できない (Azure CLI のみ)。ノードプールの名前変更も不可</div></div>
+    </section>
+
+    <!-- ===== Use case ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+        <div class="usecase-card">
+            <div class="usecase-header">
+                <span class="uc-icon">🏭</span>
+                <h4>ユースケース 1: 既存 OS Guard ノードプールの in-place 移行</h4>
+            </div>
+            <p><strong>シナリオ</strong>: セキュリティ強化目的で Azure Linux with OS Guard (preview) ノードプールを運用中のチームが、ノードプール構成を変えずに廃止期限前に ACL へ移行する。</p>
+            <p><strong>実装例</strong>:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">検証 → 本番 in-place 移行</span></div>
+                <pre><code class="language-bash"># 1. 開発環境で ACL クラスターを作成しワークロードを検証
+az aks create \
+  --resource-group $DEV_RESOURCE_GROUP \
+  --name $DEV_CLUSTER_NAME \
+  --os-sku AzureContainerLinux \
+  --node-count 3 \
+  --generate-ssh-keys
+
+# 2. 検証後、本番ノードプールを in-place 移行
+az aks nodepool update \
+    --resource-group $RESOURCE_GROUP \
+    --cluster-name $CLUSTER_NAME \
+    --name &lt;os-guard-node-pool&gt; \
+    --os-sku AzureContainerLinux \
+    --enable-secure-boot \
+    --enable-vtpm</code></pre>
+            </div>
+            <div class="effect-box">
+                <strong>✅ 効果</strong>: 標準のノードイメージアップグレードと同じフローで移行が完了し、2026 年 12 月 10 日以降もセキュリティパッチとノードイメージ更新を継続して受けられる。
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Related ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-item"><span class="r-icon">🐧</span><div><strong>Azure Container Linux (ACL)</strong>: 本廃止の移行先。Flatcar Container Linux をベースにした不変・コンテナ最適化 OS (AKS v1.34 以降で GA)</div></div>
+        <div class="related-item"><span class="r-icon">📦</span><div><strong>Azure Linux</strong>: AKS のノード OS オプションの 1 つ。ACL は Azure Linux の署名済みパッケージとサプライチェーンプロセスを継承</div></div>
+        <div class="related-item"><span class="r-icon">🛡️</span><div><strong>Trusted Launch (Secure Boot / vTPM)</strong>: ACL の必須要件。ブートチェーンの整合性を保証</div></div>
+        <div class="related-item"><span class="r-icon">🔄</span><div><strong>ノード OS 自動アップグレードチャネル</strong>: ACL では <code class="inline">NodeImage</code> / <code class="inline">None</code> のみサポート</div></div>
+        <div class="related-item"><span class="r-icon">📈</span><div><strong>ノード自動プロビジョニング (NAP)</strong>: ACL でサポートされるノードのスケーリング機能</div></div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=571257" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates #571257)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/azure-linux/azure-container-linux-overview" target="_blank" rel="noopener">Azure Container Linux (ACL) for AKS Overview</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/azure-linux/tutorial-migrate-azure-container-linux-aks" target="_blank" rel="noopener">Tutorial: Migrate Nodes to Azure Container Linux (ACL) for AKS</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/azure-linux/quick-deploy-azure-container-linux-aks-cli" target="_blank" rel="noopener">Quickstart: Deploy an Azure Container Linux (ACL) AKS Cluster using the Azure CLI</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/aks/core-aks-concepts" target="_blank" rel="noopener">AKS Core Concepts (ノードとノードプール)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section summary-section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <p>AKS の Azure Linux with OS Guard (preview) は <strong>2026 年 12 月 10 日</strong>にサポートが終了し、<strong>2027 年 3 月 10 日</strong>にはノードイメージが削除されてスケール・修復操作が失敗するようになります。後継の Azure Container Linux (ACL) は AKS v1.34 以降で GA となっており、不変 <code class="inline">/usr</code> (dm-verity)、SELinux enforcing、Trusted Launch 必須といったハードニングを標準で備えています。</p>
+        <p>OS Guard ノードプールを運用中の場合は、まず開発 / ステージング環境で ACL 上のワークロード動作と非サポート機能 (Pod Sandboxing、CVM、Artifact Streaming など) の影響を確認し、<strong>in-place OS SKU 移行または新規 ACL ノードプールへの切り替え</strong>を、セキュリティパッチが停止する <strong>2026 年 12 月 10 日より前</strong>に完了させることを推奨します。</p>
+        <div class="tags">
+            <span class="tag">#AKS</span>
+            <span class="tag">#AzureLinux</span>
+            <span class="tag">#OSGuard</span>
+            <span class="tag">#AzureContainerLinux</span>
+            <span class="tag">#Retirement</span>
+            <span class="tag">#Kubernetes</span>
+            <span class="tag">#Security</span>
+        </div>
+    </section>
+
+    <footer>
+        <p><strong>出典</strong>:
+            <a href="https://azure.microsoft.com/updates?id=571257" target="_blank" rel="noopener">Azure Updates (ID: 571257)</a> /
+            <a href="https://learn.microsoft.com/en-us/azure/azure-linux/azure-container-linux-overview" target="_blank" rel="noopener">Microsoft Learn: Azure Container Linux Overview</a> /
+            <a href="https://learn.microsoft.com/en-us/azure/azure-linux/tutorial-migrate-azure-container-linux-aks" target="_blank" rel="noopener">Microsoft Learn: ACL Migration Tutorial</a>
+        </p>
+        <p>ソースレポート: reports/2026/2026-09-11-aks-azure-linux-os-guard-retirement.md (リリース日: 2026-09-11)</p>
+        <p>このインフォグラフィックは Azure News Summary プロジェクトにより自動生成されました。</p>
+    </footer>
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
