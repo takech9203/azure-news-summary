@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Application Gateway: HTTP/3 over QUIC サポート (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 12px; }
+
+.service-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-right: 8px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.header .meta {
+    margin-top: 16px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-200);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 18px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; }
+
+.section ul {
+    margin: 8px 0 12px 24px;
+}
+
+.section ul li { margin-bottom: 6px; }
+
+a { color: var(--azure-blue); }
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { margin-left: 20px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+    font-size: 16px;
+}
+
+.feature-content p, .feature-content ul {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content ul { margin: 4px 0 0 20px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 28px; font-weight: bold; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    text-align: left;
+    padding: 10px 14px;
+}
+
+td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    background: var(--ms-surface);
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* Steps */
+.steps {
+    counter-reset: step;
+    list-style: none;
+    margin: 16px 0 !important;
+}
+
+.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 0 10px 48px;
+    margin: 0 !important;
+    border-bottom: 1px dashed var(--ms-border);
+}
+
+.steps li:last-child { border-bottom: none; }
+
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Use case cards */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-blue);
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.usecase-card .usecase-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.usecase-label {
+    flex-shrink: 0;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-weight: 700;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    height: fit-content;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+/* Merit / limitation grid */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-box {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.merit-box h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+}
+
+.merit-box ul { margin-left: 20px; font-size: 14px; }
+
+.warning-box {
+    background: #FFF8E7;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box h4 { color: var(--ms-orange); margin-bottom: 8px; }
+.warning-box ul { margin-left: 20px; font-size: 14px; }
+
+/* Related services */
+.related-card {
+    background: var(--ms-surface-secondary);
+    border-left: 4px solid var(--ms-purple);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--ms-purple); }
+
+/* Links */
+.link-list {
+    list-style: none;
+    margin: 0 !important;
+}
+
+.link-list li {
+    padding: 8px 0 8px 28px;
+    position: relative;
+    border-bottom: 1px dashed var(--ms-border);
+    margin: 0 !important;
+}
+
+.link-list li:last-child { border-bottom: none; }
+
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+/* Tags */
+.tags { margin-top: 12px; }
+
+.tag {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    margin: 4px 6px 0 0;
+}
+
+/* Footer */
+.footer {
+    background: var(--azure-dark-blue);
+    color: white;
+    border-radius: 12px;
+    padding: 24px 28px;
+    font-size: 13px;
+    margin-bottom: 24px;
+}
+
+.footer a { color: var(--azure-light-blue); word-break: break-all; }
+.footer h3 { color: white; font-size: 15px; margin-bottom: 10px; }
+.footer ul { list-style: none; }
+.footer ul li { margin-bottom: 6px; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Application Gateway</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>HTTP/3 over QUIC サポート (Public Preview)</h1>
+        <div class="subtitle">UDP ベースの QUIC で接続確立を高速化し、モバイル・不安定ネットワークでの応答性を向上</div>
+        <div class="meta">📅 リリース日: 2026-09-14　|　🏷️ 機能: HTTP/3 over QUIC サポート</div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Application Gateway で <strong>HTTP/3 over QUIC</strong> のサポートがパブリックプレビューとして発表されました。HTTP/3 は HTTP の次世代バージョンであり、トランスポート層に TCP ではなく <strong>UDP ベースの QUIC プロトコル</strong>を使用します。これにより、接続確立時間の短縮、レイテンシの削減、モバイルや不安定なネットワーク環境における耐障害性の向上が実現されます。</p>
+        <p>HTTP/3 サポートにより、Application Gateway はフロントエンドのクライアント接続を QUIC 経由で処理できるようになります。Web アプリケーション、メッセージングプラットフォーム、モバイル体験、トランザクション処理、API など、レイテンシに敏感なワークロードのパフォーマンス向上に役立ちます。QUIC は接続確立のオーバーヘッドを削減し、独立したストリームをサポートすることで、パケットロスの影響を最小限に抑え、高レイテンシ・不安定なネットワーク上での応答性を改善します。</p>
+        <div class="highlight-box">
+            HTTP/3 は<strong>リスナーレベル</strong>で構成し、<strong>Basic リスナー</strong>に対して選択的に有効化できます。パブリックプレビュー期間中は <strong>Azure Portal または REST API</strong> を使用して構成します。HTTP/3 は<strong>フロントエンドのクライアント接続にのみ適用</strong>され、バックエンドへの接続は引き続き <strong>HTTP/1.1</strong> が使用されます。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">1-RTT</div>
+                <div class="stat-label">高速ハンドシェイク</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">UDP</div>
+                <div class="stat-label">QUIC ベーストランスポート</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">TLS 1.3</div>
+                <div class="stat-label">QUIC に組み込み</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">改修不要</div>
+                <div class="stat-label">バックエンドは HTTP/1.1 のまま</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>フロントエンド接続は HTTP/1.1・HTTP/2 (いずれも TCP ベース) のみ対応。TCP の 3 ウェイハンドシェイクと TLS ハンドシェイクによる接続確立のオーバーヘッドが発生</li>
+                    <li>1 つのパケットロスや遅延が同一接続上の後続パケットの配信をブロックする「ヘッドオブラインブロッキング」により応答性が低下する場合があった</li>
+                    <li>ネットワーク切り替えで IP アドレスが変わると (例: モバイル回線 → Wi-Fi)、接続の再確立と TLS ハンドシェイクのやり直しが必要</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>QUIC の 1-RTT ハンドシェイクにより接続確立レイテンシが削減され、初期ページロードのパフォーマンスが向上</li>
+                    <li>ストリームを独立して処理するため、あるストリームのパケットロスが他のストリームをブロックしない (ヘッドオブラインブロッキングの解消)</li>
+                    <li>コネクション ID に基づく接続移行 (Connection Migration) により、IP アドレスやポートが変わっても接続を維持し、再ハンドシェイクを回避</li>
+                    <li>TLS 1.3 が QUIC に組み込まれており、セキュアな通信が標準で提供される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    Client([📱 クライアント&lt;br&gt;モバイル / ブラウザー])
+    Client2([💻 レガシークライアント])
+
+    subgraph Azure["☁️ Azure"]
+        subgraph AGW["🚪 Application Gateway"]
+            L3["🎧 HTTP/3 リスナー&lt;br&gt;(Basic リスナー / TLS 1.3)"]
+            L1["🎧 HTTP/1.1・HTTP/2 リスナー"]
+        end
+        BE["🖥️ バックエンドプール&lt;br&gt;(VM / VMSS / App Service)"]
+    end
+
+    Client -- "⚡ HTTP/3 over QUIC (UDP)" --> L3
+    Client2 -- "HTTP/1.1 / HTTP/2 (TCP)" --> L1
+    L3 -- "HTTP/1.1" --> BE
+    L1 -- "HTTP/1.1" --> BE
+            </pre>
+        </div>
+        <div class="highlight-box">
+            HTTP/3 over QUIC は<strong>フロントエンドのクライアント接続にのみ適用</strong>され、Application Gateway からバックエンドへの通信は引き続き <strong>HTTP/1.1</strong> で行われます。HTTP/3 は<strong>リスナー単位で有効化</strong>するため、従来プロトコルのリスナーと共存できます。
+        </div>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⭐ 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>1. 高速な接続確立 (1-RTT ハンドシェイク)</h4>
+                <ul>
+                    <li>QUIC は TCP の 3 ウェイハンドシェイクを 1-RTT ハンドシェイクに置き換え、接続確立のレイテンシを削減する</li>
+                    <li>Web アプリケーション、メッセージングプラットフォーム、音声アシスタント、トランザクションシステム、モバイルバンキング、通知サービス、API などのワークロードで、接続開始の高速化とユーザー体感遅延の削減が期待できる</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>2. 独立した HTTP ストリーム (ヘッドオブラインブロッキングの解消)</h4>
+                <ul>
+                    <li>単一の QUIC 接続上で複数ストリームを多重化し、各ストリームを独立して処理する</li>
+                    <li>あるストリームでパケットロスが発生しても他のストリームの進行をブロックしないため、Web ブラウジング、インスタントメッセージング、IoT 通信、API トラフィック、金融トランザクションなどの応答性が向上する</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📶</div>
+            <div class="feature-content">
+                <h4>3. 接続移行 (Connection Migration)</h4>
+                <ul>
+                    <li>クライアントの IP アドレスとポートだけでなくコネクション ID を使用して接続を識別する</li>
+                    <li>クライアントがネットワークを切り替えたり新しい IP アドレスを取得したりしても接続を継続でき、モバイル回線から Wi-Fi への移動時などに新規接続確立と TLS ハンドシェイクを回避できる</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎛️</div>
+            <div class="feature-content">
+                <h4>4. リスナーレベルでの選択的な有効化</h4>
+                <ul>
+                    <li>ゲートウェイ全体ではなくリスナー単位で HTTP/3 を構成するため、対象のワークロードだけに段階的に適用できる</li>
+                    <li>新規リスナー作成時と既存リスナーの更新時のどちらでも有効化可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>プロトコル</td><td>HTTP/3 over QUIC (UDP ベーストランスポート)</td></tr>
+            <tr><td>適用範囲</td><td>フロントエンド (クライアント → Application Gateway) のみ</td></tr>
+            <tr><td>バックエンド通信</td><td>HTTP/1.1 (変更なし)</td></tr>
+            <tr><td>構成単位</td><td>リスナーレベル (Basic リスナーのみ)</td></tr>
+            <tr><td>TLS 要件</td><td>TLS 1.3 必須。TLS 1.3 をサポートする事前定義済み 2022 TLS ポリシーの構成が必要</td></tr>
+            <tr><td>構成手段 (プレビュー期間中)</td><td>Azure Portal、REST API (API バージョン 2023-02-01 以降)</td></tr>
+            <tr><td>REST API プロパティ</td><td><code class="inline">httpListeners</code> 内の <code class="inline">enableHttp3: true</code></td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>⚙️ 設定方法</h2>
+
+        <h3>✅ 前提条件</h3>
+        <ol class="steps">
+            <li>Application Gateway が作成済みであること (プレビュー期間中は、新規ゲートウェイ作成フロー内での HTTP/3 有効化は不可)</li>
+            <li>リスナーが TLS 1.3 をサポートする事前定義済み TLS ポリシー (2022 ポリシー) を使用していること。TLS 1.3 非対応の既定ポリシーを使用している場合、HTTP/3 は有効化できない</li>
+            <li>リスナーの種類が Basic であること (マルチサイトリスナーは非対応)</li>
+            <li>クライアントが HTTP/3 に対応していること</li>
+        </ol>
+
+        <h3>🖥️ Azure Portal</h3>
+        <ol class="steps">
+            <li>Azure Portal で対象の Application Gateway を開く</li>
+            <li><strong>設定</strong> の <strong>リスナー</strong> を選択する</li>
+            <li>既存の Basic リスナーを選択するか、新しい Basic リスナーを追加する</li>
+            <li>リスナーで HTTP/3 を有効化し、<strong>保存</strong> を選択する</li>
+            <li>HTTP/3 対応クライアントから Application Gateway に接続する</li>
+        </ol>
+
+        <h3>🌐 REST API</h3>
+        <p>Network Resource Provider の API バージョン <strong>2023-02-01 以降</strong>を使用します。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">jsonc</span></div>
+            <pre><code class="language-json">// 1. Application Gateways - Get で既存のリソース構成を取得
+// 2. httpListeners コレクション内の対象リスナーで enableHttp3 を true に設定
+"enableHttp3": true
+// 3. Application Gateways - Create Or Update (PUT) でリソースを更新</code></pre>
+        </div>
+        <div class="warning-box">
+            <h4>⚠️ 注意</h4>
+            <p>パブリックプレビュー期間中は Azure PowerShell、Azure CLI、Terraform はこの機能をサポートしていません (GA 時にサポート予定)。</p>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>💎 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-box">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>初期ページロードや接続開始の高速化により、レイテンシに敏感なワークロード (モバイルバンキング、トランザクション処理、通知サービスなど) のユーザー体験が向上する</li>
+                    <li>モバイルネットワークやパケットロスの多いネットワーク上のユーザーに対しても安定した応答性を提供でき、離脱率の低減が期待できる</li>
+                    <li>リスナー単位の有効化により、リスクを抑えながら段階的に新プロトコルを導入できる</li>
+                </ul>
+            </div>
+            <div class="merit-box">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>1-RTT ハンドシェイクによる接続確立レイテンシの削減</li>
+                    <li>ストリームの独立処理による TCP ヘッドオブラインブロッキングの解消</li>
+                    <li>接続移行によるネットワーク切り替え時の接続維持 (再ハンドシェイク不要)</li>
+                    <li>QUIC に組み込まれた TLS 1.3 によるセキュリティ</li>
+                    <li>バックエンドは HTTP/1.1 のままのため、バックエンドアプリケーションの改修が不要</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <p>パブリックプレビュー期間中は以下の制限があります。</p>
+        <div class="warning-box">
+            <h4>プレビュー期間中の制限</h4>
+            <ul>
+                <li>マルチサイトリスナーは非対応 (Basic リスナーのみ)</li>
+                <li>IPv6 リスナーおよび相互認証 (mutual authentication) は非対応</li>
+                <li>Web Application Firewall (WAF) ゲートウェイでは HTTP/3 リスナーを使用できない</li>
+                <li>Public-Private IP Same Port 機能は HTTP/3 リスナーでは非対応</li>
+                <li>Azure PowerShell、Azure CLI、Terraform は非対応 (GA 時にサポート予定)。構成は Azure Portal または REST API のみ</li>
+                <li>TLS 1.3 をサポートする事前定義済み 2022 TLS ポリシーの使用が必須</li>
+                <li>プレビュー版のため SLA はなく、本番ワークロードでの使用は推奨されない (<a href="https://azure.microsoft.com/support/legal/preview-supplemental-terms/">プレビューの追加利用規約</a>が適用)</li>
+                <li>HTTP/3 はフロントエンド接続のみで、バックエンドへの gRPC over HTTP/3 のような用途には利用できない (バックエンドは HTTP/1.1)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+        <div class="usecase-card">
+            <h4>📱 ユースケース 1: モバイルアプリ向け API のレイテンシ改善</h4>
+            <div class="usecase-row">
+                <span class="usecase-label">シナリオ</span>
+                <span>モバイルバンキングアプリの API を Application Gateway 経由で公開しており、モバイル回線の高レイテンシ・パケットロスにより API 応答の体感速度が低下している。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-label">実装例</span>
+                <span>対象 API 用の Basic リスナーに TLS 1.3 対応の 2022 事前定義 TLS ポリシーを構成し、Azure Portal からリスナーの HTTP/3 を有効化する。HTTP/3 対応のモバイルクライアントは QUIC で接続し、非対応クライアントは従来どおり HTTP/1.1・HTTP/2 で接続する。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-label">効果</span>
+                <span>1-RTT ハンドシェイクによる接続確立の高速化と、パケットロス時のヘッドオブラインブロッキング解消により、モバイルユーザーの体感遅延を削減できる。</span>
+            </div>
+        </div>
+        <div class="usecase-card">
+            <h4>🚶 ユースケース 2: 移動中ユーザーのセッション継続性向上</h4>
+            <div class="usecase-row">
+                <span class="usecase-label">シナリオ</span>
+                <span>メッセージングやリアルタイム通知を提供する Web アプリケーションで、ユーザーがモバイル回線と Wi-Fi を行き来するたびに再接続が発生している。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-label">実装例</span>
+                <span>フロントエンドリスナーで HTTP/3 を有効化し、QUIC の接続移行 (コネクション ID ベースの接続識別) を活用する。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-label">効果</span>
+                <span>クライアントの IP アドレスやポートが変わっても既存接続を維持でき、ネットワーク切り替え時の新規接続確立と TLS ハンドシェイクを回避してシームレスな体験を提供できる。</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>料金ページに HTTP/3 に固有の追加料金の記載はありません。Application Gateway v2 SKU の料金は以下の 2 要素で構成されます。</p>
+        <table>
+            <tr><th>項目</th><th>課金内容</th></tr>
+            <tr><td>固定料金</td><td>ゲートウェイの稼働時間あたりの課金 (Basic / Standard / WAF の各種別)</td></tr>
+            <tr><td>容量ユニット</td><td>容量ユニット時間あたりの従量課金 (コンピュートユニット、永続接続数、スループットの 3 要素で算定)</td></tr>
+        </table>
+        <p>受信データ転送は無料、送信データ転送には標準のデータ転送料金が適用されます。具体的な金額はリージョン・通貨によって異なるため、<a href="https://azure.microsoft.com/pricing/details/application-gateway/">Application Gateway 料金ページ</a>および <a href="https://azure.microsoft.com/pricing/calculator/">Azure 料金計算ツール</a>を参照してください。</p>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2>🌍 利用可能リージョン</h2>
+        <p>公式情報でプレビューの対象リージョンは確認できませんでした。最新情報は <a href="https://learn.microsoft.com/azure/application-gateway/http3-quic-support">Microsoft Learn ドキュメント</a>を参照してください。</p>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-card">
+            <strong>Azure Front Door</strong>: グローバルな L7 ロードバランサー。現時点でクライアント接続は HTTP/1.1・HTTP/2 のサポートにとどまり、HTTP/3 には対応していない。リージョナルな Application Gateway が HTTP/3 に先行対応した形となる。
+        </div>
+        <div class="related-card">
+            <strong>Azure Web Application Firewall (WAF)</strong>: Application Gateway と統合してアプリケーションを保護するが、プレビュー期間中は WAF ゲートウェイで HTTP/3 リスナーを使用できない点に注意。
+        </div>
+        <div class="related-card">
+            <strong>Application Gateway の TLS ポリシー</strong>: HTTP/3 の有効化には TLS 1.3 をサポートする事前定義済み 2022 TLS ポリシーが必須。
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="highlight-box">
+            <p>Azure Application Gateway のフロントエンド接続で HTTP/3 over QUIC がパブリックプレビューとして利用可能になりました。<strong>1-RTT ハンドシェイク、ヘッドオブラインブロッキングの解消、接続移行</strong>という QUIC の特性により、特にモバイルや不安定なネットワーク上のレイテンシに敏感なワークロードで大きな効果が期待できます。バックエンドは HTTP/1.1 のままのため、<strong>バックエンドアプリケーションの改修なしに導入できる</strong>点も魅力です。</p>
+            <p>一方で、プレビュー期間中は Basic リスナー限定、WAF ゲートウェイ非対応、IPv6 リスナー・相互認証非対応、CLI/PowerShell/Terraform 非対応 (Portal・REST API のみ) といった制限があり、SLA も提供されません。まずは<strong>開発・検証環境のリスナーで有効化</strong>し、TLS 1.3 対応の 2022 TLS ポリシーへの移行準備とあわせて、HTTP/3 対応クライアントでの効果測定から始めることを推奨します。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Application Gateway</span>
+            <span class="tag">HTTP/3</span>
+            <span class="tag">QUIC</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">TLS 1.3</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <h3>📚 出典・参考リンク</h3>
+        <ul>
+            <li>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=571123">https://azure.microsoft.com/updates?id=571123</a></li>
+            <li>Microsoft Learn: HTTP/3 support in Azure Application Gateway (Preview): <a href="https://learn.microsoft.com/azure/application-gateway/http3-quic-support">https://learn.microsoft.com/azure/application-gateway/http3-quic-support</a></li>
+            <li>Microsoft Learn: Azure Application Gateway ドキュメント: <a href="https://learn.microsoft.com/azure/application-gateway/">https://learn.microsoft.com/azure/application-gateway/</a></li>
+            <li>料金ページ: <a href="https://azure.microsoft.com/pricing/details/application-gateway/">https://azure.microsoft.com/pricing/details/application-gateway/</a></li>
+        </ul>
+        <p style="margin-top: 14px; opacity: 0.8;">ソースレポート: reports/2026/2026-09-14-application-gateway-http3-quic.md (リリース日: 2026-09-14) | 本インフォグラフィックは Azure News Summary プロジェクトにより自動生成されました。</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

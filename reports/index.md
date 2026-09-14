@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-09-14 - Azure Virtual Desktop: Windows App の新しいクライアント側エンドポイント (FQDN) の発表](2026/2026-09-14-avd-windows-app-client-endpoints.md)
+- [2026-09-14 - Azure Application Gateway: HTTP/3 over QUIC サポート (Public Preview)](2026/2026-09-14-application-gateway-http3-quic.md)
 - [2026-09-11 - Azure Kubernetes Service: Azure Linux with OS Guard の廃止 (Retirement)](2026/2026-09-11-aks-azure-linux-os-guard-retirement.md)
 - [2026-09-11 - Azure Storage Mover: オンプレミス SMB ファイル共有から Azure Files (SMB) へのエージェントレス移行 (Public Preview)](2026/2026-09-11-storage-mover-agentless-smb-migration.md)
 - [2026-09-10 - Azure Copilot: Troubleshooting Agent の一般提供開始 (GA)](2026/2026-09-10-azure-copilot-troubleshooting-agent.md)
