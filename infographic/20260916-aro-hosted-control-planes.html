@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Red Hat OpenShift: Hosted Control Planes (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 32px;
+}
+
+.hero .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.hero h1 {
+    font-size: 30px;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.hero .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.date-badge {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    color: var(--azure-dark-blue);
+    font-size: 22px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--azure-blue);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    color: var(--ms-blue-800);
+    font-size: 17px;
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+.section ul {
+    margin: 10px 0;
+    padding-left: 24px;
+}
+
+.section li { margin: 6px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 32px; font-weight: bold; }
+.stat-sub { font-size: 13px; opacity: 0.85; }
+.stat-label { font-size: 14px; opacity: 0.9; }
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 6px 0; font-size: 14px; }
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content ul {
+    padding-left: 20px;
+    font-size: 14px;
+}
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Table ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+table.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 12px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+table.spec-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+table.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+
+table.spec-table td:first-child {
+    font-weight: 500;
+    color: var(--ms-blue-900);
+    white-space: nowrap;
+}
+
+table.spec-table code, .section p code, .section li code {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* ===== Code Blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #A0A0A0;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Merit / Caution ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.merit-card h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 8px;
+}
+
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin: 6px 0; }
+
+.caution-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.caution-box ul { padding-left: 20px; }
+.caution-box li { margin: 6px 0; font-size: 14px; }
+
+/* ===== Use Case ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.usecase-label {
+    display: inline-block;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin-right: 6px;
+}
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* ===== Regions ===== */
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.region-chip {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 10px 14px;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--ms-blue-900);
+}
+
+/* ===== Related / Links ===== */
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--ms-blue-800); }
+
+.link-list { list-style: none; padding-left: 0 !important; }
+
+.link-list li {
+    padding: 8px 12px;
+    background: var(--ms-blue-100);
+    border-radius: 6px;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+a { color: var(--azure-blue); }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+}
+
+/* ===== Tags / Footer ===== */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 13px;
+}
+
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+
+footer a { color: var(--azure-blue); }
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <div class="hero">
+        <div class="meta-row">
+            <span class="service-badge">Azure Red Hat OpenShift</span>
+            <span class="badge badge-preview">In Preview</span>
+            <span class="date-badge">リリース日: 2026-09-16</span>
+        </div>
+        <h1>Hosted Control Planes (HCP) がパブリックプレビューに</h1>
+        <p class="subtitle">コントロールプレーンを Red Hat 所有アカウントのフルマネージドサービスとして分離する、ARO の新しいデプロイオプション</p>
+    </div>
+
+    <!-- ===== Overview ===== -->
+    <div class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Red Hat OpenShift (ARO) の新しいデプロイオプション「hosted control planes (HCP)」がパブリックプレビューになりました。HCP は、OpenShift のコントロールプレーン (API サーバー、etcd データベースなど) を、顧客のアプリケーションが稼働するワーカーノードから分離し、フルマネージドサービスとして実行するアーキテクチャです。コントロールプレーンは Red Hat が所有する Azure アカウント内でホストされ、Microsoft と Red Hat の SRE によって運用されます。</p>
+        <p>顧客のサブスクリプションにデプロイするのはワーカーノードのみとなり、クラスターのプロビジョニングは約 15〜20 分で完了します (従来型は約 45 分)。コントロールプレーンとノードプールのライフサイクルが分離されるため、それぞれを個別にアップグレードでき、マルチクラスター環境の運用が簡素化されます。マネージド ID と Workload Identity による短命・自動ローテーションのトークンを利用し、etcd の既定暗号化やユーザー独自キー (BYOK) にも対応します。</p>
+        <div class="highlight-box">
+            従来型のスタンダードアーキテクチャも引き続き<strong>完全にサポート</strong>され、開発が継続されます。
+        </div>
+
+        <h3>📊 数字で見るアップデート</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">15〜20 分</div>
+                <div class="stat-label">プロビジョニング時間<div class="stat-sub">(従来型は約 45 分)</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2 台〜</div>
+                <div class="stat-label">最小ワーカーノード数<div class="stat-sub">(課金はワーカーのみ)</div></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3 AZ</div>
+                <div class="stat-label">コントロールプレーンの<br>自動マルチゾーン配置</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8</div>
+                <div class="stat-label">プレビュー提供リージョン</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>従来型 (スタンダードアーキテクチャ) では、コントロールプレーンが顧客のサブスクリプション内の専用 VM (コントロールプレーンノード 3 台) 上で稼働し、そのコストを顧客が負担する必要があった</li>
+                    <li>クラスター作成に最低でもコントロールプレーンノード 3 台 + ワーカーノード 3 台が必要で、プロビジョニングに約 45 分かかっていた</li>
+                    <li>コントロールプレーンとワーカーノードのアップグレードが一体化されており、協調プロセスとして同時に実施する必要があった</li>
+                    <li>Ingress コントローラーやイメージレジストリなどのプラットフォームコンポーネント用に専用のインフラストラクチャノードが使用されていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>コントロールプレーンは Red Hat 所有の Azure アカウントでホストされ、顧客はワーカーノード (最低 2 台) の分のみを支払う</li>
+                    <li>クラスターのプロビジョニング時間が約 15〜20 分に短縮</li>
+                    <li>コントロールプレーンと各ノードプールを個別にアップグレード可能。コントロールプレーンの z-stream (パッチ) アップグレードは Red Hat SRE により自動的に管理される</li>
+                    <li>コントロールプレーンは自動的にリージョン内の 3 つの可用性ゾーンにまたがって配置される</li>
+                    <li>専用インフラストラクチャノードが不要 (プラットフォームコンポーネントはワーカーノード上で稼働)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Architecture ===== -->
+    <div class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Standard["🏢 従来型 (Standard Architecture)"]
+        SubA["📦 顧客サブスクリプション / VNet"]
+        CP1["🧠 コントロールプレーンノード x3<br>(顧客がコスト負担)"]
+        W1["⚙️ ワーカーノード x3〜"]
+        SubA --> CP1
+        SubA --> W1
+    end
+
+    subgraph HCP["☁️ HCP アーキテクチャ (新)"]
+        RH["🔴 Red Hat 所有 Azure アカウント<br>🧠 API サーバー / etcd (マネージド)"]
+        SubB["📦 顧客サブスクリプション / VNet"]
+        INT["🔗 VNet 統合サブネット<br>(hcpOpenShiftClusters 委任)"]
+        W2["⚙️ ワーカーノード x2〜<br>(顧客はここだけ支払い)"]
+        RH -->|"コントロールプレーン通信"| INT
+        SubB --> INT
+        SubB --> W2
+    end
+            </pre>
+        </div>
+        <p>従来型ではコントロールプレーンとワーカーノードの両方が顧客の VNet 内に配置されるのに対し、HCP ではコントロールプレーンが Red Hat 所有の Azure アカウントに分離され、<code>Microsoft.RedHatOpenShift/hcpOpenShiftClusters</code> に委任された専用の VNet 統合サブネット経由でワーカーノードと通信します。</p>
+    </div>
+
+    <!-- ===== Key Features ===== -->
+    <div class="section">
+        <h2>⭐ サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧠</div>
+            <div class="feature-content">
+                <h4>1. フルマネージドなコントロールプレーン</h4>
+                <ul>
+                    <li>API サーバーや etcd などのコントロールプレーンコンポーネントを Red Hat 所有の Azure アカウント内の分離環境でホストし、Microsoft と Red Hat の SRE が運用する</li>
+                    <li>コントロールプレーンは自動的に 3 つの可用性ゾーンにまたがって配置される</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>2. 高速なクラスタープロビジョニング</h4>
+                <ul>
+                    <li>クラスター作成が約 15〜20 分で完了 (従来型は約 45 分)</li>
+                    <li>開発・テスト環境をアイドル時にスケールダウンし、必要時にスケールアップ可能。実験の高速化とインフラコストの最適化に寄与</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>3. コントロールプレーンとノードプールのライフサイクル分離</h4>
+                <ul>
+                    <li>コントロールプレーンと各ノードプールを個別にアップグレード可能</li>
+                    <li>コントロールプレーンの z-stream (パッチ) アップグレードは Red Hat SRE により自動実施</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>4. セキュリティの強化</h4>
+                <ul>
+                    <li>マネージド ID / Workload Identity により、保存された資格情報の代わりに短命で自動ローテーションされるトークンを使用</li>
+                    <li>既定で etcd 暗号化 (プラットフォームマネージドキー) が有効。BYOK (Bring Your Own Key) にも対応し、データレジデンシー・ソブランティ・規制要件への準拠を支援</li>
+                    <li>既存の ID プロバイダーとの統合が可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>5. ノードプールモデル</h4>
+                <ul>
+                    <li>各ノードプールは単一の可用性ゾーンにデプロイされ、複数のノードプールを異なるゾーンに配置することで高可用性を実現</li>
+                    <li>最小構成はワーカーノード 2 台</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Tech Specs ===== -->
+    <div class="section">
+        <h2>🔧 技術仕様</h2>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>従来型 (Standard)</th>
+                        <th>Hosted Control Planes (HCP)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>コントロールプレーンのホスト先</td><td>顧客サブスクリプション内の専用 VM</td><td>Red Hat 所有の Azure アカウント</td></tr>
+                    <tr><td>仮想ネットワーク</td><td>コントロールプレーン + ワーカーノードを顧客 VNet に配置</td><td>ワーカーノードのみ顧客 VNet に配置。コントロールプレーンとは委任された VNet 統合サブネット経由で通信</td></tr>
+                    <tr><td>可用性ゾーン</td><td>単一またはマルチゾーンを選択</td><td>コントロールプレーンは自動で 3 ゾーン構成</td></tr>
+                    <tr><td>ノードプール</td><td>マシンセットで定義。単一/複数ゾーンに配置可</td><td>各ノードプールは単一ゾーン。ゾーンごとに別プールを配置して HA を実現</td></tr>
+                    <tr><td>インフラストラクチャノード</td><td>専用インフラノードを使用</td><td>不要 (プラットフォームコンポーネントはワーカーノードで稼働)</td></tr>
+                    <tr><td>クラスターアップグレード</td><td>コントロールプレーンとワーカーを一体で実施</td><td>個別にアップグレード可。CP のパッチは Red Hat SRE が自動管理</td></tr>
+                    <tr><td>最小構成</td><td>コントロールプレーン 3 台 + ワーカー 3 台</td><td>ワーカー 2 台のみ</td></tr>
+                    <tr><td>プロビジョニング時間</td><td>約 45 分</td><td>約 15〜20 分</td></tr>
+                    <tr><td>課金対象</td><td>全ノード (CP 3 台 + ワーカー) + ライセンス</td><td>ワーカーノードのみ (最低 2 台)</td></tr>
+                    <tr><td>ネットワークプラグイン (既定)</td><td>-</td><td>OVN-Kubernetes</td></tr>
+                    <tr><td>リソースタイプ</td><td><code>Microsoft.RedHatOpenShift/openShiftClusters</code></td><td><code>Microsoft.RedHatOpenShift/hcpOpenShiftClusters</code></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ===== Setup ===== -->
+    <div class="section">
+        <h2>⚙️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ul>
+            <li>Azure CLI バージョン 2.67.0 以上と、ARO HCP CLI 拡張 (wheel ファイルを <a href="https://aka.ms/aro-hcp-cli" target="_blank" rel="noopener">https://aka.ms/aro-hcp-cli</a> からダウンロードして <code>az extension add --source &lt;path&gt;</code> でインストール)</li>
+            <li>クラスターの作成・実行に最低 20 コアのリソースクォータ</li>
+            <li>リソースグループまたはサブスクリプションに対する Contributor + User Access Administrator 権限、または Owner 権限</li>
+            <li>リソースプロバイダーの登録: <code>Microsoft.RedHatOpenShift</code>、<code>Microsoft.Compute</code>、<code>Microsoft.Storage</code>、<code>Microsoft.Authorization</code></li>
+            <li>ネットワーク: ワーカーサブネットに加え、<code>Microsoft.RedHatOpenShift/hcpOpenShiftClusters</code> に委任した VNet 統合サブネットが必要</li>
+            <li>コントロールプレーン/データプレーンオペレーター用のユーザー割り当てマネージド ID と、所定のロール割り当て</li>
+        </ul>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>HCP クラスターの作成</span></div>
+            <pre><code class="language-bash"># リソースプロバイダーの登録
+az provider register --namespace Microsoft.RedHatOpenShift --wait
+
+# VNet 統合サブネットの作成 (委任が必須)
+az network vnet subnet create \
+  --name "${CUSTOMER_VNET_INTEGRATION_SUBNET_NAME}" \
+  --vnet-name "${CUSTOMER_VNET_NAME}" \
+  --resource-group "${CUSTOMER_RG_NAME}" \
+  --address-prefixes 10.0.1.0/24 \
+  --network-security-group "${CUSTOMER_NSG}" \
+  --delegations Microsoft.RedHatOpenShift/hcpOpenShiftClusters
+
+# HCP クラスターの作成 (マネージド ID・ロール割り当ての作成後)
+az aro hcp cluster create \
+  --name "${CLUSTER_NAME}" \
+  --resource-group "${CUSTOMER_RG_NAME}" \
+  --location "${LOCATION}" \
+  --version "${CLUSTER_VERSION}" \
+  --channel-group stable \
+  --subnet-id "${SUBNET_ID}" \
+  --vnet-integration-subnet-id "${VNET_INTEGRATION_SUBNET_ID}" \
+  --nsg "${NSG_ID}" \
+  --managed-resource-group-name "${MANAGED_RESOURCE_GROUP}" \
+  --user-assigned-identities "..." \
+  --operators-authentication "..."
+
+# ノードプールの作成 (最低 2 レプリカ)
+az aro hcp cluster nodepool create \
+  --cluster-name "${CLUSTER_NAME}" \
+  --name "${NP_NAME}" \
+  --resource-group "${CUSTOMER_RG_NAME}" \
+  --replicas 2 \
+  --vm-size Standard_D8s_v3 \
+  --version "${NP_VERSION}" \
+  --channel-group stable</code></pre>
+        </div>
+        <div class="highlight-box">
+            クラスターの作成方法は <strong>Azure CLI、REST API、Bicep</strong> に対応しています。Bicep テンプレートの完全な例は Microsoft Learn のクイックスタートを参照してください。既定のデプロイでは API サーバー / Ingress ともに Public、ネットワークは OVN-Kubernetes、etcd 暗号化はプラットフォームマネージドキー、ワーカーノードは <code>Standard_D8s_v3</code> x 2 (64 GiB StandardSSD_LRS OS ディスク) となります。
+        </div>
+    </div>
+
+    <!-- ===== Merits ===== -->
+    <div class="section">
+        <h2>💡 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>コントロールプレーンノード (3 台) と専用インフラノードのコストが不要になり、ワーカーノード (最低 2 台) のみの支払いでクラスターを運用できる</li>
+                    <li>プロビジョニングが約 15〜20 分に短縮され、実験の加速・テストサイクルの短縮・本番投入の迅速化につながる</li>
+                    <li>開発・テスト環境をアイドル時にスケールダウンしてインフラ支出を最適化できる</li>
+                    <li>VM・コンテナ・クラウドネイティブアプリケーションを単一の AI-ready プラットフォームで実行でき、自社のペースでモダナイゼーションを進められる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>コントロールプレーンの運用 (パッチ適用を含む) を Microsoft / Red Hat の SRE に委任でき、チームはアプリケーション開発に集中できる</li>
+                    <li>コントロールプレーンとノードプールのライフサイクル分離により、アップグレードの柔軟性が向上し、マルチクラスター環境の運用が簡素化される</li>
+                    <li>コントロールプレーンが自動的に 3 つの可用性ゾーンにまたがる構成となる</li>
+                    <li>マネージド ID / Workload Identity による短命トークン、既定の etcd 暗号化、BYOK 対応でセキュリティ・コンプライアンスが強化される</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Constraints ===== -->
+    <div class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>パブリックプレビュー段階であり、本番環境での利用は想定されていない (プレビューは非本番・テスト用)</li>
+                <li>プレビューの提供リージョンは 8 リージョンに限定される (下記参照)</li>
+                <li>各ノードプールは単一の可用性ゾーンにのみデプロイされるため、ワーカーの高可用性には複数ノードプールをゾーンごとに配置する設計が必要</li>
+                <li>コントロールプレーンノードが顧客サブスクリプション内に存在しないため、従来型のようにコントロールプレーン VM を直接参照・操作することはできない</li>
+                <li>クラスター作成には多数のユーザー割り当てマネージド ID (コントロールプレーン用 8 個、データプレーン用 3 個、サービス用 1 個) と所定のロール割り当ての事前準備が必要</li>
+                <li>ARO HCP CLI 拡張は wheel ファイルからの手動インストールが必要 (プレビュー時点)</li>
+                <li>最低 20 コアのクォータが必要で、新規サブスクリプションの既定クォータでは不足する</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ===== Use Cases ===== -->
+    <div class="section">
+        <h2>🎯 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>💰 ユースケース 1: 開発・テスト環境のコスト最適化</h4>
+            <p><span class="usecase-label">シナリオ:</span>OpenShift 上でアプリケーションを開発しているチームが、営業時間外はほぼ使われない開発・テスト用クラスターのコストを削減したい。</p>
+            <p><span class="usecase-label">実装例:</span></p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>ノードプールのスケール調整</span></div>
+                <pre><code class="language-bash"># アイドル時: ノードプールをスケールダウン (コントロールプレーンはマネージドのため課金対象外)
+az aro hcp cluster nodepool update \
+  --cluster-name dev-cluster \
+  --name np1 \
+  --resource-group dev-rg \
+  --replicas 2
+
+# 繁忙時: ノードプールをスケールアップ
+az aro hcp cluster nodepool update \
+  --cluster-name dev-cluster \
+  --name np1 \
+  --resource-group dev-rg \
+  --replicas 6</code></pre>
+            </div>
+            <div class="effect-box">
+                <strong>効果:</strong> 支払い対象がワーカーノードのみのため、アイドル期間のスケールダウンがそのままコスト削減に直結する。約 15〜20 分でクラスターを新規作成できるため、必要なときに環境を作って破棄する運用も現実的になる。
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🌐 ユースケース 2: マルチクラスター環境の運用簡素化</h4>
+            <p><span class="usecase-label">シナリオ:</span>複数リージョン・複数環境 (開発/ステージング/本番) で多数の OpenShift クラスターを運用しており、アップグレード作業の負荷が大きい。</p>
+            <div class="effect-box">
+                <strong>効果:</strong> コントロールプレーンのパッチアップグレードは Red Hat SRE が自動管理し、ノードプールはアプリケーションの都合に合わせて個別にアップグレードできる。ネットワークのカスタマイズと運用の一貫性を維持しながら、リージョン・環境をまたいだスケールが可能になる。
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Pricing ===== -->
+    <div class="section">
+        <h2>💴 料金</h2>
+        <p>HCP ではワーカーノード (最低 2 台) 分のみを支払い、コントロールプレーンノードや専用インフラノードのコストは発生しません。具体的な料金は公式料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/openshift/" target="_blank" rel="noopener">Azure Red Hat OpenShift 料金ページ</a></li>
+        </ul>
+    </div>
+
+    <!-- ===== Regions ===== -->
+    <div class="section">
+        <h2>🌍 利用可能リージョン</h2>
+        <p>パブリックプレビューは以下の 8 リージョンで利用可能です。</p>
+        <div class="region-grid">
+            <div class="region-chip">🇬🇧 UK South</div>
+            <div class="region-chip">🇨🇦 Canada Central</div>
+            <div class="region-chip">🇦🇺 Australia East</div>
+            <div class="region-chip">🇨🇭 Switzerland North</div>
+            <div class="region-chip">🇧🇷 Brazil South</div>
+            <div class="region-chip">🇮🇳 Central India</div>
+            <div class="region-chip">🇺🇸 East US 2</div>
+            <div class="region-chip">🇪🇺 West Europe</div>
+        </div>
+    </div>
+
+    <!-- ===== Related ===== -->
+    <div class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-card"><strong>Azure Red Hat OpenShift (Standard Architecture)</strong>: 従来型のデプロイオプション。コントロールプレーンを顧客サブスクリプション内で稼働させる。引き続き完全サポート・開発継続</div>
+        <div class="related-card"><strong>Azure Kubernetes Service (AKS)</strong>: Azure のマネージド Kubernetes サービス。OpenShift プラットフォームの機能 (開発者ツール、オペレーター等) が不要な場合の選択肢</div>
+        <div class="related-card"><strong>Microsoft Entra ID / マネージド ID / Workload Identity</strong>: HCP のオペレーター認証はユーザー割り当てマネージド ID とフェデレーション資格情報 (短命トークン) で構成される</div>
+        <div class="related-card"><strong>Azure Virtual Network</strong>: ワーカーノードは顧客 VNet に配置され、コントロールプレーンとは委任された VNet 統合サブネット経由で通信する</div>
+    </div>
+
+    <!-- ===== References ===== -->
+    <div class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li>📰 <a href="https://azure.microsoft.com/updates?id=571621" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li>📝 <a href="https://techcommunity.microsoft.com/blog/appsonazureblog/azure-red-hat-openshift-with-hosted-control-planes-now-available-in-public-previ/4555997" target="_blank" rel="noopener">Azure Blog (Tech Community)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/openshift/concepts-classic-hosted-control-planes-comparison" target="_blank" rel="noopener">Microsoft Learn: Standard と Hosted Control Planes のアーキテクチャ比較</a></li>
+            <li>🚀 <a href="https://learn.microsoft.com/azure/openshift/quickstart-create-default-hosted-cluster" target="_blank" rel="noopener">Microsoft Learn: HCP クラスター作成クイックスタート</a></li>
+            <li>💴 <a href="https://azure.microsoft.com/pricing/details/openshift/" target="_blank" rel="noopener">料金ページ</a></li>
+        </ul>
+    </div>
+
+    <!-- ===== Summary ===== -->
+    <div class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Red Hat OpenShift の hosted control planes は、コントロールプレーンを Red Hat 所有アカウントのフルマネージドサービスとして分離することで、<strong>コスト (ワーカーノードのみの課金・最低 2 台)</strong>、<strong>スピード (プロビジョニング約 15〜20 分)</strong>、<strong>運用性 (ライフサイクル分離・自動パッチ)</strong> を大きく改善する新しいデプロイオプションです。OpenShift をマルチクラスターで運用している組織や、開発・テスト環境のコスト最適化を検討している Solutions Architect は、プレビュー対象リージョンでの検証を推奨します。本番ワークロードは引き続きスタンダードアーキテクチャを利用しつつ、GA に向けて HCP の評価を進めるとよいでしょう。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure Red Hat OpenShift</span>
+            <span class="tag">Containers</span>
+            <span class="tag">OpenShift</span>
+            <span class="tag">Hosted Control Planes</span>
+            <span class="tag">Kubernetes</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </div>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <p><strong>出典:</strong></p>
+        <p><a href="https://azure.microsoft.com/updates?id=571621" target="_blank" rel="noopener">Azure Updates: Azure Red Hat OpenShift Hosted Control Planes (Public Preview)</a></p>
+        <p><a href="https://techcommunity.microsoft.com/blog/appsonazureblog/azure-red-hat-openshift-with-hosted-control-planes-now-available-in-public-previ/4555997" target="_blank" rel="noopener">Microsoft Tech Community Blog</a> / <a href="https://learn.microsoft.com/azure/openshift/concepts-classic-hosted-control-planes-comparison" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>ソースレポート: reports/2026/2026-09-16-aro-hosted-control-planes.md (2026-09-16)</p>
+        <p>本インフォグラフィックは Azure News Summary により自動生成されました。</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

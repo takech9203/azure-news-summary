@@ -5,6 +5,10 @@
 
 ## 2026 年
 
+- [2026-09-16 - Microsoft Sentinel: SAP コンテナイメージの削除 (2026 年 10 月 14 日)](2026/2026-09-16-sentinel-sap-container-images-retirement.md)
+- [2026-09-16 - Azure Red Hat OpenShift: Hosted Control Planes (Public Preview)](2026/2026-09-16-aro-hosted-control-planes.md)
+- [2026-09-16 - Azure Database for PostgreSQL: PostgreSQL skills と MCP プラグイン (Public Preview)](2026/2026-09-16-postgresql-skills-mcp-plugin.md)
+- [2026-09-16 - Azure SQL Database: 2026 年 9 月中旬アップデート (論理サーバーの Soft Delete)](2026/2026-09-16-sql-mid-september-updates.md)
 - [2026-09-14 - Azure Virtual Desktop: Windows App の新しいクライアント側エンドポイント (FQDN) の発表](2026/2026-09-14-avd-windows-app-client-endpoints.md)
 - [2026-09-14 - Azure Application Gateway: HTTP/3 over QUIC サポート (Public Preview)](2026/2026-09-14-application-gateway-http3-quic.md)
 - [2026-09-11 - Azure Kubernetes Service: Azure Linux with OS Guard の廃止 (Retirement)](2026/2026-09-11-aks-azure-linux-os-guard-retirement.md)

@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Database for PostgreSQL: PostgreSQL skills と MCP プラグイン (Public Preview)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "🐘";
+    position: absolute;
+    right: 24px;
+    bottom: -10px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+
+.header .badges { margin-bottom: 16px; }
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.header .service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 26px; }
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin-bottom: 12px; }
+
+/* ===== Highlight ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 32px; font-weight: bold; }
+.stat-label { font-size: 14px; opacity: 0.9; }
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; margin-top: 6px; }
+.feature-content li { margin-bottom: 6px; }
+
+/* ===== Skill Groups ===== */
+.skill-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.skill-group {
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 13.5px;
+}
+
+.skill-group h4 {
+    font-size: 15px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.skill-group .count {
+    display: inline-block;
+    background: rgba(255,255,255,0.85);
+    border-radius: 12px;
+    padding: 1px 10px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.skill-group ul { padding-left: 18px; }
+.skill-group li { margin-bottom: 4px; }
+
+.skill-general { background: var(--ms-blue-100); border: 2px solid var(--azure-blue); }
+.skill-general h4 { color: var(--ms-blue-800); }
+.skill-azure { background: #FFF8E5; border: 2px solid var(--ms-yellow); }
+.skill-azure h4 { color: #8A6D00; }
+.skill-graph { background: #F4EFFA; border: 2px solid var(--ms-purple); }
+.skill-graph h4 { color: var(--ms-purple); }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Table ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th, .spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.spec-table th {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    white-space: nowrap;
+    width: 32%;
+}
+
+.spec-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* ===== Code ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.merit-business { background: var(--ms-blue-100); border: 2px solid var(--azure-blue); }
+.merit-tech { background: #E8F5E9; border: 2px solid var(--ms-green); }
+
+.merit-card h4 { margin-bottom: 10px; font-size: 16px; }
+.merit-business h4 { color: var(--ms-blue-800); }
+.merit-tech h4 { color: var(--ms-green); }
+
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin-bottom: 8px; }
+
+.caution-box {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 10px;
+    padding: 18px;
+    margin: 16px 0;
+}
+
+.caution-box h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.caution-box ul { padding-left: 20px; font-size: 14px; }
+.caution-box li { margin-bottom: 8px; }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card .usecase-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+}
+
+.usecase-num {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.usecase-card p { font-size: 14px; margin-bottom: 8px; }
+.usecase-card .label { font-weight: 700; color: var(--ms-text-primary); }
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* ===== Links / Related ===== */
+.link-list { list-style: none; padding: 0; }
+
+.link-list li {
+    margin-bottom: 8px;
+    padding: 10px 14px;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.link-list a { color: var(--azure-blue); text-decoration: none; font-weight: 500; }
+.link-list a:hover { text-decoration: underline; }
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--ms-purple);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--ms-blue-800); }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* ===== Tags ===== */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 16px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer a { color: var(--azure-blue); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--ms-red);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 23px; }
+    .section { padding: 20px; }
+    .spec-table th { width: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Database for PostgreSQL</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>PostgreSQL skills と MCP プラグイン<br>(Public Preview)</h1>
+        <p class="subtitle">AI コーディングアシスタントを、実環境を理解して操作まで実行できる PostgreSQL エキスパートに変えるオープンソースプラグイン</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-16</span>
+            <span>🧩 機能: PostgreSQL skills and MCP plugin</span>
+            <span>📜 ライセンス: MIT (オープンソース)</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Database for PostgreSQL 向けの「PostgreSQL skills and MCP plugin」が <strong>Public Preview</strong> として発表されました。対応する AI コーディングアシスタント (<strong>GitHub Copilot CLI、Claude Code、Codex CLI</strong>) を、コンテキストを認識した PostgreSQL エキスパートに変えるプラグインで、ガイダンスの提供だけでなく、接続されたデータベースに対して<strong>実際に操作を実行</strong>できます。</p>
+        <div class="highlight-box">
+            専門家がキュレーションした <strong>32 のサブスキル</strong>と、ライブなデータベースコンテキストの検査・クエリ実行・変更適用・データベース運用を支援する MCP サーバー <code class="inline">@microsoft/postgres-mcp</code> をバンドル。ユーザーのスキーマ、PostgreSQL バージョン、拡張機能、Azure 環境を利用して、一般的な推奨事項ではなく<strong>環境に即したガイダンス</strong>を提供し、質問内容と接続コンテキストに基づいて汎用 PostgreSQL ガイダンスと Azure 固有ガイダンスの間を自動ルーティングします。
+        </div>
+        <p>カバーするシナリオは、クエリ・インデックスチューニング、ベクトル検索と RAG (Retrieval-Augmented Generation)、JSONB、パーティショニング、セキュリティ、Azure のプロビジョニングとスケーリング、高可用性とフェイルオーバー、ポイントインタイムリストア、AI 関数、Apache AGE によるナレッジグラフなど多岐にわたります。プラグイン自体は GitHub リポジトリ <a href="https://github.com/microsoft/postgres-skills">microsoft/postgres-skills</a> で MIT ライセンスのオープンソースとして公開されています。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">32</div>
+                <div class="stat-label">専門サブスキル</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">対応 AI アシスタント</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">MIT</div>
+                <div class="stat-label">オープンソースライセンス</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">$0</div>
+                <div class="stat-label">プラグイン自体は無料</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>既定の AI アシスタントは接続先データベースのコンテキストを持たず、実際の環境に適合するとは限らない汎用的な SQL やスニペットを提案していた</li>
+                    <li>マネージドデータベースでは動作しない (壊れる可能性のある) コマンドを自信を持って推奨してしまうことがあった</li>
+                    <li>セルフホストの PostgreSQL と Azure のマネージドサービスを区別できず、「何ができるか」を説明するだけで実行はできなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>ライブなスキーマ、サービスレベル、設定を先に読み取ったうえで、環境に合わせた回答を提示</li>
+                    <li>マネージドサービス向けのガードレールと正しい Azure ワークフローを適用し、破壊的な操作の前には明示的な確認を要求</li>
+                    <li>クエリ実行、インデックス作成、プロビジョニング、リストアなどを、確認を経て AI アシスタントが実際に実行可能に</li>
+                    <li>接続を検出してセルフホスト / Azure を判別し、適切なガイダンス (汎用・Azure 固有・グラフ) に自動ルーティング</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    Dev([👩‍💻 開発者])
+    subgraph Agent["🤖 AI コーディングアシスタント<br/>(GitHub Copilot CLI / Claude Code / Codex CLI)"]
+        Skills["📚 PostgreSQL skills<br/>(32 サブスキルへのルーティング)"]
+        MCP["🔌 postgres-mcp<br/>MCP サーバー"]
+        CLI["⚙️ Azure CLI (az)"]
+    end
+    subgraph Azure["☁️ Azure"]
+        PG[("🐘 Azure Database<br/>for PostgreSQL")]
+        ARM["🏗️ Azure リソース管理<br/>(プロビジョニング / スケーリング / HA)"]
+    end
+    Dev -->|"自然言語で質問・指示"| Agent
+    Skills -->|"接続コンテキストで<br/>サブスキルを選択"| MCP
+    MCP -->|"スキーマ検査 / クエリ実行 / 変更適用"| PG
+    CLI -->|"サーバー操作"| ARM
+            </pre>
+        </div>
+        <p>開発者の質問を受けた AI アシスタントは、skills が接続コンテキストに応じて適切なサブスキルを選択し、postgres-mcp がデータベース内の操作を、Azure CLI がマネージドサービスのリソース操作を担当します。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">📚</div>
+            <div class="feature-content">
+                <h4>1. 専門家がキュレーションした 32 のサブスキル</h4>
+                <p>PostgreSQL 汎用・Azure 固有・グラフの 3 グループで構成。接続コンテキストと質問内容に応じて適切なサブスキルへルーティングされます。</p>
+            </div>
+        </div>
+
+        <div class="skill-groups">
+            <div class="skill-group skill-general">
+                <h4>🐘 PostgreSQL 汎用 <span class="count">11 サブスキル</span></h4>
+                <ul>
+                    <li>ベクトル検索 (pgvector/HNSW)</li>
+                    <li>RAG パイプライン</li>
+                    <li>拡張機能管理</li>
+                    <li>高度なインデックス</li>
+                    <li>JSONB パターン</li>
+                    <li>テーブルパーティショニング</li>
+                    <li>行レベルセキュリティ</li>
+                    <li>全文検索</li>
+                    <li>接続管理</li>
+                    <li>レプリケーション</li>
+                    <li>クエリパフォーマンス</li>
+                </ul>
+            </div>
+            <div class="skill-group skill-azure">
+                <h4>☁️ Azure Database for PostgreSQL <span class="count">11 サブスキル</span></h4>
+                <ul>
+                    <li>DiskANN ベクトル検索</li>
+                    <li>azure_ai 拡張による生成 AI パターン</li>
+                    <li>インテリジェントチューニング (Query Store)</li>
+                    <li>Entra ID 認証</li>
+                    <li>組み込み PgBouncer</li>
+                    <li>HA・災害復旧</li>
+                    <li>ネットワーク・SSL</li>
+                    <li>プロビジョニング</li>
+                    <li>拡張機能ライフサイクル</li>
+                    <li>メジャーバージョンアップグレード</li>
+                </ul>
+            </div>
+            <div class="skill-group skill-graph">
+                <h4>🕸️ グラフ (pg-graph) <span class="count">10 サブスキル</span></h4>
+                <ul>
+                    <li>Apache AGE によるオントロジー導出</li>
+                    <li>グラフ構築</li>
+                    <li>openCypher クエリ</li>
+                    <li>自然言語からの Cypher 生成</li>
+                    <li>グラフ拡張 RAG</li>
+                    <li>説明可能性</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔌</div>
+            <div class="feature-content">
+                <h4>2. postgres-mcp MCP サーバー</h4>
+                <ul>
+                    <li><code class="inline">npx</code> 経由でローカルに起動し、ライブなデータベースに対してクエリ実行、変更適用、スキーマ検査、グラフの構築・走査を実行</li>
+                    <li>接続先が Azure かどうかを検出し、ガイダンスのルーティングに利用</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-content">
+                <h4>3. Azure CLI 統合</h4>
+                <p>プロビジョニング、スケーリング、サーバーパラメーター、HA とフェイルオーバー、レプリカ、ポイントインタイムリストア、ネットワーク、アップグレードなどのマネージドサービス操作を実行。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧭</div>
+            <div class="feature-content">
+                <h4>4. 自動ルーティングと Azure HorizonDB (Preview) 対応</h4>
+                <ul>
+                    <li>質問と接続コンテキストに基づき、汎用 PostgreSQL / Azure 固有 / グラフのガイダンスを自動選択</li>
+                    <li>接続先が HorizonDB クラスター (<code class="inline">*.horizondb.azure.com</code>) の場合は、Flexible Server の手順ではなく HorizonDB 固有のガイダンス (クラスター、<code class="inline">az horizondb</code>、パラメーターグループ) にルーティングし、HorizonDB で未提供の機能をフラグする</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>5. セキュリティガードレール</h4>
+                <ul>
+                    <li>データベース書き込み、CSV インポート、グラフ書き込み、Azure リソース変更の前に明示的な確認を要求</li>
+                    <li>データベースコンテンツを信頼できないデータとして扱い、タスクに必要な範囲に取得を最小化</li>
+                    <li>バンドルされた MCP 構成では postgres-mcp のテレメトリが無効化され、データベースコンテンツはプラグインのテレメトリとして Microsoft に送信されない</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>対応 AI コーディングアシスタント</th><td>GitHub Copilot CLI、Claude Code、Codex CLI</td></tr>
+            <tr><th>サブスキル数</th><td>32 (PostgreSQL 汎用 11 + Azure 11 + グラフ pg-graph 10)</td></tr>
+            <tr><th>MCP サーバー</th><td><a href="https://github.com/microsoft/postgres-mcp"><code class="inline">@microsoft/postgres-mcp</code></a> (npx でローカル起動)</td></tr>
+            <tr><th>対応 PostgreSQL 環境</th><td>ローカル、セルフホスト、他クラウド、Azure Database for PostgreSQL、Azure HorizonDB (Preview)</td></tr>
+            <tr><th>前提ソフトウェア</th><td>Node.js LTS (npx を含む)、対応 AI エージェントのアカウント</td></tr>
+            <tr><th>Azure 操作</th><td>Azure CLI (<code class="inline">az</code>) 経由 (認証後)</td></tr>
+            <tr><th>データベース権限</th><td>接続に使用する PostgreSQL ロールの権限に従う (最小権限・読み取り専用プロファイルを推奨)</td></tr>
+            <tr><th>ライセンス</th><td>MIT (オープンソース、GitHub: microsoft/postgres-skills)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🚀</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ul style="padding-left: 20px; font-size: 14.5px;">
+            <li style="margin-bottom: 6px;">Node.js LTS がインストールされていること (<code class="inline">node --version</code> / <code class="inline">npx --version</code> で確認)</li>
+            <li style="margin-bottom: 6px;">対応 AI エージェント (Claude Code、GitHub Copilot CLI、Codex CLI のいずれか) がインストール・サインイン済みであること</li>
+            <li style="margin-bottom: 6px;">Azure リソース操作を行う場合は Azure CLI で認証できること</li>
+        </ul>
+
+        <h3>インストール (CLI)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>install</span></div>
+            <pre><code class="language-bash"># Claude Code の場合
+claude plugin marketplace add microsoft/postgres-skills
+claude plugin install postgres-skills@postgres-skills
+
+# GitHub Copilot CLI の場合
+copilot plugin marketplace add microsoft/postgres-skills
+copilot plugin install postgres-skills@postgres-skills
+
+# Codex CLI の場合
+codex plugin marketplace add microsoft/postgres-skills
+codex plugin install postgres-skills@postgres-skills</code></pre>
+        </div>
+
+        <p>インストール後、エージェントを起動して以下のように依頼すると、読み取り専用プロファイルでの安全な接続をガイドしてくれます。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">text</span><span>prompt</span></div>
+            <pre><code class="language-plaintext">Help me connect postgres-skills to my PostgreSQL database using a read-only profile.</code></pre>
+        </div>
+        <div class="highlight-box">
+            🔑 パスワードはチャットには入力せず、<strong>非表示のパスワードプロンプトでのみ入力</strong>します。詳細はリポジトリの setup and security guide (plugin/SETUP.md) を参照してください。
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>PostgreSQL / Azure Database for PostgreSQL の専門知識がないメンバーでも、専門家がキュレーションしたベストプラクティスに沿った運用・開発が可能になる</li>
+                    <li>チューニングやトラブルシューティングにかかる調査時間を短縮し、開発生産性を向上できる</li>
+                    <li>プラグイン自体はオープンソース (MIT) であり、追加のライセンス費用なしに導入を試せる</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>汎用的な回答ではなく、実際のスキーマ・バージョン・拡張機能・Azure 環境に基づいたガイダンスが得られる</li>
+                    <li>ガイダンスにとどまらず、確認を経てクエリ実行・インデックス作成・プロビジョニング・リストアまで実行できる</li>
+                    <li>ベクトル検索、RAG、Apache AGE によるナレッジグラフなど、AI アプリケーション開発のシナリオを PostgreSQL 内で完結して支援する</li>
+                    <li>マネージドサービス固有の制約 (例: PITR は新サーバーを作成する、ストレージは縮小不可、メジャーバージョンアップグレードは一方向) を考慮した安全なワークフローを適用する</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <h4>知っておくべき制約</h4>
+            <ul>
+                <li><strong>Public Preview</strong> であり、本番環境以外での評価・テスト用途が想定される</li>
+                <li>MCP サーバーは接続したデータベースに対して、その PostgreSQL ロールの権限で操作できるため、<strong>専用の最小権限ロールと読み取り専用の接続プロファイル</strong>の使用が推奨される</li>
+                <li>クエリ結果や診断情報は AI アシスタントとの対話の一部となるため、機密データベースや本番データベースへの接続前にデータアクセスの開示事項 (plugin/SETUP.md) の確認が必要</li>
+                <li>パッケージのインストールに npm レジストリへのアクセスが必要。Azure ワークフローは認証後に Azure CLI で Azure と通信する</li>
+                <li>対応 AI エージェントの有償アカウント等が別途必要 (例: Claude Code は Pro/Max/Team/Enterprise/Console アカウント、GitHub Copilot CLI は Copilot サブスクリプション)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-title"><span class="usecase-num">1</span>🔍 クエリパフォーマンスの回帰調査</div>
+            <p><span class="label">シナリオ:</span> デプロイ後にクエリの応答時間が 200ms から 8 秒に悪化した。原因を特定して修正したい。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">text</span><span>実装例</span></div>
+                <pre><code class="language-plaintext">My query went from 200ms to 8 seconds after deployment</code></pre>
+            </div>
+            <div class="effect-box"><strong>効果:</strong> ライブな実行プランとバッファ使用状況を分析して回帰の原因を特定し、適切なインデックスやチューニングを確認のうえ適用できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-title"><span class="usecase-num">2</span>🧠 ベクトル検索 / RAG の構築</div>
+            <p><span class="label">シナリオ:</span> 製品カタログに対するベクトル検索を Azure Database for PostgreSQL 上にセットアップし、100 万行のデータをデータベース内で埋め込み処理したい。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">text</span><span>実装例</span></div>
+                <pre><code class="language-plaintext">Set up vector search for my product catalog
+Batch-embed 1 million rows without leaving the database</code></pre>
+            </div>
+            <div class="effect-box"><strong>効果:</strong> 環境に適したベクトルインデックス (HNSW / DiskANN) を選択して拡張機能とインデックスを適用し、<code class="inline">azure_ai</code> 拡張でサービス制限を考慮しながらバッチ埋め込みを安全に処理できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-title"><span class="usecase-num">3</span>🕸️ Apache AGE によるナレッジグラフ構築</div>
+            <p><span class="label">シナリオ:</span> 既存のドキュメントやテーブルからナレッジグラフを構築し、グラフ走査で質問に回答したい。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">text</span><span>実装例</span></div>
+                <pre><code class="language-plaintext">Turn my documents into a knowledge graph
+Answer this by traversing my graph</code></pre>
+            </div>
+            <div class="effect-box"><strong>効果:</strong> データからオントロジーを導出 (人間のレビューを挟む) して Apache AGE 上にグラフを構築し、検証済みの openCypher クエリで回答を得られる。すべて PostgreSQL 内で完結する。</div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>プラグイン自体は <strong>MIT ライセンスのオープンソースとして無料</strong>で提供されます。接続先の Azure Database for PostgreSQL や、<code class="inline">azure_ai</code> 拡張から利用する Azure AI サービスなどには、それぞれの通常料金が適用されます。</p>
+        <ul class="link-list">
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/postgresql/">Azure Database for PostgreSQL の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card"><strong>Azure Database for PostgreSQL</strong>: 本プラグインの主対象となるマネージド PostgreSQL サービス。プロビジョニング、スケーリング、HA、PITR などを Azure CLI 経由で操作</div>
+        <div class="related-card"><strong>Azure HorizonDB (Preview)</strong>: 各 Azure サブスキルが HorizonDB 固有セクションを持ち、クラスターやパラメーターグループなど HorizonDB 向けのガイダンスにルーティング</div>
+        <div class="related-card"><strong>azure_ai 拡張</strong>: データベース内での埋め込み生成や AI 関数の利用を支援するサブスキルが含まれる</div>
+        <div class="related-card"><strong>Apache AGE</strong>: PostgreSQL 上のグラフ拡張。pg-graph スキルがオントロジー導出からグラフ構築、openCypher クエリまでをカバー</div>
+        <div class="related-card"><strong>Azure MCP Server</strong>: Azure リソースを自然言語で管理する別の MCP サーバー。PostgreSQL 向けツール (サーバー/DB/テーブル一覧、クエリ実行、スキーマ取得、パラメーター設定) を提供しており、本プラグインと補完関係にある</div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>PostgreSQL skills and MCP plugin は、AI コーディングアシスタントを「もっともらしい汎用アドバイスを返す存在」から「実際のデータベース環境を理解し、確認を経て操作まで実行できる PostgreSQL エキスパート」へと変える Public Preview のプラグインです。<strong>32 の専門サブスキルと postgres-mcp、Azure CLI の組み合わせ</strong>により、クエリチューニングからベクトル検索・RAG、Apache AGE によるナレッジグラフまで幅広いシナリオをカバーします。</p>
+            <p style="margin-top: 12px;">GitHub Copilot CLI、Claude Code、Codex CLI を利用している PostgreSQL 開発チームは、まず<strong>読み取り専用の接続プロファイルと最小権限ロール</strong>を用意し、<strong>非本番環境で評価を開始</strong>することを推奨します。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure Database for PostgreSQL</span>
+            <span class="tag">MCP</span>
+            <span class="tag">AI コーディングアシスタント</span>
+            <span class="tag">PostgreSQL</span>
+            <span class="tag">ベクトル検索</span>
+            <span class="tag">RAG</span>
+            <span class="tag">Apache AGE</span>
+            <span class="tag">Public Preview</span>
+            <span class="tag">Databases</span>
+            <span class="tag">Hybrid + multicloud</span>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li>📢 <a href="https://azure.microsoft.com/updates?id=569664">公式アップデート情報</a></li>
+            <li>📝 <a href="https://techcommunity.microsoft.com/blog/adforpostgresql/postgres-skills-give-your-ai-agent-postgresql-expertise/4556705">Tech Community Blog: Postgres Skills: Give Your AI Agent PostgreSQL Expertise</a></li>
+            <li>💻 <a href="https://github.com/microsoft/postgres-skills">GitHub: microsoft/postgres-skills</a></li>
+            <li>💻 <a href="https://github.com/microsoft/postgres-mcp">GitHub: microsoft/postgres-mcp</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/en-us/azure/developer/azure-mcp-server/tools/azure-database-postgresql">Microsoft Learn: Azure MCP Server Tools for Azure Database for PostgreSQL</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/postgresql/">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典:</strong> <a href="https://azure.microsoft.com/updates?id=569664">Azure Updates: PostgreSQL skills and MCP plugin (Public Preview)</a> / <a href="https://techcommunity.microsoft.com/blog/adforpostgresql/postgres-skills-give-your-ai-agent-postgresql-expertise/4556705">Microsoft Tech Community Blog</a> / <a href="https://github.com/microsoft/postgres-skills">GitHub: microsoft/postgres-skills</a></p>
+        <p style="margin-top: 8px;">レポート作成日: 2026-09-16 | Azure News Summary プロジェクトにより自動生成</p>
+    </footer>
+
+</div>
+
+<!-- Mermaid.js -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+
+<!-- highlight.js -->
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

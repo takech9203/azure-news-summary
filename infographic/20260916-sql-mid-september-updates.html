@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SQL Database: 論理サーバーの Soft Delete (削除保護) | 2026-09-16</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.date-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 24px; }
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-700);
+    margin: 20px 0 10px;
+}
+
+.card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 32px; font-weight: bold; }
+.stat-label { font-size: 14px; opacity: 0.9; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { padding-left: 20px; margin-top: 6px; }
+.feature-content li { font-size: 14px; margin: 4px 0; }
+.feature-content p { font-size: 14px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+.diagram-caption {
+    text-align: center;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+/* Table */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--ms-blue-800);
+    color: white;
+    padding: 12px 16px;
+    text-align: left;
+}
+
+.spec-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+.spec-table td:first-child { font-weight: 700; color: var(--ms-blue-800); white-space: nowrap; }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* Steps */
+.step-list {
+    counter-reset: step;
+    list-style: none;
+    margin: 12px 0;
+}
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 12px 10px 52px;
+    margin: 8px 0;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Merit / constraint */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.merit-business {
+    background: var(--ms-blue-100);
+    border-top: 4px solid var(--azure-blue);
+}
+
+.merit-tech {
+    background: #F3EDF9;
+    border-top: 4px solid var(--ms-purple);
+}
+
+.merit-card h4 { margin-bottom: 10px; }
+.merit-business h4 { color: var(--ms-blue-800); }
+.merit-tech h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 14px; margin: 8px 0; }
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box ul { padding-left: 20px; }
+.warning-box li { font-size: 14px; margin: 8px 0; }
+
+/* Use case */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.usecase-header {
+    background: var(--ms-blue-800);
+    color: white;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.usecase-body { padding: 20px; }
+.usecase-body p { font-size: 14px; margin: 8px 0; }
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Links */
+.link-list { list-style: none; }
+
+.link-list li {
+    padding: 10px 14px;
+    margin: 8px 0;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.link-list a {
+    color: var(--azure-blue);
+    text-decoration: none;
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.link-list a:hover { text-decoration: underline; }
+
+a { color: var(--azure-blue); }
+
+/* Related services */
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--ms-blue-800); }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+.summary-box ol { padding-left: 24px; margin-top: 10px; }
+.summary-box li { margin: 8px 0; }
+
+/* Tags */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 24px;
+}
+
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">🗄️ Azure SQL Database</span>
+            <span class="badge badge-preview">In Preview</span>
+            <span class="date-badge">📅 リリース日: 2026-09-16</span>
+        </div>
+        <h1>2026 年 9 月中旬アップデート<br>論理サーバーの Soft Delete (削除保護) 構成と自己復元</h1>
+        <p class="subtitle">誤って削除した Azure SQL 論理サーバーを、保持期間 (最大 7 日) 内にユーザー自身で復元可能に</p>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>2026 年 9 月中旬の Azure SQL アップデートとして、<strong>Azure SQL 論理サーバーの Soft Delete 構成</strong>がパブリックプレビューで発表されました。論理サーバーに Soft Delete (削除保護) の保持期間を構成できるようになり、論理サーバーが削除されると「論理削除 (soft deleted)」状態に移行し、構成した保持期間内であればユーザー自身で復元できます。誤削除の場合でも、Microsoft サポートに問い合わせることなく、予測可能かつ一貫した方法で自己復旧できます。</p>
+
+        <div class="highlight-box">
+            保持期間は論理サーバー単位で <strong>0〜7 日</strong> の範囲で設定します (0 は Soft Delete 無効)。なお、<strong>作成から 2 年を超える論理サーバーには自動的に 7 日間の保持期間が設定</strong>され、<strong>2 年未満のサーバーは既定で無効</strong>です。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">0〜7 日</div>
+                <div class="stat-label">保持期間の設定範囲<br>(0 = 無効)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">7 日</div>
+                <div class="stat-label">作成 2 年超サーバーの<br>自動設定値</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3 手段</div>
+                <div class="stat-label">Portal / PowerShell /<br>Azure CLI で操作可能</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0 回</div>
+                <div class="stat-label">サポート問い合わせ<br>不要で自己復旧</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Soft Delete 保持が構成されていない論理サーバーを削除すると即時に完全削除となり、保持・復旧のオプションがなかった</li>
+                    <li>誤削除からの復旧をユーザー自身で予測可能・一貫した方法で行う手段がなく、Microsoft サポートへの問い合わせが必要だった</li>
+                    <li>自動化スクリプトや一括クリーンアップ操作での誤削除が、取り返しのつかない損失につながるリスクがあった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>削除された論理サーバーが保持期間中は soft deleted 状態で保持され、Azure portal / PowerShell / Azure CLI からユーザー自身で一覧表示・復元が可能に</li>
+                    <li>誤削除をサポートに依頼せず、保持期間内に予測可能かつ一貫した方法で自己復旧できるように</li>
+                    <li>復元されたサーバーは削除時と同じ名前・構成で元の状態に復元され、サーバー復元後は保持期間内のデータベースをバックアップから復元できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    User([👤 管理者 / 自動化スクリプト])
+    subgraph Azure["☁️ Azure Cloud"]
+        Server[🖥️ Azure SQL 論理サーバー&lt;br/&gt;Soft Delete 保持期間: 1〜7 日]
+        DB[(🗄️ ユーザー データベース)]
+        SoftDeleted[🗑️ Soft Deleted 状態&lt;br/&gt;保持期間中はメタデータを保持]
+        Restored[✅ 復元されたサーバー&lt;br/&gt;同名・同構成で復元]
+        Purged[❌ 完全削除]
+    end
+    User --&gt;|"削除操作 (誤削除含む)"| Server
+    Server --- DB
+    Server --&gt;|保持期間 1〜7 日| SoftDeleted
+    SoftDeleted --&gt;|"保持期間内に自己復元&lt;br/&gt;(Portal / CLI / PowerShell)"| Restored
+    SoftDeleted --&gt;|保持期間経過| Purged
+    Restored --&gt;|バックアップから DB を復元| DB
+            </pre>
+        </div>
+        <p class="diagram-caption">Soft Delete を有効化した論理サーバーは削除後も保持期間中は soft deleted 状態で保持され、ユーザー自身で復元できます。保持期間を過ぎると完全削除されます。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>1. Soft Delete 保持期間の構成</h4>
+                <ul>
+                    <li>論理サーバー単位で保持期間を <strong>0〜7 日</strong>で設定 (0 は無効化、削除すると復旧不可)</li>
+                    <li>Azure portal (既存サーバーの「Delete protection (preview)」ペイン)、PowerShell (<code>-SoftDeleteRetentionDays</code>)、Azure CLI (<code>--soft-delete-retention-days</code>) で構成可能</li>
+                    <li>PowerShell / CLI ではサーバー新規作成時にも設定可能 (Portal では既存サーバーのみ)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📜</div>
+            <div class="feature-content">
+                <h4>2. Soft Deleted サーバーの一覧表示</h4>
+                <ul>
+                    <li>Azure portal の「Restore deleted server」ペイン、PowerShell の <code>Get-AzSqlDeletedServer</code>、CLI の <code>az sql server deleted-server list</code> でリージョン内の復元可能なサーバーを一覧表示</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">♻️</div>
+            <div class="feature-content">
+                <h4>3. 削除されたサーバーの自己復元</h4>
+                <ul>
+                    <li>PowerShell の <code>Restore-AzSqlServer</code>、CLI の <code>az sql server restore</code>、または Portal から復元</li>
+                    <li>復元されたサーバーは削除時と同じ名前・構成で、削除時点の元の状態に復元される</li>
+                    <li>サーバー復元後、保持期間内のデータベースは「Backups」ペインから手動で復元可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔬</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象リソース</td><td>Azure SQL Database の論理サーバー</td></tr>
+            <tr><td>保持期間の設定範囲</td><td>0〜7 日 (0 = Soft Delete 無効)</td></tr>
+            <tr><td>既定値</td><td>作成から 2 年超のサーバー: 自動的に 7 日 / 2 年未満のサーバー: 無効</td></tr>
+            <tr><td>必要なロール</td><td>SQL Server Contributor</td></tr>
+            <tr><td>必要なツールバージョン</td><td>Azure PowerShell Az モジュール 15.4.0 以降 / Azure CLI 2.84.0 以降</td></tr>
+            <tr><td>復元後のサーバー</td><td>削除時と同じ名前・構成で元の状態に復元</td></tr>
+            <tr><td>データベースの扱い</td><td>サーバー削除時にユーザー DB も削除。サーバー復元後、保持期間内であればバックアップから復元可能</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>Azure サブスクリプションと Azure SQL 論理サーバー</li>
+            <li>SQL Server Contributor ロールのメンバーであること</li>
+            <li>PowerShell / CLI を使用する場合: Az モジュール 15.4.0 以降、または Azure CLI 2.84.0 以降</li>
+        </ol>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">bash</span>
+                <span class="code-desc">Soft Delete の構成・一覧表示・復元</span>
+            </div>
+            <pre><code class="language-bash"># 新規サーバー作成時に Soft Delete 保持期間 7 日を設定
+az sql server create \
+  --name &lt;server-name&gt; \
+  --resource-group &lt;resource-group-name&gt; \
+  --location &lt;azure-region&gt; \
+  --administrator-login &lt;admin-username&gt; \
+  --administrator-login-password &lt;admin-password&gt; \
+  --soft-delete-retention-days 7
+
+# 既存サーバーの保持期間を 7 日に更新
+az sql server update \
+  --name &lt;server-name&gt; \
+  --resource-group &lt;resource-group-name&gt; \
+  --soft-delete-retention-days 7
+
+# リージョン内の soft deleted サーバーを一覧表示
+az sql server deleted-server list --location &lt;azure-region&gt;
+
+# 削除されたサーバーを復元
+az sql server restore \
+  --name &lt;server-name&gt; \
+  --resource-group &lt;resource-group-name&gt; \
+  --location &lt;azure-region&gt;</code></pre>
+        </div>
+
+        <h3>Azure Portal — 保持期間の構成 (既存サーバーのみ)</h3>
+        <ol class="step-list">
+            <li>Azure portal で対象の論理サーバーに移動</li>
+            <li><strong>Data Management</strong> の <strong>Delete protection (preview)</strong> を選択</li>
+            <li><strong>Keep deleted servers (in days)</strong> に 1〜7 の値を入力 (<code>Not enabled</code> または <code>0</code> は無効状態)</li>
+            <li><strong>Apply</strong> を選択して保存</li>
+        </ol>
+
+        <h3>Azure Portal — 削除されたサーバーの復元</h3>
+        <ol class="step-list">
+            <li>Azure portal の <strong>Azure SQL hub</strong> に移動</li>
+            <li><strong>Azure SQL Database</strong> の <strong>SQL logical servers</strong> ペインを開く</li>
+            <li>コマンドバーの <strong>Restore</strong> を選択し、サブスクリプション・場所・削除済みサーバーをドロップダウンから選択</li>
+            <li><strong>Restore</strong> を選択して復元</li>
+        </ol>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>誤削除による論理サーバーの不可逆的な損失リスクを軽減し、ヒューマンエラーに対する復旧バッファを確保できる (ガバナンス・保護)</li>
+                    <li>Microsoft サポートへの問い合わせが不要になり、復旧までの手順が予測可能・一貫したものになる</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>自動化スクリプト、スクリプトによるクリーンアップ、一括操作時の運用上の安全性が向上する</li>
+                    <li>開発・テスト環境でサーバーの削除と復元を安全に実施できる</li>
+                    <li>Portal / PowerShell / Azure CLI のいずれからも構成・一覧表示・復元が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>プレビュー段階の機能である</li>
+                <li>保持期間の上限は <strong>7 日</strong>で、それを超えると完全削除される</li>
+                <li>Microsoft Entra 認証のみを強制する組み込み Azure Policy を使用している場合、削除されたサーバーを復元できない (復元するにはポリシーを削除してから復元する)</li>
+                <li>論理サーバーの削除時にマネージド ID も削除される</li>
+                <li>復元後、カスタマー マネージド キー (CMK) による暗号化は再構成が必要</li>
+                <li>以下のサーバーレベル構成は soft delete 時に破棄され、復元後に再構成が必要: <strong>フェールオーバー グループ、geo レプリケーション リンク、サーバー DNS エイリアス、プライベート エンドポイント接続、ファイアウォール規則、エラスティック ジョブ エージェント、Microsoft Entra ID のサーバー ID、CMK/TDE 暗号化キー、Data Sync グループ、Synapse ワークスペース リンク</strong></li>
+                <li>Azure portal では新規サーバー作成時に保持期間を設定できない (既存サーバーのみ)</li>
+                <li>保持期間満了前に完全削除したい場合は、いったん復元して保持期間を 0 に設定してから再削除する必要がある</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">ユースケース 1: 誤削除からの自己復旧</div>
+            <div class="usecase-body">
+                <p><strong>シナリオ</strong>: 運用チームが一括クリーンアップ スクリプトの実行中に、本番用の論理サーバーを誤って削除してしまった。Soft Delete 保持期間 (7 日) が構成されていたため、サポートに問い合わせることなく自己復旧する。</p>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-lang">bash</span>
+                        <span class="code-desc">実装例</span>
+                    </div>
+                    <pre><code class="language-bash"># 削除されたサーバーを確認
+az sql server deleted-server show \
+  --name prod-sql-server \
+  --location japaneast
+
+# サーバーを復元
+az sql server restore \
+  --name prod-sql-server \
+  --resource-group prod-rg \
+  --location japaneast
+
+# 復元後、Portal の「Backups」ペインから保持期間内のデータベースを復元し、
+# ファイアウォール規則・プライベート エンドポイント・フェールオーバー グループ等を再構成</code></pre>
+                </div>
+                <div class="effect-box">
+                    <strong>✅ 効果</strong>: 誤削除された論理サーバーを保持期間内にユーザー自身で復元でき、復旧時間と手順の不確実性を削減できる。
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>このアップデートに関する個別の料金情報は公式ページでは確認できませんでした。詳細は以下の料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/azure-sql-database/" target="_blank" rel="noopener">Azure SQL Database の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card">
+            <strong>Azure SQL Database 自動バックアップ / ポイントインタイム リストア</strong>: サーバー復元後、保持期間内のユーザー データベースはバックアップから復元する。Soft Delete はサーバー メタデータの保護、バックアップはデータベース データの保護を担う
+        </div>
+        <div class="related-card">
+            <strong>Azure Policy (Microsoft Entra 認証のみの強制)</strong>: このポリシーが適用されていると削除済みサーバーを復元できないため、併用時は注意が必要
+        </div>
+        <div class="related-card">
+            <strong>Microsoft Entra ID / マネージド ID</strong>: サーバー削除時にマネージド ID とサーバー ID が削除されるため、復元後に再構成が必要
+        </div>
+        <div class="related-card">
+            <strong>カスタマー マネージド キー (CMK) / TDE</strong>: 復元後に暗号化キーの再構成が必要
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure SQL 論理サーバーの Soft Delete がパブリックプレビューとなり、誤削除された論理サーバーを保持期間 (最大 7 日) 内にユーザー自身で復元できるようになりました。従来は Soft Delete 未構成のサーバーを削除すると即時完全削除で復旧オプションがなく、自己復旧の一貫した手段がありませんでしたが、今後はサポートへの問い合わせなしで予測可能に復旧できます。</p>
+            <p style="margin-top: 12px;"><strong>Solutions Architect への推奨事項:</strong></p>
+            <ol>
+                <li>重要な論理サーバーへの保持期間設定 (2 年未満のサーバーは既定で無効な点に注意)</li>
+                <li>復元後に再構成が必要なサーバーレベル構成 (ファイアウォール規則、プライベート エンドポイント、フェールオーバー グループ、CMK など) の把握と復旧手順書への反映</li>
+                <li>Entra 認証のみを強制する Azure Policy との非互換の確認</li>
+            </ol>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">Databases</span>
+            <span class="tag">Hybrid + multicloud</span>
+            <span class="tag">Soft Delete</span>
+            <span class="tag">削除保護</span>
+            <span class="tag">バックアップ・復元</span>
+            <span class="tag">In preview</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li>📢 <a href="https://azure.microsoft.com/updates?id=571056" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/azure-sql/database/deleted-logical-server-restore" target="_blank" rel="noopener">Microsoft Learn: 削除された論理サーバーの復元 (プレビュー)</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/azure-sql-database/" target="_blank" rel="noopener">Azure SQL Database の料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=571056" target="_blank" rel="noopener">Azure Updates (ID: 571056)</a> / <a href="https://learn.microsoft.com/azure/azure-sql/database/deleted-logical-server-restore" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>ソースレポート: reports/2026/2026-09-16-sql-mid-september-updates.md (Azure News Summary プロジェクト)</p>
+        <p>生成日: 2026-09-16 | このインフォグラフィックは Azure News レポートを基に自動生成されたものです</p>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
