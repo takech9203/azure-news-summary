@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Virtual Network Manager: High-scale mesh (高スケールメッシュ) GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Category Color: Networking */
+    --networking-green: #00A651;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .date {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-bottom: 8px;
+}
+
+.header h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin: 12px 0;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.service-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-right: 8px;
+}
+
+.category-badge {
+    display: inline-block;
+    background: var(--networking-green);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    margin-left: 8px;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-200);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin: 12px 0; }
+
+/* Highlight */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 30px;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 6px;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Feature Cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content ul {
+    padding-left: 20px;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content li { margin: 4px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+td code, li code, p code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* Use Case Cards */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-blue);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-right: 6px;
+}
+
+/* Pros / Cons */
+.pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.pros-box {
+    background: #E8F5E9;
+    border-radius: 8px;
+    padding: 18px;
+    border-top: 4px solid var(--ms-green);
+}
+
+.cons-box {
+    background: #FFF8E1;
+    border-radius: 8px;
+    padding: 18px;
+    border-top: 4px solid var(--ms-orange);
+}
+
+.pros-box h4 { color: var(--ms-green); margin-bottom: 10px; }
+.cons-box h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.pros-box ul, .cons-box ul { padding-left: 20px; font-size: 14px; }
+.pros-box li, .cons-box li { margin: 8px 0; }
+
+/* Steps */
+.step-list { counter-reset: step; list-style: none; }
+
+.step-list li {
+    position: relative;
+    padding: 10px 0 10px 48px;
+    margin: 6px 0;
+    font-size: 14px;
+}
+
+.step-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Regions */
+.region-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+.region-chip {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    color: var(--ms-blue-900);
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 12px;
+}
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { padding-left: 20px; }
+.link-list li { margin: 8px 0; font-size: 14px; }
+
+/* Tags */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 12px;
+}
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* Code blocks (if any) */
+.code-block,
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+
+.footer a { word-break: break-all; }
+
+@media (max-width: 700px) {
+    .before-after, .pros-cons { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="date">📅 リリース日: 2026-09-17</div>
+        <div>
+            <span class="service-badge">🧭 Azure Virtual Network Manager</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="category-badge">Networking</span>
+        </div>
+        <h1>High-scale mesh (高スケールメッシュ) の一般提供開始</h1>
+        <div class="subtitle">Connected Group による高スケールメッシュ接続 — 単一構成でデフォルト最大 3,000 VNet を接続</div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">3,000</div>
+            <div class="stat-label">単一メッシュ構成で接続可能な VNet 数 (デフォルト)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">5,000</div>
+            <div class="stat-label">申請による Connected Group あたりの最大 VNet 数</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">12 倍</div>
+            <div class="stat-label">従来デフォルト上限 250 VNet からの拡張</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">128,000+</div>
+            <div class="stat-label">申請で拡張可能なプライベート IP アドレス空間</div>
+        </div>
+    </div>
+
+    <!-- Overview -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Virtual Network Manager (AVNM) の Connected Group を利用した <strong>High-scale mesh (高スケールメッシュ)</strong> が一般提供 (GA) となりました。提供対象リージョンでは、1 つのメッシュ接続構成 (mesh connectivity configuration) でデフォルトで最大 3,000 の仮想ネットワーク (VNet) を接続でき、さらに大規模な IP 接続についても申請ベースで利用可能です。</p>
+        <div class="highlight-box">
+            AVNM のメッシュトポロジは、個別の VNet ピアリングを作成・維持することなく、ネットワークグループに含まれるすべての VNet 間に双方向接続を確立します。この接続は VNet ピアリングではなく、AVNM 独自の <strong>Connected Group</strong> という接続構造で実現されており、有効ルート上では次ホップタイプ <code>ConnectedGroup</code> として表示されます。
+        </div>
+        <p>従来の Connected Group は 1 グループあたり最大 250 VNet がデフォルト上限でしたが、High-scale mesh により最大 3,000 VNet まで拡張されます。アプリケーションや事業部門ごとに VNet を分離したまま、慣れ親しんだネットワークグループと接続構成のモデルで、大規模環境の VNet 間直接接続をシンプルに管理できます。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>大量の VNet の相互接続には個別の VNet ピアリング (1:1 のマッピング) の作成・維持が必要で、VNet 数の増加に伴い管理負荷が急増</li>
+                    <li>AVNM の Connected Group はデフォルトで 1 グループあたり最大 250 VNet まで。それを超える大規模環境を単一メッシュで構成できなかった</li>
+                    <li>3,000 VNet 規模の接続はプレビュー機能 (<code>AllowHighScaleConnectedGroup</code>) の登録と申請フォームによる承認が必要だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>提供対象リージョンでは、単一のメッシュ接続構成でデフォルトで最大 3,000 VNet を接続可能に (GA)</li>
+                    <li>さらに高いスケール (Connected Group あたり最大 5,000 VNet、または接続 VNet 群の合計プライベート IP アドレス空間 128,000 超) も申請フォームによるリクエストで対応可能</li>
+                    <li>個別ピアリングの作成・維持が不要になり、ネットワークグループへの VNet 追加だけで接続が自動的に確立</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🕰️ Before"]
+        B1["🔗 個別 VNet ピアリング&lt;br&gt;1:1 の関係を手動管理"]
+        B2["📦 Connected Group&lt;br&gt;デフォルト最大 250 VNet"]
+    end
+    subgraph After["🚀 After: High-scale mesh (GA)"]
+        NM["🧭 Azure Virtual Network Manager"]
+        CC["🕸️ メッシュ接続構成"]
+        NG["🗂️ ネットワークグループ"]
+        CG["📦 Connected Group&lt;br&gt;デフォルト最大 3,000 VNet&lt;br&gt;(申請で最大 5,000 VNet)"]
+        NM --> CC --> NG --> CG
+        CG --- V["☁️ VNet 1 〜 3,000&lt;br&gt;双方向フルメッシュ接続"]
+    end
+    Before -. GA で大幅拡張 .-> After
+            </pre>
+        </div>
+        <p>従来は個別ピアリングや 250 VNet 上限の Connected Group で管理していた大規模環境を、GA した High-scale mesh では単一のメッシュ接続構成で最大 3,000 VNet (申請により 5,000 VNet) まで接続できます。</p>
+    </section>
+
+    <!-- Key Features -->
+    <section class="section">
+        <h2>⚙️ サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🕸️</div>
+            <div class="feature-content">
+                <h4>1. 単一メッシュで最大 3,000 VNet を接続</h4>
+                <ul>
+                    <li>提供対象リージョンでは、1 つのメッシュ接続構成でデフォルトで最大 3,000 VNet を接続可能</li>
+                    <li>従来の Connected Group のデフォルト上限 (250 VNet) から大幅に拡張</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <div class="feature-content">
+                <h4>2. 申請ベースのさらなるスケール拡張</h4>
+                <ul>
+                    <li>Connected Group あたり最大 5,000 VNet への拡張、または接続・ピアリングされた VNet 群のプライベート IP アドレス空間を 128,000 アドレス超にスケールする場合は、スケーリングリクエストフォームで申請可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>3. Connected Group による接続 (ピアリング不要)</h4>
+                <ul>
+                    <li>VNet ピアリングの 1:1 マッピングを使わず、Connected Group 構造で VNet 群全体の双方向接続を確立</li>
+                    <li>有効ルートの次ホップタイプは <code>ConnectedGroup</code> と表示され、VNet の「ピアリング」ブレードには表示されない</li>
+                    <li>メッシュ内の VNet の IP プレフィックス変更は自動的に同期される</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🗂️</div>
+            <div class="feature-content">
+                <h4>4. 既存の管理モデルをそのまま利用</h4>
+                <ul>
+                    <li>ネットワークグループ (静的メンバーシップ / Azure Policy ベースの動的メンバーシップ) と接続構成という既存の AVNM モデルで管理</li>
+                    <li>セキュリティ管理者ルール (security admin rules)、NSG、VNet フローログと組み合わせて直接接続のガバナンス・監視が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Specs -->
+    <section class="section">
+        <h2>🔬 技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>接続方式</td><td>Connected Group (VNet ピアリングではなく AVNM 独自の接続構造)</td></tr>
+            <tr><td>Connected Group あたりの VNet 数 (デフォルト)</td><td>250</td></tr>
+            <tr><td>High-scale mesh 有効時の VNet 数</td><td>最大 3,000 (提供対象リージョンでデフォルト利用可能。GA 発表時点)</td></tr>
+            <tr><td>申請による拡張</td><td>最大 5,000 VNet / プライベート IP アドレス空間 128,000 アドレス超 (スケーリングリクエストフォームで申請)</td></tr>
+            <tr><td>Connected Group あたりのプライベートエンドポイント数</td><td>デフォルト 2,000 (High-scale private endpoints 有効化で最大 20,000)</td></tr>
+            <tr><td>1 VNet が所属できる Connected Group 数</td><td>最大 2 (ソフトリミット。申請フォームで調整可能)</td></tr>
+            <tr><td>メッシュの範囲</td><td>デフォルトはリージョナルメッシュ。Global mesh を有効化するとリージョン間接続が可能</td></tr>
+            <tr><td>重複アドレス空間</td><td>同一 Connected Group 内で重複可能だが、重複 IP 宛の通信はドロップされる。<code>ConnectedGroupAddressOverlap</code> プロパティを <code>Disallowed</code> に設定して重複を禁止することも可能</td></tr>
+            <tr><td>hub-and-spoke との関係</td><td>hub-and-spoke 構成のスポークネットワークグループで direct connectivity を有効化した場合も Connected Group が作成される</td></tr>
+        </table>
+    </section>
+
+    <!-- Setup -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>Azure Virtual Network Manager インスタンスを作成し、対象 VNet をスコープに含めること</li>
+            <li>対象 VNet を含むネットワークグループ (静的または動的メンバーシップ) を作成すること</li>
+            <li>Connected Group がサポートされるリージョンであること (「利用可能リージョン」参照)</li>
+            <li>Microsoft Learn の制限事項ドキュメント (2026-09-16 更新時点) では、高スケール Connected Group の利用にはサブスクリプションでの <code>AllowHighScaleConnectedGroup</code> 機能フラグの登録 (表示名: Enable High Scale Connected Group) と有効化フォームの提出が案内されている。GA 発表では提供対象リージョンでデフォルトで最大 3,000 VNet を接続可能とされているため、最新の手順は公式ドキュメントを確認すること</li>
+        </ol>
+        <h3>Azure Portal での手順</h3>
+        <ol class="step-list">
+            <li>AVNM の「構成 (Configurations)」ページで接続構成を作成し、トポロジとして「メッシュ」を選択する</li>
+            <li>対象のネットワークグループをトポロジに追加し、必要に応じて Global mesh (リージョン間接続) を有効化する</li>
+            <li>「View topology」タブで接続構成のトポロジを視覚的に確認する</li>
+            <li>接続構成を対象リージョンにデプロイする (デプロイするまで構成は有効化されない)</li>
+        </ol>
+    </section>
+
+    <!-- Pros / Cons -->
+    <section class="section">
+        <h2>⚖️ メリットとデメリット・制約事項</h2>
+        <div class="pros-cons">
+            <div class="pros-box">
+                <h4>✅ メリット (ビジネス面)</h4>
+                <ul>
+                    <li>数千 VNet 規模の大企業・マルチチーム環境でも、個別ピアリングの作成・維持コストなしにネットワーク接続を一元管理できる</li>
+                    <li>アプリケーションや事業部門ごとに VNet を分離したガバナンスモデルを維持したまま、VNet 間の直接通信を実現できる</li>
+                    <li>ネットワークグループの動的メンバーシップにより、新規 VNet が自動的にメッシュへ参加するため、運用の俊敏性が向上する</li>
+                </ul>
+                <h4 style="margin-top: 16px;">✅ メリット (技術面)</h4>
+                <ul>
+                    <li>ハブを経由しない VNet 間直接通信により、ハブ経由ルーティングに起因するレイテンシを削減できる</li>
+                    <li>ピアリングの上限を超えるスケール (最大 3,000 VNet、申請により 5,000 VNet) の接続を単一構成で実現できる</li>
+                    <li>メッシュ内の IP プレフィックス変更が自動同期されるため、アドレス変更時の接続維持が容易</li>
+                    <li>セキュリティ管理者ルールや VNet フローログと組み合わせ、直接接続に対するセキュリティ制御・監視を維持できる</li>
+                </ul>
+            </div>
+            <div class="cons-box">
+                <h4>⚠️ デメリット・制約事項</h4>
+                <ul>
+                    <li>Connected Group は提供対象リージョンに限定される (下記「利用可能リージョン」参照)</li>
+                    <li>同一 Connected Group 内で IP アドレス空間の重複は許容されるが、重複アドレス宛のトラフィックはルーティングが非決定的となるためドロップされる</li>
+                    <li>High-scale private endpoints を有効化したメッシュでは、VNet 間の IP アドレス重複はサポートされない</li>
+                    <li>1 つの VNet が所属できる Connected Group は最大 2 (ソフトリミット)</li>
+                    <li>Azure VMware Solution、Nutanix Cloud Clusters on Azure、Oracle Database@Azure、Azure Payment HSM などの BareMetal インフラストラクチャは Connected Group でサポートされない</li>
+                    <li>3,000 VNet を超えるスケールや 128,000 アドレス超のプライベート IP 空間は申請フォームによるリクエストが必要</li>
+                    <li>セキュリティ管理者ルールは、AVNM 管理下の VNet 内のプライベートエンドポイントには現時点で適用されない</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Use Cases -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🏢 ユースケース 1: 大規模エンタープライズでの VNet 間直接通信</h4>
+            <p><span class="usecase-label">シナリオ</span>数百〜数千の VNet をチーム・アプリケーション単位で分離して運用している企業が、ハブを経由せずに VNet 間の低レイテンシな直接通信を実現したい。</p>
+            <p><span class="usecase-label">実装例</span>Azure Policy ベースの動的ネットワークグループで対象 VNet (例: 特定タグ付き VNet) を自動収集し、メッシュ接続構成をデプロイする。新規 VNet はタグ付与だけで自動的にメッシュへ参加する。</p>
+            <p><span class="usecase-label">効果</span>個別ピアリングの作成・削除が不要になり、最大 3,000 VNet 規模でも接続管理を単一構成に集約できる。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>🔀 ユースケース 2: hub-and-spoke と組み合わせたハイブリッド構成</h4>
+            <p><span class="usecase-label">シナリオ</span>共有サービス (ゲートウェイ、ファイアウォールなど) はハブに集約しつつ、信頼済みスポーク VNet 同士はハブを経由せず直接通信させたい。</p>
+            <p><span class="usecase-label">実装例</span>hub-and-spoke 接続構成でスポークネットワークグループの direct connectivity を有効化する。スポーク間は Connected Group (次ホップタイプ <code>ConnectedGroup</code>)、ハブ-スポーク間はピアリングで接続される。</p>
+            <p><span class="usecase-label">効果</span>ハブ経由の余分なホップを排除してパフォーマンスを改善しつつ、共有サービスへのアクセスは維持できる。</p>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Azure Virtual Network Manager の料金は、アクティブな AVNM 構成がデプロイされた VNet 数に基づいて課金されます (VNet ベース課金の導入前に作成されたインスタンスはサブスクリプションベース課金がデフォルトで、VNet ベース課金へのオプトインが可能)。同一 AVNM インスタンスから複数の構成が同じ VNet にデプロイされても、課金は VNet あたり 1 回分のみです。</p>
+        <table>
+            <tr><th>項目</th><th>課金単位</th></tr>
+            <tr><td>Virtual Network Manager (VNet ベース)</td><td>管理対象 VNet あたり / 時間</td></tr>
+            <tr><td>Virtual Network Manager (サブスクリプションベース)</td><td>管理対象サブスクリプションあたり / 時間</td></tr>
+            <tr><td>VNet ピアリング料金</td><td>AVNM が作成した接続を経由するトラフィック量に対して別途適用</td></tr>
+        </table>
+        <div class="highlight-box">
+            具体的な単価はリージョン・通貨により異なるため、<a href="https://azure.microsoft.com/pricing/details/virtual-network-manager/" target="_blank">Azure Virtual Network Manager 料金ページ</a> および <a href="https://azure.microsoft.com/pricing/calculator/" target="_blank">Azure 料金計算ツール</a> で確認してください。
+        </div>
+    </section>
+
+    <!-- Regions -->
+    <section class="section">
+        <h2>🌏 利用可能リージョン</h2>
+        <p>Connected Group は以下のリージョンでサポートされています (Microsoft Learn 制限事項ドキュメント 2026-09-16 更新時点):</p>
+        <div class="region-list">
+            <span class="region-chip">Asia East</span>
+            <span class="region-chip">Asia Southeast</span>
+            <span class="region-chip">Australia Central</span>
+            <span class="region-chip">Australia Central 2</span>
+            <span class="region-chip">Australia East</span>
+            <span class="region-chip">Australia Southeast</span>
+            <span class="region-chip">Brazil South</span>
+            <span class="region-chip">Canada Central</span>
+            <span class="region-chip">Canada East</span>
+            <span class="region-chip">North Europe</span>
+            <span class="region-chip">West Europe</span>
+            <span class="region-chip">France Central</span>
+            <span class="region-chip">Germany West Central</span>
+            <span class="region-chip">Central India</span>
+            <span class="region-chip">South India</span>
+            <span class="region-chip">West India</span>
+            <span class="region-chip">Japan East</span>
+            <span class="region-chip">Japan West</span>
+            <span class="region-chip">Korea Central</span>
+            <span class="region-chip">Korea South</span>
+            <span class="region-chip">Mexico Central</span>
+            <span class="region-chip">Norway East</span>
+            <span class="region-chip">Qatar Central</span>
+            <span class="region-chip">South Africa North</span>
+            <span class="region-chip">Sweden Central</span>
+            <span class="region-chip">Switzerland North</span>
+            <span class="region-chip">Switzerland West</span>
+            <span class="region-chip">UAE North</span>
+            <span class="region-chip">UK South</span>
+            <span class="region-chip">UK West</span>
+            <span class="region-chip">Central US</span>
+            <span class="region-chip">East US</span>
+            <span class="region-chip">East US 2</span>
+            <span class="region-chip">US North</span>
+            <span class="region-chip">US South</span>
+            <span class="region-chip">West US</span>
+            <span class="region-chip">West US 2</span>
+            <span class="region-chip">West US 3</span>
+            <span class="region-chip">West Central US</span>
+            <span class="region-chip">East US 2 EUAP</span>
+            <span class="region-chip">Central US EUAP</span>
+        </div>
+    </section>
+
+    <!-- Related Services -->
+    <section class="section">
+        <h2>🧩 関連サービス・機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>Azure Virtual Network (VNet ピアリング)</h4>
+                <ul><li>従来の 1:1 接続手段。Connected Group はピアリング上限を超えるスケールで VNet 群を単一エンティティとして接続する代替手段</li></ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>AVNM セキュリティ管理者ルール (Security Admin Rules)</h4>
+                <ul><li>NSG より先に評価される組織全体のセキュリティルール。メッシュによる直接接続に対するガバナンスを提供</li></ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔌</div>
+            <div class="feature-content">
+                <h4>AVNM High-scale private endpoints</h4>
+                <ul><li>Connected Group あたりのプライベートエンドポイント数を 2,000 から最大 20,000 に拡張する関連機能</li></ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>Azure Virtual WAN</h4>
+                <ul><li>メッシュ接続構成内のスポーク VNet を Virtual WAN ハブに接続することも可能 (hub-and-spoke 構成での Virtual WAN ハブ利用はプレビュー)</li></ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>VNet フローログ / Network Watcher</h4>
+                <ul><li>メッシュ内トラフィックの監視・記録に利用</li></ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Summary -->
+    <section class="section summary-box">
+        <h2>📝 まとめ</h2>
+        <p>Azure Virtual Network Manager の High-scale mesh が GA となり、単一のメッシュ接続構成でデフォルト最大 3,000 VNet (申請により最大 5,000 VNet) を接続できるようになりました。従来の Connected Group のデフォルト上限 250 VNet や個別ピアリング管理の限界を大きく超えるスケールを、既存のネットワークグループ + 接続構成モデルのまま本番利用できます。</p>
+        <p>数百以上の VNet を運用する組織は、ピアリング運用からの移行候補として本機能を評価することを推奨します。導入時は Connected Group の対応リージョン、IP アドレス重複時の通信ドロップ、BareMetal 系サービスの非サポートなどの制約を事前に確認してください。</p>
+        <div class="tag-list">
+            <span class="tag">Networking</span>
+            <span class="tag">Azure Virtual Network Manager</span>
+            <span class="tag">Connected Group</span>
+            <span class="tag">Mesh</span>
+            <span class="tag">GA</span>
+            <span class="tag">Launched</span>
+        </div>
+    </section>
+
+    <!-- References / Footer -->
+    <footer class="footer">
+        <p><strong>参考リンク・出典</strong></p>
+        <ul class="link-list" style="list-style: none; padding: 0;">
+            <li>📢 <a href="https://azure.microsoft.com/updates?id=571572" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/virtual-network-manager/concept-connectivity-configuration" target="_blank">Connectivity configurations in Azure Virtual Network Manager (Microsoft Learn)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/virtual-network-manager/concept-limitations" target="_blank">Limitations with Azure Virtual Network Manager (Microsoft Learn)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/virtual-network-manager/faq" target="_blank">Azure Virtual Network Manager FAQ (Microsoft Learn)</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/virtual-network-manager/" target="_blank">Azure Virtual Network Manager 料金ページ</a></li>
+        </ul>
+        <p style="margin-top: 16px;">出典: Azure News Summary レポート (2026-09-17) — Azure Virtual Network Manager: High-scale mesh の一般提供開始</p>
+        <p>本インフォグラフィックは Azure 公式情報をもとに自動生成されています。最新情報は公式ドキュメントをご確認ください。</p>
+    </footer>
+
+</div>
+</body>
+</html>

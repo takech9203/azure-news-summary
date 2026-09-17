@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-09-17 - Azure Virtual Network Manager: High-scale mesh (高スケールメッシュ) の一般提供開始](2026/2026-09-17-vnet-manager-high-scale-mesh.md)
+- [2026-09-17 - Azure Payment HSM: Azure Payments HSM v2 (Public Preview)](2026/2026-09-17-payments-hsm-v2.md)
 - [2026-09-16 - Microsoft Sentinel: SAP コンテナイメージの削除 (2026 年 10 月 14 日)](2026/2026-09-16-sentinel-sap-container-images-retirement.md)
 - [2026-09-16 - Azure Red Hat OpenShift: Hosted Control Planes (Public Preview)](2026/2026-09-16-aro-hosted-control-planes.md)
 - [2026-09-16 - Azure Database for PostgreSQL: PostgreSQL skills と MCP プラグイン (Public Preview)](2026/2026-09-16-postgresql-skills-mcp-plugin.md)
