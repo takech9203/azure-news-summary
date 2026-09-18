@@ -5,6 +5,13 @@
 
 ## 2026 年
 
+- [2026-09-18 - Foundry Agent Service: Foundry Routines (Public Preview)](2026/2026-09-18-foundry-agent-service-routines.md)
+- [2026-09-18 - Microsoft Foundry: Agent 365 における Foundry エージェントの有効化・無効化コントロール](2026/2026-09-18-foundry-agent-365-enable-disable.md)
+- [2026-09-18 - Microsoft Foundry: Microsoft 365 Copilot / Teams へのエージェント公開が一般提供 (GA)](2026/2026-09-18-foundry-agents-m365-copilot-teams.md)
+- [2026-09-18 - Azure Virtual Machines: Mdsv4 / Msv4 シリーズ (SAP 向けメモリ最適化 VM) パブリックプレビュー](2026/2026-09-18-mdsv4-msv4-sap-vms.md)
+- [2026-09-18 - Azure Database for PostgreSQL: Elastic Clusters の PostgreSQL 18 サポート (GA)](2026/2026-09-18-postgresql-elastic-clusters-pg18.md)
+- [2026-09-18 - Azure Database for PostgreSQL Flexible Server: 論理レプリケーションスロット同期ステータスメトリックが一般提供 (GA)](2026/2026-09-18-postgresql-replication-slot-sync-metric.md)
+- [2026-09-18 - Microsoft Foundry: ホステッドエージェントのネットワーク Egress 制御 (Public Preview)](2026/2026-09-18-foundry-hosted-agents-egress-controls.md)
 - [2026-09-17 - Azure Virtual Network Manager: High-scale mesh (高スケールメッシュ) の一般提供開始](2026/2026-09-17-vnet-manager-high-scale-mesh.md)
 - [2026-09-17 - Azure Payment HSM: Azure Payments HSM v2 (Public Preview)](2026/2026-09-17-payments-hsm-v2.md)
 - [2026-09-16 - Microsoft Sentinel: SAP コンテナイメージの削除 (2026 年 10 月 14 日)](2026/2026-09-16-sentinel-sap-container-images-retirement.md)

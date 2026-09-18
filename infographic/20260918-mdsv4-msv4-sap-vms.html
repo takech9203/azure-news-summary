@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure VM Mdsv4 / Msv4 シリーズ (SAP 向けメモリ最適化 VM) パブリックプレビュー</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 240px;
+    height: 240px;
+    background: rgba(80, 230, 255, 0.15);
+    border-radius: 50%;
+}
+
+.header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-preview {
+    background: var(--ms-yellow);
+    color: var(--ms-text-primary);
+}
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.92;
+    position: relative;
+    z-index: 1;
+}
+
+.release-date {
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 5px 14px;
+    border-radius: 16px;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+.lead {
+    font-size: 15px;
+    margin-bottom: 12px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-800));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.3;
+}
+
+.stat-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before, .after {
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul {
+    padding-left: 20px;
+    font-size: 14px;
+}
+
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 6px;
+}
+
+.feature-content p, .feature-content ul {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content ul { padding-left: 20px; }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--ms-border);
+}
+
+tbody tr:nth-child(even) { background: var(--ms-blue-100); }
+
+.ok { color: var(--ms-green); font-weight: 700; }
+.ng { color: var(--ms-red); font-weight: 700; }
+.limited { color: var(--ms-orange); font-weight: 700; }
+
+.table-note {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    margin-top: 6px;
+}
+
+/* ===== Two-column merit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+    border-top: 4px solid var(--azure-blue);
+}
+
+.merit-card h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin-bottom: 8px; }
+
+/* ===== Warning list ===== */
+.warning-box {
+    background: #FFF8E7;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.warning-box ul { padding-left: 20px; font-size: 14px; }
+.warning-box li { margin-bottom: 8px; }
+
+/* ===== Use cases ===== */
+.usecase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.usecase-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 18px;
+    border-top: 4px solid var(--ms-purple);
+}
+
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+
+.usecase-card p { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Related services ===== */
+.related-card {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.related-card .name {
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    white-space: nowrap;
+}
+
+/* ===== Links ===== */
+.link-list { list-style: none; }
+
+.link-list li {
+    margin-bottom: 10px;
+    padding-left: 26px;
+    position: relative;
+    font-size: 14px;
+}
+
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-size: 15px;
+}
+
+/* ===== Code (rule kept for safety) ===== */
+.code-block,
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Tags ===== */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ===== Footer ===== */
+.footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    font-size: 13px;
+}
+
+.footer h3 {
+    font-size: 15px;
+    margin-bottom: 10px;
+    color: var(--azure-light-blue);
+}
+
+.footer ul { list-style: none; }
+.footer li { margin-bottom: 6px; }
+.footer a { color: #9CDCFE; }
+.footer .credit {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    opacity: 0.85;
+}
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="header-meta">
+            <span class="service-badge">🖥️ Azure Virtual Machines</span>
+            <span class="badge badge-preview">In Preview</span>
+            <span class="release-date">📅 リリース日: 2026-09-18</span>
+        </div>
+        <h1>Mdsv4 / Msv4 シリーズ<br>SAP 向けメモリ最適化 VM がパブリックプレビュー</h1>
+        <p class="subtitle">第 6 世代 Intel® Xeon® Scalable プロセッサ (Granite Rapids) + Azure Boost 搭載。最大約 4 TB メモリの Medium Memory M シリーズ最新世代</p>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p class="lead">SAP などのメモリ集約型ワークロード向けに設計されたメモリ最適化 VM シリーズ「<strong>Mdsv4</strong>」および「<strong>Msv4</strong>」(Medium Memory) がパブリックプレビューになりました。両シリーズは第 6 世代 Intel Xeon Scalable プロセッサ (Granite Rapids) をベースとし、高度なセキュリティ機能と最新の <strong>Azure Boost</strong> テクノロジーで強化されています。</p>
+        <p class="lead">最大 4 TB の RAM (16〜256 vCPU、256〜3,892 GiB メモリ) を提供し、Ultra Disk および Premium SSD v2 を NVMe インターフェイスで利用することで、リモートディスクストレージに対して最大 225,000 IOPS / 5.5 GBps のスループットを実現します。ネットワーク性能は前世代比で 50% 向上しています。</p>
+
+        <div class="highlight-box">
+            💡 <strong>2 つのシリーズの違いはローカル (一時) ストレージの有無</strong><br>
+            <strong>Mdsv4</strong>: ローカル NVMe 一時ディスク付き (最大 2 基、合計最大 8,800 GiB、読み取り最大 2,000,000 IOPS)<br>
+            <strong>Msv4</strong>: ローカルディスクなしの構成
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">最大 4 TB</div>
+                <div class="stat-label">メモリ (256〜3,892 GiB)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">225,000</div>
+                <div class="stat-label">リモートディスク最大 IOPS<br>(5.5 GBps)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">+50%</div>
+                <div class="stat-label">ネットワーク性能<br>(前世代比・最大 50,000 Mbps)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">16〜256</div>
+                <div class="stat-label">vCPU (全 8 サイズ)</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>従来世代の M シリーズ (Medium Memory) では、リモートディスクストレージの IOPS / スループット性能に上限があり、大規模 SAP ワークロードの I/O 要件がボトルネックになる場合があった</li>
+                    <li>ネットワーク帯域も前世代の水準にとどまっていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>NVMe インターフェイス経由の Ultra Disk / Premium SSD v2 により、リモートディスクで最大 225,000 IOPS / 5.5 GBps を実現</li>
+                    <li>ネットワーク性能が前世代比 50% 向上 (最大 50,000 Mbps、MANA インターフェイス対応)</li>
+                    <li>第 6 世代 Intel Xeon Scalable プロセッサと Azure Boost による性能・セキュリティの強化</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    User([👤 SAP ユーザー / アプリケーション層])
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph VM["🖥️ Mdsv4 / Msv4 VM (プレビュー)"]
+            CPU["⚙️ 第 6 世代 Intel Xeon<br/>16〜256 vCPU"]
+            MEM["🧠 メモリ 256〜3,892 GiB<br/>(最大約 4 TB)"]
+            Local["💾 ローカル NVMe 一時ディスク<br/>(Mdsv4 のみ・最大 200 万 IOPS)"]
+        end
+        Boost["🚀 Azure Boost"]
+        Net["🌐 MANA ネットワーク<br/>最大 50,000 Mbps (前世代比 +50%)"]
+        Disk[("🗄️ Ultra Disk / Premium SSD v2<br/>NVMe 最大 225,000 IOPS / 5.5 GBps")]
+    end
+    User --> Net --> VM
+    Boost --> VM
+    VM --> Disk
+            </pre>
+        </div>
+        <p class="diagram-caption">SAP ワークロードを Mdsv4 / Msv4 VM 上で実行し、Azure Boost と MANA による高速ネットワーク、NVMe 経由の Ultra Disk / Premium SSD v2 による高性能リモートストレージを利用する構成</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-content">
+                <h4>1. 第 6 世代 Intel Xeon Scalable プロセッサ (Granite Rapids)</h4>
+                <p>16〜256 vCPU、256〜3,892 GiB メモリ (最大約 4 TB) の 8 サイズを提供</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗄️</div>
+            <div class="feature-content">
+                <h4>2. NVMe インターフェイスによる高性能リモートストレージ</h4>
+                <p>Ultra Disk / Premium SSD v2 利用時に最大 225,000 IOPS / 5.5 GBps スループット。最大 64 データディスクを接続可能</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>3. ネットワーク性能の向上</h4>
+                <p>前世代比 50% のネットワーク性能向上、最大 50,000 Mbps・8 NIC。NetVSC / MANA (Microsoft Azure Network Adapter) インターフェイスに対応</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>4. Azure Boost と高度なセキュリティ機能</h4>
+                <p>最新の Azure Boost テクノロジーとセキュリティ強化を搭載 (公式発表より)</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">💾</div>
+            <div class="feature-content">
+                <h4>5. ローカル NVMe 一時ディスク (Mdsv4)</h4>
+                <p>サイズに応じて 550〜4,400 GiB のローカル NVMe ディスクを 1〜2 基搭載。最大でランダム読み取り 2,000,000 IOPS / シーケンシャル読み取り 11.2 GBps</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+
+        <h3 style="color: var(--azure-dark-blue); margin-bottom: 8px;">シリーズ共通</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>詳細</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>プロセッサ</strong></td><td>第 6 世代 Intel Xeon Scalable (Granite Rapids) [x86-64]</td></tr>
+                    <tr><td><strong>vCPU</strong></td><td>16〜256</td></tr>
+                    <tr><td><strong>メモリ</strong></td><td>256〜3,892 GiB</td></tr>
+                    <tr><td><strong>リモートストレージ</strong></td><td>最大 64 ディスク、20,000〜225,000 IOPS、最大 5.5 GBps (Ultra Disk / Premium SSD v2、NVMe)</td></tr>
+                    <tr><td><strong>ネットワーク</strong></td><td>最大 8 NIC、4,500〜50,000 Mbps (NetVSC、MANA)</td></tr>
+                    <tr><td><strong>ローカルストレージ</strong></td><td>Mdsv4: 1〜2 基 (550〜4,400 GiB/基)、Msv4: なし</td></tr>
+                    <tr><td><strong>世代</strong></td><td>Generation 2 VM のみサポート</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 20px 0 8px;">サイズ一覧 (vCPU / メモリ)</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Mdsv4 サイズ</th><th>Msv4 サイズ</th><th>vCPU</th><th>メモリ (GiB)</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Standard_M16lds_v4</td><td>Standard_M16ls_v4</td><td>16</td><td>256</td></tr>
+                    <tr><td>Standard_M32lds_v4</td><td>Standard_M32ls_v4</td><td>32</td><td>512</td></tr>
+                    <tr><td>Standard_M48lds_v4</td><td>Standard_M48ls_v4</td><td>48</td><td>768</td></tr>
+                    <tr><td>Standard_M64lds_v4</td><td>Standard_M64ls_v4</td><td>64</td><td>1,024</td></tr>
+                    <tr><td>Standard_M96lds_v4</td><td>Standard_M96ls_v4</td><td>96</td><td>1,536</td></tr>
+                    <tr><td>Standard_M128lds_v4</td><td>Standard_M128ls_v4</td><td>128</td><td>1,944</td></tr>
+                    <tr><td>Standard_M192lds_v4</td><td>Standard_M192ls_v4</td><td>192</td><td>3,072</td></tr>
+                    <tr><td>Standard_M256lds_v4</td><td>Standard_M256ls_v4</td><td>256</td><td>3,892</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 20px 0 8px;">機能サポート状況</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>機能</th><th>Mdsv4</th><th>Msv4</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Premium Storage / キャッシュ</td><td class="ok">✅ サポート</td><td class="ok">✅ サポート</td></tr>
+                    <tr><td>Accelerated Networking</td><td class="ok">✅ サポート</td><td class="ok">✅ サポート</td></tr>
+                    <tr><td>Ephemeral OS Disk</td><td class="ok">✅ サポート</td><td class="ng">❌ 非サポート</td></tr>
+                    <tr><td>Live Migration</td><td class="limited">⚠️ 限定サポート</td><td class="limited">⚠️ 限定サポート</td></tr>
+                    <tr><td>Write Accelerator</td><td class="ng">❌ 非サポート</td><td class="ng">❌ 非サポート</td></tr>
+                    <tr><td>Hibernation / Nested Virtualization</td><td class="ng">❌ 非サポート</td><td class="ng">❌ 非サポート</td></tr>
+                    <tr><td>Generation 1 VM</td><td class="ng">❌ 非サポート</td><td class="ng">❌ 非サポート</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">✨</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>最大約 4 TB のメモリにより、大規模な SAP などのメモリ集約型ワークロードをクラウド上で実行可能</li>
+                    <li>前世代からの性能向上 (特にストレージ I/O とネットワーク) により、同規模構成での処理能力向上が期待できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>NVMe インターフェイスによる Ultra Disk / Premium SSD v2 の高スループット (最大 5.5 GBps) で、データベースの I/O ボトルネックを緩和</li>
+                    <li>MANA 対応によるネットワーク性能の向上 (前世代比 50%)</li>
+                    <li>Mdsv4 のローカル NVMe ディスクは一時領域・キャッシュ用途で非常に高い IOPS を提供</li>
+                    <li>ワークロード特性に応じてローカルディスクあり (Mdsv4) / なし (Msv4) を選択可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li><strong>パブリックプレビュー段階</strong>のため、本番 SAP 環境への適用は GA まで推奨されない</li>
+                <li><strong>Write Accelerator は非サポート</strong> (従来の M シリーズで利用していた場合は設計の見直しが必要。最大性能を得るには NVMe 経由の Ultra Disk / Premium SSD v2 の利用が前提)</li>
+                <li><strong>Generation 2 VM のみサポート</strong> (Generation 1 イメージは利用不可)</li>
+                <li>Hibernation、Nested Virtualization、Memory Preserving Updates は非サポート</li>
+                <li>Mdsv4 のローカル NVMe 一時ディスクは raw NVMe デバイスとして提示されるため、利用前に初期化とフォーマットが必要</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== 料金・リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金・利用可能リージョン</h2>
+        <div class="usecase-grid">
+            <div class="usecase-card">
+                <h4>💰 料金</h4>
+                <p>プレビュー時点の料金は公式ページで確認してください。</p>
+                <ul class="link-list" style="margin-top: 10px;">
+                    <li><a href="https://azure.microsoft.com/pricing/details/virtual-machines/" target="_blank">Virtual Machines の料金</a></li>
+                    <li><a href="https://azure.microsoft.com/pricing/calculator/" target="_blank">料金計算ツール</a></li>
+                </ul>
+            </div>
+            <div class="usecase-card">
+                <h4>🌍 利用可能リージョン</h4>
+                <p>公式ドキュメントでリージョン別の提供状況を確認してください。</p>
+                <ul class="link-list" style="margin-top: 10px;">
+                    <li><a href="https://azure.microsoft.com/global-infrastructure/services/?products=virtual-machines" target="_blank">リージョン別の利用可能な製品</a></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card">
+            <span class="name">🗄️ Ultra Disk / Premium SSD v2</span>
+            <span>NVMe インターフェイス経由で最大 225,000 IOPS / 5.5 GBps を実現するリモートストレージ。本シリーズの性能を引き出す前提となるディスクタイプ</span>
+        </div>
+        <div class="related-card">
+            <span class="name">🚀 Azure Boost</span>
+            <span>ストレージ・ネットワーク処理をホスト専用ハードウェアにオフロードする技術。本シリーズに最新版が搭載</span>
+        </div>
+        <div class="related-card">
+            <span class="name">🌐 MANA (Microsoft Azure Network Adapter)</span>
+            <span>次世代ネットワークインターフェイス。Accelerated Networking と組み合わせて高帯域を実現</span>
+        </div>
+        <div class="related-card">
+            <span class="name">🖥️ Msv3 / Mdsv3 シリーズ</span>
+            <span>前世代の Medium Memory M シリーズ。移行・比較検討の対象</span>
+        </div>
+        <div class="related-card">
+            <span class="name">🧩 Azure Center for SAP solutions</span>
+            <span>Azure 上での SAP ワークロードのデプロイ・管理サービス</span>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Mdsv4 / Msv4 シリーズは、第 6 世代 Intel Xeon Scalable プロセッサと Azure Boost を基盤に、<strong>最大約 4 TB のメモリ</strong>と NVMe 経由の高性能ストレージ (<strong>最大 225,000 IOPS / 5.5 GBps</strong>)、<strong>前世代比 50% 向上のネットワーク</strong>を提供する SAP 向けメモリ最適化 VM です。</p>
+            <p style="margin-top: 10px;">現在パブリックプレビュー段階のため、大規模 SAP 環境を運用中または移行を検討中の組織は、非本番環境での性能検証を開始し、Write Accelerator 非サポートなどの設計上の変更点を確認しておくことを推奨します。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Virtual Machines</span>
+            <span class="tag">Compute</span>
+            <span class="tag">SAP</span>
+            <span class="tag">Mdsv4</span>
+            <span class="tag">Msv4</span>
+            <span class="tag">メモリ最適化</span>
+            <span class="tag">Azure Boost</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <h3>📚 出典・参考リンク</h3>
+        <ul>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=571530" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/mdsv4-series" target="_blank">Mdsv4 シリーズ (Microsoft Learn)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/msv4-series" target="_blank">Msv4 シリーズ (Microsoft Learn)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/azure/virtual-machines/sizes/overview" target="_blank">VM サイズの概要 (Microsoft Learn)</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/virtual-machines/" target="_blank">料金ページ</a></li>
+        </ul>
+        <div class="credit">
+            出典: Azure News Summary レポート (2026-09-18) — Azure Virtual Machines: Mdsv4 / Msv4 シリーズ (SAP 向けメモリ最適化 VM) パブリックプレビュー
+        </div>
+    </footer>
+
+</div>
+
+<!-- Mermaid.js -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+</body>
+</html>

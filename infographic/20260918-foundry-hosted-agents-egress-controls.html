@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microsoft Foundry: ホステッドエージェントのネットワーク Egress 制御 (Public Preview)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-purple) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "🛡️";
+    position: absolute;
+    right: 24px;
+    bottom: -12px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+.hero .meta-badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+.hero .subtitle { font-size: 16px; opacity: 0.9; }
+.hero .date { margin-top: 16px; font-size: 14px; opacity: 0.85; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+.highlight-box strong { color: var(--ms-blue-800); }
+
+.note-box {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 6px 0; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+.diagram-caption {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 20px; margin-top: 4px; }
+.feature-content code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* ===== Action pills ===== */
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+.action-pill {
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    color: #FFFFFF;
+}
+.action-pill .name { font-size: 18px; font-weight: 700; font-family: 'Cascadia Code', 'Consolas', monospace; }
+.action-pill .desc { font-size: 13px; margin-top: 4px; opacity: 0.95; }
+.pill-allow { background: var(--ms-green); }
+.pill-deny { background: var(--ms-red); }
+.pill-transform { background: var(--ms-blue-700); }
+.pill-rewrite { background: var(--ms-purple); }
+
+/* ===== Mode cards ===== */
+.mode-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+.mode-card {
+    border-radius: 10px;
+    padding: 18px;
+    border: 2px solid;
+}
+.mode-audit { border-color: var(--ms-blue-500); background: var(--ms-blue-100); }
+.mode-enforce { border-color: var(--ms-orange); background: #FFF4E5; }
+.mode-card h4 { font-size: 17px; margin-bottom: 6px; }
+.mode-audit h4 { color: var(--ms-blue-800); }
+.mode-enforce h4 { color: var(--ms-orange); }
+.mode-card p { font-size: 14px; }
+.mode-arrow {
+    grid-column: 1 / -1;
+    text-align: center;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    font-weight: 500;
+}
+
+/* ===== Table ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.spec-table th, .spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+}
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+.spec-table td:first-child { font-weight: 700; color: var(--ms-blue-800); white-space: nowrap; }
+.spec-table code {
+    background: var(--ms-surface-tertiary);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+.table-wrap { overflow-x: auto; }
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 10px;
+    padding: 18px;
+}
+.merit-business { background: #E8F5E9; border: 2px solid var(--ms-green); }
+.merit-tech { background: var(--ms-blue-100); border: 2px solid var(--azure-blue); }
+.merit-card h4 { font-size: 16px; margin-bottom: 10px; }
+.merit-business h4 { color: var(--ms-green); }
+.merit-tech h4 { color: var(--ms-blue-800); }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin: 6px 0; }
+
+.caution-card {
+    background: #FFF3E0;
+    border: 2px solid var(--ms-orange);
+    border-radius: 10px;
+    padding: 18px;
+    margin: 16px 0;
+}
+.caution-card h4 { color: var(--ms-orange); font-size: 16px; margin-bottom: 10px; }
+.caution-card ul { padding-left: 20px; font-size: 14px; }
+.caution-card li { margin: 6px 0; }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.usecase-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.usecase-num {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.usecase-header h4 { font-size: 17px; color: var(--azure-dark-blue); }
+.usecase-body { font-size: 14px; }
+.usecase-row { display: flex; gap: 10px; margin: 8px 0; }
+.usecase-label {
+    flex-shrink: 0;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-weight: 700;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    height: fit-content;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+.usecase-row code {
+    background: var(--ms-surface-tertiary);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* ===== Related / Links ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 16px;
+}
+.related-card h4 { font-size: 15px; color: var(--ms-purple); margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); }
+
+.link-list { list-style: none; padding: 0; }
+.link-list li {
+    padding: 10px 14px;
+    margin: 8px 0;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.link-list a { color: var(--ms-blue-700); text-decoration: none; font-weight: 500; word-break: break-all; }
+.link-list a:hover { text-decoration: underline; }
+
+a { color: var(--ms-blue-700); }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* ===== Code block ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* ===== Tags ===== */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    border: 1px solid var(--ms-border);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 24px 0;
+    font-size: 13px;
+}
+.footer h3 { font-size: 15px; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 6px; }
+.footer ul { list-style: none; }
+.footer li { margin: 6px 0; }
+.footer a { color: var(--azure-light-blue); text-decoration: none; word-break: break-all; }
+.footer a:hover { text-decoration: underline; }
+.footer .credit { margin-top: 16px; opacity: 0.8; font-size: 12px; }
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .hero h1 { font-size: 22px; }
+    .before-after, .mode-grid, .merit-grid { grid-template-columns: 1fr; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="meta-badges">
+            <span class="service-badge">Microsoft Foundry</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>ホステッドエージェントの<br>ネットワーク Egress 制御</h1>
+        <p class="subtitle">Network egress controls for hosted agents ― アウトバウンド通信を FQDN ルールでガバナンス</p>
+        <p class="date">📅 リリース日: 2026-09-18 (Public Preview)</p>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Microsoft Foundry において、ホステッドエージェント (hosted agent) が行うアウトバウンド (外向き) 接続をガバナンスする「ネットワーク Egress 制御」がパブリックプレビューとして発表されました。</p>
+        <div class="highlight-box">
+            宛先ホストにマッチする<strong>順序付きルール</strong>を作成可能。<strong>FQDN</strong> で指定でき、<code>*.contoso.com</code> のような<strong>ワイルドカード</strong>もサポート。アクションは <strong>allow / deny / transform (ヘッダー変換) / rewrite (宛先書き換え)</strong> の 4 種類。ルールはエージェントの <strong>Responsible AI ポリシー</strong>に保持され、トラフィックがランタイムを出る前に Foundry マネージドの<strong>エージェントサンドボックス内で強制</strong>されるため、基本的な許可リスト運用に別途ネットワークアプライアンスは不要です。
+        </div>
+        <p>適用モードは 2 種類。<strong>audit</strong> モードは拒否対象となるはずの判定をブロックせずログのみ記録し、<strong>enforce</strong> モードは拒否対象のトラフィックを実際にブロックします。実トラフィックを観察してから段階的に強制を有効化する運用が可能です。すべての Egress 判定は監査用に <strong>Application Insights</strong> へ出力されます。</p>
+        <div class="note-box">⚠️ 本プレビューは評価目的であり、本番 SLA の対象外です。</div>
+
+        <h3 class="subsection-title">Before / After</h3>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>アウトバウンド通信を宛先単位で制御するには、Azure Firewall の FQDN 許可リストや NSG など、プライベートネットワーク (BYO VNet) 構成側での対策が必要だった</li>
+                    <li>エージェントがどの外部ホストへ接続しているかを、エージェントランタイムのレイヤーで一元的に監査する仕組みがなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>FQDN (ワイルドカード対応) にマッチする順序付きルールで、allow / deny / ヘッダー変換 / 宛先書き換えをエージェントサンドボックス内で直接強制</li>
+                    <li>基本的な許可リスト運用であれば、別途のネットワークアプライアンスが不要に</li>
+                    <li>audit モードで実トラフィックへの影響を事前観測、すべての Egress 判定が Application Insights に記録され、監査・可観測性が向上</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Admin([👩‍💻 管理者]) -->|"Foundry ポータルの Guardrails で&lt;br&gt;Egress ルールを設定"| Policy
+    subgraph Foundry["☁️ Microsoft Foundry (マネージド)"]
+        Policy["📜 Responsible AI ポリシー&lt;br&gt;(順序付き Egress ルール)"]
+        subgraph Sandbox["🔒 エージェントサンドボックス (セキュリティ境界)"]
+            Agent["🤖 ホステッドエージェント"]
+            Filter{"🛡️ Egress 制御&lt;br&gt;audit / enforce"}
+        end
+        Logs[("📊 Application Insights")]
+    end
+    Policy -.->|ルール適用| Filter
+    Agent -->|アウトバウンド要求| Filter
+    Filter -->|"✅ allow / 変換 / 書き換え"| Ext["🌐 許可された宛先&lt;br&gt;(例: *.contoso.com)"]
+    Filter -->|"⛔ deny (enforce 時)"| Blocked["🚫 ブロック"]
+    Filter -->|全 Egress 判定をログ| Logs
+            </pre>
+        </div>
+        <p class="diagram-caption">Egress ルールは Responsible AI ポリシーに保持され、トラフィックがランタイムを出る前に Foundry マネージドのサンドボックス内 (セキュリティ境界) で評価されます。すべての判定は Application Insights に記録されます。</p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔢</div>
+            <div class="feature-content">
+                <h4>1. 順序付き Egress ルール</h4>
+                <ul>
+                    <li>宛先ホストにマッチするルールを順序付きで作成</li>
+                    <li>FQDN 指定に対応し、<code>*.contoso.com</code> のようなワイルドカードも使用可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎛️</div>
+            <div class="feature-content">
+                <h4>2. 複数のアクション</h4>
+                <div class="action-grid">
+                    <div class="action-pill pill-allow"><div class="name">allow</div><div class="desc">通信を許可</div></div>
+                    <div class="action-pill pill-deny"><div class="name">deny</div><div class="desc">通信を拒否</div></div>
+                    <div class="action-pill pill-transform"><div class="name">transform</div><div class="desc">アウトバウンド要求ヘッダーを変換</div></div>
+                    <div class="action-pill pill-rewrite"><div class="name">rewrite</div><div class="desc">宛先を書き換え</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>3. 2 つの適用モード</h4>
+                <div class="mode-grid">
+                    <div class="mode-card mode-audit">
+                        <h4>👁️ audit</h4>
+                        <p>拒否対象の判定をブロックせず<strong>ログのみ記録</strong> (影響を事前観測)</p>
+                    </div>
+                    <div class="mode-card mode-enforce">
+                        <h4>🚧 enforce</h4>
+                        <p>拒否対象のトラフィックを<strong>実際にブロック</strong></p>
+                    </div>
+                    <div class="mode-arrow">audit で観測 ➡️ 影響確認後に enforce へ段階的に移行</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>4. サンドボックス内での強制</h4>
+                <ul>
+                    <li>ルールは Foundry マネージドのエージェントサンドボックス内で、トラフィックがランタイムを出る前に強制される</li>
+                    <li>基本的な許可リスト運用に別途のネットワークアプライアンスが不要</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>5. Application Insights への監査ログ出力</h4>
+                <p>すべての Egress 判定が Application Insights に出力され、監査に利用可能</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Spec ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrap">
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象</td><td>Microsoft Foundry のホステッドエージェント</td></tr>
+            <tr><td>ルールの形式</td><td>宛先ホストにマッチする順序付きルール</td></tr>
+            <tr><td>宛先指定</td><td>FQDN (ワイルドカード <code>*.contoso.com</code> 形式に対応)</td></tr>
+            <tr><td>アクション</td><td>allow / deny / ヘッダー変換 (transform) / 宛先書き換え (rewrite)</td></tr>
+            <tr><td>適用モード</td><td>audit (ログのみ) / enforce (ブロック)</td></tr>
+            <tr><td>ルールの保持場所</td><td>エージェントの Responsible AI ポリシー</td></tr>
+            <tr><td>強制ポイント</td><td>Foundry マネージドのエージェントサンドボックス内 (ランタイムからの送出前)</td></tr>
+            <tr><td>ログ出力先</td><td>Application Insights (すべての Egress 判定)</td></tr>
+            <tr><td>設定場所</td><td>Foundry ポータルの Guardrails</td></tr>
+            <tr><td>SLA</td><td>プレビューのため本番 SLA 対象外 (評価用途)</td></tr>
+        </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+        <h3 class="subsection-title">Azure Portal (Foundry ポータル)</h3>
+        <div class="highlight-box">
+            Foundry ポータルの <strong>Guardrails</strong> 配下で Egress 制御を構成します。
+        </div>
+        <p style="font-size:14px;">詳細な手順は公式ドキュメント (<a href="https://learn.microsoft.com/en-us/azure/foundry/" target="_blank" rel="noopener">Microsoft Foundry ドキュメント</a>) を参照してください (本アップデート時点でリンク先の専用ドキュメントページは公開準備中の可能性があります)。</p>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>エージェントによる意図しない外部送信 (データ漏えいリスク) を宛先単位でガバナンスでき、コンプライアンス要件に対応しやすくなる</li>
+                    <li>基本的な許可リスト運用に追加のネットワークアプライアンスが不要となり、構成・運用コストを抑えられる</li>
+                    <li>audit モードにより、業務影響を確認しながら段階的に強制へ移行できる</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>ワイルドカード FQDN による柔軟なルール定義が可能</li>
+                    <li>allow / deny に加えてヘッダー変換・宛先書き換えといった高度なアクションを利用可能</li>
+                    <li>すべての Egress 判定が Application Insights に記録され、可観測性・監査性が高い</li>
+                    <li>ルールが Responsible AI ポリシーとしてエージェントに紐づくため、ポリシーとエージェントのライフサイクルを一体で管理できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-card">
+            <h4>知っておくべき制約</h4>
+            <ul>
+                <li>パブリックプレビューであり、評価目的の提供。本番 SLA の対象外</li>
+                <li>設定は Foundry ポータルの Guardrails からの構成が案内されており、CLI / API での構成方法は本アップデート時点の公式情報では確認できず</li>
+                <li>高度なネットワーク要件 (レイヤー 3/4 制御、TLS インスペクションなど) には、引き続き BYO VNet + Azure Firewall / NSG などの構成が必要になる場合がある</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">
+                <div class="usecase-num">1</div>
+                <h4>社内ドメインのみへのアウトバウンド許可リスト</h4>
+            </div>
+            <div class="usecase-body">
+                <div class="usecase-row"><span class="usecase-label">シナリオ</span><span>ホステッドエージェントが社内 API (<code>*.contoso.com</code>) のみと通信することを保証し、それ以外の宛先への接続をブロックしたい。</span></div>
+                <div class="usecase-row"><span class="usecase-label">実装例</span><span>Foundry ポータルの Guardrails で、<code>*.contoso.com</code> への allow ルールと、それ以外を deny するルールを順序付きで作成する。</span></div>
+                <div class="usecase-row"><span class="usecase-label">効果</span><span>エージェントの外部通信を承認済みドメインに限定し、意図しないデータ送信を防止できる。</span></div>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">
+                <div class="usecase-num">2</div>
+                <h4>audit モードによる段階的な適用</h4>
+            </div>
+            <div class="usecase-body">
+                <div class="usecase-row"><span class="usecase-label">シナリオ</span><span>既存のエージェントに Egress 制御を導入したいが、業務影響が不明なため、まず実トラフィックを観測したい。</span></div>
+                <div class="usecase-row"><span class="usecase-label">実装例</span><span>ルールを audit モードで適用し、Application Insights に記録される「拒否されるはずだった判定 (would-deny)」を分析。影響がないことを確認後、enforce モードへ切り替える。</span></div>
+                <div class="usecase-row"><span class="usecase-label">効果</span><span>サービス断のリスクを抑えつつ、確実に強制モードへ移行できる。</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing & Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金・利用可能リージョン</h2>
+        <h3 class="subsection-title">料金</h3>
+        <p style="font-size:14px;">本アップデートの公式情報では、Egress 制御機能自体の料金は確認できませんでした。Microsoft Foundry の料金は以下を参照してください。</p>
+        <ul class="link-list">
+            <li>💳 <a href="https://azure.microsoft.com/pricing/details/ai-foundry/" target="_blank" rel="noopener">Microsoft Foundry 料金ページ</a></li>
+        </ul>
+        <h3 class="subsection-title">利用可能リージョン</h3>
+        <p style="font-size:14px;">本アップデートの公式情報では、対象リージョンは確認できませんでした。以下のドキュメントを参照してください。</p>
+        <ul class="link-list">
+            <li>🌍 <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/limits-quotas-regions" target="_blank" rel="noopener">Foundry Agent Service の制限・クォータ・リージョン</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>📊 Application Insights</h4>
+                <p>すべての Egress 判定のログ出力先。監査・分析に使用</p>
+            </div>
+            <div class="related-card">
+                <h4>🔌 Foundry Agent Service のプライベートネットワーク (BYO VNet)</h4>
+                <p>ホステッドエージェントを顧客 VNet の委任サブネットに接続し、プライベートエンドポイント経由で顧客リソースにアクセスする構成。ネットワーク層での分離が必要な場合に本機能と補完的に使用</p>
+            </div>
+            <div class="related-card">
+                <h4>🔥 Azure Firewall / ネットワークセキュリティグループ (NSG)</h4>
+                <p>BYO VNet 構成における従来の FQDN 許可リスト・アウトバウンド制御手段。ネットワークアプライアンスレベルの制御が必要な場合の選択肢</p>
+            </div>
+            <div class="related-card">
+                <h4>🛡️ Foundry Guardrails / Responsible AI ポリシー</h4>
+                <p>Egress ルールの設定場所・保持場所。エージェントの安全性ポリシーと一体で管理</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Microsoft Foundry のホステッドエージェントに対し、<strong>FQDN ベース (ワイルドカード対応) の順序付きルール</strong>でアウトバウンド通信を <strong>allow / deny / ヘッダー変換 / 宛先書き換え</strong>できる Egress 制御がパブリックプレビューになりました。ルールは <strong>Responsible AI ポリシー</strong>としてエージェントサンドボックス内で強制され、<strong>追加のネットワークアプライアンスなしで許可リスト運用</strong>が可能です。<strong>audit モード</strong>と Application Insights への全判定ログにより、影響を観測しながら安全に enforce へ移行できます。エージェントのデータ漏えい対策やコンプライアンス対応を検討している場合は、<strong>まず audit モードでの評価から始めることを推奨</strong>します (プレビューのため本番 SLA 対象外である点に留意)。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Microsoft Foundry</span>
+            <span class="tag">AI + Machine Learning</span>
+            <span class="tag">ホステッドエージェント</span>
+            <span class="tag">ネットワークセキュリティ</span>
+            <span class="tag">Egress 制御</span>
+            <span class="tag">Guardrails</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <h3>📚 出典・参考リンク</h3>
+        <ul>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=571821" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/foundry/" target="_blank" rel="noopener">Microsoft Foundry ドキュメント</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/concepts/agents-networking-deep-dive" target="_blank" rel="noopener">Foundry Agent Service ネットワーキング詳解 (Microsoft Learn)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/foundry/agents/how-to/virtual-networks" target="_blank" rel="noopener">Foundry Agent Service のプライベートネットワーク設定 (Microsoft Learn)</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/ai-foundry/" target="_blank" rel="noopener">Microsoft Foundry 料金ページ</a></li>
+        </ul>
+        <p class="credit">Source: Azure News Summary Report (2026-09-18) — Microsoft Foundry: ホステッドエージェントのネットワーク Egress 制御 (Public Preview)</p>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
