@@ -5,6 +5,9 @@
 
 ## 2026 年
 
+- [2026-09-21 - Azure Functions: PowerShell 7.6 サポートの一般提供開始 (GA)](2026/2026-09-21-functions-powershell-7-6.md)
+- [2026-09-21 - Azure Sphere: Azure Sphere OS バージョン 26.09 の一般提供開始](2026/2026-09-21-azure-sphere-os-26-09.md)
+- [2026-09-21 - Visual Studio Code: Azure アプリ構築のためのガイド付き Copilot エクスペリエンス (Public Preview)](2026/2026-09-21-vscode-guided-copilot-azure-apps.md)
 - [2026-09-18 - Foundry Agent Service: Foundry Routines (Public Preview)](2026/2026-09-18-foundry-agent-service-routines.md)
 - [2026-09-18 - Microsoft Foundry: Agent 365 における Foundry エージェントの有効化・無効化コントロール](2026/2026-09-18-foundry-agent-365-enable-disable.md)
 - [2026-09-18 - Microsoft Foundry: Microsoft 365 Copilot / Teams へのエージェント公開が一般提供 (GA)](2026/2026-09-18-foundry-agents-m365-copilot-teams.md)
