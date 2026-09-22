@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-09-22 - Azure Functions: Node.js 22 サポート終了 (2027 年 4 月 30 日)](2026/2026-09-22-functions-nodejs-22-retirement.md)
+- [2026-09-22 - Azure Kubernetes Service (AKS): Flex Nodes for AKS (Public Preview)](2026/2026-09-22-aks-flex-nodes.md)
 - [2026-09-21 - Azure Functions: PowerShell 7.6 サポートの一般提供開始 (GA)](2026/2026-09-21-functions-powershell-7-6.md)
 - [2026-09-21 - Azure Sphere: Azure Sphere OS バージョン 26.09 の一般提供開始](2026/2026-09-21-azure-sphere-os-26-09.md)
 - [2026-09-21 - Visual Studio Code: Azure アプリ構築のためのガイド付き Copilot エクスペリエンス (Public Preview)](2026/2026-09-21-vscode-guided-copilot-azure-apps.md)
