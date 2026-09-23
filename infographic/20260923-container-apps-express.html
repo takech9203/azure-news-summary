@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Container Apps Express 一般提供開始 (GA) | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: rgba(80, 230, 255, 0.15);
+}
+.header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.92;
+    position: relative;
+    z-index: 1;
+}
+.release-date {
+    background: rgba(255, 255, 255, 0.18);
+    color: #FFFFFF;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.header .service-badge {
+    background: #FFFFFF;
+    color: var(--azure-dark-blue);
+    font-weight: 700;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* Sections */
+section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--azure-blue);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+p { margin-bottom: 12px; }
+section > p:last-child { margin-bottom: 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--azure-dark-blue); }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 32px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 14px; opacity: 0.9; margin-top: 6px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 15px; color: var(--azure-dark-blue); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+td.spec-key { font-weight: 700; color: var(--ms-blue-800); white-space: nowrap; }
+
+.tag-ok { color: var(--ms-green); font-weight: 700; }
+.tag-ng { color: var(--ms-red); font-weight: 700; }
+
+/* Use case cards */
+.usecase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 18px;
+}
+.usecase-card h4 {
+    font-size: 15px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-card p { font-size: 14px; margin-bottom: 10px; }
+.usecase-card .label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--ms-purple);
+    border-radius: 4px;
+    padding: 1px 8px;
+    margin-right: 6px;
+}
+.usecase-card .label.effect { background: var(--ms-green); }
+
+/* Merit / limitation lists */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 18px;
+    border: 1px solid var(--ms-border);
+}
+.merit-card.business { background: var(--ms-blue-100); border-left: 4px solid var(--azure-blue); }
+.merit-card.tech { background: #F3EEF9; border-left: 4px solid var(--ms-purple); }
+.merit-card h4 { margin-bottom: 10px; color: var(--azure-dark-blue); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 14px; margin-bottom: 8px; }
+
+.limitation-card {
+    background: #FFF8F0;
+    border: 1px solid var(--ms-orange);
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 16px;
+    margin: 10px 0;
+}
+.limitation-card h4 {
+    color: var(--ms-orange);
+    font-size: 14px;
+    margin-bottom: 4px;
+}
+.limitation-card p, .limitation-card ul { font-size: 14px; margin-bottom: 0; }
+.limitation-card ul { padding-left: 20px; }
+
+/* Region */
+.region-highlight {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 12px 0 16px;
+}
+.region-jp {
+    background: var(--ms-green);
+    color: #FFFFFF;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 14px;
+}
+.region-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.region-chip {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12.5px;
+}
+.region-chip.jp {
+    background: var(--ms-green);
+    color: #FFFFFF;
+    font-weight: 700;
+}
+
+/* Related services */
+.related-list { list-style: none; }
+.related-list li {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+.related-list li strong { color: var(--ms-blue-800); }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.link-list { list-style: none; }
+.link-list li {
+    margin-bottom: 8px;
+    font-size: 14px;
+    padding-left: 24px;
+    position: relative;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px;
+}
+.summary-box p { font-size: 15px; }
+.summary-box p:last-child { margin-bottom: 0; }
+
+/* Steps (adoption strategy) */
+.step-flow {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+}
+.step {
+    flex: 1;
+    min-width: 200px;
+    background: var(--ms-surface);
+    border: 2px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+    font-size: 14px;
+}
+.step strong { color: var(--azure-dark-blue); display: block; margin-bottom: 4px; }
+.step-arrow {
+    display: flex;
+    align-items: center;
+    font-size: 22px;
+    color: var(--azure-blue);
+    font-weight: 700;
+}
+
+/* Config method cards */
+.config-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+.config-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 16px;
+}
+.config-card h4 { color: var(--azure-dark-blue); font-size: 15px; margin-bottom: 8px; }
+.config-card p { font-size: 14px; margin-bottom: 0; }
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--azure-dark-blue);
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-size: 12.5px;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 20px 0 36px;
+}
+footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid, .config-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .step-flow { flex-direction: column; }
+    .step-arrow { justify-content: center; transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-meta">
+            <span class="service-badge">Azure Container Apps</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="release-date">📅 リリース日: 2026-09-23</span>
+        </div>
+        <h1>Azure Container Apps Express の一般提供開始 (GA)</h1>
+        <p class="subtitle">インフラの意思決定ゼロで、コンテナをゼロからハイパースケールまで。開発者と AI エージェントの両方の利用を想定して設計された初の Azure コンピュートプラットフォーム。</p>
+    </div>
+
+    <!-- 概要 -->
+    <section>
+        <h2>📋 概要</h2>
+        <p>Azure Container Apps Express が一般提供 (GA) となりました。Express は、インフラストラクチャに関する意思決定を行うことなく、ゼロからハイパースケールまでアプリケーションを起動・スケールできる、<strong>Azure 上で最もシンプルかつ高速なアプリケーション実行手段</strong>です。2026 年 5 月のパブリックプレビューを経て、今回 GA に到達しました。</p>
+        <p>Express は Azure Container Apps を大規模に運用してきた経験に基づいて設計されており、Web アプリ・API・エージェントを開発する開発者が求める「素早いデプロイ」「自動スケーリング」「複雑なインフラ設定の回避」を提供します。環境は数秒でセットアップされ、あらゆるトラフィック量に対応します。</p>
+        <div class="highlight-box">
+            <strong>💡 ポイント</strong>: オートスケーリング、秒単位課金、マネージド ID、シークレット管理、コンテナレジストリ統合、リビジョン管理、組み込みの可観測性といった本番環境レベルの「オピニオネイテッド (opinionated) な既定値」を提供。開発者は<strong>コンテナを持ち込むだけ</strong>で、残りはすべて Express が処理します。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">数秒</div>
+                <div class="stat-label">環境セットアップ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">数分</div>
+                <div class="stat-label">本番対応アプリ稼働<br>(従来は数時間)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0 → ∞</div>
+                <div class="stat-label">ゼロ〜ハイパースケール<br>自動スケーリング</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">43</div>
+                <div class="stat-label">GA 時点の利用可能<br>リージョン数</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>標準の Container Apps では、アプリのデプロイ前に <strong>Container Apps 環境のプロビジョニングを待つ</strong>必要があった</li>
+                    <li>スケーリングルール、ネットワーク、リソース割り当てなど<strong>多くのインフラ設定の意思決定</strong>が求められていた</li>
+                    <li>「とにかく早く」デプロイしたい開発者や AI エージェントにとって、設定項目の多さが<strong>本番稼働までの時間 (Time to Production) のボトルネック</strong>に</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>環境のプロビジョニングを待たずにコンテナアプリを直接作成可能 (ポータル利用時は軽量環境を自動作成)。<strong>数秒で環境セットアップ、数分で本番対応アプリが稼働</strong></li>
+                    <li>スケーリング・ネットワーク・リソース割り当てが<strong>本番対応の既定値で自動構成</strong>。ゼロ〜ハイパースケールの自動スケーリングとコールドスタート最適化が組み込み</li>
+                    <li>2026 年 5 月のプレビューから<strong>約 4 か月で GA</strong>。本番ワークロードでの利用が正式サポート</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section>
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Dev(["👩‍💻 開発者 / 🤖 AI エージェント"]) -->|コンテナイメージを指定| UI["🖥️ Express 専用管理 UI&lt;br&gt;(containerapps.azure.com)"]
+    User(["🌐 エンドユーザー"]) -->|HTTPS リクエスト| App
+    UI -->|数秒で自動プロビジョニング| App
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph Env["📦 Express 環境 (軽量・自動作成)"]
+            App["🚀 コンテナアプリ&lt;br&gt;(HTTP ファースト)"]
+            Scale["⚖️ オートスケール&lt;br&gt;0 〜 ハイパースケール"]
+            App <--> Scale
+        end
+        ACR[("🗃️ コンテナレジストリ&lt;br&gt;(ACR / パブリック)")] -->|イメージ Pull| App
+        App -->|ログ / メトリック| Mon["📊 Log Analytics /&lt;br&gt;Azure Monitor メトリック"]
+    end
+            </pre>
+        </div>
+        <p>開発者や AI エージェントはコンテナイメージを指定するだけで、Express が軽量環境を自動プロビジョニングし、本番対応の既定値 (オートスケール、可観測性など) を備えたアプリを数分で公開します。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section>
+        <h2>⚙️ 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>1. 高速な起動 (High-speed launch)</h4>
+                <p>インフラチューニング不要で数分以内にデプロイ可能。スケーリング動作は最初から組み込み済み。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>2. HTTP ファーストなワークロードの実行</h4>
+                <p>API、SaaS フロントエンド、AI ゲートウェイ、イベント駆動型 Web バックエンドなどの HTTP ワークロードに対応。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <div class="feature-content">
+                <h4>3. 自動的な弾力性 (ゼロ → ハイパースケール)</h4>
+                <p>予測不能なトラフィックパターンを想定した設計で、スケーリングはプラットフォームが自動処理。アイドル時はゼロにスケールダウンし、オンデマンドで復帰するため、使用した分だけの支払いで済む。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>4. コールドスタートの最適化</h4>
+                <p>ゼロからのスケール後も迅速にトラフィックを処理できるよう、コールドスタート動作をプラットフォームが自動的に最適化。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎛️</div>
+            <div class="feature-content">
+                <h4>5. オピニオネイテッドな既定値と最小限の設定項目</h4>
+                <p>スケーリングルール、ネットワーク、リソース割り当てなどのインフラ設定を本番対応の既定値で自動適用。意思決定項目が少ないため、本番までの時間を短縮。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <div class="feature-content">
+                <h4>6. 環境管理の簡素化</h4>
+                <p>ポータル利用時はプラットフォームが軽量環境を自動作成 (CLI 利用時は環境の作成が必要)。コンピュートは従量課金 (Consumption) ベースの CPU で実行。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>7. 専用の管理 UI</h4>
+                <p>Express アプリは Azure Portal とは別の専用 UI (<a href="https://containerapps.azure.com/">containerapps.azure.com</a>) で作成・管理する、合理化された管理体験を提供。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section>
+        <h2>🔧 技術仕様</h2>
+        <table>
+            <thead>
+                <tr><th style="width: 25%;">項目</th><th>詳細</th></tr>
+            </thead>
+            <tbody>
+                <tr><td class="spec-key">コンピュート</td><td><span class="tag-ok">✔</span> Consumption (従量課金) ベースの CPU / <span class="tag-ng">✘</span> GPU は非対応</td></tr>
+                <tr><td class="spec-key">イングレス</td><td><span class="tag-ok">✔</span> HTTP イングレス (内部/外部) / <span class="tag-ng">✘</span> HTTP/2、TCP、非セキュア HTTP、追加イングレスポート、ターゲットポート自動検出 (<code class="inline">targetPort: 0</code>) は非対応</td></tr>
+                <tr><td class="spec-key">既定ドメイン</td><td>Microsoft マネージドの <code class="inline">azurecontainerapps.io</code> ドメイン</td></tr>
+                <tr><td class="spec-key">コンテナイメージ</td><td>パブリックイメージ、およびユーザー名/パスワードシークレットで認証するプライベートイメージに対応</td></tr>
+                <tr><td class="spec-key">マネージド ID</td><td><span class="tag-ok">✔</span> ユーザー割り当てマネージド ID (アプリランタイム、ACR からのイメージ Pull) / <span class="tag-ng">✘</span> システム割り当てマネージド ID は非対応</td></tr>
+                <tr><td class="spec-key">オートスケール</td><td><span class="tag-ok">✔</span> HTTP トラフィック、CPU、メモリによるスケール / <span class="tag-ng">✘</span> カスタム KEDA スケーラーは非対応</td></tr>
+                <tr><td class="spec-key">リビジョン</td><td><span class="tag-ok">✔</span> 単一リビジョンモードのローリング更新 (ゼロダウンタイム) / <span class="tag-ng">✘</span> 複数リビジョン・トラフィック分割は非対応</td></tr>
+                <tr><td class="spec-key">シークレット</td><td><span class="tag-ok">✔</span> アプリへの直接追加 / <span class="tag-ng">✘</span> Key Vault 参照は非対応</td></tr>
+                <tr><td class="spec-key">ネットワーク</td><td><span class="tag-ok">✔</span> 内部/外部イングレス、IP 制限 (CIDR)、CORS、仮想ネットワーク経由のエグレス、環境のプライベートエンドポイントに対応</td></tr>
+                <tr><td class="spec-key">ストレージ</td><td>コンテナごとに最大 10 個の <code class="inline">EmptyDir</code> ボリュームマウント。コンテナ + <code class="inline">EmptyDir</code> 合計でレプリカあたり 40 GiB まで</td></tr>
+                <tr><td class="spec-key">ヘルスプローブ</td><td><span class="tag-ok">✔</span> HTTP / TCP プローブ / <span class="tag-ng">✘</span> Exec ベースのプローブは非対応</td></tr>
+                <tr><td class="spec-key">可観測性</td><td>ライブログストリーミング、メトリック (Azure Monitor)、Log Analytics へのログ送信 (環境で有効化)、ブラウザーベースのコンソールアクセスに対応</td></tr>
+                <tr><td class="spec-key">課金</td><td>Consumption プランと同じ秒単位の従量課金</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section>
+        <h2>🛠️ 設定方法</h2>
+        <p>Express アプリは、Azure Portal とは別の専用管理 UI (<a href="https://containerapps.azure.com/">https://containerapps.azure.com/</a>) から作成・管理します。作成・管理時には、標準の Azure Portal ではなくこの合理化されたインターフェイスに誘導されます。</p>
+        <div class="config-grid">
+            <div class="config-card">
+                <h4>🖥️ ポータル (専用 UI) 利用時</h4>
+                <p>プラットフォームが軽量環境を自動作成するため、<strong>環境管理は不要</strong>。</p>
+            </div>
+            <div class="config-card">
+                <h4>⌨️ CLI 利用時</h4>
+                <p>環境の作成は<strong>利用者が実施する必要あり</strong>。</p>
+            </div>
+        </div>
+        <div class="limitation-card">
+            <h4>⚠️ 注意</h4>
+            <p>Express 環境向けの Azure Portal の一部の画面は機能しない旨がドキュメントに記載されています。</p>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section>
+        <h2>👍 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>コード作成から本番対応アプリの稼働までを<strong>数時間ではなく数分</strong>に短縮し、Time to Market を改善</li>
+                    <li>ゼロスケール + 秒単位課金により、<strong>アイドル時のコストが発生せず</strong>、スタートアップや新規プロジェクトのコストリスクを低減</li>
+                    <li>インフラ運用の負担が減り、チームが<strong>アプリケーション開発に集中</strong>できる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>本番対応の既定値 (オートスケール、可観測性、シークレット管理、マネージド ID) が自動適用され、<strong>設定ミスのリスクを低減</strong></li>
+                    <li>ゼロからハイパースケールまでの自動スケーリングにより、<strong>予測不能なトラフィックにも対応</strong></li>
+                    <li>コールドスタートがプラットフォーム側で最適化され、<strong>ゼロスケールからの復帰も高速</strong></li>
+                    <li><strong>AI エージェントによる利用を想定</strong>した設計で、エージェントがアプリを自律的にデプロイするワークフローに適合</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section>
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="limitation-card">
+            <h4>イングレス制限</h4>
+            <p>HTTP のみ対応。HTTP/2、TCP イングレス、非セキュア HTTP、追加イングレスポート、ターゲットポート自動検出は非対応。</p>
+        </div>
+        <div class="limitation-card">
+            <h4>コンピュート制限</h4>
+            <p>Consumption ベースの CPU のみ。GPU ワークロードは Consumption GPU ワークロードプロファイル (標準環境) を利用する必要がある。</p>
+        </div>
+        <div class="limitation-card">
+            <h4>細かい制御は不可</h4>
+            <p>コンピュート、ネットワーク、コールドスタート動作の細かい制御が必要な場合は、ワークロードプロファイル環境の標準 Container Apps を使用する。</p>
+        </div>
+        <div class="limitation-card">
+            <h4>ネットワーク機能の制限</h4>
+            <p>カスタムドメイン (マネージド証明書/持ち込み証明書とも)、クライアント証明書、セッションアフィニティ、組み込みのサービスディスカバリは非対応 (アプリ間通信はパブリック URL 経由)。</p>
+        </div>
+        <div class="limitation-card">
+            <h4>非対応機能</h4>
+            <p>Dapr、ジョブ、ワークロードプロファイル、システム割り当てマネージド ID、サイドカー/Init コンテナ、Easy Auth、Key Vault シークレット参照、Azure Files ストレージ、複数リビジョン/トラフィック分割、デプロイラベル、ゾーン冗長、OpenTelemetry エージェント、Premium イングレス、ピアツーピア暗号化、メンテナンスウィンドウ、Aspire、ソースコードからのデプロイ (Source-to-cloud) など。</p>
+        </div>
+        <div class="limitation-card">
+            <h4>ポータル制限</h4>
+            <p>Express 環境向けの Azure Portal の一部の画面は機能しない。</p>
+        </div>
+        <div class="limitation-card">
+            <h4>適合しないワークロードと代替先</h4>
+            <ul>
+                <li>TCP サービスやサービスディスカバリを要するマイクロサービス → <strong>ワークロードプロファイル環境</strong></li>
+                <li>ジョブ/バッチ処理 → <strong>Container Apps ジョブ</strong></li>
+                <li>GPU ワークロード → <strong>サーバーレス GPU</strong></li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section>
+        <h2>💡 ユースケース</h2>
+        <div class="usecase-grid">
+            <div class="usecase-card">
+                <h4>🤖 1. SaaS アプリ / AI アプリのフロントエンド</h4>
+                <p><span class="label">シナリオ</span>SaaS 製品や AI 搭載インターフェイス・ゲートウェイを、スケーリングインフラを気にせず公開したい。</p>
+                <p><span class="label effect">効果</span>需要に応じて自動スケールし、インフラ設計なしで本番公開できる。アイドル時はゼロスケールでコストを抑制。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>🚀 2. スタートアップ・新規プロジェクトの高速立ち上げ</h4>
+                <p><span class="label">シナリオ</span>アイデアを数分で本番環境に載せ、プロトタイプを高速に検証しつつ、成長に合わせてそのままスケールさせたい。</p>
+                <p><span class="label effect">効果</span>検証で作ったアプリをリプラットフォームせずに本番運用へ継続でき、開発速度を維持したままスケールできる。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>📊 3. 社内開発者ツール・Web ダッシュボード</h4>
+                <p><span class="label">シナリオ</span>社内外の開発者ツールや、分析・監視・管理用の Web ダッシュボードをゼロコンフィグでデプロイしたい。</p>
+                <p><span class="label effect">効果</span>環境構築の手間なく即座に利用可能になり、利用がない時間帯はゼロスケールで課金が発生しない。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section>
+        <h2>💰 料金</h2>
+        <p>Azure Container Apps Express は、<strong>Consumption プランと同じ秒単位の従量課金 (pay-per-second)</strong> に従います (公式料金ページに明記)。</p>
+        <ul style="padding-left: 20px; margin-bottom: 16px;">
+            <li style="margin-bottom: 8px;"><strong>課金モデル</strong>: 秒単位のリソース割り当て (vCPU / メモリ) とリクエスト数に基づく課金。アクティブ時とアイドル時で課金レートが異なる (アイドル時は割引レート)</li>
+            <li><strong>ゼロスケール時</strong>: アプリがゼロにスケールしている間は使用料金が発生しない</li>
+        </ul>
+        <h3>無料枠 (サブスクリプションごと・月次)</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">180,000</div>
+                <div class="stat-label">vCPU 秒</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">360,000</div>
+                <div class="stat-label">GiB 秒 (メモリ)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">200 万</div>
+                <div class="stat-label">リクエスト件数</div>
+            </div>
+        </div>
+        <p style="font-size: 14px; color: var(--ms-text-secondary);">具体的な単価はリージョン・通貨により異なるため、<a href="https://azure.microsoft.com/pricing/calculator/">Azure 料金計算ツール</a>および<a href="https://azure.microsoft.com/pricing/details/container-apps/">料金ページ</a>を参照してください。</p>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section>
+        <h2>🌏 利用可能リージョン</h2>
+        <p>GA 時点で以下の <strong>43 リージョン</strong>で利用可能です。</p>
+        <div class="region-highlight">
+            <span class="region-jp">🇯🇵 Japan East で利用可能</span>
+            <span class="region-jp">🇯🇵 Japan West で利用可能</span>
+        </div>
+        <div class="region-list">
+            <span class="region-chip">Australia East</span>
+            <span class="region-chip">Austria East</span>
+            <span class="region-chip">Brazil South</span>
+            <span class="region-chip">Canada Central</span>
+            <span class="region-chip">Canada East</span>
+            <span class="region-chip">Central India</span>
+            <span class="region-chip">Central US</span>
+            <span class="region-chip">Chile Central</span>
+            <span class="region-chip">East Asia</span>
+            <span class="region-chip">East US</span>
+            <span class="region-chip">East US 2</span>
+            <span class="region-chip">East US 2 EUAP</span>
+            <span class="region-chip">France Central</span>
+            <span class="region-chip">Germany West Central</span>
+            <span class="region-chip">Indonesia Central</span>
+            <span class="region-chip">Italy North</span>
+            <span class="region-chip jp">Japan East</span>
+            <span class="region-chip jp">Japan West</span>
+            <span class="region-chip">Jio India Central</span>
+            <span class="region-chip">Korea Central</span>
+            <span class="region-chip">Malaysia West</span>
+            <span class="region-chip">Mexico Central</span>
+            <span class="region-chip">New Zealand North</span>
+            <span class="region-chip">North Central US</span>
+            <span class="region-chip">North Europe</span>
+            <span class="region-chip">Norway East</span>
+            <span class="region-chip">Poland Central</span>
+            <span class="region-chip">South Africa North</span>
+            <span class="region-chip">South Central US</span>
+            <span class="region-chip">South India</span>
+            <span class="region-chip">Southeast Asia</span>
+            <span class="region-chip">Spain Central</span>
+            <span class="region-chip">Sweden Central</span>
+            <span class="region-chip">Switzerland North</span>
+            <span class="region-chip">Switzerland West</span>
+            <span class="region-chip">UAE North</span>
+            <span class="region-chip">UK South</span>
+            <span class="region-chip">UK West</span>
+            <span class="region-chip">West Central US</span>
+            <span class="region-chip">West Europe</span>
+            <span class="region-chip">West US</span>
+            <span class="region-chip">West US 2</span>
+            <span class="region-chip">West US 3</span>
+        </div>
+    </section>
+
+    <!-- 関連サービス -->
+    <section>
+        <h2>🔗 関連サービス・機能</h2>
+        <ul class="related-list">
+            <li><strong>Azure Container Apps (標準環境 / ワークロードプロファイル)</strong>: Express で非対応の機能 (TCP イングレス、Dapr、サービスディスカバリ、GPU、ゾーン冗長など) が必要な場合の移行先・代替</li>
+            <li><strong>Azure Container Apps ジョブ</strong>: バッチ処理やスケジュール実行が必要なワークロード向けの代替</li>
+            <li><strong>サーバーレス GPU (Consumption GPU ワークロードプロファイル)</strong>: GPU を要する AI/ML ワークロード向けの代替</li>
+            <li><strong>Azure Container Registry (ACR)</strong>: ユーザー割り当てマネージド ID によるプライベートイメージの Pull に対応</li>
+            <li><strong>Azure Monitor / Log Analytics</strong>: メトリック表示と、Express 環境で有効化することによるログ収集・分析</li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section>
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Container Apps Express の GA により、<strong>「コンテナを持ち込むだけ」で数分以内に本番対応の Web アプリ・API・エージェントバックエンドを公開</strong>できる選択肢が正式に利用可能になりました。ゼロスケール + 秒単位課金 + コールドスタート最適化の組み合わせは、トラフィックが読めない新規サービスや AI アプリのフロントエンド、社内ツールに特に適しています。</p>
+            <p>一方で、HTTP のみのイングレス、カスタムドメイン非対応、Dapr / ジョブ / GPU 非対応など機能面の制約が明確に定義されているため、Solutions Architect としては段階的な採用戦略を検討するとよいでしょう。まずは <strong>Japan East / Japan West</strong> で専用管理 UI (<a href="https://containerapps.azure.com/">containerapps.azure.com</a>) からの検証を推奨します。</p>
+        </div>
+        <div class="step-flow">
+            <div class="step"><strong>Step 1</strong>Express で素早く開始<br>(専用 UI から検証)</div>
+            <div class="step-arrow">➜</div>
+            <div class="step"><strong>Step 2</strong>ゼロスケール + 秒単位課金で<br>低リスク運用</div>
+            <div class="step-arrow">➜</div>
+            <div class="step"><strong>Step 3</strong>要件が増えたら標準 Container Apps<br>(ワークロードプロファイル環境) へ</div>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Container Apps</span>
+            <span class="tag">Containers</span>
+            <span class="tag">Express</span>
+            <span class="tag">Serverless</span>
+            <span class="tag">GA</span>
+            <span class="tag">オートスケール</span>
+            <span class="tag">AI エージェント</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p><strong>出典・参考リンク</strong></p>
+        <p>
+            <a href="https://azure.microsoft.com/updates?id=559242">公式アップデート情報 (Azure Updates)</a> ・
+            <a href="https://techcommunity.microsoft.com/blog/appsonazureblog/azure-container-apps-express-is-now-generally-available/4559101">Azure Blog (Tech Community): Azure Container Apps Express is now generally available</a>
+        </p>
+        <p>
+            <a href="https://learn.microsoft.com/azure/container-apps/express-overview">Microsoft Learn: Azure Container Apps express overview</a> ・
+            <a href="https://learn.microsoft.com/azure/container-apps/">Microsoft Learn: Azure Container Apps ドキュメント</a> ・
+            <a href="https://azure.microsoft.com/pricing/details/container-apps/">料金ページ</a>
+        </p>
+        <p style="margin-top: 10px;">レポート日: 2026-09-23 | Azure News Summary プロジェクトにより生成</p>
+    </footer>
+
+</div>
+</body>
+</html>

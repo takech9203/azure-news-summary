@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Container Apps: Sandboxes の一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 61, 105, 0.25);
+}
+
+.hero .meta-badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.hero .subtitle { font-size: 16px; opacity: 0.92; }
+.hero .date { font-size: 14px; margin-top: 12px; opacity: 0.85; }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 24px; }
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin-bottom: 12px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.keyword {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+.figure-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 8px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin: 0; }
+.feature-content ul { font-size: 14px; color: var(--ms-text-secondary); padding-left: 18px; margin-top: 4px; }
+.feature-content li { margin-bottom: 4px; }
+
+.features-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.features-grid .feature-card { margin: 0; }
+
+/* ===== Tables ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+.spec-table code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    background: var(--ms-surface-tertiary);
+    padding: 1px 5px;
+    border-radius: 4px;
+    color: var(--ms-blue-900);
+}
+.spec-table.center td, .spec-table.center th { text-align: center; }
+.tier-default { background: var(--ms-blue-300) !important; font-weight: 700; }
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #A0A0A0;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* ===== Steps ===== */
+.step-list { list-style: none; counter-reset: step; }
+.step-list li {
+    counter-increment: step;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    font-size: 14.5px;
+}
+.step-list li::before {
+    content: counter(step);
+    background: var(--azure-blue);
+    color: white;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 2px;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 18px;
+    font-size: 14px;
+}
+.merit-business { background: var(--ms-blue-100); border-top: 4px solid var(--azure-blue); }
+.merit-tech { background: #F3EEF9; border-top: 4px solid var(--ms-purple); }
+.merit-card h4 { margin-bottom: 10px; font-size: 16px; }
+.merit-business h4 { color: var(--ms-blue-800); }
+.merit-tech h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin-bottom: 8px; }
+
+.warning-box {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-yellow);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+.warning-box h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.warning-box ul { padding-left: 20px; font-size: 14px; }
+.warning-box li { margin-bottom: 8px; }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    border-top: 4px solid var(--ms-purple);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.usecase-card h4 {
+    font-size: 17px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    background: var(--ms-purple);
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin-right: 4px;
+}
+.usecase-card p { font-size: 14px; }
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* ===== Related services ===== */
+.related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+    border-left: 4px solid var(--ms-blue-500);
+}
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); }
+.link-list { list-style: none; }
+.link-list li {
+    margin-bottom: 8px;
+    padding-left: 24px;
+    position: relative;
+    font-size: 14px;
+    word-break: break-all;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+.summary-box p { font-size: 15px; margin-bottom: 12px; }
+.summary-box p:last-child { margin-bottom: 0; }
+
+/* ===== Tags ===== */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-size: 13px;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 20px 0 8px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+.footer a { word-break: break-all; }
+.footer p { margin-bottom: 6px; }
+
+.note { font-size: 13px; color: var(--ms-text-secondary); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid, .features-grid, .related-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Hero ===== -->
+    <header class="hero">
+        <div class="meta-badges">
+            <span class="service-badge">Azure Container Apps</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Azure Container Apps: Sandboxes の一般提供開始 (GA)</h1>
+        <p class="subtitle">高速・セキュア・エフェメラルなコンピュートを、サスペンド/レジューム付きで提供する第 4 のコンピュートタイプが GA</p>
+        <p class="date">📅 リリース日: 2026-09-23　|　機能: Azure Container Apps Sandboxes</p>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>
+            Azure Container Apps <strong>Sandboxes</strong> が一般提供 (GA) となりました。Sandboxes は新しいファーストクラスのリソースタイプ
+            <span class="keyword">Microsoft.App/SandboxGroups</span> で、Apps、Jobs、Dynamic sessions と並ぶ
+            <span class="keyword">第 4 のコンピュートタイプ</span>として、高速・セキュア・エフェメラルなコンピュート環境を
+            <span class="keyword">サスペンド/レジューム機能</span>付きで提供します。2026 年 6 月のパブリックプレビューを経ての GA です。
+        </p>
+        <p>
+            各サンドボックスはハードウェア分離された <span class="keyword">microVM</span> 境界内で動作し、標準の OCI コンテナイメージをサポートし、
+            プリウォームされたプールから<span class="keyword">サブ秒で起動</span>します。メモリ・ディスク状態・プリロード済みライブラリを
+            スナップショットとして保存できるため、コールドスタートのリロードペナルティなしに同じ実行ポイントからワークロードを再開できます。
+        </p>
+        <div class="highlight-box">
+            エージェント型 AI アプリケーション、マルチテナントプラットフォーム、開発環境、CI/CD システムを構築するチームが独自インフラで組み合わせてきた
+            「信頼できないコードの安全な実行」「セッション間の状態保持」「バースト需要への対応」を、<strong>マネージドな単一リソースタイプ</strong>として解決します。
+            GitHub Sandbox、Foundry Agent Service のホステッドエージェント、Azure Container Apps Express と同じ Azure 基盤上に構築されています。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">サブ秒</div>
+                <div class="stat-label">起動 / レジューム時間 (プリウォームプール)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0 → 数千</div>
+                <div class="stat-label">同時サンドボックスへオンデマンドスケール</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">¥0</div>
+                <div class="stat-label">停止中の CPU/メモリ課金 (scale to zero)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">microVM</div>
+                <div class="stat-label">ハードウェア分離境界</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>AI 生成コードなどの信頼できないコードを安全に実行するには、独自のカスタムインフラ (分離基盤) を構築・維持する必要があった</li>
+                    <li>セッションをまたいだ状態 (メモリ・ディスク・実行コンテキスト) の保持を自前で実装する必要があった</li>
+                    <li>バースト的な需要に備えてアイドル容量を確保すると、使っていない時間にもコストが発生した</li>
+                    <li>既存の Dynamic sessions はエフェメラル (クールダウン後に破棄) で、永続ストレージやライフサイクルの直接制御ができなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>ハードウェア分離された microVM 境界により、信頼できないワークロードをマネージド環境で安全に実行可能</li>
+                    <li>スナップショットによるサスペンド/レジュームで、メモリとディスクを含む完全な状態をサブ秒で復元し、長時間タスクの実行コンテキストを保持</li>
+                    <li>停止中は CPU/メモリ課金が発生せず (scale to zero)、ゼロから数千の同時サンドボックスまでオンデマンドでスケール</li>
+                    <li>SDK/CLI からライフサイクル (作成・サスペンド・レジューム・削除)、ファイル、ポート、Egress ポリシーを直接制御可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Dev([👤 開発者 / 🤖 AI エージェント])
+    Dev -->|ARM 制御プレーン| SG
+    Dev -->|ADC データプレーン&lt;br&gt;SDK / CLI| SB
+
+    subgraph Azure["☁️ Azure Container Apps"]
+        SG["📦 Sandbox Group&lt;br&gt;(管理境界)"]
+        SG --> SB["🔒 Sandbox&lt;br&gt;(microVM 分離・サブ秒起動)"]
+        IMG["💿 ディスクイメージ&lt;br&gt;(OCI コンテナイメージ)"] --> SB
+        SB <-->|サスペンド/レジューム| SNAP["📸 スナップショット&lt;br&gt;(メモリ + ディスク)"]
+        SB --- VOL[("🗄️ ボリューム&lt;br&gt;Azure Blob / Data Disk")]
+        SB -->|Egress ポリシー| NET["🌐 外部ネットワーク / VNet"]
+    end
+            </pre>
+        </div>
+        <p class="figure-caption">
+            サンドボックスグループが管理境界となり、各サンドボックスは OCI ディスクイメージから起動、スナップショットでサスペンド/レジュームし、
+            ボリュームで永続ストレージを利用します。制御は ARM (グループ管理) と ADC データプレーン (サンドボックス操作) の 2 プレーン構成です。
+        </p>
+    </section>
+
+    <!-- ===== Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能 (サービスアップデートの詳細)</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <div class="feature-content">
+                    <h4>1. サブ秒起動</h4>
+                    <p>プリウォームされたプールからプロビジョニングされ、ほぼ瞬時に利用可能</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔒</div>
+                <div class="feature-content">
+                    <h4>2. 強力な分離</h4>
+                    <p>各サンドボックスはハードウェア分離された microVM 境界内で動作し、信頼できないコードの実行に安全</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📸</div>
+                <div class="feature-content">
+                    <h4>3. サスペンド/レジューム (スナップショット)</h4>
+                    <p>メモリとディスクを含む完全な状態をスナップショットとして保存し、サブ秒で復元。環境のクローン作成や、構成済み環境のチームでの共有 (ベースライン配布) にも利用可能</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📈</div>
+                <div class="feature-content">
+                    <h4>4. Scale to zero / スケールアウト</h4>
+                    <p>停止中は CPU/メモリ課金なし。オンデマンドで数千の同時サンドボックスまでバースト</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💿</div>
+                <div class="feature-content">
+                    <h4>5. OCI コンテナイメージサポート</h4>
+                    <p>提供されるパブリックイメージのほか、パブリック/プライベートレジストリの独自イメージをルートファイルシステムとして利用可能</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">⚙️</div>
+                <div class="feature-content">
+                    <h4>6. ライフサイクル制御とポリシー</h4>
+                    <ul>
+                        <li><strong>Auto-suspend</strong>: アイドルタイムアウトで自動サスペンド</li>
+                        <li><strong>Suspend Mode</strong>: メモリモード (ディスク + メモリの完全スナップショット) / ディスクモード (ディスクのみ保持)</li>
+                        <li><strong>Auto-delete</strong>: 停止後、指定日数で自動削除</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🗄️</div>
+                <div class="feature-content">
+                    <h4>7. 永続ストレージ (ボリューム)</h4>
+                    <ul>
+                        <li><strong>Azure Blob</strong>: 複数サンドボックスに同時マウント可能。アーティファクト共有向け</li>
+                        <li><strong>Data Disk</strong>: 高パフォーマンス。データベースやビルドキャッシュ向け (同時マウントは 1 サンドボックスのみ)</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <div class="feature-content">
+                    <h4>8. ネットワーク制御</h4>
+                    <p>ドメインベースの許可/拒否ルール、CIDR ベースのネットワークルール、VNet 統合を含む Egress ポリシーとポート管理 (Ingress/Egress)</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th style="width:30%">項目</th><th>詳細</th></tr>
+            <tr><td>リソースタイプ</td><td><code>Microsoft.App/SandboxGroups</code> (ARM リソース)</td></tr>
+            <tr><td>分離方式</td><td>サンドボックスごとのハードウェア分離 microVM 境界</td></tr>
+            <tr><td>起動時間</td><td>サブ秒 (プリウォームプール)、レジュームもサブ秒</td></tr>
+            <tr><td>イメージ</td><td>OCI コンテナイメージ (パブリックイメージ / コンテナレジストリイメージ)</td></tr>
+            <tr><td>制御プレーン</td><td>ARM (<code>management.azure.com</code>): サンドボックスグループの作成・更新・削除、VNet 接続管理</td></tr>
+            <tr><td>データプレーン</td><td>ADC (<code>management.azuredevcompute.io</code>): サンドボックス、ディスクイメージ、スナップショット、ファイル、ボリューム、シークレット、ポート、Egress ポリシーの管理</td></tr>
+            <tr><td>ライフサイクル状態</td><td>Running / Stopped (停止時に Suspend Mode に応じたスナップショットを保存)</td></tr>
+            <tr><td>SDK</td><td>Python SDK (<code>azure-containerapps-sandbox</code>) および REST API</td></tr>
+            <tr><td>必要ロール</td><td>Container Apps SandboxGroup Data Owner (ロール定義 ID: <code>c24cf47c-5077-412d-a19c-45202126392c</code>)</td></tr>
+            <tr><td>認証</td><td>Microsoft Entra ID アカウントのみ (個人用 Microsoft アカウントは非サポート)</td></tr>
+        </table>
+
+        <h3>リソースティア</h3>
+        <table class="spec-table center">
+            <tr><th>ティア</th><th>CPU</th><th>メモリ</th><th>ディスク</th></tr>
+            <tr><td>XS</td><td>0.25 コア</td><td>0.5 GB</td><td>20 GB</td></tr>
+            <tr><td>S</td><td>0.5 コア</td><td>1 GB</td><td>20 GB</td></tr>
+            <tr><td class="tier-default">M (既定)</td><td class="tier-default">1 コア</td><td class="tier-default">2 GB</td><td class="tier-default">20 GB</td></tr>
+            <tr><td>L</td><td>2 コア</td><td>4 GB</td><td>40 GB</td></tr>
+            <tr><td>XL</td><td>4 コア</td><td>8 GB</td><td>80 GB</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>リソースグループ作成権限のある Azure サブスクリプション</li>
+            <li>サンドボックスを作成・管理するユーザーへの <strong>Container Apps SandboxGroup Data Owner</strong> ロールの割り当て (サブスクリプションまたはリソースグループスコープ)</li>
+            <li>Microsoft Entra ID アカウント (個人用 Microsoft アカウントは非サポート)</li>
+            <li>Python SDK 利用時: Azure CLI、Python 3.10 以降</li>
+        </ol>
+
+        <h3>Azure CLI (ロール割り当て)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>ロール割り当て</span></div>
+            <pre><code class="language-bash"># サンドボックス管理に必要なロールを割り当てる
+az role assignment create \
+  --assignee "&lt;USER_EMAIL_OR_OBJECT_ID&gt;" \
+  --role "Container Apps SandboxGroup Data Owner" \
+  --scope "/subscriptions/&lt;SUBSCRIPTION_ID&gt;/resourceGroups/&lt;RESOURCE_GROUP_NAME&gt;"</code></pre>
+        </div>
+        <p class="note">※ ロール割り当ての反映には 30〜60 秒程度かかる場合があります (403 エラー時は約 1 分待って再試行)。</p>
+
+        <h3>Python SDK</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>SDK のインストール</span></div>
+            <pre><code class="language-bash">pip install azure-containerapps-sandbox azure-mgmt-resource azure-mgmt-authorization</code></pre>
+        </div>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">python</span><span>サンドボックスの作成とコマンド実行</span></div>
+            <pre><code class="language-python">from azure.containerapps.sandbox import SandboxGroupClient, endpoint_for_region
+
+# サンドボックスグループのデータプレーンに接続
+client = SandboxGroupClient(
+    endpoint_for_region(region), credential,
+    subscription_id=subscription_id,
+    resource_group=resource_group,
+    sandbox_group=sandbox_group,
+)
+
+# サンドボックスを作成してコマンドを実行
+sandbox = client.begin_create_sandbox(disk="ubuntu").result()
+result = sandbox.exec("echo 'Hello from ACA Sandbox.'")
+print(result.stdout)
+sandbox.delete()</code></pre>
+        </div>
+
+        <h3>Azure Portal</h3>
+        <p>
+            Sandboxes ポータル (<a href="https://aka.ms/aca/sandboxes/portal" target="_blank" rel="noopener">https://aka.ms/aca/sandboxes/portal</a>)
+            からサンドボックスの作成・管理が可能です。
+        </p>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>信頼できないコード実行用のカスタムインフラの構築・運用コストを削減</li>
+                    <li>停止中は CPU/メモリ課金が発生しないため、バースト型ワークロードでもアイドルコストを支払わずに済む</li>
+                    <li>GitHub Sandbox や Foundry Agent Service のホステッドエージェントを支える実績ある Azure 基盤をそのまま利用可能</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>microVM によるハードウェア分離で、AI 生成コードやマルチテナントの信頼できないワークロードを安全に実行</li>
+                    <li>メモリを含む完全スナップショットにより、コールドスタートなしで実行コンテキストを保持したまま再開可能</li>
+                    <li>SDK/CLI によるプログラマブルなライフサイクル制御 (Dynamic sessions では不可能だった直接制御が可能)</li>
+                    <li>Azure Blob / Data Disk ボリュームによる永続ストレージのマウントに対応</li>
+                    <li>Egress ポリシー (ドメイン/CIDR ルール) と VNet 統合によるネットワーク制御</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ デメリット・制約事項</h4>
+            <ul>
+                <li>サンドボックスへのアクセスは Microsoft Entra ID アカウントのみ (個人用 Microsoft アカウントは非サポート)</li>
+                <li>サンドボックスの作成・管理には <strong>Container Apps SandboxGroup Data Owner</strong> ロールの割り当てが必須</li>
+                <li>Data Disk ボリュームは同時に 1 つのサンドボックスにしかマウントできない (複数サンドボックスでの共有には Azure Blob を使用)</li>
+                <li>リソースティアは XS〜XL の 5 段階で、最大 4 コア / 8 GB メモリ / 80 GB ディスクまで</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 1</span>🤖 AI エージェントのコード実行環境</h4>
+            <p><strong>シナリオ</strong>: LLM が生成したコードを安全に実行し、タスク間で実行コンテキスト (インストール済みライブラリ、作業ファイル、メモリ状態) を保持したいエージェントワークフロー。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">python</span><span>実装例</span></div>
+                <pre><code class="language-python"># エージェント用サンドボックスを作成し、状態を保持しながらタスクを実行
+sandbox = client.begin_create_sandbox(disk="ubuntu").result()
+sandbox.exec("pip install pandas && python analyze.py")
+# タスク間はサスペンドし、次のタスクで同じ状態からレジューム</code></pre>
+            </div>
+            <div class="usecase-effect">
+                <strong>効果</strong>: 信頼できない AI 生成コードを microVM 分離で安全に実行しつつ、サスペンド/レジュームでコールドスタートなしにコンテキストを維持。アイドル時間の課金も回避できる。
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 2</span>🔄 CI/CD のエフェメラルビルド環境</h4>
+            <p><strong>シナリオ</strong>: ビルド・テストのたびにクリーンな分離環境が必要だが、アイドル時のコストは払いたくない CI/CD パイプライン。</p>
+            <div class="usecase-effect">
+                <strong>効果</strong>: ゼロから数千サンドボックスへのバーストスケールでピーク時のジョブを並列処理し、アイドル時は scale to zero でコストゼロ。スナップショットで依存関係プリロード済みの「既知の良い状態」からクローンし、ビルドの立ち上がりを高速化。
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 3</span>🏢 セキュアなマルチテナントコンピュート / 開発環境</h4>
+            <p><strong>シナリオ</strong>: テナントごと・ユーザーごとに分離されたコンピュート環境を提供するプラットフォームや、セッションをまたいで状態を保持するオンデマンド開発環境。</p>
+            <div class="usecase-effect">
+                <strong>効果</strong>: テナント/ユーザー単位の強力な分離境界を提供し、Auto-suspend でアイドル環境を自動的にサスペンドしてコストを最適化。再接続時は同じ状態からサブ秒で再開。
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>
+            公式料金ページによると、<strong>Azure Container Apps Sandboxes (および Express) は Consumption プランと同じ秒単位の従量課金</strong>に従います。
+        </p>
+        <ul style="padding-left: 20px; margin-bottom: 16px;">
+            <li>vCPU 秒とメモリ GiB 秒の割り当て量、およびリクエスト数に基づく秒単位課金</li>
+            <li>停止中 (scale to zero) は CPU/メモリ課金なし</li>
+        </ul>
+        <h3>無料枠 (サブスクリプションごと・月あたり、Consumption プラン)</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">180,000</div>
+                <div class="stat-label">vCPU 秒 / 月</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">360,000</div>
+                <div class="stat-label">メモリ GiB 秒 / 月</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">200 万</div>
+                <div class="stat-label">リクエスト / 月</div>
+            </div>
+        </div>
+        <p class="note">
+            具体的な単価はリージョン・通貨により異なるため、<a href="https://azure.microsoft.com/pricing/details/container-apps/" target="_blank" rel="noopener">料金ページ</a>
+            および <a href="https://azure.microsoft.com/pricing/calculator/?service=container-apps" target="_blank" rel="noopener">料金計算ツール</a>で確認してください。
+        </p>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <p>
+            公式アップデートおよび確認したドキュメントにはリージョン一覧の記載がありませんでした。最新のリージョン提供状況は
+            <a href="https://azure.microsoft.com/global-infrastructure/services/?products=container-apps" target="_blank" rel="noopener">リージョン別の利用可能な製品</a>
+            を参照してください。
+        </p>
+    </section>
+
+    <!-- ===== Related services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>Azure Container Apps Dynamic sessions</strong>
+                同じく分離コンピュートを提供するが、セッションプールが割り当て・ライフサイクルを管理するエフェメラルなマネージド実行環境。インフラを抽象化したマネージド実行が必要なら Dynamic sessions、状態永続化を伴うプログラマブルな制御が必要なら Sandboxes を選択。
+            </div>
+            <div class="related-card">
+                <strong>Azure Container Apps (Apps / Jobs)</strong>
+                Apps は長時間稼働のサービス・API 向け (ステートレス)、Jobs は実行完了型のバッチ処理向け。Sandboxes はライフサイクルを利用者が制御するステートフルな分離コンピュートという位置づけ。
+            </div>
+            <div class="related-card">
+                <strong>Foundry Agent Service (ホステッドエージェント)</strong>
+                Sandboxes と同じ Azure 基盤上に構築されており、エージェントワークロードの実行基盤として関連。
+            </div>
+            <div class="related-card">
+                <strong>GitHub Sandbox / Azure Container Apps Express</strong>
+                同じ基盤テクノロジーを利用するオファリング。
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>
+                Azure Container Apps Sandboxes の GA により、AI エージェントのコード実行・マルチテナントプラットフォーム・開発環境・CI/CD といった
+                「<strong>信頼できないコードを安全に、状態を保持しながら、バーストに耐えて実行する</strong>」シナリオを、カスタムインフラなしでマネージドに実現できるようになりました。
+                <span class="keyword">microVM 分離</span>、<span class="keyword">サブ秒起動</span>、<span class="keyword">メモリを含むスナップショットによるサスペンド/レジューム</span>、
+                <span class="keyword">scale to zero</span> が最大の特徴です。
+            </p>
+            <p>
+                Dynamic sessions を利用中で永続ストレージやライフサイクルの直接制御に課題を感じているチーム、あるいはエージェント型アプリケーションの実行基盤を自前構築しているチームは、
+                Sandboxes への移行・採用を評価することを推奨します。まずは <code>azure-containerapps-sandbox</code> Python SDK のクイックスタートで動作を確認し、
+                必要ロール (Container Apps SandboxGroup Data Owner) の割り当て設計と Egress ポリシー/VNet 統合の要件整理から始めるとよいでしょう。
+            </p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Container Apps</span>
+            <span class="tag">Sandboxes</span>
+            <span class="tag">Containers</span>
+            <span class="tag">GA</span>
+            <span class="tag">microVM</span>
+            <span class="tag">AI Agents</span>
+            <span class="tag">Serverless</span>
+        </div>
+    </section>
+
+    <!-- ===== References / Footer ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=561262" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://techcommunity.microsoft.com/blog/appsonazureblog/azure-container-apps-sandboxes-now-generally-available/4559125" target="_blank" rel="noopener">GA 発表ブログ (Apps on Azure Blog)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/container-apps/sandboxes-overview" target="_blank" rel="noopener">Microsoft Learn: Azure Container Apps Sandboxes overview</a></li>
+            <li><a href="https://sandboxes.azure.com/docs/sandboxes/quickstart/setup-python-sdk" target="_blank" rel="noopener">Sandboxes 開発者ドキュメント (Python SDK クイックスタート)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/container-apps/" target="_blank" rel="noopener">料金ページ (Azure Container Apps)</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=561262" target="_blank" rel="noopener">Azure Updates (ID: 561262)</a> /
+            <a href="https://techcommunity.microsoft.com/blog/appsonazureblog/azure-container-apps-sandboxes-now-generally-available/4559125" target="_blank" rel="noopener">Apps on Azure Blog</a> /
+            <a href="https://learn.microsoft.com/azure/container-apps/sandboxes-overview" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>ソースレポート: reports/2026/2026-09-23-container-apps-sandboxes.md | リリース日: 2026-09-23</p>
+        <p>本インフォグラフィックは Azure News Summary プロジェクトにより自動生成されました。</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

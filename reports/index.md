@@ -5,6 +5,10 @@
 
 ## 2026 年
 
+- [2026-09-23 - Azure Functions: PowerShell 7.4 のサポートが 2026 年 11 月 10 日に終了](2026/2026-09-23-functions-powershell-7-4-retirement.md)
+- [2026-09-23 - Azure Container Apps: Azure Container Apps Express の一般提供開始 (GA)](2026/2026-09-23-container-apps-express.md)
+- [2026-09-23 - Azure Container Apps: Sandboxes の一般提供開始 (GA)](2026/2026-09-23-container-apps-sandboxes.md)
+- [2026-09-23 - Azure Functions: .NET 8 / .NET 9 サポート終了 (2026 年 11 月 10 日) — .NET 10 へのアップグレードが必要](2026/2026-09-23-functions-dotnet-8-9-retirement.md)
 - [2026-09-22 - Azure Functions: Node.js 22 サポート終了 (2027 年 4 月 30 日)](2026/2026-09-22-functions-nodejs-22-retirement.md)
 - [2026-09-22 - Azure Kubernetes Service (AKS): Flex Nodes for AKS (Public Preview)](2026/2026-09-22-aks-flex-nodes.md)
 - [2026-09-21 - Azure Functions: PowerShell 7.6 サポートの一般提供開始 (GA)](2026/2026-09-21-functions-powershell-7-6.md)
