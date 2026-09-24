@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Communication Services: スタンドアロンサービスの廃止 (2028 年 9 月 30 日)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "";
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 240px; height: 240px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+}
+.hero-badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-retirement { background: var(--ms-red); }
+.hero h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+.hero .hero-meta { font-size: 14px; opacity: 0.9; }
+.hero .deadline-banner {
+    margin-top: 18px;
+    background: rgba(216, 59, 1, 0.9);
+    border-radius: 10px;
+    padding: 12px 18px;
+    font-size: 16px;
+    font-weight: 700;
+    display: inline-block;
+    position: relative;
+    z-index: 1;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon { font-size: 26px; }
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 22px 0 10px;
+    padding-left: 10px;
+    border-left: 4px solid var(--azure-blue);
+}
+.section p { margin: 10px 0; font-size: 15px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+strong { color: var(--ms-red); font-weight: 700; }
+.highlight-box strong, .hero strong { color: inherit; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-card.red { background: linear-gradient(135deg, var(--ms-red), #A52D00); }
+.stat-card.orange { background: linear-gradient(135deg, var(--ms-orange), #CC7000); }
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.92; margin-top: 6px; }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* ===== Service chips ===== */
+.chip-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 14px 0;
+}
+.chip {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.chip-retire { background: #FFEBEE; border: 1.5px solid var(--ms-red); color: #8E2600; }
+.chip-breaking { background: #FFF4E5; border: 1.5px solid var(--ms-orange); color: #995400; }
+.chip-safe { background: #E8F5E9; border: 1.5px solid var(--ms-green); color: #0B5A0B; }
+
+/* ===== Tables ===== */
+.table-wrapper { overflow-x: auto; margin: 16px 0; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+}
+td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+.type-retire { color: var(--ms-red); font-weight: 700; white-space: nowrap; }
+.type-breaking { color: var(--ms-orange); font-weight: 700; white-space: nowrap; }
+
+/* ===== Timeline ===== */
+.timeline { position: relative; margin: 24px 0 8px; padding-left: 34px; }
+.timeline::before {
+    content: "";
+    position: absolute;
+    left: 12px; top: 6px; bottom: 6px;
+    width: 4px;
+    background: var(--ms-blue-300);
+    border-radius: 2px;
+}
+.timeline-item { position: relative; margin-bottom: 22px; }
+.timeline-item::before {
+    content: "";
+    position: absolute;
+    left: -30px; top: 4px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--azure-blue);
+    border: 3px solid #FFFFFF;
+    box-shadow: 0 0 0 2px var(--azure-blue);
+}
+.timeline-item.danger::before { background: var(--ms-red); box-shadow: 0 0 0 2px var(--ms-red); }
+.timeline-item.warn::before { background: var(--ms-orange); box-shadow: 0 0 0 2px var(--ms-orange); }
+.timeline-date { font-weight: 700; color: var(--azure-dark-blue); font-size: 15px; }
+.timeline-item.danger .timeline-date { color: var(--ms-red); }
+.timeline-item.warn .timeline-date { color: var(--ms-orange); }
+.timeline-desc { font-size: 14px; color: var(--ms-text-secondary); margin-top: 2px; }
+
+/* ===== Feature / action cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 20px; margin-top: 6px; }
+.feature-content li { margin: 5px 0; }
+
+/* ===== Lists ===== */
+.section ul.plain { padding-left: 24px; margin: 10px 0; font-size: 15px; }
+.section ul.plain li { margin: 8px 0; }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.link-list { list-style: none; padding: 0; }
+.link-list li {
+    padding: 10px 14px;
+    margin: 8px 0;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.link-list li::before { content: "🔗 "; }
+
+/* ===== Summary ===== */
+.summary-section {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+}
+
+/* ===== Footer ===== */
+footer {
+    margin-top: 32px;
+    padding: 24px;
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    font-size: 13px;
+    text-align: center;
+    line-height: 1.9;
+}
+footer a { color: var(--azure-light-blue); }
+
+/* ===== Code (Mermaid 除外) ===== */
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    color: #E8E8E8;
+    margin: 0;
+    padding: 16px;
+    overflow-x: auto;
+    border-radius: 8px;
+}
+
+/* ===== Tags ===== */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; justify-content: center; }
+.tag {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+@media (max-width: 640px) {
+    .before-after { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Hero ===== -->
+    <header class="hero">
+        <div class="hero-badges">
+            <span class="service-badge">Azure Communication Services</span>
+            <span class="badge badge-retirement">Retirement</span>
+        </div>
+        <h1>ACS スタンドアロンサービスの廃止<br>2028 年 9 月 30 日に提供終了</h1>
+        <div class="hero-meta">📅 リリース日: 2026-09-24 ｜ 🏷️ 機能: スタンドアロンサービスの廃止 (Retirement)</div>
+        <div class="deadline-banner">⚠️ 2026/10/23 新規サインアップ停止 → 2028/9/30 提供終了</div>
+    </header>
+
+    <!-- ===== Key dates ===== -->
+    <div class="stats-grid">
+        <div class="stat-card orange">
+            <div class="stat-value">2026/10/23</div>
+            <div class="stat-label">新規顧客のサインアップ停止</div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-value">2028/9/30</div>
+            <div class="stat-label">廃止対象サービスの提供終了</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">約 2 年</div>
+            <div class="stat-label">移行期間 (既存顧客の猶予)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">11 サービス</div>
+            <div class="stat-label">廃止対象 / 6 サービスが破壊的変更</div>
+        </div>
+    </div>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Microsoft は、Azure Communication Services (ACS) のスタンドアロン提供を <strong>2028 年 9 月 30 日</strong> に廃止すると発表しました。Email、SMS、Chat、Rooms、Job Router など複数の ACS サービスがこの日をもって利用できなくなり、API/SDK 操作はエラーを返すようになります。この決定は、Microsoft Teams・Dynamics 365・Azure といった Microsoft プラットフォームに深く統合されたコミュニケーション体験を優先し、不足分は主要な CPaaS (Communications Platform as a Service) パートナーと連携して補うという Microsoft の戦略転換を反映したものです。</p>
+        <div class="highlight-box">
+            Voice/Video Calling SDK や Call Automation などの通話系サービスは廃止ではなく <b>破壊的変更 (Breaking Change)</b> の対象。2028 年 9 月 30 日以降も存続しますが、<b>Microsoft Teams 連携シナリオ (Teams Phone Extensibility、Teams Meeting Interoperability、Teams Click-2-Call) で使用する場合のみサポート</b>され、最新のメジャーバージョン SDK への更新が必要です。Teams と統合しないスタンドアロンの通話実装は、この日以降サポート対象外となり動作しなくなります。
+        </div>
+        <div class="warning-box">
+            <b>重要マイルストーン</b>: 2026 年 10 月 23 日以降、新規顧客は廃止対象の ACS サービスにサインアップできなくなります。それ以前に作成された ACS リソースを持つ既存顧客は、移行期間中 (2028 年 9 月 30 日まで) 既存リソースと廃止対象サービスを引き続き利用できます。Solutions Architect としては、影響範囲の棚卸しと移行計画の立案を早期に開始することが求められます。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前)</h4>
+                <ul>
+                    <li>ACS は Email、SMS、Chat、通話、電話番号管理などをスタンドアロンの CPaaS として提供しており、Teams ライセンスなしでカスタムコミュニケーションアプリを構築できた</li>
+                    <li>ACS Rooms や UI Library SDK を使った独自のビデオ通話・会議体験の実装が可能だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後)</h4>
+                <ul>
+                    <li>2026 年 10 月 23 日以降、廃止対象サービスへの新規サインアップが停止される</li>
+                    <li>2028 年 9 月 30 日以降、廃止対象サービス (Email、SMS、Chat、Rooms、Job Router など) は完全に利用不可となる</li>
+                    <li>通話系サービス (Voice/Video Calling SDK、Call Automation など) は Teams 連携シナリオ + 最新 SDK でのみサポート継続となる</li>
+                    <li>移行先として Microsoft 製品 (Teams、Dynamics 365、Microsoft Graph、Microsoft 365 HVE/Exchange Online) またはサードパーティ CPaaS パートナー (Infobip、Telesign、Luware、Talkdesk) が案内される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🔴 Before: スタンドアロン ACS (〜2028/9/30)"]
+        APP1(["👨‍💻 カスタムアプリ"])
+        ACS["☁️ ACS スタンドアロン<br>📧 Email / 💬 SMS・Chat<br>📹 Rooms / 🎛️ Job Router"]
+        APP1 --> ACS
+    end
+
+    subgraph After["🟢 After: 移行先 (2028/10/1〜)"]
+        APP2(["👨‍💻 カスタムアプリ"])
+        TEAMS["💼 Teams 連携<br>TPE / Meeting Interop<br>+ 最新 Calling SDK"]
+        MS["📨 Microsoft 代替<br>M365 HVE / Graph Chat API<br>Dynamics 365 Contact Center"]
+        PARTNER["🤝 CPaaS パートナー<br>Infobip / Telesign<br>Luware / Talkdesk"]
+        APP2 --> TEAMS
+        APP2 --> MS
+        APP2 --> PARTNER
+    end
+
+    Before -.->|"🚚 2028/9/30 までに移行"| After
+            </pre>
+        </div>
+        <p>スタンドアロン ACS で構築していたコミュニケーション機能は、2028 年 9 月 30 日までに Teams 連携シナリオ、Microsoft の代替サービス、またはサードパーティ CPaaS パートナーへの移行が必要です。通話系 SDK は Teams 連携 + 最新メジャーバージョンへの更新でのみ継続利用できます。</p>
+    </section>
+
+    <!-- ===== Details ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔍</span>サービスアップデートの詳細</h2>
+
+        <h3>🛑 廃止対象サービス (2028 年 9 月 30 日以降、利用不可)</h3>
+        <p>以下の ACS サービスは廃止され、機能しなくなります。</p>
+        <div class="chip-grid">
+            <span class="chip chip-retire">📧 Email</span>
+            <span class="chip chip-retire">💬 SMS</span>
+            <span class="chip chip-retire">🟢 Advanced Messaging with WhatsApp</span>
+            <span class="chip chip-retire">💭 Chat</span>
+            <span class="chip chip-retire">🤝 Chat for Teams Meeting Interop</span>
+            <span class="chip chip-retire">📹 Rooms</span>
+            <span class="chip chip-retire">☎️ Number Management (Direct Offer)</span>
+            <span class="chip chip-retire">🔀 Direct Routing</span>
+            <span class="chip chip-retire">🎛️ Job Router</span>
+            <span class="chip chip-retire">🖥️ Web UI Library SDK</span>
+            <span class="chip chip-retire">📱 Mobile UI Library SDK</span>
+        </div>
+
+        <h3>⚠️ 破壊的変更の対象サービス (Teams 連携 + 最新 SDK でのみ継続)</h3>
+        <p>以下のサービスは存続しますが、Microsoft Teams と組み合わせて使用する場合のみサポートされ、アプリケーションを最新 SDK に更新する必要があります。</p>
+        <div class="chip-grid">
+            <span class="chip chip-breaking">🎥 Voice/Video Calling SDK</span>
+            <span class="chip chip-breaking">🩺 Call Diagnostics</span>
+            <span class="chip chip-breaking">🤖 Call Automation</span>
+            <span class="chip chip-breaking">🔊 Audio Streaming</span>
+            <span class="chip chip-breaking">⏺️ Call Recording</span>
+            <span class="chip chip-breaking">📝 Closed Captions</span>
+        </div>
+        <div class="warning-box">
+            破壊的変更を含む SDK は新しいメジャーバージョン番号 (例: 3.x.x → 4.x.x) で提供されます。2028 年 9 月 30 日までに最新メジャーバージョンへ更新しない実装、および Teams と統合しないスタンドアロンの通話実装は、この日以降サポートされず動作しなくなります。
+        </div>
+
+        <h3>✅ 影響を受けないサービス</h3>
+        <div class="chip-grid">
+            <span class="chip chip-safe">💼 Microsoft Teams (Teams Interop / Teams Phone / Teams Phone Extensibility)</span>
+            <span class="chip chip-safe">🧠 Microsoft Foundry (音声 (Speech) 機能は Foundry 内に統合・強化)</span>
+        </div>
+    </section>
+
+    <!-- ===== Schedule ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗓️</span>廃止スケジュール</h2>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">2026 年 9 月</div>
+                <div class="timeline-desc">廃止および破壊的変更の発表</div>
+            </div>
+            <div class="timeline-item warn">
+                <div class="timeline-date">2026 年 10 月 23 日</div>
+                <div class="timeline-desc">新規顧客による廃止対象サービスへのサインアップ停止 (既存リソースは継続利用可)</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">2026 年 9 月〜2028 年 9 月 30 日</div>
+                <div class="timeline-desc">移行期間。既存 SDK は動作・サポート継続 (セキュリティ更新・バグ修正はサポートプランに準拠)。SLA・コンプライアンス認証は維持</div>
+            </div>
+            <div class="timeline-item danger">
+                <div class="timeline-date">2028 年 9 月 30 日</div>
+                <div class="timeline-desc">廃止対象サービスの提供終了。スタンドアロン通話実装のサポート終了</div>
+            </div>
+            <div class="timeline-item danger">
+                <div class="timeline-date">2028 年 9 月 30 日以降</div>
+                <div class="timeline-desc">廃止・スタンドアロンサービスの関連データおよびテレメトリが廃棄される (事前のエクスポートが必要)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Migration ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🚚</span>移行推奨事項</h2>
+        <p>公式ガイドで案内されているサービス別の移行先は以下のとおりです。</p>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>サービス</th>
+                        <th>変更種別</th>
+                        <th>Microsoft の代替 / サポートされるシナリオ</th>
+                        <th>必要要件</th>
+                        <th>サードパーティ代替</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Email</td><td class="type-retire">廃止</td><td>Microsoft 365 High Volume Email (HVE)、Exchange Online</td><td>Microsoft 365 ライセンス</td><td>Infobip、Telesign</td></tr>
+                    <tr><td>SMS</td><td class="type-retire">廃止</td><td>-</td><td>-</td><td>Infobip、Telesign</td></tr>
+                    <tr><td>Chat (Teams Interop 含む)</td><td class="type-retire">廃止</td><td>Microsoft Graph Chat API</td><td>Teams ライセンス</td><td>Infobip</td></tr>
+                    <tr><td>WhatsApp (Advanced Messaging)</td><td class="type-retire">廃止</td><td>Dynamics 365 Contact Center</td><td>Dynamics 365 ライセンス</td><td>Infobip、Telesign</td></tr>
+                    <tr><td>PSTN (Direct Offer)</td><td class="type-retire">廃止</td><td>Teams Phone Extensibility、Teams Calling Plan、Teams Direct Routing、Operator Connect</td><td>Teams + Teams Phone ライセンス</td><td>Infobip、Telesign</td></tr>
+                    <tr><td>Direct Routing</td><td class="type-retire">廃止</td><td>Teams Phone Extensibility、Teams Direct Routing</td><td>Teams + Teams Phone ライセンス</td><td>Infobip、Telesign</td></tr>
+                    <tr><td>Rooms</td><td class="type-retire">廃止</td><td>Teams Meeting Interoperability、Microsoft Graph API</td><td>Teams ライセンス</td><td>Infobip、Telesign</td></tr>
+                    <tr><td>UI Library (Web/Mobile)</td><td class="type-retire">廃止</td><td>-</td><td>-</td><td>-</td></tr>
+                    <tr><td>Job Router</td><td class="type-retire">廃止</td><td>Dynamics 365 Contact Center</td><td>-</td><td>Luware、Talkdesk</td></tr>
+                    <tr><td>Voice/Video Calling SDK</td><td class="type-breaking">破壊的変更</td><td>Teams Meeting Interoperability</td><td>SDK 更新 + Teams ライセンス</td><td>Infobip、Telesign</td></tr>
+                    <tr><td>Call Automation</td><td class="type-breaking">破壊的変更</td><td>Teams Phone Extensibility (対象シナリオのみ)</td><td>SDK 更新 + Teams/Teams Phone ライセンス、リソースアカウント構成、PSTN 接続</td><td>-</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== SA Actions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧭</span>Solutions Architect 向け: 推奨アクション</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">1️⃣</div>
+            <div class="feature-content">
+                <h4>影響範囲の棚卸し</h4>
+                <p>ACS を利用しているサブスクリプション・リソースを特定するためのツールが提供されています。</p>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>ツール</th><th>アクセス方法</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Azure Advisor Recommendation</td><td>Azure portal &gt; Advisor &gt; Recommendations &gt; Operational Excellence</td></tr>
+                    <tr><td>Azure Advisor Workbook (Service Retirement)</td><td>Azure portal &gt; Advisor &gt; Service Retirement (CSV エクスポート可)</td></tr>
+                    <tr><td>ACS Resource Explorer Agent</td><td>GitHub: microsoft/acs-resource-explorer-agent (Copilot でサブスクリプションをスキャン)</td></tr>
+                    <tr><td>Azure Cost Management + Billing</td><td>Azure portal &gt; Cost Management + Billing (使用状況の確認)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">2️⃣</div>
+            <div class="feature-content">
+                <h4>移行計画の立案</h4>
+                <ul>
+                    <li>廃止対象 (Email、SMS、Chat、Rooms 等) と破壊的変更対象 (通話系 SDK) を区別し、それぞれの移行先を選定する</li>
+                    <li>Teams 連携へ移行する場合、Teams / Teams Phone / Microsoft 365 / Dynamics 365 の追加ライセンスコストが発生し得る点を考慮する</li>
+                    <li>チャットメッセージ、通話録音、Azure Monitor 上の運用テレメトリなどのデータは、廃止日以降に廃棄されるため、必要に応じて期限前にエクスポートする</li>
+                    <li>Dynamics 365 で ACS 機能 (SMS、Calling、WhatsApp) を利用している場合は、専用の Dynamics 365 ACS retirement guide を確認する</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">3️⃣</div>
+            <div class="feature-content">
+                <h4>移行期間中のサポートの理解</h4>
+                <ul>
+                    <li>移行期間中 (2026 年 9 月〜2028 年 9 月 30 日)、既存 SDK は動作し、サポートプランに応じた break-fix サポート・セキュリティ更新・バグ修正が提供される</li>
+                    <li>新機能開発は行われず、既存機能の維持と重要なセキュリティ・安定性の更新に注力される</li>
+                    <li>SLA・稼働率保証、コンプライアンス認証 (HIPAA、SOC2、GDPR 等) は移行期間中も維持される</li>
+                    <li>ACS Identity は廃止後もサポート対象サービス (例: Teams Meeting Interop) との組み合わせで引き続き利用可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>影響・制約事項</h2>
+        <ul class="plain">
+            <li>2026 年 10 月 23 日以降、新規顧客は廃止対象サービスにサインアップできない</li>
+            <li>2028 年 9 月 30 日以降、廃止対象サービスに依存する API/SDK 操作はエラーを返す</li>
+            <li>Teams と統合しないスタンドアロンの通話実装 (human-to-human、application-to-human) はサポート対象外となる</li>
+            <li>移行先サービスの利用により、追加のサービスコストやライセンスコスト (Microsoft 365 ライセンス、従量課金など) が発生する可能性がある</li>
+            <li>SMS と UI Library には Microsoft の直接的な代替が提示されておらず、サードパーティ CPaaS への移行検討が必要</li>
+        </ul>
+    </section>
+
+    <!-- ===== Related services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">💼</div>
+            <div class="feature-content">
+                <h4>Microsoft Teams (Teams Phone Extensibility / Meeting Interoperability)</h4>
+                <p>通話系サービスの主要な移行先。破壊的変更後の Calling SDK はこれらとの組み合わせでのみサポートされる</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>Microsoft Graph API</h4>
+                <p>ACS Chat および Rooms の移行先。ACS ID から Microsoft Entra ユーザーへのマッピングを含む移行ガイドが提供されている</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📞</div>
+            <div class="feature-content">
+                <h4>Dynamics 365 Contact Center</h4>
+                <p>WhatsApp (Advanced Messaging) および Job Router の移行先</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📨</div>
+            <div class="feature-content">
+                <h4>Microsoft 365 High Volume Email (HVE) / Exchange Online</h4>
+                <p>ACS Email の移行先</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧮</div>
+            <div class="feature-content">
+                <h4>Azure Advisor</h4>
+                <p>廃止対象リソースの特定とトラッキングに利用</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤝</div>
+            <div class="feature-content">
+                <h4>Microsoft Marketplace (Infobip / Telesign / Luware / Talkdesk)</h4>
+                <p>サードパーティ CPaaS 代替ソリューション</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=557117" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/communication-services/acs-retirement-and-breaking-changes-guide" target="_blank" rel="noopener">ACS Retirement and Breaking Changes Guide (公式 FAQ)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/communication-services/" target="_blank" rel="noopener">Azure Communication Services ドキュメント</a></li>
+            <li><a href="https://learn.microsoft.com/azure/communication-services/acs-chat-to-graph-chat-migration-guide" target="_blank" rel="noopener">ACS Chat to Microsoft Graph chat 移行ガイド</a></li>
+            <li><a href="https://github.com/microsoft/acs-resource-explorer-agent" target="_blank" rel="noopener">ACS Resource Explorer Agent (GitHub)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section summary-section">
+        <h2 class="section-title"><span class="icon">💡</span>まとめ</h2>
+        <p>Azure Communication Services のスタンドアロン提供は <strong>2028 年 9 月 30 日</strong> に終了します。Email、SMS、Chat、Rooms、Job Router、UI Library などは完全廃止となり、Voice/Video Calling SDK や Call Automation などの通話系サービスは Teams 連携 + 最新 SDK でのみ存続します。2026 年 10 月 23 日には新規サインアップが停止されるため、猶予は約 2 年です。</p>
+        <div class="highlight-box">
+            まず Azure Advisor や ACS Resource Explorer Agent で影響を受けるリソースを棚卸しし、サービスごとの移行先 (Teams、Microsoft Graph、Dynamics 365、Microsoft 365 HVE、またはサードパーティ CPaaS) を選定して、ライセンスコストとデータエクスポートを織り込んだ移行計画を早期に策定することを強く推奨します。
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <div><b>出典</b></div>
+        <div>
+            <a href="https://azure.microsoft.com/updates?id=557117" target="_blank" rel="noopener">Azure Updates: Azure Communication Services Standalone Services Retirement</a><br>
+            <a href="https://learn.microsoft.com/azure/communication-services/acs-retirement-and-breaking-changes-guide" target="_blank" rel="noopener">Microsoft Learn: ACS Retirement and Breaking Changes Guide</a>
+        </div>
+        <div style="margin-top: 10px;">ソースレポート: reports/2026/2026-09-24-acs-standalone-services-retirement.md (Azure News Summary プロジェクト)</div>
+        <div>生成日: 2026-09-24 ｜ このインフォグラフィックは Azure ニュースレポートを基に自動生成されています</div>
+        <div class="tag-list">
+            <span class="tag">Azure Communication Services</span>
+            <span class="tag">Retirement</span>
+            <span class="tag">Mobile</span>
+            <span class="tag">Web</span>
+            <span class="tag">Teams</span>
+            <span class="tag">CPaaS</span>
+            <span class="tag">Migration</span>
+        </div>
+    </footer>
+
+</div>
+</body>
+</html>

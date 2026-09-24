@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Virtual Machines: VM 復元ポイントの Instant Access が一般提供 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "⚡";
+    position: absolute;
+    right: 24px;
+    bottom: -18px;
+    font-size: 130px;
+    opacity: 0.12;
+}
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+.header .meta {
+    font-size: 14px;
+    opacity: 0.92;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+.header .meta span { display: inline-flex; align-items: center; gap: 6px; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 900;
+    color: var(--azure-dark-blue);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--ms-blue-200);
+}
+.section-title .icon {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 10px;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.section p { margin: 10px 0; }
+.section ul { margin: 10px 0 10px 24px; }
+.section li { margin: 6px 0; }
+
+code.inline {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    word-break: break-all;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 8px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; }
+.before ul, .after ul { margin-left: 20px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { color: var(--azure-dark-blue); margin-bottom: 4px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { margin: 6px 0 0 20px; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+.state-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    white-space: nowrap;
+}
+.state-pending { background: var(--ms-surface-tertiary); color: var(--ms-text-secondary); border: 1px solid var(--ms-text-disabled); }
+.state-available { background: #E8F5E9; color: var(--ms-green); border: 1px solid var(--ms-green); }
+.state-instant { background: var(--ms-blue-200); color: var(--ms-blue-800); border: 1px solid var(--azure-blue); }
+.state-both { background: #F3EDF9; color: var(--ms-purple); border: 1px solid var(--ms-purple); }
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 16px;
+}
+.merit-business { background: var(--ms-blue-100); border: 2px solid var(--azure-blue); }
+.merit-tech { background: #F3EDF9; border: 2px solid var(--ms-purple); }
+.merit-card h4 { margin-bottom: 8px; }
+.merit-business h4 { color: var(--azure-dark-blue); }
+.merit-tech h4 { color: var(--ms-purple); }
+.merit-card ul { margin-left: 20px; font-size: 14px; }
+
+.warning-box {
+    background: #FFF8E6;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+.warning-box ul { margin-left: 20px; }
+.warning-box li { margin: 6px 0; }
+
+/* Steps */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin: 14px 0;
+}
+.step-number {
+    counter-increment: step;
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 16px;
+}
+.step-content { padding-top: 5px; }
+
+/* Use case */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 17px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.usecase-card ol { margin: 8px 0 8px 24px; font-size: 14px; }
+.usecase-card p { font-size: 14px; }
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card h4 { color: var(--azure-dark-blue); font-size: 15px; margin-bottom: 4px; }
+
+/* Links */
+a { color: var(--azure-blue); }
+.link-list { list-style: none; margin: 10px 0 0 0 !important; }
+.link-list li {
+    margin: 8px 0;
+    padding: 10px 14px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    font-size: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+}
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px;
+    margin: 16px 0;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 28px 20px;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+.footer p { margin: 4px 0; }
+
+/* Code blocks (guard mermaid) */
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px 16px; }
+    table { display: block; overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="service-badge">Azure Virtual Machines</span>
+            <span class="service-badge">Azure Disk Storage</span>
+        </div>
+        <h1>VM 復元ポイントの Instant Access が一般提供 (GA)</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-24</span>
+            <span>⚡ 機能: Instant Access for VM restore points</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>VM 復元ポイント (VM restore points) の <strong>Instant Access</strong> が一般提供 (GA) になりました。対象は、<strong>Premium SSD v2 または Ultra Disk をデータディスク</strong>として持つ仮想マシンの、<strong>アプリケーション整合性 (application-consistent) 復元ポイント</strong>です。Instant Access を有効にすると、スナップショットが作成された直後からディスクの復元を開始でき、バックグラウンドのデータレプリケーションの完了を待つ必要がなくなります。これにより、VM をオンラインに戻す際の <strong>RTO (目標復旧時間) を短縮</strong>できます。</p>
+        <div class="highlight-box">
+            <strong>GA の新要素</strong>: 復元ポイントレベルの読み取り専用プロパティ <code class="inline">instantAccessState</code> が導入されました。プレビュー期間中は各ディスク復元ポイントの <code class="inline">snapshotAccessState</code> を個別に確認し、復元ポイント全体が利用可能かどうかを利用者側で判断する必要がありました。GA 以降は復元ポイントレベルの 1 つのプロパティを読むだけで、復元・コピー・ダウンロードの可否を一度に判断でき、リカバリ自動化からディスク単位のポーリングロジックを排除できます。
+        </div>
+        <p>なお、この機能は <strong>2026 年 6 月にプレビュー開始</strong>、<strong>2026 年 9 月に GA</strong> となりました。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>復元ポイント作成後、ソースディスクからスナップショットへのバックグラウンドデータコピーが完全に終わるまでディスク復元を開始できず、RTO が長くなっていた</li>
+                    <li>(プレビュー時) 復元ポイント全体の利用可否を判断するには、ディスクごとの <code class="inline">snapshotAccessState</code> を個別に確認・集約する必要があり、リカバリ自動化のロジックが複雑だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>スナップショット作成直後からディスク復元を開始でき、バックグラウンドコピーの完了 (フルハイドレーション) を待たずに VM を復旧できるため、RTO を大幅に短縮できる</li>
+                    <li>復元ポイントレベルの <code class="inline">instantAccessState</code> プロパティ 1 つで復元・コピー・ダウンロードの可否を判断でき、ディスク単位のポーリングが不要になった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🕐 Before: 従来の復元フロー"]
+        A1["📸 復元ポイント作成"] --> B1["⏳ バックグラウンドの<br>データコピー完了を待機"]
+        B1 --> C1["💾 ディスク復元を開始"]
+    end
+    subgraph After["⚡ After: Instant Access (GA)"]
+        A2["📸 復元ポイント作成<br>(instantAccess: true)"] --> B2{"🔍 instantAccessState<br>を確認"}
+        B2 --> C2["💾 スナップショット作成直後に<br>ディスク復元を開始"]
+        C2 -.-> D2["🔄 データコピーは<br>バックグラウンドで継続"]
+    end
+            </pre>
+        </div>
+        <p>従来はスナップショットへのバックグラウンドデータコピーの完了を待ってから復元を開始する必要がありましたが、Instant Access ではスナップショット作成直後に復元を開始でき、GA で追加された <code class="inline">instantAccessState</code> により復元可否の判断も 1 ステップで行えます。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>サービスアップデートの詳細: 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>1. スナップショット作成直後の復元開始</h4>
+                <ul>
+                    <li>復元ポイントコレクションで <code class="inline">instantAccess</code> を <code class="inline">true</code> に設定すると、コレクション内のすべての復元ポイントで Instant Access が有効になる</li>
+                    <li>バックグラウンドのデータコピー (ハイドレーション) の完了を待たずにディスク復元を開始でき、RTO を短縮できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-content">
+                <h4>2. <code class="inline">instantAccessState</code> プロパティの導入 (GA の新機能)</h4>
+                <ul>
+                    <li>復元ポイントレベルの読み取り専用プロパティで、配下のすべてのディスク復元ポイントの状態を集約して表す</li>
+                    <li>復元・クロスリージョンコピー・オフラインダウンロードの可否を 1 つの値で判断でき、リカバリ自動化がシンプルになる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⏱️</div>
+            <div class="feature-content">
+                <h4>3. Instant Access の有効期間の制御</h4>
+                <ul>
+                    <li>復元ポイントごとに <code class="inline">instantAccessDurationMinutes</code> を設定し、Instant Access を維持する時間を制御できる (60〜300 分、既定は 300 分)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3 style="color: var(--azure-dark-blue); margin-top: 24px;">🧭 <code class="inline">instantAccessState</code> の値</h3>
+        <table>
+            <thead>
+                <tr><th style="width: 280px;">値</th><th>意味</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><span class="state-badge state-pending">Pending</span></td>
+                    <td>復元・コピー・オフラインダウンロードのいずれにも使用不可 (いずれかのディスク復元ポイントが <code class="inline">Pending</code> の場合)</td>
+                </tr>
+                <tr>
+                    <td><span class="state-badge state-available">Available</span></td>
+                    <td>復元・クロスリージョンコピー・オフラインダウンロードに使用可能 (通常は <code class="inline">instantAccessDurationMinutes</code> の期限切れ後)</td>
+                </tr>
+                <tr>
+                    <td><span class="state-badge state-instant">InstantAccess</span></td>
+                    <td>高速ディスク復元は可能だが、コピー・ダウンロードは不可</td>
+                </tr>
+                <tr>
+                    <td><span class="state-badge state-both">AvailableWithInstantAccess</span></td>
+                    <td>高速ディスク復元に加え、コピー・ダウンロードも可能</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <thead>
+                <tr><th style="width: 260px;">項目</th><th>詳細</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>対象復元ポイント</strong></td><td>アプリケーション整合性 (application-consistent) 復元ポイントのみ</td></tr>
+                <tr><td><strong>対象ディスク</strong></td><td>Premium SSD v2 または Ultra Disk を<strong>データディスク</strong>として持つ VM</td></tr>
+                <tr><td><code class="inline">instantAccess</code></td><td>復元ポイント<strong>コレクション</strong>に設定するブール値。<code class="inline">true</code> でコレクション内の全復元ポイントに適用。既定は <code class="inline">false</code></td></tr>
+                <tr><td><code class="inline">instantAccessDurationMinutes</code></td><td>各<strong>復元ポイント</strong>に設定。有効範囲 60〜300 分、既定 300 分 (5 時間)</td></tr>
+                <tr><td><code class="inline">snapshotAccessState</code></td><td>個々のディスク復元ポイントの状態を示す読み取り専用プロパティ</td></tr>
+                <tr><td><code class="inline">instantAccessState</code></td><td>復元ポイント全体の状態を集約した読み取り専用プロパティ (GA で追加)</td></tr>
+                <tr><td><strong>API バージョン</strong></td><td>2025-04-01 以降</td></tr>
+                <tr><td><strong>操作手段</strong></td><td>REST API、Azure SDK、Azure CLI、ARM テンプレート (Azure Portal は現時点で未対応)</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 style="color: var(--azure-dark-blue);">✅ 前提条件</h3>
+        <div class="steps">
+            <div class="step"><div class="step-number">1</div><div class="step-content">対象 VM のデータディスクが <strong>Premium SSD v2 または Ultra Disk</strong> であること (マネージドディスクのみサポート)</div></div>
+            <div class="step"><div class="step-number">2</div><div class="step-content"><strong>アプリケーション整合性モード</strong>で復元ポイントを作成すること (クラッシュ整合性は非対応)</div></div>
+            <div class="step"><div class="step-number">3</div><div class="step-content">API バージョン <strong>2025-04-01 以降</strong>を使用すること</div></div>
+        </div>
+
+        <h3 style="color: var(--azure-dark-blue); margin-top: 24px;">📝 設定手順の概要</h3>
+        <div class="steps">
+            <div class="step"><div class="step-number">1</div><div class="step-content">復元ポイントコレクションで <code class="inline">instantAccess</code> を <code class="inline">true</code> に設定する (コレクション内のすべての復元ポイントで Instant Access が有効になる)</div></div>
+            <div class="step"><div class="step-number">2</div><div class="step-content">必要に応じて復元ポイントに <code class="inline">instantAccessDurationMinutes</code> (60〜300 分) を設定し、Instant Access の有効時間を制御する</div></div>
+            <div class="step"><div class="step-number">3</div><div class="step-content">復元を実行する前に、復元ポイントの <code class="inline">instantAccessState</code> を読み取り、その値に基づいて復元・コピー・ダウンロードの可否を判断する (ディスクごとの状態集約は不要)</div></div>
+        </div>
+        <p style="font-size: 14px; color: var(--ms-text-secondary);">REST API / SDK / CLI / ARM テンプレートでの具体的な構文は <a href="https://learn.microsoft.com/azure/virtual-machines/virtual-machines-create-restore-points#instant-access" target="_blank">公式ドキュメント</a> を参照してください。</p>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>障害・オペレーションミスからの復旧時間 (RTO) を短縮でき、業務停止時間の最小化につながる</li>
+                    <li>復元操作の課金がディスクのプロビジョニングサイズに基づく 1 回限りの料金であり、コストの予測可能性が高い</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>スナップショット作成直後から復元を開始でき、バックグラウンドコピーの完了待ちが不要</li>
+                    <li><code class="inline">instantAccessState</code> により復元可否の判断が 1 プロパティで完結し、DR 自動化スクリプトからディスク単位のポーリング処理を削減できる</li>
+                    <li>復元ポイントは増分方式のため、2 回目以降は変更分のみが保存されストレージ効率が高い</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>Premium SSD v2 / Ultra Disk を<strong>データディスク</strong>に持つ VM のアプリケーション整合性復元ポイントのみが対象</li>
+                <li>クラッシュ整合性 (crash-consistent) 復元ポイントは非対応</li>
+                <li>サブスクリプションあたり・リージョンあたりの同時 Instant Access 復元ポイント作成は<strong>最大 50 件</strong></li>
+                <li>現時点では <strong>Azure Portal からは操作できない</strong> (REST API / SDK / CLI / ARM テンプレートのみ)</li>
+                <li><code class="inline">instantAccessState</code> が <code class="inline">InstantAccess</code> の間は高速復元のみ可能で、コピー・ダウンロードはできない</li>
+                <li>復元ポイント全般の制限として、VM あたり最大 500 復元ポイント、同一 VM への同時作成不可、アプリケーション整合性の作成はターゲット VM あたり 1 時間に 3 回まで、などの制限がある</li>
+            </ul>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">50 件</div>
+                <div class="stat-label">同時 Instant Access 復元ポイント作成上限<br>(サブスクリプション / リージョンあたり)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">500 個</div>
+                <div class="stat-label">VM あたり最大復元ポイント数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3 回 / 時</div>
+                <div class="stat-label">アプリケーション整合性の作成上限<br>(ターゲット VM あたり)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">60〜300 分</div>
+                <div class="stat-label">instantAccessDurationMinutes<br>(既定 300 分)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🗄️ ユースケース 1: DR 自動化における RTO 短縮</h4>
+            <span class="usecase-label">シナリオ</span>
+            <p>Premium SSD v2 をデータディスクに持つデータベースサーバー VM に対し、定期的にアプリケーション整合性復元ポイントを作成している。障害発生時にはできるだけ早く VM を復旧したい。</p>
+            <span class="usecase-label" style="margin-top: 12px;">実装の考え方</span>
+            <ol>
+                <li>復元ポイントコレクションで <code class="inline">instantAccess: true</code> を設定して定期的に復元ポイントを作成</li>
+                <li>障害発生時、リカバリ自動化スクリプトが復元ポイントの <code class="inline">instantAccessState</code> を確認</li>
+                <li><code class="inline">InstantAccess</code> または <code class="inline">AvailableWithInstantAccess</code> であれば、バックグラウンドコピーの完了を待たずに即座にディスク復元 → VM 再作成を実行</li>
+            </ol>
+            <div class="usecase-effect">
+                <strong>✨ 効果</strong>: スナップショットのハイドレーション完了を待つ時間が復旧プロセスから排除され、RTO を短縮できる。また、状態確認がディスク単位から復元ポイント単位になり、自動化ロジックが簡素化される。
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Instant Access スナップショットは<strong>使用量ベースの課金モデル</strong>で、2 種類の料金が発生します。</p>
+        <table>
+            <thead>
+                <tr><th style="width: 220px;">項目</th><th>課金内容</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>スナップショットストレージ料金</strong></td>
+                    <td>Instant Access スナップショットがアクティブな間に使用した<strong>追加ストレージ分のみ</strong>課金。作成直後はソースディスクとデータを共有するためストレージコストは発生せず、ソースディスクのデータが変更・削除されるにつれて元データを保持する分だけ使用量が増加する (変更がなければ追加料金なし)</td>
+                </tr>
+                <tr>
+                    <td><strong>復元操作料金</strong></td>
+                    <td>Instant Access スナップショットからディスクを復元するたびに、復元時点のディスクの<strong>プロビジョニングサイズ</strong>に基づく 1 回限りの料金が発生</td>
+                </tr>
+            </tbody>
+        </table>
+        <p style="font-size: 14px; color: var(--ms-text-secondary);">詳細は <a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank">Managed Disks の料金ページ</a> を参照してください。</p>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <div class="highlight-box">
+            <strong>すべてのパブリックリージョンで利用可能です。</strong>
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>💽 Azure Disk Storage (Premium SSD v2 / Ultra Disk)</h4>
+                <p>Instant Access の対象となるデータディスク種別。高パフォーマンスワークロード向けディスク</p>
+            </div>
+            <div class="related-card">
+                <h4>📸 Instant Access Snapshots (マネージドディスク)</h4>
+                <p>本機能の基盤となるディスクスナップショット機能。VM 復元ポイントがこれを利用して即時復元を実現</p>
+            </div>
+            <div class="related-card">
+                <h4>🛡️ Azure Backup</h4>
+                <p>VM のバックアップを包括的に管理するサービス。復元ポイントはより軽量・粒度の細かいバックアップ手段として補完関係にある</p>
+            </div>
+            <div class="related-card">
+                <h4>🌐 復元ポイントのクロスリージョンコピー (プレビュー)</h4>
+                <p><code class="inline">instantAccessState</code> が <code class="inline">Available</code> / <code class="inline">AvailableWithInstantAccess</code> の場合にコピー可能</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Premium SSD v2 / Ultra Disk をデータディスクに持つ VM のアプリケーション整合性復元ポイントで、<strong>スナップショット作成直後からのディスク復元</strong>が可能になり、GA で追加された <code class="inline">instantAccessState</code> により<strong>復元可否の判断も 1 プロパティで完結</strong>するようになりました。</p>
+            <p style="margin-top: 10px;">バックアップ/DR 設計の観点では、ハイドレーション待ちが復旧プロセスから排除されることで <strong>RTO を直接短縮</strong>でき、リカバリ自動化の状態管理も大幅に簡素化されます。Premium SSD v2 / Ultra Disk を利用する高パフォーマンスワークロードの DR 手順を持つチームは、復元ポイントコレクションでの <code class="inline">instantAccess</code> 有効化と、自動化スクリプトの <code class="inline">instantAccessState</code> ベースへの移行を検討することを推奨します。</p>
+            <p style="margin-top: 10px;">なお、<strong>Portal 非対応・同時作成 50 件/サブスクリプション/リージョン</strong>などの制約に留意してください。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Virtual Machines</span>
+            <span class="tag">Azure Disk Storage</span>
+            <span class="tag">Restore Points</span>
+            <span class="tag">Instant Access</span>
+            <span class="tag">Premium SSD v2</span>
+            <span class="tag">Ultra Disk</span>
+            <span class="tag">Backup</span>
+            <span class="tag">Disaster Recovery</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=572573" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/virtual-machines/virtual-machines-create-restore-points#instant-access" target="_blank">Microsoft Learn: VM 復元ポイントの使用 (Instant Access)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/virtual-machines/disks-instant-access-snapshots" target="_blank">Microsoft Learn: Instant Access Snapshots</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/virtual-machines/concepts-restore-points" target="_blank">Microsoft Learn: VM 復元ポイントのサポートマトリックス</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank">料金ページ (Managed Disks)</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=572573" target="_blank">Azure Updates (ID: 572573)</a> / <a href="https://learn.microsoft.com/azure/virtual-machines/virtual-machines-create-restore-points#instant-access" target="_blank">Microsoft Learn</a></p>
+        <p>ソースレポート: reports/2026/2026-09-24-vm-restore-points-instant-access.md (Azure News Summary プロジェクト)</p>
+        <p>リリース日: 2026-09-24 | ステータス: Launched (GA) | 生成日: 2026-09-24</p>
+    </footer>
+
+</div>
+</body>
+</html>
