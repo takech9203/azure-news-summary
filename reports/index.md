@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-09-25 - Azure HorizonDB: PostgreSQL 18 サポート (Public Preview)](2026/2026-09-25-horizondb-postgresql-18.md)
 - [2026-09-24 - Azure Communication Services: スタンドアロンサービスの廃止 (2028 年 9 月 30 日)](2026/2026-09-24-acs-standalone-services-retirement.md)
 - [2026-09-24 - Azure Virtual Machines: VM 復元ポイントの Instant Access が一般提供 (GA)](2026/2026-09-24-vm-restore-points-instant-access.md)
 - [2026-09-23 - Azure Container Apps: Azure Container Apps Express の一般提供開始 (GA)](2026/2026-09-23-container-apps-express.md)
