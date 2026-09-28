@@ -5,6 +5,11 @@
 
 ## 2026 年
 
+- [2026-09-28 - Azure SQL Database: ベクトル検索とベクトルインデックスが一般提供 (GA)](2026/2026-09-28-sql-database-vector-search-ga.md)
+- [2026-09-28 - Azure SQL Managed Instance: 2026 年 9 月下旬のアップデート (Flexible Memory の Business Critical GA / トランザクションログスループット向上)](2026/2026-09-28-sql-managed-instance-late-september-updates.md)
+- [2026-09-28 - Azure SQL Database: Azure SQL Dev Hub (Public Preview)](2026/2026-09-28-sql-dev-hub-preview.md)
+- [2026-09-28 - Azure Extended Zones: Luxembourg Extended Zone の一般提供開始](2026/2026-09-28-extended-zones-luxembourg.md)
+- [2026-09-28 - Azure Backup: Azure Elastic SAN ボリュームのオペレーショナルバックアップが一般提供 (GA)](2026/2026-09-28-backup-elastic-san.md)
 - [2026-09-25 - Azure HorizonDB: PostgreSQL 18 サポート (Public Preview)](2026/2026-09-25-horizondb-postgresql-18.md)
 - [2026-09-24 - Azure Communication Services: スタンドアロンサービスの廃止 (2028 年 9 月 30 日)](2026/2026-09-24-acs-standalone-services-retirement.md)
 - [2026-09-24 - Azure Virtual Machines: VM 復元ポイントの Instant Access が一般提供 (GA)](2026/2026-09-24-vm-restore-points-instant-access.md)

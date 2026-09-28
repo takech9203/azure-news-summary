@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Backup: Azure Elastic SAN ボリュームのオペレーショナルバックアップが GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.header h1 {
+    font-size: 26px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta {
+    font-size: 14px;
+    opacity: 0.9;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(255,255,255,0.6);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box h4 { color: var(--ms-red); margin-bottom: 8px; }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { padding-left: 20px; margin: 6px 0; }
+.feature-content li { font-size: 14px; margin: 4px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* Table */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+
+/* Code block */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Steps */
+.step-list { list-style: none; counter-reset: step; margin: 12px 0; }
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 8px 0 8px 44px;
+    font-size: 14px;
+}
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Use case */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 { color: var(--ms-purple); margin-bottom: 10px; font-size: 16px; }
+.usecase-card .label { font-weight: 700; color: var(--ms-blue-800); }
+
+/* Merit / demerit lists */
+.merit-list, .caution-list { padding-left: 22px; margin: 10px 0; }
+.merit-list li { margin: 8px 0; font-size: 14px; }
+.caution-list li { margin: 10px 0; font-size: 14px; }
+
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-col {
+    background: #E8F5E9;
+    border: 1px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.merit-col h4 { color: var(--ms-green); margin-bottom: 8px; }
+
+/* Related services */
+.related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+.related-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13px;
+}
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; font-size: 14px; }
+
+/* Links */
+.link-list { padding-left: 22px; }
+.link-list li { margin: 6px 0; font-size: 14px; }
+a { color: var(--azure-blue); }
+
+/* Region banner */
+.region-banner {
+    background: linear-gradient(135deg, var(--ms-green), #0B5A0B);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 20px 24px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 16px 0;
+}
+
+/* Summary actions */
+.action-box {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0;
+    border-top: 1px solid var(--ms-border);
+}
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid, .related-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 21px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Backup</span>
+            <span class="service-badge">Azure Elastic SAN</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Azure Elastic SAN ボリュームの<br>オペレーショナルバックアップが一般提供 (GA)</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-28</span>
+            <span>🔧 機能: Azure Elastic SAN volume operational backup</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Backup による Azure Elastic SAN ボリュームの<strong>オペレーショナルバックアップ</strong>が GA になりました。Backup vault のバックアップポリシーでスケジュールと保持期間を定義すると、Azure Backup が Elastic SAN ボリュームを<strong>マネージドディスク増分スナップショット</strong>としてエクスポートし、そのライフサイクル (作成・期限切れ削除) をポリシーに従って自動管理します。誤削除、ランサムウェア、アプリケーション更新による論理破損からの復旧を、スクリプトを書かずに実現できます。</p>
+
+        <div class="warning-box">
+            <h4>⚠️ 最重要ポイント: オペレーショナル層のみのサポート</h4>
+            <p>サポートされるのは<strong>オペレーショナル層 (operational tier) のみ</strong>で、コンテナー層 (vault tier) のバックアップは非対応。復元ポイント (マネージドディスク増分スナップショット) は Microsoft 管理の Vault 内ではなく<strong>お客様自身のサブスクリプション</strong> (既定では Elastic SAN ボリュームと同じリソースグループ、または指定したスナップショット用リソースグループ) に作成されます。そのため Vault 層のセキュリティ機能 — <strong>不変性 (immutability)、論理削除 (soft delete)、多要素承認 (MUA)、カスタマー管理キー (CMK)</strong> — はいずれも適用できず、オフサイトの長期保管 (vaulted backup) も現時点では非対応です。「ランサムウェア保護」は「ボリュームのライフサイクルから独立したスナップショットの自動世代管理」までであり、Vault 層と同等のテナント侵害耐性はない点を設計時に織り込む必要があります。</p>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>🗓️ 提供の経緯</strong>: 2024 年 7 月プライベートプレビュー → 2025 年 5 月パブリックプレビュー → 2026 年 9 月 GA。プレビュー時点では特定リージョンのみでしたが、GA では Elastic SAN が利用可能なすべての Azure パブリックリージョンで利用できます。</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">450</div>
+                <div class="stat-label">最大復元ポイント数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">16 TB</div>
+                <div class="stat-label">対応ボリュームサイズ上限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">7 日</div>
+                <div class="stat-label">既定の保持期間</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0 円</div>
+                <div class="stat-label">保護インスタンス料金 (発生しない)</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>ボリューム保護は portal / PowerShell / CLI での<strong>手動スナップショット作成</strong>か自前スクリプトが必要で、スケジュール・保持をポリシーとして宣言する仕組みがなかった</li>
+                    <li>ボリュームスナップショットはソースボリューム削除で一緒に消える (durable backup ではない)。独立保持にはマネージドディスクスナップショットへの<strong>手動エクスポート</strong>が必要</li>
+                    <li>スナップショットは 1 ボリューム最大 200 個・削除は 1 個ずつで世代管理の運用負荷が高い</li>
+                    <li>ジョブの成否や復元ポイント一覧を集中管理・監視する仕組みがなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>バックアップポリシー (日次 / 週次、既定保持 7 日、最大 450 復元ポイント) で宣言的に定義し、増分スナップショットのライフサイクルを Azure Backup が自動管理</li>
+                    <li>復元ポイントは Elastic SAN のライフサイクルから独立し、ソースボリュームを削除してもバックアップデータが残る</li>
+                    <li>復元は import API 経由で「既存 Elastic SAN 内の新規ボリューム」として自動実行、<strong>別サブスクリプションへの復元にも対応</strong></li>
+                    <li>Resiliency center で構成・監視・復元を一元化。Azure CLI (<code>az dataprotection</code>、拡張 1.12.0 以降) による自動化にも対応</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Sub["☁️ お客様サブスクリプション (Vault とボリュームは同一サブスク・同一リージョン)"]
+        Policy["📋 バックアップポリシー<br>日次 / 週次・最大 450 復元ポイント"]
+        Vault["🛡️ Backup vault<br>システム割り当てマネージド ID"]
+        ESAN[("💽 Elastic SAN<br>ボリュームグループ / ボリューム")]
+        Temp["📸 ボリュームスナップショット<br>一時的・復元ポイントではない"]
+        Snap[("🗄️ マネージドディスク増分スナップショット<br>LRS / ZRS・スナップショット用 RG")]
+        NewVol[("🆕 復元先ボリューム<br>既存 Elastic SAN 内に新規作成")]
+    end
+    Policy --> Vault
+    Vault -->|"1️⃣ Elastic SAN Snapshot Exporter"| ESAN
+    ESAN -->|"2️⃣ 一時スナップショットを取得"| Temp
+    Temp -->|"3️⃣ 差分をエクスポート後に一時スナップショットを削除"| Snap
+    Snap -->|"4️⃣ 復元: Elastic SAN Volume Importer (ALR のみ)"| NewVol
+            </pre>
+        </div>
+        <p>Backup vault はマネージド ID を使って Elastic SAN ボリュームの一時スナップショットを取得し、差分をマネージドディスク増分スナップショットにエクスポートしてから一時スナップショットを削除します。復元ポイント (増分スナップショット) はお客様サブスクリプション内のスナップショット用リソースグループに置かれ、復元時はそこから既存 Elastic SAN 内の<strong>新しいボリューム</strong>として書き戻されます (上書きは不可)。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⚡ サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">📋</div>
+            <div class="feature-content">
+                <h4>1. ポリシーベースのオペレーショナルバックアップ</h4>
+                <ul>
+                    <li>Backup vault で「Elastic SAN volumes」をデータソース種別としたバックアップポリシーを作成し、スケジュール (日次 / 週次) と保持ルールを定義</li>
+                    <li>既定のバックアップ頻度は日次 (24 時間間隔)、既定の保持期間は 7 日。保持ルール全体を通じて任意時点で最大 450 復元ポイントを保持可能</li>
+                    <li>サポートされるバックアップ層はオペレーショナル層のみ</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📸</div>
+            <div class="feature-content">
+                <h4>2. マネージドディスク増分スナップショットへのエクスポート</h4>
+                <ul>
+                    <li>Azure Backup は Elastic SAN ボリュームの一時スナップショットを取得し、変更分をマネージドディスク増分スナップショットとして抽出後、一時スナップショットを削除</li>
+                    <li>この一時的な Elastic SAN ボリュームスナップショットは復元ポイントではない</li>
+                    <li>生成された増分スナップショットは Elastic SAN のライフサイクルから独立し、Azure Backup がポリシーに従ってライフサイクルを管理</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>3. スナップショットの冗長性 (LRS / ZRS)</h4>
+                <ul>
+                    <li>ZRS をサポートするリージョンで<strong>新規に作成したバックアップインスタンス</strong>、かつ対象ボリュームから増分スナップショットが未エクスポートの場合は、既定で ZRS に格納</li>
+                    <li>既存のバックアップインスタンス、および ZRS 非対応リージョンでは LRS に格納 (アナウンス本文は LRS と記載)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">💽</div>
+            <div class="feature-content">
+                <h4>4. ボリューム単位のバックアップインスタンス</h4>
+                <ul>
+                    <li>Azure portal ではボリュームグループでフィルタしてボリュームを選択し、複数ボリュームを 1 回のリクエストでまとめて追加可能</li>
+                    <li>選択したボリュームごとに個別のバックアップインスタンス (ボリューム + ポリシーのペア) を作成</li>
+                    <li>同一ボリュームを複数のバックアップインスタンスで重複保護することはできない</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗂️</div>
+            <div class="feature-content">
+                <h4>5. スナップショット格納先リソースグループの選択</h4>
+                <ul>
+                    <li>既定では Elastic SAN ボリュームと同じリソースグループに復元ポイントスナップショットを格納</li>
+                    <li>別のリソースグループも指定可能だが、Elastic SAN ボリュームとスナップショット用リソースグループは<strong>同一サブスクリプション</strong>である必要がある (マネージドディスク増分スナップショットの制約)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>6. 復元 (ALR / クロスサブスクリプション対応)</h4>
+                <ul>
+                    <li>Azure Backup が増分スナップショットを読み取り、Elastic SAN の import API を使って既存 Elastic SAN インスタンス内に新しいボリュームとして復元</li>
+                    <li>復元先はターゲットのサブスクリプション / リソースグループ / Elastic SAN インスタンス / ボリュームグループを選択でき、<strong>別サブスクリプションへの復元もサポート</strong></li>
+                    <li>Azure portal から増分スナップショットを使って直接マネージドディスクを作成することも可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>7. Resiliency center と Azure CLI による運用</h4>
+                <ul>
+                    <li>Azure portal の <strong>Resiliency</strong> から保護の構成 (Configure protection)、保護ポリシー管理、復元 (Recover)、ジョブ監視を実施</li>
+                    <li>Azure CLI は <code>az dataprotection</code> コマンド群 (<code>--datasource-type AzureElasticSAN</code>) を使用。dataprotection 拡張 1.12.0 以降が必要</li>
+                    <li>バックアップ停止時はデータを無期限またはポリシーどおりに保持可能。バックアップインスタンスを削除するとバックアップデータもすべて削除される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔬 技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>バックアップ層</td><td>オペレーショナル層のみ (Vault 層は非対応)</td></tr>
+            <tr><td>復元ポイントの実体</td><td>マネージドディスク増分スナップショット (お客様サブスクリプション内)</td></tr>
+            <tr><td>スナップショットの冗長性</td><td>ZRS (対応リージョンの新規バックアップインスタンス) または LRS</td></tr>
+            <tr><td>バックアップ頻度</td><td>日次 / 週次 (時間単位は非対応)</td></tr>
+            <tr><td>既定の保持期間</td><td>7 日</td></tr>
+            <tr><td>最大復元ポイント数</td><td>450 (保持ルール全体の合計)</td></tr>
+            <tr><td>対応ボリュームサイズ</td><td>16 TB 以下</td></tr>
+            <tr><td>バックアップ単位</td><td>Elastic SAN ボリューム単位 (1 ボリューム = 1 バックアップインスタンス)</td></tr>
+            <tr><td>復元の種別</td><td>ALR (別の場所への復元) のみ。OLR は非対応</td></tr>
+            <tr><td>復元先</td><td>既存 Elastic SAN インスタンス / ボリュームグループ内の<strong>新規</strong>ボリューム (上書き不可)</td></tr>
+            <tr><td>クロスサブスクリプション復元</td><td>対応</td></tr>
+            <tr><td>Vault とデータソースの配置</td><td>Backup vault とバックアップ対象ボリュームは同一サブスクリプション・同一リージョン</td></tr>
+            <tr><td>オンデマンドバックアップ上限</td><td>1 バックアップインスタンスあたり 1 日 10 回</td></tr>
+            <tr><td>復元上限</td><td>1 バックアップインスタンスあたり 1 日 10 回</td></tr>
+            <tr><td>必要なロール (バックアップ)</td><td>Elastic SAN Snapshot Exporter / Disk Snapshot Contributor (スナップショット用 RG)</td></tr>
+            <tr><td>必要なロール (復元)</td><td>Reader (スナップショット用 RG) / Elastic SAN Volume Importer</td></tr>
+            <tr><td>CLI 要件</td><td>Azure CLI + dataprotection 拡張 1.12.0 以降、<code>--datasource-type AzureElasticSAN</code></td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>⚙️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>既存の Elastic SAN ボリューム (サイズ 16 TB 以下)、またはサポートリージョンで新規作成したボリューム</li>
+            <li>Elastic SAN ボリュームと<strong>同一サブスクリプション・同一リージョン</strong>の Backup vault</li>
+            <li>データソース種別「Elastic SAN volumes」のバックアップポリシー</li>
+            <li>Backup vault のシステム割り当てマネージド ID に必要なロールを付与 (バックアップ: Elastic SAN Snapshot Exporter + Disk Snapshot Contributor、復元: Reader + Elastic SAN Volume Importer)。ロール付与を portal から実行するには <strong>Role-Based Access Control Administrator</strong> 権限が必要</li>
+            <li>Azure CLI を使う場合は dataprotection 拡張 1.12.0 以降</li>
+            <li>スナップショット用リソースグループに <strong>Delete Lock</strong> が設定されていないこと (設定されているとスナップショットの削除ができない)</li>
+        </ol>
+
+        <h3>Azure CLI — バックアップの構成</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>バックアップ構成</span></div>
+            <pre><code class="language-bash"># dataprotection 拡張のインストール / 更新
+az extension add --name dataprotection --upgrade
+
+# 変数の設定
+sub="&lt;subscription_id&gt;"
+rg="&lt;resource_group&gt;"
+vault="&lt;backup_vault_name&gt;"
+policyName="&lt;esan_policy_name&gt;"
+location="&lt;region&gt;"
+esanName="&lt;elastic_san_name&gt;"
+vgName="&lt;volume_group_name&gt;"
+volume="&lt;volume_name&gt;"
+
+vgId="/subscriptions/$sub/resourceGroups/$rg/providers/Microsoft.ElasticSan/elasticSans/$esanName/volumeGroups/$vgName"
+
+# 1. 既定のポリシーテンプレートを生成してポリシーを作成
+az dataprotection backup-policy get-default-policy-template \
+    --datasource-type AzureElasticSAN \
+    &gt; esan_policy.json
+
+az dataprotection backup-policy create \
+    --resource-group $rg \
+    --vault-name $vault \
+    --name $policyName \
+    --policy esan_policy.json
+
+policyId=$(az dataprotection backup-policy show \
+    --resource-group $rg --vault-name $vault --name $policyName \
+    --query id --output tsv)
+
+# 2. バックアップ構成 (対象ボリュームの指定) を作成
+az dataprotection backup-instance initialize-backupconfig \
+    --datasource-type AzureElasticSAN \
+    --resource-selectors $volume \
+    &gt; esan_backup_config.json
+
+# 3. バックアップインスタンスを初期化 (データソースはボリュームグループ)
+az dataprotection backup-instance initialize \
+    --datasource-type AzureElasticSAN \
+    --datasource-location $location \
+    --datasource-id $vgId \
+    --policy-id $policyId \
+    --friendly-name esan-bi \
+    --backup-configuration @esan_backup_config.json \
+    &gt; esan_backup_instance.json
+
+# 4. Backup vault のマネージド ID に必要なロールを付与
+az dataprotection backup-instance update-msi-permissions \
+    --datasource-type AzureElasticSAN \
+    --operation Backup \
+    --permissions-scope Resource \
+    --resource-group $rg \
+    --vault-name $vault \
+    --backup-instance @esan_backup_instance.json \
+    --yes
+
+# 5. バックアップ準備状況を検証
+az dataprotection backup-instance validate-for-backup \
+    --resource-group $rg \
+    --vault-name $vault \
+    --backup-instance @esan_backup_instance.json
+
+# 6. 保護を有効化
+az dataprotection backup-instance create \
+    --resource-group $rg \
+    --vault-name $vault \
+    --backup-instance @esan_backup_instance.json</code></pre>
+        </div>
+
+        <h3>Azure CLI — 復元</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>復元の実行</span></div>
+            <pre><code class="language-bash">restoreVol="&lt;restored_volume_name&gt;"
+snapshotRgId="/subscriptions/$sub/resourceGroups/$rg"
+
+# バックアップインスタンスと復元ポイントを解決
+biName=$(az dataprotection backup-instance list \
+    --resource-group $rg --vault-name $vault \
+    --query "[?contains(properties.friendlyName, 'esan-bi')].name | [0]" --output tsv)
+
+rpId=$(az dataprotection recovery-point list \
+    --resource-group $rg --vault-name $vault --backup-instance-name $biName \
+    --query "[0].name" --output tsv)
+
+# 復元構成を作成 (復元先ボリューム名を指定)
+az dataprotection backup-instance initialize-restoreconfig \
+    --datasource-type AzureElasticSAN \
+    --resource-identifiers $volume \
+    --resource-name-overrides "{\"$volume\":\"$restoreVol\"}" \
+    &gt; esan_restore_config.json
+
+# 復元リクエストを初期化 (ソースはオペレーショナル層)
+az dataprotection backup-instance restore initialize-for-item-recovery \
+    --datasource-type AzureElasticSAN \
+    --source-datastore OperationalStore \
+    --restore-location $location \
+    --recovery-point-id $rpId \
+    --target-resource-id $vgId \
+    --restore-configuration @esan_restore_config.json \
+    &gt; esan_restore_request.json
+
+# 復元用のロールを付与し、検証して復元を実行
+az dataprotection backup-instance update-msi-permissions \
+    --datasource-type AzureElasticSAN --operation Restore \
+    --permissions-scope Resource --resource-group $rg --vault-name $vault \
+    --restore-request-object @esan_restore_request.json \
+    --snapshot-resource-group-id $snapshotRgId --yes
+
+az dataprotection backup-instance validate-for-restore \
+    --resource-group $rg --vault-name $vault \
+    --backup-instance-name $biName \
+    --restore-request-object @esan_restore_request.json
+
+az dataprotection backup-instance restore trigger \
+    --resource-group $rg --vault-name $vault \
+    --backup-instance-name $biName \
+    --restore-request-object @esan_restore_request.json</code></pre>
+        </div>
+
+        <h3>Azure Portal — バックアップポリシーの作成</h3>
+        <ol class="step-list">
+            <li>Azure portal で <strong>Resiliency</strong> &gt; <strong>Protection policies</strong> を開く</li>
+            <li><strong>+ Create Policy</strong> &gt; <strong>Create Backup Policy</strong> を選択</li>
+            <li><strong>Basics</strong> タブでポリシー名を入力し、データソース種別に <strong>Elastic SAN volumes</strong> を選択</li>
+            <li><strong>Schedule + retention</strong> タブでバックアップスケジュール (Daily が既定、Weekly も選択可) を設定</li>
+            <li><strong>Retention settings</strong> で既定の保持ルール (7 日) を編集、または保持ルールを追加</li>
+            <li><strong>Review + create</strong> &gt; <strong>Create</strong></li>
+        </ol>
+
+        <h3>Azure Portal — バックアップの構成</h3>
+        <ol class="step-list">
+            <li><strong>Resiliency</strong> &gt; <strong>+ Configure protection</strong> を選択</li>
+            <li><strong>Resource managed by</strong> = Azure、<strong>Datasource type</strong> = Elastic SAN volumes、<strong>Solution</strong> = Azure Backup を選択して <strong>Continue</strong></li>
+            <li><strong>Vault</strong> で Backup vault を選択 (Vault はシステム割り当てマネージド ID でスナップショットを作成・管理)</li>
+            <li><strong>Backup policy</strong> タブで作成済みポリシーを選択</li>
+            <li><strong>Datasources</strong> タブで <strong>Add</strong> から Elastic SAN インスタンスを選択 (Vault と同一サブスクリプション・同一リージョンのインスタンスのみ表示)</li>
+            <li><strong>Add backup instance</strong> で <strong>Volume group</strong> でフィルタし、対象ボリュームを選択。必要ならスナップショット格納先リソースグループを変更</li>
+            <li>バックアップ準備状況の検証でロール不足が出た場合は <strong>Assign missing roles</strong> で付与し、<strong>Revalidate</strong></li>
+            <li><strong>Review + configure</strong> &gt; <strong>Configure Backup</strong></li>
+        </ol>
+
+        <h3>Azure Portal — 復元</h3>
+        <ol class="step-list">
+            <li><strong>Resiliency</strong> &gt; <strong>Recover</strong> を開き、<strong>Datasource type</strong> = Elastic SAN volumes、保護対象アイテムを選択</li>
+            <li><strong>Restore point</strong> タブで復元ポイントを選択</li>
+            <li><strong>Restore parameters</strong> タブで復元先のサブスクリプション / リソースグループ / Elastic SAN インスタンス / ボリュームグループ、および新しいボリューム名を指定</li>
+            <li><strong>Validate</strong> で権限を検証 (不足時は <strong>Assign missing roles</strong>)</li>
+            <li><strong>Review + restore</strong> &gt; <strong>Restore</strong></li>
+        </ol>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>💪 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-col">
+                <h4>💼 ビジネス面</h4>
+                <ul class="merit-list">
+                    <li>Azure Backup の保護インスタンス料金が発生せず、課金はマネージドディスク増分スナップショットのストレージ料金のみ。増分スナップショットは前回からの差分に対して課金されるため、ミッションクリティカルなブロックストレージの保護コストを抑えやすい</li>
+                    <li>誤削除、ランサムウェア、アプリケーション更新による論理破損からの復旧手段を、独自スクリプトの開発・保守なしに整備できる</li>
+                    <li>Resiliency center でバックアップ構成・ジョブ・復元を一元的に可視化でき、保護状況のレポーティングが容易になる</li>
+                    <li>Elastic SAN が利用可能なすべての Azure パブリックリージョンで利用でき、リージョン制約を理由にした設計分岐が不要</li>
+                </ul>
+            </div>
+            <div class="merit-col">
+                <h4>🔧 技術面</h4>
+                <ul class="merit-list">
+                    <li>スケジュールと保持を宣言的なポリシーとして管理でき、最大 450 復元ポイントの世代管理を Azure Backup に任せられる (手動スナップショットの 1 ボリューム 200 個上限・1 件ずつ削除という運用制約から脱却)</li>
+                    <li>復元ポイントが Elastic SAN のライフサイクルから独立するため、ソースボリューム削除後もデータが残る</li>
+                    <li>ZRS 対応リージョンの新規バックアップインスタンスでは既定で ZRS に格納され、単一ゾーン障害に対する耐性が得られる</li>
+                    <li>別サブスクリプションへの復元に対応しており、本番データを非本番サブスクリプションに書き戻す検証フローを構成できる</li>
+                    <li><code>az dataprotection</code> による完全な CLI 対応で、IaC / CI/CD パイプラインへ組み込める</li>
+                    <li>増分スナップショットから Azure portal で直接マネージドディスクを作成でき、Elastic SAN 以外への取り出し経路もある</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <h4>🔒 セキュリティ設計上の最重要制約</h4>
+            <p><strong>オペレーショナル層のみのサポート。復元ポイント (マネージドディスク増分スナップショット) はお客様自身のサブスクリプション内に格納される。</strong>そのため Vault 層バックアップで利用できる<strong>不変性 (immutability)、論理削除 (soft delete)、多要素承認 (MUA)、カスタマー管理キー (CMK) はいずれも利用できない</strong>。テナントが侵害された場合や、スナップショット用リソースグループへの書き込み権限を持つ悪意ある管理者に対しては、バックアップデータそのものが削除・改変されるリスクが残る。アナウンスの「ランサムウェア保護」は、ソースボリュームと独立した世代を自動管理できるレベルの保護と理解し、テナント侵害を想定するなら別手段 (例: 増分スナップショットからマネージドディスクを作成して Vault 層で保護されるワークロードに取り込む、など) を併用した多層防御を設計すること。</p>
+        </div>
+        <ul class="caution-list">
+            <li><strong>長期のオフサイト保管 (vaulted backup) は非対応</strong>。長期保持やコンプライアンス目的の Vault 層保管はできない</li>
+            <li><strong>時間単位 (hourly) のバックアップは非対応</strong>。日次 / 週次のみで、既定のバックアップ頻度は 24 時間。RPO は最短でも 1 日単位</li>
+            <li><strong>OLR (元の場所への復元) は非対応で ALR のみ</strong>。復元は必ず新しいボリュームとして作成され、既存ボリュームの上書きはできない。同名ボリュームが存在すると復元は失敗する。Elastic SAN のボリューム名は一度割り当てると変更できないため、本番ボリュームへの切り戻しはアプリ側の接続先 (iSCSI) 変更を伴う運用手順として設計する必要がある</li>
+            <li>ボリュームサイズは <strong>16 TB 以下</strong>に限定される</li>
+            <li>Backup vault とバックアップ対象ボリュームは同一サブスクリプション・同一リージョンである必要があり、中央の Vault で複数サブスクリプションを横断保護する構成は取れない (復元先は別サブスクリプション可)</li>
+            <li>Elastic SAN ボリュームとスナップショット用リソースグループも同一サブスクリプションでなければならない (マネージドディスク増分スナップショットの制約により、サブスクリプション外への増分スナップショット作成は不可)</li>
+            <li>同一ボリュームを複数のバックアップインスタンスで重複保護できない</li>
+            <li>スナップショット用リソースグループに <strong>Delete Lock</strong> が設定されていると、ポリシーによるスナップショット削除ができず機能が正常に動作しない</li>
+            <li>リージョン / サブスクリプションあたりのディスクスナップショット総数に Azure のサブスクリプション制限が適用されるため、多数のボリューム × 多世代を保持する設計ではクォータを事前に確認する必要がある</li>
+            <li>オンデマンドバックアップ・復元はいずれも 1 バックアップインスタンスあたり 1 日 10 回が上限</li>
+            <li>バックアップインスタンスを削除するとバックアップデータもすべて削除される</li>
+            <li>ロールは <strong>Elastic SAN Snapshot Exporter / Disk Snapshot Contributor / Reader / Elastic SAN Volume Importer</strong> を使う必要があり、<strong>Owner など他のロールはサポートされず権限エラーの原因になる</strong>。ロール割り当ては反映に数分かかる</li>
+            <li><strong>アプリケーション整合性</strong>: Elastic SAN のドキュメントでは、実行中の VM に対して取得したボリュームスナップショットは crash-consistent にとどまる可能性があり、複数ボリュームにまたがる整合性を得るには freeze / flush (Windows の VSS、Linux の fsfreeze) によるアプリ側の協調が必要と記載されている。Azure Backup for Elastic SAN のドキュメントにアプリケーション整合性の取得に関する記述はないため、データベースなどの整合性要件があるワークロードでは別途検証が必要</li>
+        </ul>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🛠️ ユースケース 1: iSCSI 接続ワークロードの日次バックアップと誤削除からの復旧</h4>
+            <p><span class="label">シナリオ</span>: Azure VM / Azure VMware Solution / AKS から iSCSI で Elastic SAN ボリュームを利用しているワークロードに対し、日次のオペレーショナルバックアップを構成する。ボリュームの誤削除やアプリケーション更新による論理破損が起きた際に、任意の復元ポイントから新しいボリュームを作成して切り替える。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+                <pre><code class="language-bash"># 日次スケジュール・保持 30 日のポリシーを作成し、ボリュームグループ配下の対象ボリュームを保護
+az dataprotection backup-policy get-default-policy-template \
+    --datasource-type AzureElasticSAN &gt; esan_policy.json
+# esan_policy.json のスケジュール / 保持ルールを要件に合わせて編集 (日次 or 週次、最大 450 復元ポイント)
+az dataprotection backup-policy create \
+    --resource-group $rg --vault-name $vault --name daily-30d --policy esan_policy.json
+
+# 障害発生時: 復元ポイントから新規ボリュームとして復元 (ALR)
+az dataprotection backup-instance restore trigger \
+    --resource-group $rg --vault-name $vault \
+    --backup-instance-name $biName \
+    --restore-request-object @esan_restore_request.json</code></pre>
+            </div>
+            <p><span class="label">効果</span>: 手動スナップショットとエクスポートスクリプトの運用を廃止し、最大 450 世代の復元ポイントをポリシーで自動管理できる。復元後は新ボリュームへ iSCSI 接続先を切り替えることで復旧する。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🧪 ユースケース 2: 本番ボリュームのコピーを別サブスクリプションに復元して検証環境を構築</h4>
+            <p><span class="label">シナリオ</span>: 本番 Elastic SAN ボリュームの復元ポイントを、非本番サブスクリプションの Elastic SAN インスタンスに新規ボリュームとして復元し、パッチ検証やデータ分析、リストア訓練に利用する。ALR とクロスサブスクリプション復元の組み合わせで実現できる。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+                <pre><code class="language-bash"># 復元先を非本番サブスクリプションのボリュームグループに向ける
+targetVgId="/subscriptions/&lt;nonprod_sub&gt;/resourceGroups/&lt;nonprod_rg&gt;/providers/Microsoft.ElasticSan/elasticSans/&lt;nonprod_esan&gt;/volumeGroups/&lt;nonprod_vg&gt;"
+
+az dataprotection backup-instance restore initialize-for-item-recovery \
+    --datasource-type AzureElasticSAN \
+    --source-datastore OperationalStore \
+    --restore-location $location \
+    --recovery-point-id $rpId \
+    --target-resource-id $targetVgId \
+    --restore-configuration @esan_restore_config.json \
+    &gt; esan_restore_request.json</code></pre>
+            </div>
+            <p><span class="label">効果</span>: 本番ボリュームに触れずに同一時点のデータを非本番環境へ払い出せる。復元は既存ボリュームを上書きしないため、本番データへの影響なしにリストア手順の訓練 (1 バックアップインスタンスあたり 1 日 10 回まで) を実施できる。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Azure Elastic SAN ボリュームのオペレーショナルバックアップでは、<strong>Azure Backup の保護インスタンス料金 (protected instance fee) は発生しません</strong>。課金されるのは、オペレーショナル層に格納される<strong>マネージドディスク増分スナップショットのストレージ料金のみ</strong>で、通常のマネージドディスク料金体系が適用されます。増分スナップショットは前回スナップショットからの差分に対して課金されます (例: 128 GB のディスクで 10 GB が使用済みの場合、初回スナップショットは 10 GB 分の課金)。</p>
+        <p>なお、Azure Backup が作成する Elastic SAN ボリュームスナップショットは一時的なもので、差分のエクスポート後に削除されます。Elastic SAN のボリュームスナップショット自体には個別の課金はありませんが、保持されている間は Elastic SAN の容量を消費します。</p>
+        <p>以下は参考として、マネージドディスク増分スナップショットの格納先となる Standard HDD マネージドディスクスナップショットの料金です (Azure Retail Prices API、東日本リージョン、2026-09-28 時点)。</p>
+        <table class="spec-table">
+            <tr><th>項目</th><th>料金</th></tr>
+            <tr><td>Azure Backup 保護インスタンス料金</td><td>なし (発生しない)</td></tr>
+            <tr><td>Standard HDD マネージドディスク スナップショット (LRS)</td><td>0.05 USD / GB / 月</td></tr>
+            <tr><td>Standard HDD マネージドディスク スナップショット (ZRS)</td><td>0.05 USD / GB / 月</td></tr>
+            <tr><td>Elastic SAN ボリュームスナップショット (一時的)</td><td>個別課金なし (保持中は Elastic SAN の容量を消費)</td></tr>
+        </table>
+        <div class="highlight-box">
+            <p>実際に適用される単価はリージョン・通貨・スナップショットの格納先ストレージ種別により異なります。正確な金額は Azure 料金計算ツールおよび料金ページ (<a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank">Azure Backup</a> / <a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank">Azure Managed Disks</a>) で確認してください。</p>
+        </div>
+    </section>
+
+    <!-- リージョン -->
+    <section class="section">
+        <h2>🌏 利用可能リージョン</h2>
+        <div class="region-banner">
+            🌐 Elastic SAN がサポートされる<strong>すべての Azure パブリックリージョン</strong>で利用可能
+        </div>
+        <p>プレビュー時点では特定リージョンに限定されていましたが、GA によりリージョン制約が解消されました。</p>
+    </section>
+
+    <!-- 関連サービス -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>💽 Azure Elastic SAN</strong>
+                バックアップ対象そのもの。Elastic SAN &gt; ボリュームグループ &gt; ボリュームという階層構造を持ち、バックアップインスタンスはボリューム単位で作成される。復元先も既存 Elastic SAN インスタンスのボリュームグループ内となる。
+            </div>
+            <div class="related-card">
+                <strong>🛡️ Backup vault</strong>
+                バックアップポリシーとバックアップインスタンスを保持する制御プレーン。システム割り当てマネージド ID でスナップショットの作成・管理・インポートを実行。Elastic SAN ボリュームと同一サブスクリプション・同一リージョンに配置する必要がある。
+            </div>
+            <div class="related-card">
+                <strong>🗄️ Azure Managed Disks (増分スナップショット)</strong>
+                復元ポイントの実体。マネージドディスク増分スナップショットとしてお客様サブスクリプション内に格納され、課金もマネージドディスクスナップショットの料金体系に従う。ここからマネージドディスクを直接作成することも可能。
+            </div>
+            <div class="related-card">
+                <strong>🖥️ Resiliency center (Azure portal)</strong>
+                保護の構成、保護ポリシーの管理、復元、バックアップジョブ / 復元ジョブの監視を行う入口。
+            </div>
+            <div class="related-card">
+                <strong>☸️ AKS / Azure VMware Solution / Azure VM</strong>
+                Elastic SAN ボリュームを iSCSI で消費するコンピュート。これらのワークロードのブロックストレージがバックアップ対象になる。
+            </div>
+            <div class="related-card">
+                <strong>🔑 Azure RBAC</strong>
+                Elastic SAN Snapshot Exporter、Disk Snapshot Contributor、Elastic SAN Volume Importer、Reader の各ロールを Backup vault のマネージド ID に付与する必要がある。Owner などの他ロールはサポートされない。
+            </div>
+            <div class="related-card">
+                <strong>🔒 Azure Resource Manager のリソースロック</strong>
+                スナップショット用リソースグループの Delete Lock はポリシーによるスナップショット削除を妨げるため、設定状況を確認・調整する必要がある。
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <p>Azure Elastic SAN ボリュームのオペレーショナルバックアップが GA し、Elastic SAN が利用可能なすべての Azure パブリックリージョンで、ポリシーベースの世代管理 (日次 / 週次、最大 450 復元ポイント、16 TB 以下のボリューム) が使えるようになりました。これまで手動のボリュームスナップショット取得とマネージドディスクスナップショットへのエクスポートをスクリプトで組んでいた運用は、Backup vault のポリシーに置き換えられます。Azure Backup の保護インスタンス料金が発生せず、課金が増分スナップショットのストレージのみという点もコスト面で扱いやすいポイントです。</p>
+        <p>一方で Solutions Architect として押さえるべき最大の論点は、<strong>これがオペレーショナル層のみのバックアップであり、復元ポイントはお客様サブスクリプション内のマネージドディスク増分スナップショットとして存在する</strong>という点です。不変性・論理削除・MUA・CMK は適用できず、Vault 層の長期オフサイト保管も非対応です。テナント侵害や特権アカウント乗っ取りを脅威モデルに含める場合、この機能単体でランサムウェア対策が完結したとは言えません。</p>
+        <div class="action-box">
+            <h3 style="margin-top: 0;">✅ 推奨される次のアクション</h3>
+            <ol class="step-list">
+                <li>保護対象の Elastic SAN ボリュームを棚卸しし、16 TB 以下という制約と、日次 / 週次という RPO でビジネス要件を満たせるかを確認する</li>
+                <li>スナップショット用リソースグループを本体と分離して設計し、そこへの書き込み・削除権限を最小化する (Delete Lock はポリシー動作を妨げるため使用不可であることに注意)</li>
+                <li>復元が ALR のみ・上書き不可であることを前提に、復旧手順 (新ボリューム作成後の iSCSI 接続先切り替え) をランブックとして整備し、クロスサブスクリプション復元を使ったリストア訓練を組み込む</li>
+                <li>Vault 層相当の保護が必要な要件については、別手段との併用による多層防御を検討する</li>
+                <li>多数のボリューム × 多世代を保持する場合、リージョン / サブスクリプションあたりのディスクスナップショット数のクォータを事前に確認する</li>
+            </ol>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Backup</span>
+            <span class="tag">Azure Elastic SAN</span>
+            <span class="tag">オペレーショナルバックアップ</span>
+            <span class="tag">マネージドディスク増分スナップショット</span>
+            <span class="tag">Backup vault</span>
+            <span class="tag">Resiliency center</span>
+            <span class="tag">ランサムウェア対策</span>
+            <span class="tag">ストレージ</span>
+            <span class="tag">GA</span>
+            <span class="tag">データ保護</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=494438" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/backup/azure-elastic-san-backup-overview" target="_blank">About Azure Elastic SAN volume operational backup</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/backup/azure-elastic-san-backup-support-matrix" target="_blank">Support matrix for Azure Elastic SAN volume operational backup</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/backup/azure-elastic-san-backup-quickstart" target="_blank">Quickstart: Create an operational backup policy for Azure Elastic SAN volume</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/backup/azure-elastic-san-backup-configure" target="_blank">Configure operational backup for Azure Elastic SAN volume</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/backup/azure-elastic-san-backup-restore" target="_blank">Restore Azure Elastic SAN volume backup</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/backup/azure-elastic-san-backup-manage" target="_blank">Manage Azure Elastic SAN volume backups</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/backup/whats-new#operational-backup-support-for-azure-elastic-san-volume-is-now-generally-available" target="_blank">What's new in the Azure Backup service</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/storage/elastic-san/elastic-san-snapshots" target="_blank">Backup Azure Elastic SAN volumes (ボリュームスナップショット / エクスポート)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank">Azure Backup の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank">Azure Managed Disks の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=494438" target="_blank">Azure Updates — Azure Elastic SAN volume operational backup (GA)</a> / <a href="https://learn.microsoft.com/en-us/azure/backup/azure-elastic-san-backup-overview" target="_blank">Microsoft Learn</a></p>
+        <p>ソースレポート: reports/2026/2026-09-28-backup-elastic-san.md (Azure News Summary)</p>
+        <p>生成日: 2026-09-28</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
