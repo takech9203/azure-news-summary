@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Database for PostgreSQL: 長期保持 (LTR) v2 (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: var(--ms-yellow);
+    color: var(--ms-text-primary);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.header .date {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-top: 12px;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    color: var(--azure-blue);
+    font-size: 22px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--ms-blue-200);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    color: var(--ms-blue-800);
+    font-size: 17px;
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 0; }
+
+/* Tables */
+.table-wrapper { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    text-align: left;
+    padding: 10px 14px;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Steps */
+.step-list { counter-reset: step; list-style: none; margin: 12px 0; }
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 12px 10px 52px;
+    margin-bottom: 10px;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Merits / Demerits */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.merit-card h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+}
+
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin-bottom: 8px; font-size: 14px; }
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin-bottom: 8px; font-size: 14px; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-blue);
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.usecase-item { margin-bottom: 10px; font-size: 14px; }
+.usecase-item .label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-weight: 500;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-right: 8px;
+}
+
+/* Region info */
+.region-box {
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 14px;
+}
+
+.region-tag {
+    display: inline-block;
+    background: #FFEBEE;
+    color: var(--ms-red);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin: 3px;
+}
+
+/* Links */
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+}
+.link-list li:last-child { border-bottom: none; }
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Related services */
+.related-card {
+    background: var(--ms-surface-secondary);
+    border-left: 4px solid var(--ms-purple);
+    padding: 12px 16px;
+    margin: 10px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+}
+.related-card strong { color: var(--ms-blue-800); }
+
+/* Code blocks (not used but per theme rule) */
+.code-block,
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* Tags */
+.tag {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    margin: 3px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0;
+}
+
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="meta-row">
+            <span class="service-badge">Azure Database for PostgreSQL</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>長期保持 (LTR) v2 が Public Preview</h1>
+        <p class="subtitle">pg_dump 論理バックアップから、Azure Backup Vault 統合の物理スナップショットベースの次世代長期バックアップへ</p>
+        <p class="date">📅 リリース日: 2026-09-29 | 機能: Long-term retention (LTR) v2</p>
+    </div>
+
+    <!-- Overview -->
+    <div class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Database for PostgreSQL の次世代長期バックアップソリューション「Long-term retention (LTR) v2」がパブリックプレビューとして発表された。LTR v1 で使用されていた論理バックアップ (pg_dump / pg_restore) から、<strong>Azure Backup Vault と統合された物理スナップショットベースのバックアップ</strong>へ移行する。</p>
+        <p>v2 はマネージドディスクの増分スナップショットを利用して物理バックアップを取得するため、pg_dump ベースのエクスポートと比較して大規模データベースに対するスケーラビリティが大幅に向上する。Flexible Server に加えて Elastic Cluster もサポートし、日次バックアップ (RPO 1 日)、最大 64 TB のサーバー保護、ターゲットサーバーへの直接リストア (Restore as Server) が可能になる。</p>
+        <div class="highlight-box">
+            保持期間は v1 と同様に<strong>最大 10 年</strong>。Backup Vault の WORM イミュータビリティ、ソフトデリート、マルチユーザー認可などのランサムウェア対策機能も利用可能。v1 (GA) は引き続き一般提供されており、既存の v1 保護アイテムは同じバックアップポリシーと Backup Vault のまま v2 へ移行できる (<strong>一方向のみ</strong>)。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">64 TB</div>
+                <div class="stat-label">最大保護サイズ (Premium SSD v2)<br>v1 は 1 TB</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">RPO 1 日</div>
+                <div class="stat-label">日次バックアップ対応<br>v1 は週次のみ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">10 年</div>
+                <div class="stat-label">最大保持期間<br>(WORM 対応)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8 ノード</div>
+                <div class="stat-label">Elastic Cluster<br>を新たにサポート</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before: LTR v1 の課題</h4>
+                <ul>
+                    <li>pg_dump による論理バックアップのため、保護できるサーバーサイズが最大 <strong>1 TB</strong> に制限</li>
+                    <li>バックアップ頻度が<strong>週 1 回のフルバックアップのみ</strong>で、長期保持バックアップの RPO が大きい</li>
+                    <li>リストアは「Restore as Files」でストレージコンテナーにファイルを復元後、pg_restore などのネイティブツールで<strong>手動インポート</strong>が必要</li>
+                    <li>保護対象は Flexible Server のみで、Elastic Cluster には非対応</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After: LTR v2 の改善</h4>
+                <ul>
+                    <li>マネージドディスクスナップショットによる物理バックアップで、<strong>Premium SSD v1: 32 TB / Premium SSD v2: 64 TB</strong> を保護可能</li>
+                    <li>日次・週次スケジュールに対応し <strong>RPO 1 日</strong>を実現 (オンデマンドバックアップも可能)</li>
+                    <li>初回フル・2 回目以降は<strong>増分バックアップ</strong>で、マルチテラバイト級サーバーでも効率的にデータ転送</li>
+                    <li><strong>「Restore as Server」</strong>で中間ストレージや手動 pg_restore なしにターゲットへ直接リストア</li>
+                    <li>Flexible Server と <strong>Elastic Cluster (最大 8 ノード)</strong> の両方を保護</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Architecture -->
+    <div class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🔙 Before: LTR v1 (GA)"]
+        A1["🗄️ Flexible Server<br/>最大 1 TB"] -->|"📤 pg_dump 論理バックアップ<br/>週次フルのみ"| A2[("🔒 Vault 層ストレージ")]
+        A2 -->|"📄 Restore as Files"| A3["🛠️ pg_restore で手動インポート"]
+    end
+    subgraph After["🆕 After: LTR v2 (Preview)"]
+        B1["🗄️ Flexible Server / Elastic Cluster<br/>最大 32/64 TB"] -->|"📸 ディスクスナップショット<br/>日次・増分 (RPO 1 日)"| B2[("🏦 Backup Vault<br/>WORM / RBAC / ソフトデリート")]
+        B2 -->|"🖥️ Restore as Server (直接復元)"| B3["🗄️ ターゲットサーバー"]
+    end
+            </pre>
+        </div>
+        <p>LTR v1 の週次 pg_dump + ファイル復元から、LTR v2 ではディスクスナップショットベースの日次増分バックアップと Backup Vault からのサーバー直接リストアに変わる。</p>
+    </div>
+
+    <!-- Key features -->
+    <div class="section">
+        <h2>⭐ 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">📸</div>
+            <div class="feature-content">
+                <h4>物理スナップショットベースのバックアップ</h4>
+                <p>マネージドディスクの増分スナップショットを取得し、Backup Vault にストリーミング。初回はフル、以降は変更ブロックのみを転送する。スナップショットチェーンが途切れた場合は、ユーザー操作なしで自動的に初期レプリケーションを再実行する。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🏦</div>
+            <div class="feature-content">
+                <h4>Vault 分離による長期保護</h4>
+                <p>バックアップデータはソースのサブスクリプション・アカウントから分離され、Azure RBAC、ソフトデリート、マルチユーザー認可 (有効時) で保護される。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>WORM イミュータブルバックアップ</h4>
+                <p>Backup Vault のイミュータビリティ (WORM) を有効化すると、Vault 管理者を含むいかなるユーザーも保持期間満了前に復旧ポイントを変更・上書き・削除できない。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🗓️</div>
+            <div class="feature-content">
+                <h4>柔軟なバックアップポリシー</h4>
+                <p>日次または週次のスケジュールバックアップとオンデマンドバックアップに対応。日次・週次・月次・年次の復旧ポイントごとに 7 日〜10 年の独立した保持期間を設定可能。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>Restore as Server</h4>
+                <p>事前作成したターゲットの Flexible Server / Elastic Cluster に復旧ポイントを直接リストア。中間ストレージアカウントや手動の pg_restore が不要。クロスリージョンリストア、別サブスクリプション (同一テナント内) へのリストア、ソース削除後のリストアにも対応。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧭</div>
+            <div class="feature-content">
+                <h4>一元的なバックアップ管理</h4>
+                <p>Azure の Resiliency (Backup center) から、他の Azure Backup 保護ワークロードと合わせてバックアップ / リストアジョブ、保護アイテム、アラート、レポートを一元管理。</p>
+            </div>
+        </div>
+
+        <h3>LTR v1 と v2 の比較</h3>
+        <div class="table-wrapper">
+            <table>
+                <tr><th>項目</th><th>v1 (GA)</th><th>v2 (Preview)</th></tr>
+                <tr><td><strong>バックアップ技術</strong></td><td>論理バックアップ (pg_dump)</td><td>マネージドディスクスナップショットによる物理バックアップ</td></tr>
+                <tr><td><strong>保護対象</strong></td><td>Flexible Server</td><td>Flexible Server + Elastic Cluster</td></tr>
+                <tr><td><strong>最大サイズ</strong></td><td>1 TB</td><td>Premium SSD v1: 32 TB / Premium SSD v2: 64 TB</td></tr>
+                <tr><td><strong>バックアップ頻度</strong></td><td>週 1 回</td><td>日次・週次 (RPO 1 日)</td></tr>
+                <tr><td><strong>バックアップ種別</strong></td><td>フルバックアップのみ</td><td>初回フル、以降は増分</td></tr>
+                <tr><td><strong>リストア</strong></td><td>Restore as Files (ストレージコンテナーへ復元後、ネイティブツールでインポート)</td><td>Restore as Server (ターゲットサーバーへ直接復元)</td></tr>
+                <tr><td><strong>最大保持期間</strong></td><td>最大 10 年</td><td>最大 10 年</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Technical specs -->
+    <div class="section">
+        <h2>🔧 技術仕様</h2>
+        <div class="table-wrapper">
+            <table>
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td><strong>PostgreSQL メジャーバージョン</strong></td><td>PostgreSQL 15 以降</td></tr>
+                <tr><td><strong>コンピュートティア</strong></td><td>General Purpose、Memory Optimized (Burstable は非対応)</td></tr>
+                <tr><td><strong>ディスクタイプと最大サイズ</strong></td><td>Premium SSD v1: 最大 32 TB / Premium SSD v2: 最大 64 TB</td></tr>
+                <tr><td><strong>サーバーロール</strong></td><td>プライマリサーバーのみ (リードレプリカ / geo レプリカは非対応)</td></tr>
+                <tr><td><strong>Elastic Cluster</strong></td><td>最大 8 ノードまでサポート</td></tr>
+                <tr><td><strong>バックアップ単位</strong></td><td>サーバー / クラスター全体 (個別データベース単位は不可)</td></tr>
+                <tr><td><strong>RPO</strong></td><td>最小 1 日 (初回バックアップや高チャーン環境では 1 日を超える場合あり)</td></tr>
+                <tr><td><strong>保持期間</strong></td><td>7 日〜10 年 (日次・週次・月次・年次で独立設定)</td></tr>
+                <tr><td><strong>Backup Vault の場所</strong></td><td>データソースと同一リージョン (サブスクリプションは同一テナント内であれば別でも可)</td></tr>
+                <tr><td><strong>CMK (カスタマーマネージドキー)</strong></td><td>ソースサーバー、Backup Vault ともにサポート</td></tr>
+                <tr><td><strong>ネットワーク</strong></td><td>VNet / プライベートエンドポイント構成のサーバーは Trusted Access 経由でサポート</td></tr>
+                <tr><td><strong>HA 有効サーバー</strong></td><td>ソースとしてサポート (リストアターゲットは HA 構成不可)</td></tr>
+                <tr><td><strong>認証</strong></td><td>Backup Vault のマネージド ID (ユーザー割り当てマネージド ID も利用可)</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Setup -->
+    <div class="section">
+        <h2>⚙️ 設定方法</h2>
+
+        <h3>✅ 前提条件</h3>
+        <ol class="step-list">
+            <li>PostgreSQL 15 以降のメジャーバージョンを使用していること (14 以前はバックアップ構成が失敗するため、事前にメジャーバージョンアップグレードが必要)</li>
+            <li>コンピュートティアが General Purpose または Memory Optimized であること (Burstable はスケールアップが必要)</li>
+            <li>データソースと同一リージョンに Backup Vault があること</li>
+            <li>Backup Vault のマネージド ID に、ソースサーバー (バックアップ時) / ターゲットサーバー (リストア時) への必要な権限を付与すること (Azure Portal では構成時に不足ロールをインラインで割り当て可能。サーバーへの書き込み権限がない場合はロール割り当てテンプレートをダウンロードして DBA に実行を依頼できる)</li>
+        </ol>
+
+        <h3>💾 バックアップフロー</h3>
+        <ol class="step-list">
+            <li>Backup Vault のマネージド ID にソースサーバーへの権限を付与</li>
+            <li>スケジュールと保持ルールを定義したバックアップポリシーを構成し、保護対象のデータソースを選択</li>
+            <li>スケジュール実行のたびに、Azure Backup が PostgreSQL リソースプロバイダー経由でサーバーディスクのスナップショットを作成</li>
+            <li>前回スナップショットとの差分を計算し、差分のみを Backup Vault へ転送 (初回はフル転送)</li>
+            <li>Vault へのコピー完了でジョブが「Successful」となり、ポリシーの保持ルールに従って復旧ポイントを管理</li>
+        </ol>
+
+        <h3>♻️ リストアフロー (Restore as Server)</h3>
+        <ol class="step-list">
+            <li>リストア先となる Flexible Server / Elastic Cluster を事前に作成 (空であること、Burstable 以外、ソースと同じ PostgreSQL メジャーバージョン・同じディスクサイズ・同じディスクタイプ、HA / geo レプリカ構成なし、Backup Vault と同一リージョン)</li>
+            <li>Backup Vault で復旧ポイントとターゲットを選択 (Azure Backup がバージョン、ディスクサイズ / タイプ、SKU ティア、ネットワーク構成を事前検証)</li>
+            <li>Azure Backup が復旧ポイントの内容をターゲットサーバーのディスクに書き込み</li>
+            <li>PostgreSQL リソースプロバイダーがサーバーを起動し、トランザクション整合性のある状態でオンライン化</li>
+        </ol>
+
+        <h3>🔄 v1 からの移行</h3>
+        <div class="highlight-box">
+            <ul style="padding-left: 20px;">
+                <li>既存の v1 保護アイテムは、同じバックアップポリシーと Backup Vault を維持したまま v2 へ移行可能</li>
+                <li>移行後も既存の v1 復旧ポイントは利用可能 (v1 復旧ポイントは Restore as Files、v2 復旧ポイントは Restore as Server でリストア)</li>
+                <li><strong>移行は一方向のみ</strong>。v1 に戻すには保護を停止しバックアップインスタンスを削除した上で v1 で再構成が必要</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Merits -->
+    <div class="section">
+        <h2>👍 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>最大 64 TB までの大規模データベースで最大 10 年の長期保持が可能になり、コンプライアンス要件 (WORM 対応を含む) に対応しやすくなる</li>
+                    <li>バックアップデータがソースサブスクリプションから分離された Backup Vault に保存され、ランサムウェアや誤削除・悪意ある削除への耐性が向上する</li>
+                    <li>Restore as Server により復旧手順が簡素化され、運用負荷と復旧時のオペレーションミスのリスクを低減できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>週次から日次バックアップになり、長期保持バックアップの RPO が 1 日に短縮される</li>
+                    <li>増分データ転送により、マルチテラバイト級サーバーでも効率的にバックアップできる</li>
+                    <li>サービス管理のクローンやエクスポート処理に依存する論理バックアップと異なり、スナップショットベースで本番ワークロードへの影響を抑えられる</li>
+                    <li>Elastic Cluster (最大 8 ノード) を含む幅広いデータソースを単一のソリューションで保護できる</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Constraints -->
+    <div class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>個別データベース・テーブル・オブジェクト単位のバックアップ / リストア (アイテムレベル) は非対応 (サーバー / クラスター全体のみ)</li>
+                <li>Burstable コンピュートティア、PostgreSQL 14 以前は非対応</li>
+                <li>リードレプリカ / geo レプリカのバックアップは不可 (プライマリサーバーのみ)</li>
+                <li>リストアはフルディスクイメージの書き込みとなるため、復旧時間は復旧ポイントのサイズに比例する。マルチテラバイト級サーバーでは RTO を分単位ではなく数時間〜数日で見積もる必要がある</li>
+                <li>RPO 1 日はすべてのシナリオで保証されない (初回バックアップ / 初期再レプリケーション、日次チャーンが大きいサーバー、Premium SSD v2 使用時は 1 日を超える場合あり)</li>
+                <li>同一サーバーの多重保護は不可 (v1 と v2 のどちらか一方のみ)</li>
+                <li>ターゲットサーバーの要件が厳格 (空であること、同一メジャーバージョン、同一ディスクサイズ・タイプなど)。ターゲットのディスクサイズがソースより小さいとリストアが失敗する</li>
+                <li>計画的な geo フェールオーバー後、バックアップ構成は新プライマリに自動では引き継がれない (旧プライマリに関連付いたままバックアップが失敗するため、新プライマリで再構成が必要)</li>
+                <li>v1 から v2 への移行は一方向</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Use cases -->
+    <div class="section">
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>1️⃣ 大規模データベースの長期保持コンプライアンス対応</h4>
+            <div class="usecase-item"><span class="label">シナリオ</span>金融・医療などの規制業種で、数 TB 規模の PostgreSQL データベースに対し数年〜10 年のバックアップ保持が求められるが、LTR v1 の 1 TB 制限と週次バックアップでは要件を満たせない。</div>
+            <div class="usecase-item"><span class="label">実装</span>LTR v2 で日次バックアップポリシーを構成し、日次復旧ポイントを数か月、月次・年次復旧ポイントを最長 10 年保持するよう設定。Backup Vault のイミュータビリティ (WORM) を有効化して改ざん・削除を防止する。</div>
+            <div class="usecase-item"><span class="label">効果</span>最大 64 TB のサーバーを RPO 1 日で保護しつつ、WORM 準拠の長期保持要件を満たせる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>2️⃣ ランサムウェア対策としての分離バックアップ</h4>
+            <div class="usecase-item"><span class="label">シナリオ</span>本番サブスクリプションが侵害された場合でも復旧可能なバックアップ体制を構築したい。</div>
+            <div class="usecase-item"><span class="label">実装</span>本番と分離された Backup Vault (別サブスクリプション、同一テナント) に v2 バックアップを構成し、ソフトデリート、マルチユーザー認可、WORM を組み合わせる。</div>
+            <div class="usecase-item"><span class="label">効果</span>バックアップデータがソース環境から分離され、ソースサーバーが削除された後でもリストア可能。クロスリージョンリストアにも対応する。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>3️⃣ LTR v1 からの移行</h4>
+            <div class="usecase-item"><span class="label">シナリオ</span>既に LTR v1 (pg_dump ベース) で保護しているサーバーのデータ増加に伴い、1 TB 制限や週次バックアップが課題になっている。</div>
+            <div class="usecase-item"><span class="label">実装</span>PostgreSQL 15 以降へのアップグレードと General Purpose / Memory Optimized へのスケールを確認した上で、既存の保護アイテムを v2 へ移行。既存ポリシーと Backup Vault はそのまま利用し、v1 の既存復旧ポイントも保持される。</div>
+            <div class="usecase-item"><span class="label">効果</span>バックアップ基盤を再構築することなく、日次バックアップと Restore as Server の恩恵を受けられる。</div>
+        </div>
+    </div>
+
+    <!-- Pricing -->
+    <div class="section">
+        <h2>💰 料金</h2>
+        <p>LTR v2 では以下の課金が発生する。プレビュー時点の具体的な単価は料金ページを参照。</p>
+        <div class="table-wrapper">
+            <table>
+                <tr><th>項目</th><th>内容</th></tr>
+                <tr><td><strong>保護インスタンス料金</strong></td><td>データソースのサイズに基づき、保護インスタンスごとにユニット単位で課金</td></tr>
+                <tr><td><strong>バックアップストレージ料金</strong></td><td>Vault に保存された総データ量と Backup Vault の冗長性構成に基づき課金</td></tr>
+            </table>
+        </div>
+        <div class="highlight-box">
+            v2 は大規模サーバーの日次バックアップに対応するため、ストレージコストは主に保持設定で決まる。<strong>日次復旧ポイントは数か月程度の保持にとどめ、長期保持には週次・月次・年次の復旧ポイントを使う構成が推奨</strong>されている。
+        </div>
+        <p>詳細: <a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank">Azure Backup 料金ページ</a></p>
+    </div>
+
+    <!-- Regions -->
+    <div class="section">
+        <h2>🌍 利用可能リージョン</h2>
+        <div class="region-box">
+            <p><strong>以下を除くすべてのパブリックリージョンで利用可能:</strong></p>
+            <span class="region-tag">Austria East</span>
+            <span class="region-tag">Belgium Central</span>
+            <span class="region-tag">Chile Central</span>
+            <span class="region-tag">Indonesia Central</span>
+            <span class="region-tag">Israel Northwest</span>
+            <span class="region-tag">Malaysia South</span>
+            <span class="region-tag">Malaysia West</span>
+            <span class="region-tag">Mexico Central</span>
+            <span class="region-tag">Qatar Central</span>
+            <span class="region-tag">South Central US 2</span>
+            <span class="region-tag">Southeast US</span>
+            <span class="region-tag">Southeast US 3</span>
+            <span class="region-tag">Southeast US 5</span>
+            <span class="region-tag">Southwest US</span>
+            <span class="region-tag">West India</span>
+        </div>
+    </div>
+
+    <!-- Related services -->
+    <div class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-card"><strong>Azure Backup (Backup Vault)</strong>: v2 の基盤となるサービス。スナップショットの取得・増分転送・復旧ポイント管理を担い、RBAC / ソフトデリート / マルチユーザー認可 / WORM で保護する</div>
+        <div class="related-card"><strong>Azure Managed Disks (増分スナップショット)</strong>: v2 の物理バックアップの取得元。Premium SSD v1 / v2 に対応</div>
+        <div class="related-card"><strong>Azure Database for PostgreSQL の運用バックアップ (PITR)</strong>: サービス組み込みの自動バックアップは最大 35 日保持。35 日を超える長期保持要件を LTR v2 が補完する</div>
+        <div class="related-card"><strong>Elastic Cluster</strong>: v2 で新たに保護対象となった PostgreSQL の分散構成 (最大 8 ノード)</div>
+        <div class="related-card"><strong>Azure Business Continuity Center (Resiliency)</strong>: バックアップ / リストアジョブ、保護アイテム、アラート、レポートの一元管理</div>
+    </div>
+
+    <!-- Summary -->
+    <div class="section">
+        <h2>📝 まとめ</h2>
+        <p>LTR v2 は、Azure Database for PostgreSQL の長期保持バックアップを pg_dump ベースの論理バックアップからディスクスナップショットベースの物理バックアップへ刷新するアップデートである。1 TB / 週次という v1 の大きな制約が解消され、<strong>最大 64 TB・日次 RPO・Restore as Server による直接復旧</strong>が可能になるため、大規模 PostgreSQL ワークロードの長期保持・ランサムウェア対策の設計が大きく改善する。</p>
+        <p>現在 v1 を利用中の場合は、PostgreSQL 15 以降へのアップグレードと Burstable 以外のティアへのスケールを前提に、<strong>一方向移行</strong>である点とアイテムレベルリストア非対応・リストアターゲット要件などの制約を評価した上で、プレビュー段階での検証を推奨する。</p>
+        <div style="margin-top: 16px;">
+            <span class="tag">Azure Database for PostgreSQL</span>
+            <span class="tag">Azure Backup</span>
+            <span class="tag">Long-term Retention</span>
+            <span class="tag">Backup Vault</span>
+            <span class="tag">Databases</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </div>
+
+    <!-- References -->
+    <div class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=571914" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/backup/backup-azure-postgresql-flex-server-elastic-cluster-v2-overview" target="_blank">About Azure Backup for PostgreSQL flexible server and elastic cluster (v2) - Microsoft Learn</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/backup/backup-azure-postgresql-flex-server-elastic-cluster-v2-support-matrix" target="_blank">Support matrix for Azure Backup for PostgreSQL flexible server and elastic cluster (v2) - Microsoft Learn</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/backup/backup-azure-database-postgresql-flex-overview" target="_blank">About Azure Database for PostgreSQL Flexible server backup (v1) - Microsoft Learn</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank">料金ページ (Azure Backup)</a></li>
+        </ul>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=571914" target="_blank">Azure Updates</a> | <a href="https://learn.microsoft.com/azure/backup/backup-azure-postgresql-flex-server-elastic-cluster-v2-overview" target="_blank">Microsoft Learn</a></p>
+        <p>レポート日: 2026-09-29 | Azure News Summary プロジェクトにより生成</p>
+    </div>
+
+</div>
+</body>
+</html>

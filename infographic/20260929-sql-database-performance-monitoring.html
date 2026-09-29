@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SQL Database: SQL Performance Monitoring (パブリックプレビュー)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.header h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle { font-size: 16px; opacity: 0.9; }
+
+.header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.header .service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+.section ul { margin: 10px 0 10px 24px; }
+.section ul li { margin: 6px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { margin-left: 20px; font-size: 14px; }
+.before ul li, .after ul li { margin: 8px 0; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; font-size: 16px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { margin: 6px 0 0 20px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 32px; font-weight: bold; }
+.stat-label { font-size: 14px; opacity: 0.9; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    text-align: left;
+    padding: 10px 14px;
+    border: 1px solid var(--ms-border);
+}
+
+td {
+    padding: 10px 14px;
+    border: 1px solid var(--ms-border);
+    background: var(--ms-surface);
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid { display: flex; justify-content: center; }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Merit / caution */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-box {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+    border-top: 4px solid var(--azure-blue);
+}
+
+.merit-box.green { background: #E8F5E9; border-top-color: var(--ms-green); }
+.merit-box h4 { margin-bottom: 8px; color: var(--ms-blue-900); }
+.merit-box.green h4 { color: var(--ms-green); }
+.merit-box ul { margin-left: 20px; font-size: 14px; }
+.merit-box ul li { margin: 6px 0; }
+
+.caution-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.caution-box ul { margin-left: 20px; }
+
+/* Region grid */
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.region-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.region-card h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+    font-size: 15px;
+    border-bottom: 2px solid var(--ms-blue-300);
+    padding-bottom: 6px;
+}
+
+.region-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.region-tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.region-tag.jp { background: var(--ms-green); color: #FFFFFF; font-weight: 700; }
+
+/* Related services */
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--ms-blue-800); }
+
+/* Links */
+a { color: var(--azure-blue); word-break: break-all; }
+
+.links-list li { margin: 8px 0; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+}
+
+/* Tags */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    border: 1px solid var(--ms-border);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <div class="header">
+        <div class="badges">
+            <span class="service-badge">Azure SQL Database</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>SQL Performance Monitoring<br>Microsoft マネージドのパフォーマンス監視 (パブリックプレビュー)</h1>
+        <p class="subtitle">監視インフラのデプロイ・運用ゼロで、SQL エステート全体のパフォーマンスを一元監視</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-29</span>
+            <span>🗄️ サービス: Azure SQL Database</span>
+            <span>🔧 機能: SQL Performance Monitoring</span>
+        </div>
+    </div>
+
+    <!-- 概要 -->
+    <div class="section">
+        <h2>📋 概要</h2>
+        <p>Azure SQL Database 向けの Microsoft マネージドなパフォーマンス監視機能「SQL Performance Monitoring」がパブリックプレビューとして提供開始されました。カスタムの収集スクリプトを構築したり、分散した複数ツール間でテレメトリを相関付けしたりすることなく、Azure SQL Database のパフォーマンスを監視できます。</p>
+        <div class="highlight-box">
+            <p><strong>ポイント</strong>: テレメトリの収集はデータベースエンジンの近くで行われ、Microsoft が管理するテレメトリパイプラインとデータストアに送信されます。ユーザー側でウォッチャー、パイプライン、データストアをデプロイ・運用する必要は一切ありません。収集データは Azure RBAC で保護され、既にアクセス権を持つリソースのテレメトリのみ参照できます。</p>
+        </div>
+        <p>この監視機能は Azure SQL Database に加え、<strong>SQL Server on Azure Virtual Machines</strong>、<strong>Azure Arc enabled SQL Server</strong> にも対応しており、<strong>Azure SQL Managed Instance</strong> への対応も近日提供予定 (coming soon) です。また、<strong>Fabric Database Hub</strong> と統合されており、事前構築済みダッシュボードによってデータベースエステート全体を一元的に把握できます。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">0</div>
+                <div class="stat-label">デプロイ・運用する監視インフラ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3+1</div>
+                <div class="stat-label">対象リソースタイプ (MI は近日対応)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">27</div>
+                <div class="stat-label">プレビュー対象リージョン</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">無制限</div>
+                <div class="stat-label">監視対象数のスケール制限なし</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>大規模な SQL 監視には、ウォッチャーやエージェントなど収集リソースのデプロイ・構成、テレメトリパイプラインの構築、データストアのプロビジョニング (課金・セキュリティ確保・運用含む)、ダッシュボードの構築が必要で、サーバー・データベース・リージョンが増えるたびに同じ作業を繰り返す必要があった</li>
+                    <li>監視スタックの各ステップが故障・構成ドリフト・収集停止のリスク要因になっていた</li>
+                    <li>監視対象数のスケール制限や、データストア運用に伴う運用負荷とコストのオーバーヘッドが課題だった</li>
+                    <li>AI エージェントにパフォーマンス分析をさせるには、ツールとデータストアが分断されていない、全データベースにわたる一貫したパフォーマンスデータソースが必要だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>組み込みのデータ収集が Microsoft 管理のテレメトリパイプラインとデータストアに送信されるため、デプロイ・運用するインフラがゼロになった</li>
+                    <li>リソース単位およびエステート全体の事前構築済みダッシュボード (Fabric Database Hub) で、パフォーマンスの傾向、異常、リソースボトルネックを特定できるようになった</li>
+                    <li>RBAC で保護された Microsoft マネージドの Azure Data Explorer プロキシエンドポイント経由で、KQL によるテレメトリへの直接クエリが可能になった (自前の ADX クラスターの作成・支払いは不要)</li>
+                    <li>監視対象数のスケール制限を気にする必要がなくなった</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- アーキテクチャ図 -->
+    <div class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph Sources["🗄️ SQL エステート"]
+        SQLDB[("🗄️ Azure SQL Database")]
+        SQLVM["💻 SQL Server on Azure VM"]
+        ARC["🌐 Arc enabled SQL Server"]
+    end
+
+    subgraph MS["☁️ Microsoft マネージド"]
+        PIPE["🔄 テレメトリパイプライン"]
+        STORE[("📦 マネージドデータストア")]
+        ADX["🔐 ADX プロキシエンドポイント&lt;br&gt;(RBAC 保護)"]
+    end
+
+    HUB["📊 Fabric Database Hub&lt;br&gt;事前構築済みダッシュボード"]
+    KQL(["🧑‍💻 KQL クエリ / Grafana / Power BI / AI エージェント"])
+
+    SQLDB --> PIPE
+    SQLVM --> PIPE
+    ARC --> PIPE
+    PIPE --> STORE
+    STORE --> HUB
+    STORE --> ADX
+    ADX --> KQL
+            </pre>
+        </div>
+        <p>各 SQL リソースのエンジン近くで収集されたテレメトリは Microsoft マネージドのパイプラインとデータストアに送られ、Fabric Database Hub のダッシュボードと RBAC 保護された Azure Data Explorer エンドポイント経由の KQL クエリの両方から利用できます。</p>
+    </div>
+
+    <!-- 主要機能 -->
+    <div class="section">
+        <h2>⚙️ 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>1. インフラ管理不要の組み込み監視</h4>
+                <ul>
+                    <li>ウォッチャーリソースや収集エージェントの作成・管理、テレメトリパイプラインの構築・運用、データストアのプロビジョニング・サイジング・支払いが不要</li>
+                    <li>テレメトリの収集・パイプライン運用・データ保存はすべて Microsoft が実施</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>2. SQL エステート全体で一貫したテレメトリ</h4>
+                <ul>
+                    <li>Azure、オンプレミス、他クラウドのいずれで稼働していても、サポート対象のすべての SQL デプロイで同一のコアパフォーマンスデータセットを収集</li>
+                    <li>プレビューで収集されるテレメトリ: CPU・メモリ使用率、待機統計 (wait statistics)、アクティブセッション、ストレージ I/O とデータベースストレージ使用率、パフォーマンスカウンター、クライアント接続、データベースプロパティ、可用性グループ・レプリカ・データベースレプリカの正常性</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>3. Fabric Database Hub の事前構築済みダッシュボード</h4>
+                <ul>
+                    <li>「データベースは正常か」「どのデータベースに注意が必要か」に素早く答えられるよう設計されたダッシュボードを追加構築なしで利用可能</li>
+                    <li>リソース使用量、待機、セッションアクティビティへのドリルダウンでパフォーマンス変化の要因を調査可能</li>
+                    <li>パフォーマンス監視データは自動的に Fabric Database Hub に連携され、別途のオンボーディング手順は不要</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-content">
+                <h4>4. テレメトリへの直接クエリアクセス</h4>
+                <ul>
+                    <li>Microsoft マネージドかつ RBAC で保護された Azure Data Explorer エンドポイントを通じて、Azure Data Explorer Web UI から KQL でクエリ可能</li>
+                    <li>独自レポート・ダッシュボードの構築、Grafana や Power BI など既存ツールとの接続、AI エージェントへのアクセス付与が可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>💻 KQL クエリ例 (発表ブログより)</h3>
+        <p>直近 1 時間の 95 パーセンタイル CPU 使用率でリソースを上位 10 件ランク付けする例:</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">KQL (Kusto)</span></div>
+            <pre><code class="language-sql">SqlServerCPUUtilization
+| where SampleTimeUTC > ago(1h)
+| summarize
+  AvgCPU = round(avg(AvgCPUPercent), 1)
+  , P95CPU = round(percentile(AvgCPUPercent, 95), 1)
+  by ResourceID, ResourceType
+| top 10 by P95CPU desc</code></pre>
+        </div>
+    </div>
+
+    <!-- 技術仕様 -->
+    <div class="section">
+        <h2>🔧 技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象リソース</td><td>Azure SQL Database、SQL Server on Azure VMs、SQL Server enabled by Azure Arc (Azure SQL Managed Instance は近日対応予定)</td></tr>
+            <tr><td>収集データ</td><td>CPU・メモリ使用率、待機統計、アクティブセッション、ストレージ I/O、パフォーマンスカウンター、クライアント接続、データベースプロパティ、可用性グループ関連の正常性</td></tr>
+            <tr><td>データ保存先</td><td>Microsoft マネージドのテレメトリパイプラインおよびデータストア</td></tr>
+            <tr><td>クエリアクセス</td><td>RBAC 保護された Microsoft マネージド Azure Data Explorer エンドポイント経由の KQL</td></tr>
+            <tr><td>ダッシュボード</td><td>Fabric Database Hub の事前構築済みダッシュボード (自動連携)</td></tr>
+            <tr><td>アクセス制御</td><td>Azure RBAC (アクセス権を持つリソースのテレメトリのみ参照可能)</td></tr>
+            <tr><td>有効化方法 (Azure SQL Database)</td><td>監視対象の各データベースに拡張プロパティ (extended property) を追加</td></tr>
+        </table>
+    </div>
+
+    <!-- 設定方法 -->
+    <div class="section">
+        <h2>🛠️ 設定方法</h2>
+        <h3>前提条件 (テレメトリの参照)</h3>
+        <ul>
+            <li>クエリ対象のリソースを含む各サブスクリプションに対する <strong>Reader ロール</strong> (またはそれ以上の権限を持つロール)</li>
+            <li>サブスクリプションで <code>Microsoft.AzureArcData</code> リソースプロバイダーが登録済みであること</li>
+        </ul>
+        <h3>有効化 (プレビュー時点)</h3>
+        <p>リソースタイプごとに有効化方法が異なります。</p>
+        <table>
+            <tr><th>リソースタイプ</th><th>有効化方法</th></tr>
+            <tr><td>Azure SQL Database</td><td>監視対象の各データベースに拡張プロパティを追加</td></tr>
+            <tr><td>Azure SQL Managed Instance</td><td>近日対応予定</td></tr>
+            <tr><td>SQL Server on Azure VMs</td><td>SQL IaaS Agent 拡張機能の機能フラグを有効化</td></tr>
+            <tr><td>SQL Server enabled by Azure Arc</td><td>Azure Arc への接続後、既定で有効</td></tr>
+        </table>
+        <p>具体的な手順は公式ドキュメント (<a href="https://aka.ms/PerformanceMonitoring_SQLDB" target="_blank">aka.ms/PerformanceMonitoring_SQLDB</a>) を参照してください。</p>
+    </div>
+
+    <!-- メリット -->
+    <div class="section">
+        <h2>✨ メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-box">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>監視インフラの構築・運用に費やしていた時間を、データベース自体の管理・改善に振り向けられる</li>
+                    <li>自前のデータストアのプロビジョニングや支払いが不要になり、監視に伴う運用負荷とコストのオーバーヘッドを削減できる</li>
+                    <li>エステート全体の可視性により「どのデータベースに今注意が必要か」を迅速に判断できる</li>
+                </ul>
+            </div>
+            <div class="merit-box green">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>Azure・オンプレミス・他クラウドを問わず、同一のテレメトリセットと単一のダッシュボード体系で監視できる (SQL の形態ごとにツールを使い分ける必要がない)</li>
+                    <li>RBAC 保護された ADX エンドポイント経由で KQL による柔軟な分析、Grafana / Power BI 連携、AI エージェントによる調査が可能</li>
+                    <li>監視対象数のスケール制限を気にせず利用できる</li>
+                    <li>収集スタックの故障・ドリフト・収集停止といった運用リスクを排除できる</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- デメリット・制約事項 -->
+    <div class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>パブリックプレビュー段階であり、本番環境での利用には Microsoft Azure プレビューの追加利用規約が適用される</li>
+                <li>Azure SQL Managed Instance は現時点で未対応 (近日対応予定)</li>
+                <li>Azure SQL Database では監視対象のデータベースごとに拡張プロパティを追加する必要がある (プレビュー時点)</li>
+                <li>テレメトリの参照には <code>Microsoft.AzureArcData</code> リソースプロバイダーの登録が必要</li>
+                <li>利用可能リージョンが限定されている (下記参照)</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- 利用可能リージョン -->
+    <div class="section">
+        <h2>🗺️ 利用可能リージョン</h2>
+        <p>パブリックプレビューは以下の Azure リージョンで利用可能です。</p>
+        <div class="region-grid">
+            <div class="region-card">
+                <h4>🌎 南北アメリカ (12)</h4>
+                <div class="region-tags">
+                    <span class="region-tag">Brazil South</span>
+                    <span class="region-tag">Canada Central</span>
+                    <span class="region-tag">Canada East</span>
+                    <span class="region-tag">Central US</span>
+                    <span class="region-tag">East US</span>
+                    <span class="region-tag">East US 2</span>
+                    <span class="region-tag">North Central US</span>
+                    <span class="region-tag">South Central US</span>
+                    <span class="region-tag">West Central US</span>
+                    <span class="region-tag">West US</span>
+                    <span class="region-tag">West US 2</span>
+                    <span class="region-tag">West US 3</span>
+                </div>
+            </div>
+            <div class="region-card">
+                <h4>🌍 ヨーロッパ・中東・アフリカ (10)</h4>
+                <div class="region-tags">
+                    <span class="region-tag">France Central</span>
+                    <span class="region-tag">North Europe</span>
+                    <span class="region-tag">Norway East</span>
+                    <span class="region-tag">South Africa North</span>
+                    <span class="region-tag">Sweden Central</span>
+                    <span class="region-tag">Switzerland North</span>
+                    <span class="region-tag">UAE North</span>
+                    <span class="region-tag">UK South</span>
+                    <span class="region-tag">UK West</span>
+                    <span class="region-tag">West Europe</span>
+                </div>
+            </div>
+            <div class="region-card">
+                <h4>🌏 アジア太平洋 (5)</h4>
+                <div class="region-tags">
+                    <span class="region-tag">Australia East</span>
+                    <span class="region-tag">Central India</span>
+                    <span class="region-tag jp">Japan East</span>
+                    <span class="region-tag">Korea Central</span>
+                    <span class="region-tag">Southeast Asia</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 料金 -->
+    <div class="section">
+        <h2>💰 料金</h2>
+        <p>本アップデートの発表時点で、この機能自体の料金に関する公式情報は確認できませんでした。なお、発表ブログでは「自前のデータストアをプロビジョニングして支払う必要はない」「自前の Azure Data Explorer クラスターを作成・支払いする必要はない」と明記されています。</p>
+        <ul>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/single/" target="_blank">Azure SQL Database 料金ページ</a></li>
+        </ul>
+    </div>
+
+    <!-- 関連サービス・機能 -->
+    <div class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-card"><strong>📊 Fabric Database Hub</strong>: 本機能のダッシュボード表示先。Azure SQL、Azure Database for PostgreSQL、Azure Cosmos DB を含むデータベースエステート全体を一元表示し、AI 支援分析や Real-Time Dashboard の構築が可能</div>
+        <div class="related-card"><strong>🔍 Azure Data Explorer</strong>: Microsoft マネージドのプロキシエンドポイント経由で収集テレメトリに KQL でクエリするためのインターフェイス (Web UI)</div>
+        <div class="related-card"><strong>👁️ Database watcher (プレビュー)</strong>: 従来提供されてきた Azure SQL 向け詳細監視ソリューション。ユーザーのサブスクリプション内の中央データストアにデータを収集する方式で、本機能は同様の監視をインフラ管理なしで実現する</div>
+        <div class="related-card"><strong>📈 Azure Monitor</strong>: Azure SQL Database の従来からの監視基盤。プラットフォームメトリック、診断設定によるリソースログの Log Analytics へのルーティング、メトリック/ログアラートを提供</div>
+        <div class="related-card"><strong>🧭 Query Performance Insight / Query Store</strong>: 単一データベースのクエリレベルの分析を提供する既存機能</div>
+    </div>
+
+    <!-- まとめ -->
+    <div class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Azure SQL Database の SQL Performance Monitoring パブリックプレビューは、これまで監視スタックの構築・運用 (収集リソース、パイプライン、データストア、ダッシュボード) に費やされていた作業を Microsoft マネージドに置き換える大きなアップデートです。Fabric Database Hub の事前構築済みダッシュボードによるエステート全体の可視化と、RBAC 保護された ADX エンドポイント経由の KQL クエリアクセスにより、大規模な SQL 環境の運用チームや AI エージェントによる分析に適した一貫したテレメトリ基盤が提供されます。</p>
+            <p style="margin-top: 12px;"><strong>推奨アクション</strong>: Japan East を含むプレビュー対象リージョンで Azure SQL Database を運用している場合は、非本番環境で拡張プロパティによる有効化を試し、既存の監視ソリューション (database watcher、カスタム収集スクリプト、サードパーティツール) との比較評価を始めることを推奨します。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">Databases</span>
+            <span class="tag">Monitoring</span>
+            <span class="tag">Public Preview</span>
+            <span class="tag">Fabric Database Hub</span>
+            <span class="tag">KQL</span>
+            <span class="tag">Azure Data Explorer</span>
+        </div>
+    </div>
+
+    <!-- 参考リンク -->
+    <div class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="links-list">
+            <li><a href="https://azure.microsoft.com/updates?id=571867" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://techcommunity.microsoft.com/blog/AzureSQLBlog/public-preview-performance-monitoring-for-azure-sql/4560498" target="_blank">発表ブログ: Public Preview: Performance monitoring for Azure SQL (Tech Community)</a></li>
+            <li><a href="https://aka.ms/PerformanceMonitoring_SQLDB" target="_blank">公式ドキュメント: Performance monitoring for Azure SQL Database</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/monitoring-sql-database-azure-monitor" target="_blank">Microsoft Learn: Monitor Azure SQL Database</a></li>
+            <li><a href="https://learn.microsoft.com/fabric/database/hub/overview" target="_blank">Microsoft Learn: Fabric Database Hub</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/single/" target="_blank">料金ページ</a></li>
+        </ul>
+    </div>
+
+    <!-- フッター -->
+    <div class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=571867" target="_blank">Azure Updates (ID: 571867)</a> / <a href="https://techcommunity.microsoft.com/blog/AzureSQLBlog/public-preview-performance-monitoring-for-azure-sql/4560498" target="_blank">Azure SQL Blog (Tech Community)</a></p>
+        <p>リリース日: 2026-09-29 | ステータス: In preview | Azure News Summary プロジェクトによる自動生成インフォグラフィック</p>
+    </div>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

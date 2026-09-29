@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Arc-enabled SCVMM: 2029 年 9 月 30 日に廃止</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-retirement { background: var(--ms-red); }
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    color: var(--azure-dark-blue);
+    font-size: 22px;
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    color: var(--ms-blue-800);
+    font-size: 18px;
+    margin: 20px 0 12px;
+}
+
+.section p { margin: 12px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-card.red { background: linear-gradient(135deg, var(--ms-red), #A22C00); }
+.stat-card.green { background: linear-gradient(135deg, var(--ms-green), #0B5A0B); }
+
+.stat-value { font-size: 26px; font-weight: bold; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 8px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 6px 0; font-size: 14px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p { margin: 0; font-size: 14px; color: var(--ms-text-secondary); }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-tertiary); }
+
+/* Timeline */
+.timeline {
+    position: relative;
+    margin: 24px 0;
+    padding-left: 32px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 4px;
+    bottom: 4px;
+    width: 4px;
+    background: var(--ms-blue-300);
+    border-radius: 2px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 6px;
+    width: 16px;
+    height: 16px;
+    background: var(--azure-blue);
+    border: 3px solid #FFFFFF;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px var(--azure-blue);
+}
+
+.timeline-item.critical::before {
+    background: var(--ms-red);
+    box-shadow: 0 0 0 2px var(--ms-red);
+}
+
+.timeline-item.warning::before {
+    background: var(--ms-orange);
+    box-shadow: 0 0 0 2px var(--ms-orange);
+}
+
+.timeline-date {
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    font-size: 15px;
+}
+
+.timeline-event { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* Steps */
+.steps { counter-reset: step; margin: 16px 0; }
+
+.step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 12px 0;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+.step-num {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.step-text { font-size: 14px; padding-top: 3px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Lists */
+.section ul { padding-left: 22px; margin: 10px 0; }
+.section li { margin: 6px 0; }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list li { margin: 8px 0; font-size: 14px; }
+
+/* Footer */
+.footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 20px 0 8px;
+}
+
+@media (max-width: 640px) {
+    .before-after { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title Area ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Arc-enabled SCVMM</span>
+            <span class="badge badge-retirement">Retirement (廃止)</span>
+        </div>
+        <h1>Azure Arc-enabled System Center Virtual Machine Manager<br>2029 年 9 月 30 日に廃止</h1>
+        <div class="meta">📅 リリース日: 2026-09-29 ｜ 🛠️ 機能: サービス廃止 (Retirement) ｜ 🏷️ Hybrid / Azure Arc</div>
+    </header>
+
+    <!-- ===== Key Dates ===== -->
+    <div class="stats-grid">
+        <div class="stat-card red">
+            <div class="stat-value">2029/9/30</div>
+            <div class="stat-label">Arc-enabled SCVMM 廃止日</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">2026/10</div>
+            <div class="stat-label">新規オンボーディング停止</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-value">対象外</div>
+            <div class="stat-label">オンプレミス SCVMM 製品は継続</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">15,000 VM</div>
+            <div class="stat-label">管理サーバーあたり (VMM 2025/2022/2019)</div>
+        </div>
+    </div>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Microsoft は、<strong>Azure Arc-enabled System Center Virtual Machine Manager (SCVMM)</strong> を <strong>2029 年 9 月 30 日に廃止</strong>することを発表しました。Azure Arc-enabled SCVMM は、SCVMM で管理されるオンプレミス VM 環境を Azure に接続し、Azure ポータルからの VM ライフサイクル操作 (作成・起動・停止・削除など)、Azure RBAC によるセルフサービス VM 管理、Arc エージェントの大規模インストール、Azure のセキュリティ・ガバナンス・監視・更新管理サービスの利用を可能にするサービスです。</p>
+        <p>今回の廃止は Azure Arc 製品ポートフォリオの再編の一環であり、<strong>新規オンボーディングは 2026 年 10 月までに停止</strong>されます。既存顧客 (Azure Arc-enabled SCVMM のアクティブなデプロイを持つ Azure サブスクリプション) は、2029 年 9 月の廃止まで現行のすべての機能を引き続き利用できますが、新機能の追加は行われません。</p>
+        <div class="highlight-box">
+            <strong>推奨される移行先は利用形態によって異なります。</strong><br>
+            Azure 管理サービス (Azure Update Manager、Defender for Cloud、Azure Monitor、Azure Policy、ESU/従量課金ライセンスなど) のみを利用している場合は <strong>Azure Arc-enabled Servers</strong> への移行が推奨されます。Azure からの VM ライフサイクル操作を利用している場合は、Microsoft (<a href="mailto:arc-vmm-feedback@microsoft.com">arc-vmm-feedback@microsoft.com</a>) に連絡して移行アセスメントを開始することが案内されています。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ 廃止による影響</h4>
+                <ul>
+                    <li>2026 年 10 月以降、新規顧客は Azure Arc-enabled SCVMM をデプロイできなくなる</li>
+                    <li>廃止までの期間、Azure Arc-enabled SCVMM への新機能追加は行われない</li>
+                    <li>2029 年 9 月 30 日以降、Azure からの SCVMM VM ライフサイクル管理・インベントリ表示は利用不可となる</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ 既存顧客への猶予</h4>
+                <ul>
+                    <li>既存デプロイは 2029 年 9 月まで現行機能をすべて利用可能 (サポート継続)</li>
+                    <li>VM にインストール済みの Azure Arc エージェント自体は動作を継続する (Azure CLI コマンドで Arc-enabled Servers マシンへの切り替えが必要)</li>
+                    <li>オンプレミスの System Center Virtual Machine Manager 製品自体は廃止対象外 (System Center のライフサイクルポリシーに従い継続利用可能)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2>🗺️ アーキテクチャ図 (移行パス)</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    SCVMM["🖥️ Azure Arc-enabled SCVMM<br>(2029/9/30 廃止)"]
+    Q1{"❓ 利用形態は?"}
+    MgmtOnly["🛡️ Azure 管理サービスのみ利用<br>(Update Manager / Defender / Monitor / ESU)"]
+    Lifecycle["🔄 VM ライフサイクル操作を利用<br>(作成・起動・停止・削除)"]
+    ArcServers["☁️ Azure Arc-enabled Servers<br>へ移行"]
+    Contact["📧 arc-vmm-feedback@microsoft.com<br>へ連絡し移行アセスメント"]
+    Deboard["🧹 Arc-enabled SCVMM リソースを<br>Azure から削除"]
+
+    SCVMM --> Q1
+    Q1 --> MgmtOnly
+    Q1 --> Lifecycle
+    MgmtOnly --> ArcServers
+    Lifecycle --> Contact
+    ArcServers --> Deboard
+            </pre>
+        </div>
+        <p>Azure Arc-enabled SCVMM の利用形態に応じた移行パスです。管理サービスのみの利用なら Azure Arc-enabled Servers へ移行し、VM ライフサイクル操作を利用している場合は Microsoft への連絡による個別アセスメントが推奨されます。</p>
+    </section>
+
+    <!-- ===== Details ===== -->
+    <section class="section">
+        <h2>🔍 サービスアップデートの詳細</h2>
+
+        <h3>📆 廃止スケジュール</h3>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">2026 年 9 月</div>
+                <div class="timeline-event">廃止の発表 (新規デプロイの計画を避けることを推奨)</div>
+            </div>
+            <div class="timeline-item warning">
+                <div class="timeline-date">2026 年 10 月</div>
+                <div class="timeline-event">新規顧客のオンボーディング停止 (既存顧客のオンボーディング体験は維持)</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">2026 年 10 月まで</div>
+                <div class="timeline-event">Arc-enabled Servers への切り替え用 Azure CLI コマンドがドキュメントで公開予定</div>
+            </div>
+            <div class="timeline-item critical">
+                <div class="timeline-date">2029 年 9 月 30 日</div>
+                <div class="timeline-event">Azure Arc-enabled SCVMM の廃止</div>
+            </div>
+        </div>
+
+        <h3>🧭 移行パスの選択</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>現在の利用形態</th>
+                    <th>推奨される移行パス</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Azure 管理サービスのみ利用 (Update Manager、Defender for Cloud、Azure Monitor、Azure Policy、Guest Configuration、ESU / 従量課金の SQL・Windows Server ライセンス) で、Azure ベースの VM ライフサイクル管理は不要</td>
+                    <td><strong>Azure Arc-enabled Servers</strong></td>
+                </tr>
+                <tr>
+                    <td>Azure からの VM ライフサイクル操作のみ利用 (作成、起動、停止、再起動、リサイズ、削除、セルフサービス VM プロビジョニング)</td>
+                    <td><strong>arc-vmm-feedback@microsoft.com へ連絡</strong></td>
+                </tr>
+                <tr>
+                    <td>VM ライフサイクル操作と Azure 管理サービスの両方を利用</td>
+                    <td><strong>arc-vmm-feedback@microsoft.com へ連絡</strong></td>
+                </tr>
+            </tbody>
+        </table>
+        <div class="warning-box">
+            Azure Arc-enabled Servers はゲスト OS レベルの管理を提供するサービスであり、仮想化レイヤーの VM ライフサイクル操作 (CRUD) は提供しません。VM ライフサイクル操作が必要な場合、インフラ・接続性・VM 管理要件が組織ごとに異なるため単一の代替ソリューションは提示されておらず、Microsoft が接続シナリオ・非接続シナリオ両方の移行オプションを個別に案内するとしています。
+        </div>
+
+        <h3>🪜 Azure Arc-enabled Servers への移行手順 (概要)</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-text">Azure サービス (パッチ適用、監視、セキュリティなど) にオンボード済み、または Azure ベースのライセンス (ESU、従量課金ライセンス) に登録済みの VM を特定する</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-text">Azure CLI コマンドをマシン単位、リソースグループ単位、またはサブスクリプション単位で実行する (<strong>CLI コマンドは 2026 年 10 月までにドキュメントで公開予定</strong>)</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-text">マシンと Azure Arc 間の接続性を検証する</div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-text">ポリシー、監視、更新、セキュリティ、ライセンス課金、コンプライアンス機能の動作を確認する</div></div>
+            <div class="step"><div class="step-num">5</div><div class="step-text">将来的に追加マシンを大規模に Arc オンボードする計画を策定する</div></div>
+            <div class="step"><div class="step-num">6</div><div class="step-text">Azure Arc-enabled SCVMM リソースを Azure から適切に削除 (デボード) する</div></div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Specs ===== -->
+    <section class="section">
+        <h2>⚙️ 技術仕様</h2>
+        <table>
+            <thead>
+                <tr><th>項目</th><th>詳細</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>廃止対象</td><td>Azure Arc-enabled System Center Virtual Machine Manager</td></tr>
+                <tr><td>廃止日</td><td><strong>2029 年 9 月 30 日</strong></td></tr>
+                <tr><td>新規オンボーディング停止</td><td>2026 年 10 月</td></tr>
+                <tr><td>廃止対象外</td><td>オンプレミスの System Center Virtual Machine Manager 製品 (System Center のライフサイクル・サポートポリシーに従う)</td></tr>
+                <tr><td>現行のサポート対象 SCVMM バージョン</td><td>VMM 2025、2022、2019 (管理サーバーあたり最大 15,000 VM)</td></tr>
+                <tr><td>主な移行先</td><td>Azure Arc-enabled Servers (ゲスト OS 管理・ライセンス調達用途)</td></tr>
+                <tr><td>VM ライフサイクル管理の代替</td><td>個別アセスメント (arc-vmm-feedback@microsoft.com へ連絡)</td></tr>
+                <tr><td>問い合わせ先</td><td><a href="mailto:arc-vmm-feedback@microsoft.com">arc-vmm-feedback@microsoft.com</a></td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="feature-card" style="border-left-color: var(--ms-red);">
+            <div class="feature-icon">🚫</div>
+            <div class="feature-content">
+                <h4>VM ライフサイクル操作の直接的な代替なし</h4>
+                <p>Azure Arc-enabled Servers は仮想化レイヤーの VM ライフサイクル操作 (作成・削除・リサイズなど) を提供しないため、Azure ポータルからの SCVMM VM のプロビジョニングやセルフサービス操作の直接的な代替にはならない</p>
+            </div>
+        </div>
+        <div class="feature-card" style="border-left-color: var(--ms-orange);">
+            <div class="feature-icon">🧊</div>
+            <div class="feature-content">
+                <h4>新機能追加の停止</h4>
+                <p>廃止までの期間、Azure Arc-enabled SCVMM への新機能追加は行われない</p>
+            </div>
+        </div>
+        <div class="feature-card" style="border-left-color: var(--ms-orange);">
+            <div class="feature-icon">⏳</div>
+            <div class="feature-content">
+                <h4>切り替え用 CLI コマンドは未提供</h4>
+                <p>Arc-enabled Servers への切り替え用 Azure CLI コマンドは 2026 年 10 月までの公開予定であり、現時点では未提供</p>
+            </div>
+        </div>
+        <div class="feature-card" style="border-left-color: var(--ms-orange);">
+            <div class="feature-icon">🧹</div>
+            <div class="feature-content">
+                <h4>移行後のデボード作業が必要</h4>
+                <p>移行完了後は、残存する Azure Arc-enabled SCVMM リソース (Arc resource bridge など) の Azure からの削除作業が別途必要</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">☁️</div>
+            <div class="feature-content">
+                <h4>Azure Arc-enabled Servers</h4>
+                <p>推奨される移行先。仮想化プラットフォームに依存しないゲスト OS レベルの管理 (Azure Policy、Update Manager、Monitor、Defender for Cloud、ESU など) を提供</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌉</div>
+            <div class="feature-content">
+                <h4>Azure Arc resource bridge</h4>
+                <p>Arc-enabled SCVMM で SCVMM 管理サーバーを Azure に接続していた仮想アプライアンス。移行後はデボード対象</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🏠</div>
+            <div class="feature-content">
+                <h4>Azure Local</h4>
+                <p>新規のクラウドネイティブな VM 管理ニーズに対して Arc-enabled Servers と併せて評価が推奨されるプラットフォーム</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖧</div>
+            <div class="feature-content">
+                <h4>Azure Arc-enabled VMware vSphere</h4>
+                <p>SCVMM 管理下の VMware vCenter VM を Arc オンボードする場合の選択肢 (従来から Arc-enabled SCVMM の対象外)</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>Azure Update Manager / Microsoft Defender for Cloud / Azure Monitor</h4>
+                <p>Arc-enabled SCVMM 経由で利用していた管理サービス。Arc-enabled Servers への切り替え後も継続利用可能</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="highlight-box">
+            <p>Azure Arc-enabled SCVMM は <strong>2029 年 9 月 30 日に廃止</strong>され、新規オンボーディングは <strong>2026 年 10 月に停止</strong>されます。既存環境は廃止まで現行機能を利用できますが、新機能は追加されないため、早期の移行計画が推奨されます。</p>
+            <p>Solutions Architect としては、まず自組織の利用形態を棚卸しし、Azure 管理サービスのみの利用であれば <strong>Azure Arc-enabled Servers への切り替え</strong> (CLI コマンドは 2026 年 10 月までに公開予定) を、Azure からの VM ライフサイクル操作を利用している場合は <strong>arc-vmm-feedback@microsoft.com への連絡による移行アセスメント</strong>を早期に開始すべきです。</p>
+            <p>なお、オンプレミスの SCVMM 製品自体は廃止対象外であり、System Center のライフサイクルポリシーに従って継続利用できます。</p>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=570283" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/azure-arc/system-center-virtual-machine-manager/transition-guidance" target="_blank" rel="noopener">移行ガイダンス (Transition guidance)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/azure-arc/system-center-virtual-machine-manager/overview" target="_blank" rel="noopener">Azure Arc-enabled SCVMM 概要</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/azure-arc/servers/overview" target="_blank" rel="noopener">Azure Arc-enabled Servers 概要</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/azure-arc/system-center-virtual-machine-manager/remove-scvmm-from-azure-arc" target="_blank" rel="noopener">SCVMM 環境の Azure Arc からの削除手順</a></li>
+        </ul>
+        <p style="font-size: 13px; color: var(--ms-text-secondary);">タグ: Azure Arc, SCVMM, System Center, Retirement, Hybrid, Azure Arc-enabled Servers</p>
+    </section>
+
+    <footer class="footer">
+        出典: <a href="https://azure.microsoft.com/updates?id=570283" target="_blank" rel="noopener">Azure Updates (ID: 570283)</a> ｜ レポート日: 2026-09-29 ｜ Azure News Summary
+    </footer>
+
+</div>
+</body>
+</html>

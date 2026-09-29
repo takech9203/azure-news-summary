@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SQL: 2026 年 9 月下旬のアップデートまとめ (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.header h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    color: var(--azure-dark-blue);
+    font-size: 22px;
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    color: var(--ms-blue-800);
+    font-size: 18px;
+    margin: 24px 0 12px;
+}
+
+.section p { margin: 10px 0; }
+
+.section ul, .section ol {
+    margin: 10px 0;
+    padding-left: 24px;
+}
+
+.section li { margin: 6px 0; }
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+    font-size: 16px;
+}
+
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 20px; margin: 6px 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 32px; font-weight: bold; }
+.stat-label { font-size: 14px; opacity: 0.9; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) { background: var(--ms-blue-100); }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+code.inline-code {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* Use case cards */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-label {
+    display: inline-block;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin-right: 4px;
+}
+
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+
+/* Warning / constraint boxes */
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: 14px;
+}
+
+.warning-box h4 { color: var(--ms-orange); margin-bottom: 6px; }
+.warning-box ul { padding-left: 20px; }
+
+/* Merit grid */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.merit-card h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+}
+
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list li { margin: 8px 0; }
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer a { word-break: break-all; }
+
+/* Summary box */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+}
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure SQL Database</span>
+            <span class="service-badge">Azure SQL Managed Instance</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Azure SQL: 2026 年 9 月下旬のアップデートまとめ<br>5 件の Public Preview 新機能</h1>
+        <div class="meta">📅 リリース日: 2026-09-29 | 🧩 Database Hub / Hyperscale Elastic Pool / タイムゾーン / MSSQL 拡張 / MI link</div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>2026 年 9 月下旬に、Azure SQL に対して以下 5 件のアップデート・機能強化 (いずれも <strong>Public Preview</strong>) が発表されました。</p>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗂️</div>
+            <div class="feature-content">
+                <h4>1. Database Hub in Microsoft Fabric</h4>
+                <p>SQL Server、Azure SQL、PostgreSQL、Azure Cosmos DB、Fabric SQL にまたがるデータベースを横断的に発見・管理・監視・最適化する統合エクスペリエンス。AI を活用したインサイトとエージェントを単一のコントロールプレーンに集約し、データベース運用を簡素化します。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🏊</div>
+            <div class="feature-content">
+                <h4>2. Hyperscale Elastic Pool のデータベース数上限拡大</h4>
+                <p>1 つの Hyperscale Elastic Pool に配置できるデータベース数を <strong>50</strong> に増加可能になりました。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🕐</div>
+            <div class="feature-content">
+                <h4>3. Azure SQL Database のローカルタイムゾーンサポート</h4>
+                <p>カスタムロジックや回避策なしに、構成したタイムゾーンでアプリケーションを動作させることが可能になりました。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💻</div>
+            <div class="feature-content">
+                <h4>4. MSSQL 拡張機能 (VS Code) のモダナイズされたランディングページ</h4>
+                <p>機能の発見と迅速な利用開始が容易になりました。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>5. Managed Instance link の複数データベースレプリケーション</h4>
+                <p>単一の link で SQL Server Always On 可用性グループの複数データベースを Azure SQL Managed Instance にレプリケート可能になりました。</p>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">5 件</div>
+                <div class="stat-label">Public Preview アップデート</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">50 DB</div>
+                <div class="stat-label">Hyperscale Elastic Pool 上限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1 link</div>
+                <div class="stat-label">AG 全 DB をレプリケート</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8+</div>
+                <div class="stat-label">Database Hub 対応サービス</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>データベース資産が Azure、Fabric、オンプレミスなど複数のポータル・管理画面に分散し、Issues や Suggestions を確認するために複数のポータルを行き来する必要があった</li>
+                    <li>Azure SQL Database は歴史的に UTC 固定であり、データベースやセッションのタイムゾーンを構成する手段がなく、すべてのクエリへの <code class="inline-code">AT TIME ZONE</code> の埋め込みやアプリケーション層でのタイムゾーン処理といった回避策が必要だった (エラーが起きやすく、大規模環境ではパフォーマンス上のオーバーヘッドも発生)</li>
+                    <li>Managed Instance link は単一データベースモードのみで、1 link = 1 データベースの制約があり、複数データベースをレプリケートするにはデータベースごとに個別の link を作成する必要があった (可用性グループを単一データベースの AG に分割する必要があった)</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Database Hub により、既存の Azure RBAC 権限を利用して、データベース資産全体のインベントリ、Issues/Suggestions、パフォーマンスを単一のコントロールプレーンで横断的に把握できるようになった</li>
+                    <li><code class="inline-code">ALTER DATABASE SCOPED CONFIGURATION SET TIME_ZONE</code> (データベースレベル) と <code class="inline-code">SET TIME ZONE</code> (セッションレベル) により、クライアントドライバーや接続文字列の変更なしにローカルタイムゾーンで日時関数が動作するようになった</li>
+                    <li>複数データベース link モード (プレビュー) により、既存の Always On 可用性グループを分割せずに、グループ内の全データベースを 1 つの link で Azure SQL Managed Instance に拡張できるようになった</li>
+                    <li>Hyperscale Elastic Pool あたりのデータベース数を 50 に増やせるようになり、SaaS などマルチテナント構成での集約密度が向上した</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Fabric["🧩 Microsoft Fabric"]
+        HUB["🗂️ Database Hub&lt;br&gt;(発見・監視・最適化・AI インサイト)"]
+    end
+    subgraph Azure["☁️ Azure"]
+        SQLDB[("🗄️ Azure SQL Database&lt;br&gt;🕐 ローカルタイムゾーン対応")]
+        HSEP[("🏊 Hyperscale Elastic Pool&lt;br&gt;最大 50 DB")]
+        MI[("🗄️ SQL Managed Instance")]
+        COSMOS[("🌐 Cosmos DB / PostgreSQL")]
+    end
+    subgraph OnPrem["🏢 オンプレミス"]
+        AG["🖥️ SQL Server&lt;br&gt;Always On 可用性グループ"]
+    end
+    DEV(["👩‍💻 開発者&lt;br&gt;VS Code MSSQL 拡張"])
+    HUB --&gt;|"Azure 管理 API 経由で&lt;br&gt;メタデータ取得"| SQLDB
+    HUB --&gt; HSEP
+    HUB --&gt; MI
+    HUB --&gt; COSMOS
+    AG ==&gt;|"🔗 単一の MI link で&lt;br&gt;複数 DB をレプリケート"| MI
+    DEV --&gt; SQLDB
+            </pre>
+        </div>
+        <p>Database Hub が Azure・Fabric・オンプレミスのデータベース資産を単一のコントロールプレーンとして横断的に管理し、Managed Instance link は単一の link で可用性グループ内の複数データベースを Azure SQL Managed Instance へレプリケートします。</p>
+    </section>
+
+    <!-- サービスアップデートの詳細 -->
+    <section class="section">
+        <h2>🔍 サービスアップデートの詳細</h2>
+
+        <h3>1. 🗂️ Database Hub in Microsoft Fabric</h3>
+        <p>Azure、Microsoft Fabric、オンプレミス、サポートされるマルチクラウド環境にまたがるデータベース資産を統合的に運用するエクスペリエンス。</p>
+        <ul>
+            <li><strong>Overview ページ</strong>: 注意が必要な項目をハイライト表示</li>
+            <li><strong>Estate ページ</strong>: エンジン横断のリソースビュー。データベースインベントリを一元的に閲覧し、Issues (早急な対応・修復が必要な問題) と Suggestions (セキュリティ・パフォーマンス・使用率・コスト効率・運用態勢の改善機会) を複数ポータルを移動せずに確認可能。カスタムビューの保存・共有にも対応</li>
+            <li><strong>Performance ページ</strong>: アクセス権のある全データベースエンジンを横断して、リアルタイムおよび履歴メトリックを資産レベルで統合表示</li>
+            <li><strong>リソース作成</strong>: Estate ページの「+ Create resource」から、サポートされる任意のプラットフォームのリソースを作成可能</li>
+        </ul>
+        <div class="highlight-box">
+            <p><strong>サポートされるデータベースサービス (プレビュー時点)</strong>: Azure SQL Database (全サービスティア)、Azure SQL Elastic Pools、Azure SQL Managed Instance、SQL database in Fabric、Azure Arc 対応 SQL Server、Azure VM 上の SQL Server、Azure Database for PostgreSQL フレキシブルサーバー、Azure Cosmos DB</p>
+            <p style="margin-top: 8px;"><strong>アクセス制御</strong>: 既存の Microsoft Entra ID と Azure RBAC の権限をそのまま使用。Database Hub が追加のアクセス権を付与することはなく、パフォーマンス監視データの表示には対象サブスクリプションでの Reader ロール以上が必要。Database Hub はデータベースリソースを変更しません。</p>
+        </div>
+
+        <h3>2. 🏊 Hyperscale Elastic Pool のデータベース数上限を 50 に拡大</h3>
+        <p>1 つの Hyperscale Elastic Pool に配置できるデータベース数を <strong>50</strong> に増やせるようになりました (プレビュー)。Hyperscale Elastic Pool は、プール内のデータベース間でコンピュートとログリソースを共有する Hyperscale データベース向けの共有リソースモデルで、利用パターンの異なる複数データベースのコスト最適化に有効です。</p>
+
+        <h3>3. 🕐 Azure SQL Database のローカルタイムゾーンサポート</h3>
+        <ul>
+            <li><strong>データベースレベル</strong>: <code class="inline-code">ALTER DATABASE SCOPED CONFIGURATION SET TIME_ZONE = '&lt;Windows タイムゾーン ID&gt;'</code> で全接続に適用される永続的な設定。セカンダリレプリカはプライマリの設定を継承</li>
+            <li><strong>セッションレベル</strong>: ANSI SQL 標準構文 <code class="inline-code">SET TIME ZONE '&lt;タイムゾーン&gt;'</code> で単一接続のみに適用。切断時に自動でリセットされ、ストアドプロシージャや動的 SQL 内でもスコープが正しく管理される</li>
+            <li><strong>優先順位</strong>: セッション設定 → データベース設定 → プラットフォーム既定 (UTC)</li>
+            <li><strong>影響を受ける関数</strong>: <code class="inline-code">GETDATE()</code>、<code class="inline-code">SYSDATETIME()</code>、<code class="inline-code">CURRENT_TIMESTAMP</code>、<code class="inline-code">CURRENT_DATE</code>、<code class="inline-code">SYSDATETIMEOFFSET()</code>、<code class="inline-code">CURRENT_TIMEZONE()</code>、<code class="inline-code">CURRENT_TIMEZONE_ID()</code></li>
+            <li>クライアントドライバーの変更や接続文字列属性の追加は不要</li>
+        </ul>
+
+        <h3>4. 💻 MSSQL 拡張機能 (VS Code) のモダナイズされたランディングページ</h3>
+        <p>VS Code 向け MSSQL 拡張機能のランディングページが刷新され、機能の発見と利用開始が容易になりました。</p>
+
+        <h3>5. 🔗 Managed Instance link: 単一 link での複数データベースレプリケーション</h3>
+        <p>Managed Instance link に <strong>複数データベース link モード (プレビュー)</strong> が追加されました。</p>
+        <ul>
+            <li>既存の SQL Server Always On 可用性グループ内の <strong>全データベース</strong> を 1 つの link で Azure SQL Managed Instance にレプリケート可能。既存グループを単一データベースの可用性グループに分割する必要がない</li>
+            <li>各データベースは、顧客に見える link 内の内部レプリケーショングループを持つ</li>
+            <li>レプリケートされた各データベースはインスタンス全体のデータベース数上限にカウントされる (General Purpose / Business Critical は最大 100、Next-gen General Purpose は最大 500)</li>
+            <li>単一データベースモードと複数データベースモードの link は同一 SQL Server インスタンス上で共存不可。モードのインプレース変更も不可 (全 link を削除し、全レプリカでモードを変更してから再作成が必要)</li>
+            <li>特定の SQL Server 累積更新プログラム、サポートされるエディション、および全 SQL Server レプリカでのオプトインが必要。SQL Managed Instance が初期プライマリの場合やロールを SQL Server に戻す場合は、対応する更新ポリシー (SQL Server 2022 / 2025) の一致が必要</li>
+        </ul>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>⚙️ 技術仕様</h2>
+        <table>
+            <thead>
+                <tr><th style="width: 38%;">項目</th><th>詳細</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Database Hub の対象サービス</td><td>Azure SQL Database (全ティア)、Azure SQL Elastic Pools、SQL Managed Instance、SQL database in Fabric、Azure Arc 対応 SQL Server、Azure VM 上の SQL Server、Azure Database for PostgreSQL フレキシブルサーバー、Azure Cosmos DB</td></tr>
+                <tr><td>Database Hub の権限モデル</td><td>既存の Microsoft Entra ID / Azure RBAC を使用 (パフォーマンス監視には Reader ロール以上)</td></tr>
+                <tr><td>Hyperscale Elastic Pool のデータベース数</td><td>最大 50 (プレビュー)</td></tr>
+                <tr><td>タイムゾーン設定 (データベースレベル)</td><td><code class="inline-code">ALTER DATABASE SCOPED CONFIGURATION SET TIME_ZONE</code> / 確認は <code class="inline-code">sys.database_scoped_configurations</code></td></tr>
+                <tr><td>タイムゾーン設定 (セッションレベル)</td><td><code class="inline-code">SET TIME ZONE</code> / 確認は <code class="inline-code">sys.dm_exec_sessions</code> の <code class="inline-code">time_zone</code> 列</td></tr>
+                <tr><td>利用可能なタイムゾーン</td><td><code class="inline-code">sys.time_zone_info</code> ビューで確認 (Windows タイムゾーン識別子)</td></tr>
+                <tr><td>タイムゾーンの対象サービス</td><td>Azure SQL Database (SQL Managed Instance / SQL Server は未サポート)</td></tr>
+                <tr><td>MI link 複数データベースモード</td><td>既存 AG 内の全データベースを 1 link でレプリケート。単一/複数モードは同一インスタンスで共存不可</td></tr>
+                <tr><td>MI link のデータベース数上限</td><td>インスタンス全体で GP/BC: 100、Next-gen GP: 500 (link 数を増やしても上限は増えない)</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>ローカルタイムゾーン (T-SQL)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">SQL</span></div>
+            <pre><code class="language-sql">-- 利用可能なタイムゾーンを確認
+SELECT * FROM sys.time_zone_info;
+
+-- データベースレベルで設定 (全接続に適用、永続)
+ALTER DATABASE SCOPED CONFIGURATION SET TIME_ZONE = 'Tokyo Standard Time';
+
+-- リセット (プラットフォーム既定の UTC に戻す)
+ALTER DATABASE SCOPED CONFIGURATION SET TIME_ZONE = LOCAL;
+
+-- セッションレベルで設定 (当該接続のみ、切断で自動リセット)
+SET TIME ZONE 'India Standard Time';
+SET TIME ZONE LOCAL;</code></pre>
+        </div>
+
+        <h3>Hyperscale Elastic Pool への変換 (T-SQL)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">SQL</span></div>
+            <pre><code class="language-sql">-- General Purpose データベースを既存の Hyperscale Elastic Pool (hsep1) に変換・追加
+ALTER DATABASE gpepdb1 MODIFY (SERVICE_OBJECTIVE = ELASTIC_POOL(NAME = [hsep1]));
+-- 進捗は sys.dm_operation_status で確認</code></pre>
+        </div>
+
+        <h3>Managed Instance link (複数データベースモード)</h3>
+        <p><strong>前提条件:</strong></p>
+        <ol>
+            <li>SQL Server と SQL Managed Instance 間のネットワーク接続 (オンプレミスは VPN / ExpressRoute、Azure VM は同一 VNet または VNet ピアリング)</li>
+            <li>特定の SQL Server 累積更新プログラムの適用と、全 SQL Server レプリカでの複数データベースモードのオプトイン</li>
+            <li>証明書ベースの認証 (Windows 認証は使用不可)。link のデータレプリケーションは VNet ローカルエンドポイントのみ使用可能</li>
+        </ol>
+        <p>設定手順は Microsoft Learn の「Extend an Always On availability group to Azure SQL Managed Instance」を参照。</p>
+
+        <h3>Database Hub の有効化</h3>
+        <ul>
+            <li>Microsoft SQL データベースサービスを Database Hub の Overview / Estate ページに表示するには、各サブスクリプションで Azure リソースプロバイダーの登録が必要 (既に登録済みの場合あり)</li>
+            <li>Azure SQL Database のパフォーマンス監視データを収集するには、Estate ページの「Enable Performance Monitoring」オプションを選択するか、ドキュメント記載の T-SQL スクリプトで拡張プロパティをデータベースに追加する</li>
+        </ul>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>💡 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>📈 ビジネス面</h4>
+                <ul>
+                    <li>データベース資産全体の可視性が向上し、複数ポータルの行き来が不要になることで運用コストを削減できる</li>
+                    <li>タイムゾーン対応がプラットフォームレベルで提供されることで、マルチリージョン SaaS やオンプレミスからの移行時のアプリケーション改修コストを削減できる</li>
+                    <li>Hyperscale Elastic Pool の集約密度向上 (最大 50 DB) により、SaaS マルチテナント構成の価格性能比を最適化できる</li>
+                    <li>既存の可用性グループ構成を変更せずに Azure への拡張・移行ができ、移行プロジェクトのリスクと工数を削減できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>Database Hub は既存の Azure 管理 API と RBAC を利用するため、追加のアクセス権付与やリソース変更なしに導入できる</li>
+                    <li>ローカルタイムゾーンはクライアントドライバーや接続文字列の変更が不要で、セッションレベル設定はストアドプロシージャ・動的 SQL 内でもスコープが正しく管理される</li>
+                    <li>MI link 複数データベースモードでは、可用性グループを分割せずに全データベースを一括レプリケートできる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <h4>共通</h4>
+            <ul>
+                <li>各機能はいずれも Public Preview であり、サポートされるシグナル・アクション・エージェント・エンジン・リージョンはプレビュー期間中に変更される可能性がある</li>
+            </ul>
+        </div>
+        <div class="warning-box">
+            <h4>Database Hub</h4>
+            <ul>
+                <li>Cosmos DB in Fabric、Fabric のミラーデータベース、Fabric Data Warehouse は未対応</li>
+                <li>Azure SQL Elastic Pools、SQL Managed Instance、SQL database in Fabric、Azure VM 上の SQL Server は Estate ページにインベントリ表示されるが Performance ページには未対応</li>
+                <li>生成される推奨事項はオペレーターによるレビューが必要</li>
+            </ul>
+        </div>
+        <div class="warning-box">
+            <h4>ローカルタイムゾーン</h4>
+            <ul>
+                <li>保存済みの日時値は変換されない (<code class="inline-code">datetime</code>/<code class="inline-code">datetime2</code> はオフセットを保存しないため、必要に応じて <code class="inline-code">datetimeoffset</code> を使用)</li>
+                <li>カタログビュー・DMV・拡張イベントの日時値は UTC のまま。<code class="inline-code">AT TIME ZONE</code> 句は本設定と無関係に動作</li>
+                <li>既知の問題として、<code class="inline-code">TIME_ZONE</code> 設定のスクリプト生成時に引用符が正しく付与されず構文エラーとなり、BACPAC インポート / DACPAC デプロイにも影響する</li>
+                <li>SQL Managed Instance / SQL Server では未サポート</li>
+            </ul>
+        </div>
+        <div class="warning-box">
+            <h4>MI link 複数データベースモード</h4>
+            <ul>
+                <li>単一データベースモードと同一 SQL Server インスタンス上で共存不可。モードのインプレース変更不可</li>
+                <li>全 SQL Server レプリカで累積更新プログラムの適用とオプトインが必須</li>
+                <li>更新ポリシーが一致しない場合、カットオーバー後のレプリケーションや SQL Server へのフェールバックは不可</li>
+                <li>システムデータベース、サーバーレベルオブジェクト、エージェントジョブ、ログインはレプリケートされない。フェールオーバーグループとの併用不可</li>
+            </ul>
+        </div>
+        <div class="warning-box">
+            <h4>Hyperscale Elastic Pool</h4>
+            <ul>
+                <li>非 Hyperscale プールの Hyperscale への変更 (およびその逆) は不可</li>
+                <li>named replica のプールへの追加は不可。ゾーン冗長設定は作成時のみ指定可能</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>🎯 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🗂️ ユースケース 1: 分散したデータベース資産の統合ガバナンス</h4>
+            <p><span class="usecase-label">シナリオ:</span>Azure SQL Database、SQL Managed Instance、オンプレミスの Arc 対応 SQL Server、Cosmos DB が混在する企業で、セキュリティ・パフォーマンス・コストの問題を横断的に把握したい。</p>
+            <p><span class="usecase-label">実装:</span>Microsoft Fabric の Database Hub を開き、各サブスクリプションでリソースプロバイダーを登録。Estate ページで Issues の多いリソースから優先的に調査し、カスタムビューをチームで共有する。</p>
+            <p><span class="usecase-label">効果:</span>複数ポータルの行き来が不要になり、問題の発見から対応までのリードタイムを短縮できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🕐 ユースケース 2: オンプレミス SQL Server からのタイムゾーン互換を保った移行</h4>
+            <p><span class="usecase-label">シナリオ:</span>日本時間 (JST) 前提で <code class="inline-code">GETDATE()</code> を多用するオンプレミスアプリケーションを Azure SQL Database に移行したいが、UTC 固定のためアプリ改修が必要だった。</p>
+            <p><span class="usecase-label">実装例:</span></p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">SQL</span></div>
+                <pre><code class="language-sql">ALTER DATABASE SCOPED CONFIGURATION SET TIME_ZONE = 'Tokyo Standard Time';</code></pre>
+            </div>
+            <p><span class="usecase-label">効果:</span>アプリケーションコードの改修なしに、従来どおり JST で日時関数が動作する。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🔗 ユースケース 3: 可用性グループ全体の Azure への DR 拡張・移行</h4>
+            <p><span class="usecase-label">シナリオ:</span>複数データベースを含む Always On 可用性グループを運用しており、グループ構成を維持したまま Azure に DR サイトを構築、将来的には最小ダウンタイムで移行したい。</p>
+            <p><span class="usecase-label">実装:</span>複数データベース link モード (プレビュー) を使用して、可用性グループ全体を 1 つの link で SQL Managed Instance に拡張する。SQL Server 2022/2025 と対応する更新ポリシーの組み合わせでは双方向のフェールオーバー・フェールバックが可能。</p>
+            <p><span class="usecase-label">効果:</span>グループ分割や link の多重管理が不要になり、DR 構成の運用がシンプルになる。パッシブ DR レプリカにはライセンス費用の免除 (hybrid failover benefit) も適用可能。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>本アップデート (プレビュー機能) 自体の追加料金に関する公式情報は確認できませんでした。Azure SQL Database / SQL Managed Instance の料金は以下を参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/" target="_blank" rel="noopener">Azure SQL Database 料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-managed-instance/" target="_blank" rel="noopener">Azure SQL Managed Instance 料金</a></li>
+        </ul>
+        <div class="highlight-box">
+            <p>💡 Managed Instance link では、DR 専用のパッシブセカンダリインスタンスに <strong>hybrid failover benefit</strong> を適用すると SQL Server ライセンス費用が免除されます。</p>
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>Microsoft Fabric</h4>
+                <p>Database Hub のホスト環境。既存の Azure 権限を利用して Azure リソースを表示する</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>Microsoft Entra ID / Azure RBAC</h4>
+                <p>Database Hub のアクセス制御基盤。追加の権限付与は行われない</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌉</div>
+            <div class="feature-content">
+                <h4>Azure Arc 対応 SQL Server</h4>
+                <p>オンプレミス SQL Server を Database Hub のインベントリに含めるための接続手段</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔁</div>
+            <div class="feature-content">
+                <h4>分散可用性グループ (Distributed Availability Groups)</h4>
+                <p>Managed Instance link の基盤技術 (SQL Server 2016 で導入)</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔑</div>
+            <div class="feature-content">
+                <h4>Azure Key Vault</h4>
+                <p>TDE 暗号化されたデータベースを link でレプリケートする際の BYOK キー管理に使用</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li>🌐 <a href="https://azure.microsoft.com/updates?id=571846" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/fabric/database/hub/overview" target="_blank" rel="noopener">Database Hub in Microsoft Fabric (Microsoft Learn)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/azure-sql/database/hyperscale-elastic-pool-overview?view=azuresql" target="_blank" rel="noopener">Hyperscale Elastic Pool 概要 (Microsoft Learn)</a></li>
+            <li>📝 <a href="https://devblogs.microsoft.com/azure-sql/announcing-the-public-preview-of-local-time-zone-support-in-azure-sql-database/" target="_blank" rel="noopener">ローカルタイムゾーンサポート発表ブログ (Azure SQL Devblog)</a></li>
+            <li>📝 <a href="https://devblogs.microsoft.com/azure-sql/vscode-mssql-september2026/" target="_blank" rel="noopener">MSSQL 拡張機能 September 2026 (Azure SQL Devblog)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/azure-sql/managed-instance/managed-instance-link-feature-overview?view=azuresql" target="_blank" rel="noopener">Managed Instance link 概要 (Microsoft Learn)</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/azure-sql-database/" target="_blank" rel="noopener">Azure SQL Database 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section summary-box">
+        <h2>📝 まとめ</h2>
+        <p>2026 年 9 月下旬の Azure SQL アップデートは、<strong>「データベース資産の統合管理 (Database Hub)」「マルチテナント集約密度の向上 (Hyperscale Elastic Pool 50 DB)」「タイムゾーンのプラットフォーム対応」「ハイブリッド構成の簡素化 (MI link 複数データベースモード)」</strong>と、運用性と移行性を大きく改善する内容です。特に、UTC 固定が長年の課題だった Azure SQL Database のローカルタイムゾーンサポートは、オンプレミスからの移行やマルチリージョン SaaS の設計に直接影響します。いずれも Public Preview のため、本番適用前に制約事項 (スクリプト生成の既知の問題、link モードの共存不可など) を確認したうえで、検証環境での評価を推奨します。</p>
+        <div class="tags">
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">Azure SQL Managed Instance</span>
+            <span class="tag">Microsoft Fabric</span>
+            <span class="tag">Database Hub</span>
+            <span class="tag">Hyperscale</span>
+            <span class="tag">Elastic Pool</span>
+            <span class="tag">Time Zone</span>
+            <span class="tag">Managed Instance link</span>
+            <span class="tag">Always On</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong></p>
+        <p>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=571846" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=571846</a></p>
+        <p>Database Hub: <a href="https://learn.microsoft.com/fabric/database/hub/overview" target="_blank" rel="noopener">https://learn.microsoft.com/fabric/database/hub/overview</a> / ローカルタイムゾーン: <a href="https://devblogs.microsoft.com/azure-sql/announcing-the-public-preview-of-local-time-zone-support-in-azure-sql-database/" target="_blank" rel="noopener">Azure SQL Devblog</a> / MI link: <a href="https://learn.microsoft.com/azure/azure-sql/managed-instance/managed-instance-link-feature-overview?view=azuresql" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p style="margin-top: 8px;">レポート: reports/2026/2026-09-29-sql-late-september-preview-updates.md | 生成日: 2026-09-29 | Azure News Summary</p>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

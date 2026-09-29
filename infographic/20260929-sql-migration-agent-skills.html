@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SQL: SQL Migration Agent Skills (評価・移行・検証) の一般提供開始</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta {
+    font-size: 14px;
+    opacity: 0.9;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 32px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Skill category grid */
+.skill-category {
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    margin: 16px 0;
+    overflow: hidden;
+}
+
+.skill-category-header {
+    padding: 10px 16px;
+    font-weight: 700;
+    color: #FFFFFF;
+    font-size: 15px;
+}
+
+.cat-assess { background: var(--azure-blue); }
+.cat-plan { background: var(--ms-purple); }
+.cat-migrate { background: var(--ms-orange); }
+.cat-validate { background: var(--ms-green); }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+table th {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--ms-blue-300);
+    white-space: nowrap;
+}
+
+table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+table tr:last-child td { border-bottom: none; }
+
+.table-wrap { overflow-x: auto; margin: 12px 0; border: 1px solid var(--ms-border); border-radius: 8px; }
+.skill-category .table-wrap { border: none; border-radius: 0; margin: 0; }
+
+code:not(.hljs) {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    word-break: break-all;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+    background: #1E1E1E;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-box {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.merit-box h4 { color: var(--ms-blue-800); margin-bottom: 10px; font-size: 15px; }
+.merit-box ul { padding-left: 20px; }
+.merit-box li { font-size: 14px; margin-bottom: 8px; }
+
+.warning-box {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-yellow);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+.warning-box h4 { color: var(--ms-orange); margin-bottom: 10px; font-size: 16px; }
+.warning-box ul { padding-left: 20px; }
+.warning-box li { font-size: 14px; margin-bottom: 8px; }
+
+/* Use cases */
+.usecase-card {
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+    background: var(--ms-surface-secondary);
+}
+
+.usecase-card h3 { margin-top: 0; }
+
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--azure-blue);
+    border-radius: 4px;
+    padding: 2px 10px;
+    margin: 8px 8px 4px 0;
+}
+
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Links & related */
+.related-list li, .link-list li { margin-bottom: 8px; font-size: 14px; }
+.related-list, .link-list { padding-left: 22px; }
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* Tags */
+.tags { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 16px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+.footer p { margin-bottom: 6px; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .container { padding: 12px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure SQL</span>
+            <span class="service-badge">SQL Server → Azure 移行</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>SQL Migration Agent Skills<br>評価・移行・検証をカバーする AI スキル群が一般提供開始</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-29</span>
+            <span>🧩 機能: SQL Migration Agent Skills for assessment, migration, and validation</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>SQL Server から Azure への移行ジャーニー全体 (<strong>評価、ターゲット選定、移行実行、移行後検証</strong>) を自動化・効率化する「SQL Migration Agent Skills」が一般提供 (GA) となりました。これらは再利用可能な AI 駆動のスキル群で、コーディングエージェント (<strong>GitHub Copilot、Claude Code、Codex、Cursor、Grok Build</strong>) にプラグインとしてインストールして利用します。複数の Microsoft ユーザーインターフェイスをまたいで移行コンテキストを保持しながら動作し、重要な意思決定はユーザーのコントロール下に置かれる設計です。</p>
+        <div class="highlight-box">
+            スキルは Microsoft SQL 製品チームが公開する GitHub リポジトリ (<code>microsoft/microsoft-sql</code>) の <code>microsoft-sql-migration</code> プラグイン (Agent Plugins 1.0 形式、MIT ライセンス) として配布されます。評価・計画・移行実行・検証をカバーする <strong>12 個のスキル</strong>が含まれ、移行先として <strong>Azure SQL Database、Azure SQL Managed Instance、SQL Server on Azure Virtual Machines</strong> の 3 つをサポートします。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">12</div>
+                <div class="stat-label">含まれるスキル数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">移行先 (SQL DB / SQL MI / SQL on VM)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5</div>
+                <div class="stat-label">対応コーディングエージェント</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">MIT</div>
+                <div class="stat-label">オープンソースライセンス</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>互換性評価、ターゲット選定、SKU サイジング、移行実行、移行後検証の各フェーズを個別のツール (Azure DMS、<code>az datamigration</code>、AzCopy など) で手動に組み合わせて進める必要があった</li>
+                    <li>フェーズやツールをまたぐ際に移行のコンテキスト (評価結果や選定内容) が引き継がれず、手作業での確認・転記が発生していた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>評価から検証までのエンドツーエンドの移行ワークフローを、AI エージェント上の自然言語による依頼で自動化・ガイドできる</li>
+                    <li>複数の Microsoft ユーザーインターフェイスをまたいで移行コンテキストが保持され、手作業を削減しつつ、重要な判断はユーザーが制御できる</li>
+                    <li>実測パフォーマンスに基づく Azure SQL ターゲットの SKU サイジングや、シナリオ別の前提条件プラン生成が自動化された</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    SRC[("🗄️ SQL Server<br/>オンプレミス / Azure Arc")] --> ASSESS
+    subgraph Skills["🤖 SQL Migration Agent Skills"]
+        ASSESS["🔍 評価<br/>互換性・準備状況"] --> PLAN["🧭 ターゲット選定<br/>SKU 推奨・前提条件プラン"]
+        PLAN --> MIG["🚚 移行実行<br/>BACPAC / LRS / バックアップ・リストア"]
+        MIG --> VAL["✅ 検証<br/>データ・スキーマ照合"]
+    end
+    MIG --> DB[("☁️ Azure SQL Database")]
+    MIG --> MI[("☁️ Azure SQL Managed Instance")]
+    MIG --> VM[("☁️ SQL Server on Azure VM")]
+            </pre>
+        </div>
+        <p>SQL Server ワークロードを評価し、最適な Azure ターゲットの選定と方式別の移行実行、移行後のデータ検証までを AI スキルがエンドツーエンドでガイドします。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⚡ 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-content">
+                <h4>1. 準備状況の評価とブロッカーの特定</h4>
+                <p>SQL Server ワークロードを分析し、互換性の問題、リスク、移行上の課題を特定する</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧭</div>
+            <div class="feature-content">
+                <h4>2. 最適な Azure 移行先の推奨</h4>
+                <p>Azure SQL Database、Azure SQL Managed Instance、SQL Server on Azure Virtual Machines のガイダンスを提供し、サイジングと適合性の考慮事項を提示する</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚚</div>
+            <div class="feature-content">
+                <h4>3. 移行ワークフローの自動化</h4>
+                <p>Azure SQL Database および Azure SQL Managed Instance シナリオ向けの明確なガイダンスにより移行ワークフローを自動化する</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">✅</div>
+            <div class="feature-content">
+                <h4>4. 移行成功の検証</h4>
+                <p>カットオーバー後のワークロードの準備状況を確認するため、移行後の検証と修復ガイダンスを提供する</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 含まれるスキル -->
+    <section class="section">
+        <h2>🧰 含まれるスキル (12 個)</h2>
+
+        <div class="skill-category">
+            <div class="skill-category-header cat-assess">🔍 評価・アセスメント系 (5 スキル)</div>
+            <div class="table-wrap">
+                <table>
+                    <tr><th>スキル</th><th>概要</th></tr>
+                    <tr><td><code>analyze-readiness-at-scale</code></td><td>Azure Arc 対応 SQL Server インスタンスのエステート (資産) 全体での移行評価ダッシュボード表示</td></tr>
+                    <tr><td><code>evaluate-azure-migration-assessment</code></td><td>移行評価の実行・更新と、準備状況・SKU 結果の取得</td></tr>
+                    <tr><td><code>evaluate-offline-migration-readiness</code></td><td>Windows 上の <code>az datamigration</code> を使ったローカル/オンプレミス SQL Server の準備状況評価</td></tr>
+                    <tr><td><code>get-migration-assessment</code></td><td>Azure Resource Graph からの既存の移行評価データ取得</td></tr>
+                    <tr><td><code>run-migration-assessment</code></td><td>評価・互換性・コスト・SKU 推奨リクエストの汎用ルーティング</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="skill-category">
+            <div class="skill-category-header cat-plan">🧭 計画・推奨系 (3 スキル)</div>
+            <div class="table-wrap">
+                <table>
+                    <tr><th>スキル</th><th>概要</th></tr>
+                    <tr><td><code>recommend-migration-path</code></td><td>移行先の暫定判断と推奨評価パスの提示</td></tr>
+                    <tr><td><code>recommend-sku-sizing</code></td><td>パフォーマンスデータ収集と Azure SQL SKU 推奨の計算</td></tr>
+                    <tr><td><code>generate-migration-prerequisite-plan</code></td><td>シナリオ別の移行前提条件プランの生成</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="skill-category">
+            <div class="skill-category-header cat-migrate">🚚 移行実行系 (3 スキル)</div>
+            <div class="table-wrap">
+                <table>
+                    <tr><th>スキル</th><th>移行方式</th></tr>
+                    <tr><td><code>sql-backup-restore-to-azure-sql-vm-migration</code></td><td>バックアップ/リストア方式。AzCopy と Microsoft Entra ID でバックアップを Blob Storage にアップロード</td></tr>
+                    <tr><td><code>sql-bacpac-to-azure-sql-db-migration</code></td><td>オフライン BACPAC 方式で Azure SQL Database へ移行</td></tr>
+                    <tr><td><code>sql-server-to-sql-mi-lrs-migration</code></td><td>Log Replay Service (LRS) 方式で Azure SQL Managed Instance へ移行。Blob アクセスにマネージド ID を使用</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="skill-category">
+            <div class="skill-category-header cat-validate">✅ 検証系 (1 スキル)</div>
+            <div class="table-wrap">
+                <table>
+                    <tr><th>スキル</th><th>概要</th></tr>
+                    <tr><td><code>validate-post-migration-data</code></td><td>移行後のデータとスキーマの検証 (SQL Database / SQL MI / Azure VM 上の SQL Server に対応)</td></tr>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>配布形態</td><td>GitHub リポジトリ <code>microsoft/microsoft-sql</code> の <code>microsoft-sql-migration</code> プラグイン (Agent Plugins 1.0 形式)</td></tr>
+                <tr><td>ライセンス</td><td>MIT</td></tr>
+                <tr><td>対応エージェント</td><td>GitHub Copilot、Claude Code、Codex、Cursor、Grok Build</td></tr>
+                <tr><td>移行元</td><td>SQL Server (バックアップ/リストア方式は SQL Server 2008〜2025)</td></tr>
+                <tr><td>移行先</td><td>Azure SQL Database、Azure SQL Managed Instance、SQL Server on Azure Virtual Machines</td></tr>
+                <tr><td>移行方式</td><td>BACPAC (SQL Database、オフライン)、Log Replay Service (SQL MI)、バックアップ/リストア (Azure VM)</td></tr>
+                <tr><td>利用ツール</td><td>Azure CLI (<code>az datamigration</code> 拡張)、AzCopy、Azure Resource Graph、Azure Arc</td></tr>
+                <tr><td>認証</td><td>Microsoft Entra ID / マネージド ID (バックアップのアップロード、LRS の Blob アクセス)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>⚙️ 設定方法</h2>
+        <h3>前提条件</h3>
+        <ol style="padding-left: 22px;">
+            <li>対応するコーディングエージェント (GitHub Copilot、Claude Code、Codex、Cursor、Grok Build のいずれか)</li>
+            <li>オフライン準備状況評価 (<code>evaluate-offline-migration-readiness</code>) には Windows 上の Azure CLI <code>az datamigration</code> 拡張が必要</li>
+            <li>バックアップのアップロードには AzCopy と Microsoft Entra ID 認証、LRS の Blob アクセスにはマネージド ID が必要</li>
+            <li>大規模評価 (<code>analyze-readiness-at-scale</code>) は Azure Arc 対応 SQL Server インスタンスが対象</li>
+        </ol>
+
+        <h3>インストール (Claude Code の場合)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">plaintext</span></div>
+            <pre><code class="language-plaintext">/plugin marketplace add microsoft/microsoft-sql
+/plugin install microsoft-sql-migration@microsoft-sql</code></pre>
+        </div>
+        <p>マーケットプレイス非対応のクライアントでは、リポジトリの <code>skills/&lt;skill&gt;/</code> ディレクトリを直接コピーする方法が案内されています。</p>
+
+        <h3>使い方</h3>
+        <p>インストール後は特別なプロンプト構文は不要で、自然言語で依頼するとスキルが自動的にルーティングされます。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">plaintext</span></div>
+            <pre><code class="language-plaintext">Interview me to choose a SQL Server to Azure migration target and method.</code></pre>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>👍 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-box">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>評価から検証までの移行ジャーニー全体がガイドされるため、手作業と移行プロジェクトの負担を削減し、より確信を持って移行を進められる</li>
+                    <li>実測パフォーマンスに基づく SKU サイジングにより、移行先リソースの過剰・過小プロビジョニングを回避できる</li>
+                    <li>Azure Arc を活用したエステート全体の準備状況分析により、大規模な移行計画の立案が容易になる</li>
+                </ul>
+            </div>
+            <div class="merit-box">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>評価、ターゲット選定、移行実行、検証の各フェーズが再利用可能なスキルとして分割されており、必要なフェーズだけ利用することも可能</li>
+                    <li>複数のユーザーインターフェイスをまたいで移行コンテキストが保持される</li>
+                    <li>移行先・方式ごと (BACPAC / LRS / バックアップ・リストア) に専用スキルが用意され、シナリオ別の前提条件プランを自動生成できる</li>
+                    <li>独立したワークフロープラグインとして、他の Azure SQL 系プラグイン (<code>microsoft-sql</code> など) と併用できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <h4>知っておくべき制約</h4>
+            <ul>
+                <li>BACPAC 方式による Azure SQL Database への移行は<strong>オフライン</strong>ワークフローであり、ダウンタイムが発生する</li>
+                <li>バックアップ/リストア方式は、ソースが SQL Server 2008〜2025、ターゲットが SQL Server 2025 に限定される</li>
+                <li><code>evaluate-offline-migration-readiness</code> (オフライン準備状況評価) は Windows 上での実行が前提</li>
+                <li><code>recommend-sku-sizing</code> は、ソースが明示的にローカル/オンプレミスと確認された場合のみ実行される</li>
+                <li>対応するコーディングエージェント環境が必要であり、従来の Azure Portal のみで完結するワークフローではない</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h3>🎯 ユースケース 1: オンプレミス SQL Server の移行先選定と評価</h3>
+            <span class="usecase-label">シナリオ</span>
+            <p>オンプレミスの SQL Server 群を Azure に移行したいが、Azure SQL Database、SQL Managed Instance、SQL Server on Azure VM のどれが適切か判断できていない。</p>
+            <span class="usecase-label">実装例</span>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">plaintext</span></div>
+                <pre><code class="language-plaintext"># Claude Code にプラグインをインストール
+/plugin marketplace add microsoft/microsoft-sql
+/plugin install microsoft-sql-migration@microsoft-sql
+
+# 自然言語で依頼 (スキルが自動ルーティングされる)
+Interview me to choose a SQL Server to Azure migration target and method.</code></pre>
+            </div>
+            <div class="usecase-effect"><strong>効果</strong>: 対話形式で要件をヒアリングした上で、互換性評価と SKU 推奨に基づく最適な移行先と移行方式の提案を受けられる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h3>🎯 ユースケース 2: Azure SQL Managed Instance への移行と移行後検証</h3>
+            <span class="usecase-label">シナリオ</span>
+            <p>評価が完了した SQL Server データベースを Log Replay Service で Azure SQL Managed Instance に移行し、カットオーバー後にデータの整合性を確認したい。</p>
+            <span class="usecase-label">実装例</span>
+            <p><code>sql-server-to-sql-mi-lrs-migration</code> スキルで LRS ベースの移行を実行し (Blob アクセスにはマネージド ID を使用)、移行完了後に <code>validate-post-migration-data</code> スキルでソースとターゲットのデータ・スキーマを照合する。</p>
+            <div class="usecase-effect"><strong>効果</strong>: 移行実行から移行後検証までを一貫したコンテキストで実施でき、カットオーバー後のワークロードの準備状況を確認できる。</div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>SQL Migration Agent Skills 自体は <strong>MIT ライセンスのオープンソースプラグイン</strong>として GitHub で公開されています。移行先の Azure リソース (Azure SQL Database、Azure SQL Managed Instance、Azure VM、Blob Storage など) には通常の Azure 料金が適用されます。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/" target="_blank" rel="noopener">Azure SQL Database の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-managed-instance/" target="_blank" rel="noopener">Azure SQL Managed Instance の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <ul class="related-list">
+            <li><strong>Azure Database Migration Service (DMS)</strong>: SQL Server から Azure への移行を支援するフルマネージドサービス。Azure SQL Database (オフライン)、SQL MI (オンライン/オフライン)、SQL Server on Azure VM (オンライン/オフライン) への移行をサポートする</li>
+            <li><strong>Azure Arc 対応 SQL Server</strong>: エステート全体の移行準備状況評価 (<code>analyze-readiness-at-scale</code> スキル) の基盤。DMS の推奨機能と同じ移行評価テクノロジーを利用する</li>
+            <li><strong>Azure Resource Graph</strong>: 既存の移行評価データの取得 (<code>get-migration-assessment</code> スキル) に使用</li>
+            <li><strong>Azure Blob Storage / AzCopy</strong>: バックアップファイルのアップロードと LRS 方式でのリストアに使用</li>
+            <li><strong>GitHub Copilot / Claude Code などのコーディングエージェント</strong>: スキルの実行環境</li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>SQL Migration Agent Skills の GA により、SQL Server から Azure への移行が「<strong>AI エージェント上の自然言語ワークフロー</strong>」として実行できるようになりました。評価・ターゲット選定・移行実行・検証の <strong>12 スキル</strong>が GitHub Copilot や Claude Code などのエージェントにプラグインとしてインストールでき、移行コンテキストを保持したままエンドツーエンドの移行をガイドします。</p>
+            <p>SQL Server の Azure 移行を計画している Solutions Architect は、まず <code>recommend-migration-path</code> や評価系スキルで対象ワークロードの準備状況と最適な移行先を確認することを推奨します。BACPAC 方式のオフライン制約や、バックアップ/リストア方式の対象バージョン (ソース SQL Server 2008〜2025、ターゲット SQL Server 2025) には注意が必要です。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure SQL</span>
+            <span class="tag">SQL Server</span>
+            <span class="tag">Migration</span>
+            <span class="tag">Azure Database Migration Service</span>
+            <span class="tag">AI Agent</span>
+            <span class="tag">GA</span>
+            <span class="tag">Databases</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典・参考リンク</strong></p>
+        <p><a href="https://azure.microsoft.com/updates?id=571899" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></p>
+        <p><a href="https://aka.ms/sqlmigrationskills" target="_blank" rel="noopener">SQL Migration Agent Skills (GitHub: microsoft/microsoft-sql)</a></p>
+        <p><a href="https://learn.microsoft.com/azure/dms/dms-overview" target="_blank" rel="noopener">Azure Database Migration Service の概要 (Microsoft Learn)</a></p>
+        <p><a href="https://learn.microsoft.com/sql/sql-server/azure-arc/migration-assessment" target="_blank" rel="noopener">Azure Arc の移行評価 (Microsoft Learn)</a></p>
+        <p style="margin-top: 12px;">リリース日: 2026-09-29 | ステータス: Launched (GA) | Azure News Summary により生成</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

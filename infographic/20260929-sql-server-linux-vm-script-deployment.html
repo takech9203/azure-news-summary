@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Server on Linux Azure VM のスクリプトベースデプロイ (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "🐧";
+    position: absolute;
+    right: 24px;
+    bottom: -10px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+.hero .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.hero h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+.hero .subtitle { font-size: 15px; opacity: 0.92; }
+.hero .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 18px;
+    font-size: 14px;
+}
+.hero .meta span {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 14px;
+    border-radius: 16px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+.hero .service-badge { background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.5); }
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon { font-size: 26px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--azure-dark-blue); margin-bottom: 4px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; margin-top: 4px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Deployment Stages ===== */
+.stage-flow {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 20px 0;
+}
+.stage-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+    position: relative;
+}
+.stage-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--azure-blue);
+    color: #FFF;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+.stage-card p { font-size: 13px; }
+
+/* ===== Table ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 16px 0;
+}
+.spec-table th, .spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+}
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+.spec-table td:first-child { font-weight: 700; white-space: normal; width: 32%; }
+
+/* ===== Steps ===== */
+.steps {
+    counter-reset: step;
+    list-style: none;
+    margin: 12px 0;
+}
+.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 8px 0 8px 44px;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--ms-border);
+}
+.steps li:last-child { border-bottom: none; }
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--azure-blue);
+    color: #FFF;
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.method-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 14px 0;
+}
+.method-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 10px;
+    padding: 18px;
+    border: 1px solid var(--ms-border);
+    background: var(--ms-surface-secondary);
+}
+.merit-card h4 {
+    font-size: 16px;
+    margin-bottom: 10px;
+    color: var(--azure-dark-blue);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin: 8px 0; }
+
+.demerit-list { list-style: none; margin: 12px 0; }
+.demerit-list li {
+    background: #FFF8F5;
+    border-left: 4px solid var(--ms-red);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 17px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    margin: 8px 0 4px;
+}
+.usecase-card p, .usecase-card ol { font-size: 14px; margin: 6px 0; }
+.usecase-card ol { padding-left: 22px; }
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* ===== Related / Links ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 10px;
+    padding: 16px;
+}
+.related-card h4 { font-size: 15px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); }
+
+.link-list { list-style: none; margin: 12px 0; }
+.link-list li {
+    padding: 8px 0 8px 28px;
+    position: relative;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--ms-border);
+}
+.link-list li:last-child { border-bottom: none; }
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--ms-blue-800);
+}
+
+/* ===== Summary / Footer ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-surface);
+    border: 1px solid var(--azure-blue);
+    color: var(--azure-blue);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+}
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 40px;
+}
+footer a { font-size: 13px; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">SQL Server on Azure Virtual Machines</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>SQL Server on Linux Azure VM の<br>スクリプトベースデプロイ</h1>
+        <p class="subtitle">Marketplace イメージから、標準 Linux イメージ + 自動プロビジョニングの統合ワークフローへ</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-29</span>
+            <span>⚙️ 機能: Script-based deployment for SQL Server on Linux Azure VM</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>SQL Server on Linux Azure Virtual Machines (VM) の新しいデプロイエクスペリエンスがパブリックプレビューとして発表されました。従来の事前作成済み (precreated) Azure Marketplace イメージに代わり、<strong>スクリプトベースの自動プロビジョニング</strong>が導入されます。標準の Linux ベースイメージから VM を作成し、SQL Server の構成を指定すると、Azure が VM プロビジョニング中に SQL Server を自動的にインストール・構成し、SQL Server IaaS Agent 拡張機能への登録まで統合ワークフローで実行します。</p>
+        <div class="warning-box">
+            <strong>⚠️ 重要な変更点</strong>: 事前作成済みの SQL Server on Linux Azure Marketplace イメージは<strong>非推奨 (deprecated)</strong> となり、Azure portal、Azure SQL hub、Azure CLI、Azure PowerShell からの新規デプロイでは利用できなくなりました。今後は、サポートされる Linux ベースイメージ (RHEL 9/10、Ubuntu 22.04/24.04/26.04) を起点に、ポータルのガイド付き構成で SQL Server のバージョン・エディション・ライセンスモデルを選択してデプロイします。
+        </div>
+        <p>デプロイは「Create a virtual machine」ページまたは Azure SQL hub のどちらからでも開始でき、いずれも同じガイド付き SQL Server 構成につながります。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>SQL Server のバージョン・エディションと Linux ディストリビューションの組み合わせは、事前作成済み Marketplace イメージとして提供されているものに限られていた</li>
+                    <li>新しい Linux バージョンや Azure の新機能を利用するには、対応する新しい Marketplace イメージの提供を待つ必要があった</li>
+                    <li>SQL Server の構成のカスタマイズ (mssql.conf など) はデプロイ後に手動で行う必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Linux ディストリビューション、SQL Server のバージョン・エディション・機能を自由に選択でき、独自の <code class="inline">mssql.conf</code> ファイルをアップロードして構成をカスタマイズ可能</li>
+                    <li>新しい Linux バージョンや Azure 機能が、Marketplace イメージの更新を待たずに利用可能 (サポート対象の新バージョンは自動的に選択肢に追加)</li>
+                    <li>すべての VM が SQL Server IaaS Agent 拡張機能に既定で自動登録され、ライセンスの柔軟性・コンプライアンス・ライセンス可視性を確保</li>
+                    <li>ポータルが OS・SQL Server バージョン・ライセンスの有効な組み合わせのみを表示するガイド付き構成</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🕰️ Before: Marketplace イメージ方式"]
+        U1(["👤 管理者"]) --> M["🛒 事前作成済み SQL Server on Linux<br>Marketplace イメージ (非推奨)"]
+        M --> V1["🖥️ SQL Server 入り Linux VM<br>(固定の組み合わせ)"]
+        V1 --> C1["🔧 デプロイ後に手動カスタマイズ"]
+    end
+    subgraph After["✨ After: スクリプトベースデプロイ (Preview)"]
+        U2(["👤 管理者"]) --> P["🧭 Azure portal / Azure SQL hub<br>ガイド付き構成"]
+        P --> B["🐧 標準 Linux ベースイメージ<br>(RHEL 9/10, Ubuntu 22.04/24.04/26.04)"]
+        B --> S["⚙️ Azure が SQL Server を自動<br>インストール・構成 (mssql.conf 対応)"]
+        S --> E["🤖 SQL IaaS Agent 拡張機能に自動登録"]
+    end
+            </pre>
+        </div>
+        <p>従来は事前作成済み Marketplace イメージの固定的な組み合わせからしか選べませんでしたが、新方式では標準 Linux イメージを起点に、プロビジョニング中に SQL Server のインストール・構成・IaaS Agent 拡張機能への登録までが自動化されます。</p>
+    </section>
+
+    <!-- ===== Details / Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⭐</span>サービスアップデートの詳細: 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎛️</div>
+            <div class="feature-content">
+                <h4>1. 柔軟性とコントロール</h4>
+                <ul>
+                    <li>Linux ディストリビューション、SQL Server のバージョン・エディション・機能を選択可能</li>
+                    <li>独自の <code class="inline">mssql.conf</code> ファイルをアップロードして SQL Server 構成をカスタマイズ可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>2. 新バージョンへの迅速なアクセス</h4>
+                <ul>
+                    <li>新しい Linux バージョンや Azure の新機能が、新しい Marketplace イメージの提供を待たずに利用可能</li>
+                    <li>サポートされる新しいディストリビューションのバージョンは自動的に選択肢に追加</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>3. SQL Server IaaS Agent 拡張機能への自動登録</h4>
+                <ul>
+                    <li>すべての VM が既定で SQL Server IaaS Agent 拡張機能に登録</li>
+                    <li>VM リソースとは別に「SQL virtual machine」リソースが作成され、Azure から SQL Server のライセンスタイプを管理可能</li>
+                    <li>デプロイ後の登録解除・再登録も可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧭</div>
+            <div class="feature-content">
+                <h4>4. ガイド付き構成</h4>
+                <ul>
+                    <li>Azure portal は、選択した OS・SQL Server バージョン・ライセンスオプションの有効な組み合わせのみを表示</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚪</div>
+            <div class="feature-content">
+                <h4>5. 2 つのデプロイ開始ポイント</h4>
+                <ul>
+                    <li><strong>Azure portal の「Create a virtual machine」ページ</strong>: Basics タブで Linux ベースイメージを選択し、Advanced タブで「Install SQL Server」を有効化</li>
+                    <li><strong>Azure SQL hub</strong>: 「SQL Server on Linux」イメージオファーを選択する SQL ファーストのエクスペリエンス。選択内容が VM 作成ページに事前入力される</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 24px 0 4px; font-size: 18px;">🔄 デプロイのステージ</h3>
+        <div class="stage-flow">
+            <div class="stage-card">
+                <div class="stage-num">1</div>
+                <p>サポートされる Linux ベースイメージと VM サイズを選択</p>
+            </div>
+            <div class="stage-card">
+                <div class="stage-num">2</div>
+                <p>SQL Server を有効化し、バージョン・エディション・機能・ライセンスモデルを構成</p>
+            </div>
+            <div class="stage-card">
+                <div class="stage-num">3</div>
+                <p>Azure が VM 上に SQL Server をインストール・構成</p>
+            </div>
+            <div class="stage-card">
+                <div class="stage-num">4</div>
+                <p>Azure が VM を SQL Server IaaS Agent 拡張機能に登録 (Pay-as-you-go または Azure Hybrid Benefit)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>サポートされる Linux ディストリビューション</td><td>RHEL 9、RHEL 10、Ubuntu 22.04、Ubuntu 24.04、Ubuntu 26.04</td></tr>
+            <tr><td>SQL Server バージョン</td><td>SQL Server 2025、SQL Server 2022 など (ポータルで選択可能なバージョン)</td></tr>
+            <tr><td>SQL Server エディション</td><td>Enterprise、Standard、Developer、Express、Evaluation (選択したバージョンにより利用可能なエディションが変動)</td></tr>
+            <tr><td>ライセンスモデル</td><td>Pay-as-you-go (既定) / Azure Hybrid Benefit (License Mobility through Software Assurance 付きライセンスが必要)</td></tr>
+            <tr><td>構成のカスタマイズ</td><td>ポータルでの SQL Server オプション構成、またはカスタム <code class="inline">mssql.conf</code> ファイルのアップロード</td></tr>
+            <tr><td>IaaS Agent 拡張機能</td><td>デプロイ時に自動登録 (VM リソースとは別の SQL virtual machine リソースを作成)</td></tr>
+            <tr><td>非サポート</td><td>SUSE Linux Enterprise Server (SLES)。SLES で SQL Server を実行する場合は SLES VM を作成して手動インストール</td></tr>
+            <tr><td>既定でインストールされるツール</td><td>SQL Server コマンドラインツールパッケージ (<code class="inline">sqlcmd</code>、<code class="inline">bcp</code>。パス: <code class="inline">/opt/mssql-tools/bin/</code>)</td></tr>
+            <tr><td>従来の Marketplace イメージ</td><td>非推奨。Azure portal、Azure SQL hub、Azure CLI、Azure PowerShell からの新規デプロイで利用不可</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <div class="method-card">
+            <h4>📌 前提条件</h4>
+            <ol class="steps">
+                <li>Azure サブスクリプション</li>
+                <li>(Azure Hybrid Benefit を選択する場合) License Mobility through Software Assurance 付きの SQL Server ライセンス</li>
+                <li>(SSH 公開キー認証を使用する場合) RSA 公開キー</li>
+            </ol>
+        </div>
+
+        <div class="method-card">
+            <h4>🖥️ 方法 1: 「Create a virtual machine」ページから (Azure Portal)</h4>
+            <ol class="steps">
+                <li>Azure portal で <strong>Virtual machines</strong> &gt; <strong>Create</strong> を選択</li>
+                <li><strong>Basics</strong> タブでサブスクリプション、リソースグループ、VM 名、リージョン、可用性オプションを設定</li>
+                <li><strong>Image</strong> でサポートされる Linux ベースイメージ (RHEL 9/10、Ubuntu 22.04/24.04/26.04 など) を選択し、VM サイズを選択</li>
+                <li>認証 (SSH 公開キー推奨) と受信ポート (SSH 22。リモート接続には後で 1433 を許可) を構成</li>
+                <li><strong>Advanced</strong> タブで <strong>Install SQL Server</strong> を選択すると、<strong>SQL Server settings</strong> タブが有効化</li>
+                <li><strong>SQL Server settings</strong> タブでバージョン、エディション、ライセンスモデル (Pay-as-you-go / Azure Hybrid Benefit)、詳細構成 (<code class="inline">mssql.conf</code> のアップロード可) を設定</li>
+                <li><strong>Review + create</strong> で構成を確認し、<strong>Create</strong> を選択</li>
+            </ol>
+        </div>
+
+        <div class="method-card">
+            <h4>🧭 方法 2: Azure SQL hub から</h4>
+            <ol class="steps">
+                <li><a href="https://aka.ms/azuresqlhub" target="_blank" rel="noopener">Azure SQL hub</a> で <strong>SQL Server on Azure Virtual Machines</strong> &gt; <strong>+ Create</strong> を選択</li>
+                <li><strong>Show options</strong> から、イメージオファー <strong>SQL Server on Linux</strong>、SQL Server バージョン (2025 / 2022 など)、ディストリビューション、エディションを選択</li>
+                <li>選択内容が事前入力された VM 作成ページに進み、以降は方法 1 と同様に構成</li>
+            </ol>
+        </div>
+
+        <div class="highlight-box">
+            💡 デプロイ後は、Azure portal の <strong>SQL virtual machines</strong> に VM が表示されることで IaaS Agent 拡張機能への登録を確認できます。
+        </div>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">👍</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>Marketplace イメージの提供を待たずに新しい Linux バージョン・SQL Server バージョンを採用でき、モダナイゼーションのリードタイムを短縮</li>
+                    <li>IaaS Agent 拡張機能への自動登録により、ライセンスの柔軟性 (Pay-as-you-go / Azure Hybrid Benefit の管理)、コンプライアンス、ライセンスの可視性を確保</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>Linux ディストリビューション、SQL Server バージョン・エディション・機能の組み合わせを自由に選択可能</li>
+                    <li><code class="inline">mssql.conf</code> ファイルのアップロードにより、デプロイ時点で SQL Server 構成をコード化・標準化できる</li>
+                    <li>ポータルが有効な組み合わせのみを表示するため、構成ミスを防止</li>
+                    <li>VM プロビジョニングから SQL Server のインストール・構成・拡張機能登録までが単一の統合ワークフローで完結</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Demerits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="demerit-list">
+            <li>本機能は現在プレビューであり、本番環境での利用には注意が必要</li>
+            <li>SUSE Linux Enterprise Server (SLES) はポータルデプロイの対象外 (手動インストールが必要)</li>
+            <li>事前作成済み SQL Server on Linux Marketplace イメージは非推奨となり、Azure portal / Azure SQL hub / Azure CLI / Azure PowerShell からの新規デプロイでは利用不可。既存の自動化 (IaC やスクリプト) が Marketplace イメージに依存している場合は見直しが必要</li>
+        </ul>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🧪 ユースケース 1: 最新の Linux ディストリビューションでの SQL Server 2025 検証環境の構築</h4>
+            <span class="usecase-label">シナリオ</span>
+            <p>Ubuntu 24.04 上で SQL Server 2025 の新機能を検証したいが、従来は対応する Marketplace イメージの提供を待つ必要があった。</p>
+            <span class="usecase-label">実装例</span>
+            <ol>
+                <li>Azure SQL hub で「SQL Server on Linux」を選択し、SQL Server 2025 + Ubuntu 24.04 + Developer エディションを指定</li>
+                <li>VM 作成ページで開発用の VM サイズを選択してデプロイ</li>
+                <li>デプロイ完了後、SSH で接続し <code class="inline">/opt/mssql-tools/bin/</code> の <code class="inline">sqlcmd</code> で動作確認</li>
+            </ol>
+            <div class="usecase-effect"><strong>✅ 効果</strong>: Marketplace イメージの提供を待たずに、最新の OS と SQL Server バージョンの組み合わせを即座に検証できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🏭 ユースケース 2: 標準化された SQL Server 構成での本番 VM プロビジョニング (プレビュー明け以降)</h4>
+            <span class="usecase-label">シナリオ</span>
+            <p>組織標準の SQL Server 構成 (照合順序、トレースフラグなどの <code class="inline">mssql.conf</code> 設定) を、デプロイ時点で確実に適用したい。</p>
+            <span class="usecase-label">実装例</span>
+            <ol>
+                <li>組織標準の <code class="inline">mssql.conf</code> ファイルを用意</li>
+                <li>VM 作成時の SQL Server settings タブの Advanced configuration でこのファイルをアップロード</li>
+                <li>Azure Hybrid Benefit を選択して既存ライセンスを活用し、IaaS Agent 拡張機能経由でライセンスタイプを一元管理</li>
+            </ol>
+            <div class="usecase-effect"><strong>✅ 効果</strong>: デプロイ後の手動構成作業を排除し、構成のばらつきを防止。ライセンス管理も Azure 側で可視化される。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>このアップデート自体に伴う追加料金の公式情報は確認できませんでした。SQL Server on Azure VM の料金は、<strong>VM 料金</strong>と <strong>SQL Server ライセンス</strong> (Pay-as-you-go の場合) で構成されます。Azure Hybrid Benefit を選択すると、License Mobility through Software Assurance 付きの既存 SQL Server ライセンスを持ち込めます。詳細は料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-machines/sql-server-enterprise-linux/" target="_blank" rel="noopener">SQL Server on Azure VM の料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🤖 SQL Server IaaS Agent 拡張機能 (Linux)</h4>
+                <p>本デプロイ方式で自動登録される拡張機能。Azure からの SQL Server ライセンスタイプ管理やコンプライアンス・ライセンス可視性を提供</p>
+            </div>
+            <div class="related-card">
+                <h4>🧭 Azure SQL hub</h4>
+                <p>SQL ファーストのデプロイ開始ポイント。SQL Server on Linux のイメージオファー・バージョン・ディストリビューション・エディションを選択して VM 作成に進める</p>
+            </div>
+            <div class="related-card">
+                <h4>💳 Azure Hybrid Benefit</h4>
+                <p>既存の SQL Server ライセンス (Software Assurance 付き) を持ち込んでコストを削減するライセンスオプション</p>
+            </div>
+            <div class="related-card">
+                <h4>🪟 SQL Server on Windows Azure VM</h4>
+                <p>Windows 版の SQL Server VM。こちらは引き続き Marketplace イメージベースのデプロイを提供</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=571810" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://techcommunity.microsoft.com/blog/sqlserver/announcing-script-based-deployment-for-sql-server-on-linux-azure-vms-public-prev/4547846" target="_blank" rel="noopener">発表ブログ (Tech Community)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/virtual-machines/linux/sql-server-on-linux-vm-what-is-iaas-overview" target="_blank" rel="noopener">Microsoft Learn: SQL Server on Azure Virtual Machines for Linux の概要</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/virtual-machines/linux/sql-vm-create-portal-quickstart" target="_blank" rel="noopener">Microsoft Learn: クイックスタート - Linux SQL Server VM の作成</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-machines/sql-server-enterprise-linux/" target="_blank" rel="noopener">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>SQL Server on Linux Azure VM のデプロイが、事前作成済み Marketplace イメージから<strong>スクリプトベースの自動プロビジョニング</strong>へと刷新されました (パブリックプレビュー)。標準 Linux ベースイメージ (RHEL 9/10、Ubuntu 22.04/24.04/26.04) を起点に、SQL Server のバージョン・エディション・ライセンスの柔軟な選択、<code class="inline">mssql.conf</code> によるカスタマイズ、SQL IaaS Agent 拡張機能への自動登録が統合ワークフローで実現されます。従来の Marketplace イメージは非推奨となり新規デプロイで利用できないため、SQL Server on Linux VM を利用中・検討中の組織は、既存のデプロイ自動化が Marketplace イメージに依存していないか確認し、新しいデプロイ方式への移行を検証することを推奨します。<strong>SLES が対象外</strong>である点にも注意が必要です。</p>
+            <div class="tags">
+                <span class="tag">SQL Server on Azure Virtual Machines</span>
+                <span class="tag">Linux</span>
+                <span class="tag">Compute</span>
+                <span class="tag">Databases</span>
+                <span class="tag">In preview</span>
+                <span class="tag">Deployment</span>
+                <span class="tag">SQL IaaS Agent extension</span>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=571810" target="_blank" rel="noopener">Azure Updates (ID: 571810)</a> / <a href="https://techcommunity.microsoft.com/blog/sqlserver/announcing-script-based-deployment-for-sql-server-on-linux-azure-vms-public-prev/4547846" target="_blank" rel="noopener">Microsoft Tech Community Blog</a></p>
+        <p>Azure News Summary - インフォグラフィック (2026-09-29 レポートより生成)</p>
+    </footer>
+
+</div>
+</body>
+</html>

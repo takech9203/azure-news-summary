@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Arc-enabled SQL Server: Germany West Central / Italy North で GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 220px;
+    height: 220px;
+    background: rgba(80, 230, 255, 0.15);
+    border-radius: 50%;
+}
+
+.header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+
+.header .meta {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 14px;
+    opacity: 0.95;
+    position: relative;
+    z-index: 1;
+}
+
+.region-flags {
+    display: flex;
+    gap: 16px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+}
+
+.region-flag {
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--ms-text-primary);
+    border-radius: 12px;
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.region-flag .flag { font-size: 28px; }
+.region-flag .region-name { font-size: 16px; }
+.region-flag .region-sub { font-size: 12px; font-weight: 400; color: var(--ms-text-secondary); display: block; }
+
+/* ===== Section ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 6px;
+}
+
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 20px; margin-top: 6px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Tables ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) { background: var(--ms-surface-tertiary); }
+.spec-table td:first-child {
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    white-space: nowrap;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.merit-business {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+}
+
+.merit-tech {
+    background: #F3EEF9;
+    border: 2px solid var(--ms-purple);
+}
+
+.merit-card h4 { margin-bottom: 10px; font-size: 16px; }
+.merit-business h4 { color: var(--azure-blue); }
+.merit-tech h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 8px 0; font-size: 14px; }
+
+.caution-box {
+    background: #FFF8E7;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 18px;
+    margin: 16px 0;
+}
+
+.caution-box ul { padding-left: 20px; }
+.caution-box li { margin: 8px 0; font-size: 14px; }
+
+.unsupported-box {
+    background: #FFEBEE;
+    border-left: 4px solid var(--ms-red);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+.unsupported-box h4 { color: var(--ms-red); margin-bottom: 8px; font-size: 15px; }
+.unsupported-box ul { padding-left: 20px; }
+.unsupported-box li { margin: 6px 0; font-size: 14px; }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 12px;
+}
+
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    background: var(--azure-blue);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-right: 6px;
+}
+
+.usecase-label.effect { background: var(--ms-green); }
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+
+/* ===== Regions ===== */
+.new-region-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.new-region-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+}
+
+.new-region-card .flag { font-size: 36px; }
+.new-region-card .name { font-size: 20px; font-weight: 700; margin-top: 6px; }
+.new-region-card .label {
+    display: inline-block;
+    background: var(--ms-green);
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 2px 12px;
+    margin-top: 10px;
+}
+
+.region-group {
+    margin: 14px 0;
+}
+
+.region-group h4 {
+    font-size: 15px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 8px;
+}
+
+.region-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.region-chip {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 13px;
+}
+
+/* ===== Related Services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--azure-dark-blue); display: block; margin-bottom: 4px; }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); }
+
+.link-list { list-style: none; }
+.link-list li {
+    margin: 10px 0;
+    padding-left: 26px;
+    position: relative;
+    font-size: 14px;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* ===== Pricing ===== */
+.pricing-note {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 14px;
+    margin: 12px 0;
+}
+
+/* ===== Tags & Footer ===== */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.tag {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    color: var(--ms-blue-800);
+    border-radius: 14px;
+    padding: 4px 14px;
+    font-size: 13px;
+}
+
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 12px;
+}
+
+.footer a { color: var(--azure-blue); }
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+    .before-after, .merit-grid, .new-region-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px; }
+    .spec-table td:first-child { white-space: normal; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="header-badges">
+            <span class="service-badge">Azure Arc-enabled SQL Server</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Germany West Central / Italy North リージョンで一般提供開始</h1>
+        <p class="subtitle">SQL Server enabled by Azure Arc のリージョン拡大 — ドイツ・イタリア国内リージョンで Arc リソースを配置可能に</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-09-29</span>
+            <span>🧭 機能: リージョン拡大 (2 件のアナウンスを統合)</span>
+        </div>
+        <div class="region-flags">
+            <div class="region-flag">
+                <span class="flag">🇩🇪</span>
+                <span>
+                    <span class="region-name">Germany West Central</span>
+                    <span class="region-sub">ドイツ西中部</span>
+                </span>
+            </div>
+            <div class="region-flag">
+                <span class="flag">🇮🇹</span>
+                <span>
+                    <span class="region-name">Italy North</span>
+                    <span class="region-sub">イタリア北部</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Arc-enabled SQL Server が、新たに <strong>Germany West Central (ドイツ西中部)</strong> と <strong>Italy North (イタリア北部)</strong> の 2 リージョンで一般提供 (GA) となりました。同一サービスの関連する 2 件のリージョン拡大アナウンスをまとめています。</p>
+        <div class="highlight-box">
+            <strong>Azure Arc-enabled SQL Server とは?</strong><br>
+            Azure 外部 (オンプレミスのデータセンター、エッジ拠点、他のパブリッククラウドやホスティングプロバイダー) でホストされている SQL Server インスタンスに Azure のサービスを拡張する機能。Azure Arc に接続することで、インベントリ管理、ガバナンス、セキュリティ (Microsoft Defender for Cloud)、ベストプラクティス評価、移行評価、ライセンス管理 (従量課金や ESU サブスクリプション) を単一のコントロールポイントである Azure から利用できます。
+        </div>
+        <p>今回のリージョン拡大により、ドイツおよびイタリアのリージョンに Arc リソースを配置できるようになり、両国のデータレジデンシー要件を持つ組織でも Arc-enabled SQL Server の管理機能を利用しやすくなります。</p>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Germany West Central / Italy North はサポートリージョンに含まれず、ドイツ・イタリア国内リージョンに Arc リソース (メタデータ) を配置できなかった</li>
+                    <li>データレジデンシーやコンプライアンス上、国内リージョンでの管理を求める組織は、他の欧州リージョン (West Europe、North Europe など) を選択する必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Germany West Central と Italy North で GA となり、両リージョンに Arc リソースを配置してオンボーディング可能に</li>
+                    <li>ドイツ・イタリア国内のリージョンを使用しつつ、インベントリ、ガバナンス、セキュリティ、評価、ライセンス管理などの Azure ベースの管理機能を利用可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph OnPrem["🏢 オンプレミス / 他クラウド"]
+        SQL[("🗄️ SQL Server インスタンス")]
+        Agent["🔌 Azure Connected Machine Agent"]
+        Ext["🧩 Azure extension for SQL Server"]
+        SQL --> Ext
+        Ext --> Agent
+    end
+
+    subgraph Azure["☁️ Azure (Germany West Central 🇩🇪 / Italy North 🇮🇹)"]
+        Arc["🔗 Azure Arc リソース"]
+        Portal["🖥️ Azure Portal / Resource Graph&lt;br&gt;(インベントリ・ガバナンス)"]
+        Defender["🛡️ Microsoft Defender for Cloud"]
+        License["💳 ライセンス管理&lt;br&gt;(PAYG / ESU)"]
+        Arc --> Portal
+        Arc --> Defender
+        Arc --> License
+    end
+
+    Agent -- "HTTPS (TCP 443) / TLS" --> Arc
+            </pre>
+        </div>
+        <p>オンプレミス等の SQL Server は Azure Connected Machine Agent と Azure extension for SQL Server を通じて、<strong>アウトバウンドの HTTPS (TCP 443) のみ</strong>で Azure Arc に接続されます。今回のアップデートで、この Arc リソースを Germany West Central と Italy North に配置できるようになりました。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>1. 単一コントロールポイントからの大規模インベントリ管理</h4>
+                <ul>
+                    <li>Azure Portal で SQL Server の名前、バージョン、エディション、コア数、ホスト OS などの詳細を確認可能</li>
+                    <li>Azure Resource Graph Explorer で全 SQL Server インスタンスを横断クエリ (例: 「SQL Server 2014 のインスタンス数は?」「Linux で稼働するインスタンスは?」)</li>
+                    <li>バックアップ未実施や暗号化されていないデータベースの横断的な把握</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">✅</div>
+            <div class="feature-content">
+                <h4>2. ベストプラクティス評価 (Best practices assessment)</h4>
+                <p>Microsoft サポートの実績に基づくベストプラクティスと構成を比較し、パフォーマンス・セキュリティ改善の具体的な推奨事項をレポート。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>3. セキュリティ機能</h4>
+                <ul>
+                    <li><strong>Microsoft Defender for Cloud</strong>: 脆弱性評価と脅威保護 (SQL Advanced Threat Protection ベースのアラート)</li>
+                    <li><strong>Microsoft Entra 認証</strong>: SQL Server 2022 以降で、MFA / SSO を含むモダンな ID 管理を SQL Server に適用可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💳</div>
+            <div class="feature-content">
+                <h4>4. ライセンス・課金管理</h4>
+                <ul>
+                    <li><strong>従量課金 (Pay-as-you-go)</strong>: ライセンス購入の代わりに Azure 経由の従量課金モデルを選択可能 (SQL Server 2012〜2022 の全バージョンに対応)</li>
+                    <li><strong>拡張セキュリティ更新プログラム (ESU)</strong>: サポート終了後の SQL Server を最大 3 年間保護するサブスクリプションに対応</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>5. 移行評価 (Migration assessment)</h4>
+                <p>クラウド移行の準備状況分析、リスクと軽減策の特定、最適な Azure SQL 構成 (SKU サイズ) の推奨を自動生成 (既定で週 1 回実行)。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🗂️</div>
+            <div class="feature-content">
+                <h4>6. Microsoft Purview 連携</h4>
+                <p>アクセスポリシーなどのデータガバナンス機能との統合。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対応 SQL Server バージョン</td><td>SQL Server 2014 (12.x) 以降 (64 ビット版のみ)</td></tr>
+            <tr><td>対応 OS (Windows)</td><td>Windows 10 / 11、Windows Server 2016 以降</td></tr>
+            <tr><td>対応 OS (Linux)</td><td>Ubuntu 20.04 (x64)、RHEL 8 (x64)、SLES 15 (x64)</td></tr>
+            <tr><td>.NET Framework</td><td>Windows では .NET Framework 4.7.2 以降が必要</td></tr>
+            <tr><td>接続方式</td><td>Azure Connected Machine Agent + Azure extension for SQL Server によるアウトバウンド HTTPS (TCP 443、TLS)。HTTPS プロキシ、ExpressRoute、Private Link 経由の通信に対応</td></tr>
+            <tr><td>推奨システム要件</td><td>2 コア以上、512 MB 以上の空きメモリ</td></tr>
+            <tr><td>リージョン割り当て</td><td>Arc-enabled Server と Arc-enabled SQL Server インスタンスには同一リージョンを割り当てる必要がある</td></tr>
+            <tr><td>拡張機能のサポート</td><td>直近 1 年以内にリリースされた Azure extension for SQL Server バージョンのみサポート</td></tr>
+        </table>
+        <div class="unsupported-box">
+            <h4>🚫 主な非サポート構成 (抜粋)</h4>
+            <ul>
+                <li>Windows Server 2016 より前の Windows Server</li>
+                <li>コンテナー内で稼働する SQL Server</li>
+                <li>SQL Server 2012 以前のバージョン</li>
+                <li>Azure Virtual Machines 上の SQL Server (Arc ではなく SQL Server on Azure VM の管理機能を使用)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">👍</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>ドイツ・イタリアのデータレジデンシー / コンプライアンス要件に合わせて、国内リージョンで Arc リソースを管理できる</li>
+                    <li>従量課金 (PAYG) モデルにより、需要が変動する SQL Server のライセンスコストを最適化できる</li>
+                    <li>ESU サブスクリプションにより、サポート終了後の SQL Server を保護しながら移行を計画できる</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>オンプレミス・マルチクラウドに散在する SQL Server を Azure から単一のコントロールポイントで一元管理</li>
+                    <li>アウトバウンド HTTPS (443) のみで接続でき、インバウンドポートの開放が不要</li>
+                    <li>ベストプラクティス評価・移行評価により、構成改善と Azure SQL への移行判断を支援</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>一部機能 (Microsoft Defender for Cloud、ベストプラクティス評価など) は Azure Monitoring Agent (AMA) 拡張機能のインストールと Log Analytics ワークスペースへの接続が必要</li>
+                <li>機能の可用性は OS により異なる (ベストプラクティス評価、移行評価、詳細インベントリ、Defender for Cloud などは Windows のみ)</li>
+                <li>Linux の PAYG 課金には制限があり、パッシブインスタンス検出などが利用できず全インスタンスがアクティブとして課金される</li>
+                <li>ベストプラクティス評価、ESU、自動更新などの一部機能はライセンス種別 (Software Assurance / サブスクリプション / PAYG) が前提</li>
+                <li>Arc データ処理サービスのエンドポイント (<code>&lt;region&gt;.arcdataservices.com</code>) への Private Link 接続は非サポート</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🇩🇪 ユースケース 1: ドイツ国内データセンターの SQL Server 資産の一元管理</h4>
+            <p><span class="usecase-label">シナリオ</span>ドイツ国内のデータセンターで多数の SQL Server を運用しており、コンプライアンス上、管理メタデータもドイツ国内リージョンに保持したい。</p>
+            <p><span class="usecase-label effect">効果</span>Germany West Central に Arc リソースを配置して SQL Server をオンボーディングすることで、国内リージョン要件を満たしつつ、Azure Resource Graph によるインベントリの横断クエリ、Defender for Cloud によるセキュリティ監視、ベストプラクティス評価を利用できる。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>🇮🇹 ユースケース 2: イタリア国内の SQL Server の Azure SQL 移行準備</h4>
+            <p><span class="usecase-label">シナリオ</span>Italy North を利用するイタリア国内の組織が、老朽化した SQL Server の Azure SQL への移行を計画している。</p>
+            <p><span class="usecase-label effect">効果</span>Arc-enabled SQL Server の移行評価により、クラウド移行準備状況の分析、リスクの特定、最適な Azure SQL 構成 (SKU) の推奨を自動で取得できる。サポート終了バージョンには ESU サブスクリプションを適用し、移行完了まで保護を継続できる。</p>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="pricing-note">
+            Azure Arc への接続 (SQL Server inventory) 自体は<strong>すべてのライセンス種別で利用可能</strong>ですが、ベストプラクティス評価や ESU など一部機能は Software Assurance 付きライセンス、SQL Server サブスクリプション、または従量課金 (PAYG) サブスクリプションが必要です。詳細な料金は公式ページを参照してください。
+        </div>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-arc/" target="_blank" rel="noopener">Azure Arc の料金</a></li>
+            <li><a href="https://learn.microsoft.com/sql/sql-server/azure-arc/manage-license-billing" target="_blank" rel="noopener">ライセンスと課金の管理 (Microsoft Learn)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <p>今回のアップデートで以下の 2 リージョンが追加されました。</p>
+        <div class="new-region-grid">
+            <div class="new-region-card">
+                <div class="flag">🇩🇪</div>
+                <div class="name">Germany West Central</div>
+                <span class="label">NEW — GA</span>
+            </div>
+            <div class="new-region-card">
+                <div class="flag">🇮🇹</div>
+                <div class="name">Italy North</div>
+                <span class="label">NEW — GA</span>
+            </div>
+        </div>
+        <p>既存のサポートリージョンには以下が含まれます (Microsoft Learn ドキュメントより)。</p>
+        <div class="region-group">
+            <h4>南北アメリカ</h4>
+            <div class="region-chips">
+                <span class="region-chip">Brazil South</span>
+                <span class="region-chip">Canada Central</span>
+                <span class="region-chip">Canada East</span>
+                <span class="region-chip">Central US</span>
+                <span class="region-chip">East US</span>
+                <span class="region-chip">East US 2</span>
+                <span class="region-chip">North Central US</span>
+                <span class="region-chip">South Central US</span>
+                <span class="region-chip">US Government Virginia</span>
+                <span class="region-chip">West Central US</span>
+                <span class="region-chip">West US</span>
+                <span class="region-chip">West US 2</span>
+                <span class="region-chip">West US 3</span>
+            </div>
+        </div>
+        <div class="region-group">
+            <h4>アジア太平洋</h4>
+            <div class="region-chips">
+                <span class="region-chip">Australia East</span>
+                <span class="region-chip">Central India</span>
+                <span class="region-chip">Japan East</span>
+                <span class="region-chip">Korea Central</span>
+                <span class="region-chip">Southeast Asia</span>
+            </div>
+        </div>
+        <div class="region-group">
+            <h4>欧州・中東・アフリカ</h4>
+            <div class="region-chips">
+                <span class="region-chip">France Central</span>
+                <span class="region-chip">North Europe</span>
+                <span class="region-chip">Norway East</span>
+                <span class="region-chip">South Africa North</span>
+                <span class="region-chip">Sweden Central</span>
+                <span class="region-chip">Switzerland North</span>
+                <span class="region-chip">UAE North</span>
+                <span class="region-chip">UK South</span>
+                <span class="region-chip">UK West</span>
+                <span class="region-chip">West Europe</span>
+            </div>
+        </div>
+        <p>最新のリージョン一覧は <a href="https://learn.microsoft.com/sql/sql-server/azure-arc/overview#supported-azure-regions" target="_blank" rel="noopener">公式ドキュメント</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>🖥️ Azure Arc-enabled Servers</strong>
+                SQL Server ホストの接続基盤。Azure Connected Machine Agent により Arc へ接続し、Run Command による T-SQL スクリプトの大規模実行にも対応
+            </div>
+            <div class="related-card">
+                <strong>🛡️ Microsoft Defender for Cloud</strong>
+                Arc 経由で SQL Server の脆弱性評価・脅威保護を提供
+            </div>
+            <div class="related-card">
+                <strong>🪪 Microsoft Entra ID</strong>
+                SQL Server 2022 以降で Entra 認証 (MFA / SSO) を利用可能
+            </div>
+            <div class="related-card">
+                <strong>🗂️ Microsoft Purview</strong>
+                データガバナンス (アクセスポリシー、データ分類) との統合
+            </div>
+            <div class="related-card">
+                <strong>📈 Azure Monitor / Log Analytics</strong>
+                評価・監視データの収集基盤 (AMA 拡張機能経由)
+            </div>
+            <div class="related-card">
+                <strong>☁️ Azure SQL Managed Instance</strong>
+                移行評価・データベース移行 (Managed Instance link、LRS) の移行先
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            Azure Arc-enabled SQL Server の Germany West Central / Italy North への拡大は、機能追加ではなく<strong>リージョン拡大のアップデート</strong>ですが、ドイツ・イタリアのデータレジデンシー要件を持つ組織にとっては、<strong>国内リージョンでハイブリッド SQL Server 資産を一元管理できるようになる重要な発表</strong>です。両国リージョンを利用している、または欧州の他リージョンで代替していた組織は、Arc リソースの配置先として新リージョンの利用を検討するとよいでしょう。オンボーディングの際は、<strong>Arc-enabled Server と Arc-enabled SQL Server インスタンスに同一リージョンを割り当てる要件</strong>に注意してください。
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Arc</span>
+            <span class="tag">SQL Server</span>
+            <span class="tag">Hybrid</span>
+            <span class="tag">リージョン拡大</span>
+            <span class="tag">Germany West Central</span>
+            <span class="tag">Italy North</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=570696" target="_blank" rel="noopener">公式アップデート情報: Germany West Central</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=570763" target="_blank" rel="noopener">公式アップデート情報: Italy North</a></li>
+            <li><a href="https://learn.microsoft.com/sql/sql-server/azure-arc/overview" target="_blank" rel="noopener">Microsoft Learn: SQL Server enabled by Azure Arc の概要</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-arc/" target="_blank" rel="noopener">Azure Arc の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=570696" target="_blank" rel="noopener">Azure Updates (Germany West Central)</a> / <a href="https://azure.microsoft.com/updates?id=570763" target="_blank" rel="noopener">Azure Updates (Italy North)</a> / <a href="https://learn.microsoft.com/sql/sql-server/azure-arc/overview" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>リリース日: 2026-09-29 | Azure News Summary — Azure Arc-enabled SQL Server リージョン拡大レポート</p>
+    </footer>
+
+</div>
+</body>
+</html>

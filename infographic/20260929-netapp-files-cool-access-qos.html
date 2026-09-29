@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure NetApp Files: Cool Access QoS 改善 (Premium/Ultra) GA | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+
+    /* Storage category */
+    --storage-blue: #00BCF2;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--storage-blue) 100%);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "❄️";
+    position: absolute;
+    right: 24px;
+    bottom: -10px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.date-badge {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+}
+
+.header h1 {
+    font-size: 26px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.header p.subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+    max-width: 780px;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+}
+
+.section-title .icon {
+    font-size: 22px;
+}
+
+h3.sub-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 18px 0 10px;
+}
+
+p { margin: 8px 0; font-size: 14.5px; }
+
+/* Highlight */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14.5px;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 15px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 15px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { font-size: 13.5px; margin: 8px 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 30px;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.stat-value small { font-size: 15px; font-weight: 500; }
+
+.stat-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 6px;
+}
+
+/* Feature card */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 15px;
+    color: var(--ms-blue-800);
+    margin-bottom: 4px;
+}
+
+.feature-content p, .feature-content li {
+    font-size: 13.5px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content ul { padding-left: 18px; margin-top: 4px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 13.5px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* Calc example */
+.calc-example {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 14px 0;
+}
+
+.calc-example h4 { font-size: 14.5px; color: var(--ms-blue-800); margin-bottom: 8px; }
+.calc-example ul { padding-left: 20px; }
+.calc-example li { font-size: 13.5px; margin: 6px 0; }
+
+.calc-bars { margin: 14px 0 4px; }
+.calc-bar-row { display: flex; align-items: center; gap: 10px; margin: 8px 0; }
+.calc-bar-label { width: 210px; min-width: 210px; font-size: 12.5px; color: var(--ms-text-secondary); }
+.calc-bar-track { flex: 1; background: var(--ms-blue-200); border-radius: 6px; height: 26px; position: relative; overflow: hidden; }
+.calc-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.calc-bar-fill.new { background: linear-gradient(90deg, var(--ms-green), #4CAF50); }
+.calc-bar-fill.full { background: linear-gradient(90deg, var(--azure-blue), var(--storage-blue)); }
+.calc-bar-fill.old { background: linear-gradient(90deg, var(--ms-red), var(--ms-orange)); }
+
+/* Steps */
+.steps { counter-reset: step; margin: 12px 0; }
+.step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 12px 0;
+}
+.step-num {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+.step-body { font-size: 14px; padding-top: 3px; }
+.step-body b { color: var(--ms-blue-800); }
+
+/* Pros / cons */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.merit-card.business { background: var(--ms-blue-100); border: 2px solid var(--azure-blue); }
+.merit-card.tech { background: #F3EEF9; border: 2px solid var(--ms-purple); }
+
+.merit-card h4 { font-size: 15px; margin-bottom: 10px; }
+.merit-card.business h4 { color: var(--azure-blue); }
+.merit-card.tech h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 13.5px; margin: 8px 0; }
+
+.warning-box {
+    background: #FFF8E6;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.warning-box ul { padding-left: 20px; }
+.warning-box li { font-size: 13.5px; margin: 8px 0; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--storage-blue);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 14px 0;
+}
+.usecase-card h4 { font-size: 15.5px; color: var(--azure-dark-blue); margin-bottom: 10px; }
+.usecase-card .label { font-weight: 700; color: var(--ms-blue-800); font-size: 13.5px; }
+.usecase-card p, .usecase-card li { font-size: 13.5px; }
+.usecase-card ol { padding-left: 20px; margin: 6px 0; }
+
+.effect-tag {
+    display: inline-block;
+    background: var(--ms-green);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 6px;
+}
+
+/* Regions */
+.region-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.region-chip {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 12.5px;
+    font-weight: 500;
+}
+.region-chip.jp { background: var(--azure-blue); color: #FFFFFF; }
+
+/* Related */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+.related-card h4 { font-size: 13.5px; color: var(--azure-blue); margin-bottom: 4px; }
+.related-card p { font-size: 12.5px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { padding-left: 20px; }
+.link-list li { font-size: 13.5px; margin: 6px 0; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), #E6F7FD);
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+}
+.summary-box p { font-size: 14.5px; }
+
+/* Tags */
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.tag {
+    background: var(--ms-surface);
+    border: 1px solid var(--azure-blue);
+    color: var(--azure-blue);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 12.5px;
+    padding: 20px 10px 30px;
+    border-top: 1px solid var(--ms-border);
+}
+.footer p { font-size: 12.5px; margin: 4px 0; }
+
+/* pre (non-mermaid) */
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 21px; }
+    .calc-bar-label { width: 140px; min-width: 140px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">📦 Azure NetApp Files</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="date-badge">📅 リリース日: 2026-09-29</span>
+        </div>
+        <h1>Storage with Cool Access Enhancement<br>Premium / Ultra サービスレベルの QoS 改善が一般提供開始</h1>
+        <p class="subtitle">クールアクセス有効時のスループット上限が「固定削減」から「階層化データ量に基づく動的計算」へ。ホット層データは本来のパフォーマンスを維持したまま、コスト削減とパフォーマンスの両立を実現。</p>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure NetApp Files の「storage with cool access (クールアクセス付きストレージ)」機能において、<b>Premium および Ultra サービスレベル</b>でクールアクセスを有効化した際の <b>QoS (スループット制御) の改善が一般提供 (GA)</b> されました。2026 年 4 月にプレビューが開始され、2026 年 9 月に GA となったアップデートです。</p>
+        <div class="highlight-box">
+            ❄️ クールアクセスは、非アクティブなデータブロックをボリューム (ホット層) から Azure ストレージアカウント (クール層) へ自動的に移動してストレージコストを削減する機能です。従来は、クール層への階層化量に関係なくボリューム全体のスループット上限が一律に削減されていましたが、今回の改善により<b>最大スループットがクール層に階層化されたデータ量に基づいて動的に計算</b>されるようになりました。ホット層のデータは構成済みのパフォーマンスをそのまま維持し、データがクール層に移動したときにのみスループットが調整されます。
+        </div>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">64 <small>MiB/s/TiB</small></div>
+                <div class="stat-label">Premium ホット層レート (維持)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">128 <small>MiB/s/TiB</small></div>
+                <div class="stat-label">Ultra ホット層レート (維持)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">16 <small>MiB/s/TiB</small></div>
+                <div class="stat-label">クール層データのレート (共通)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">360→544 <small>MiB/s</small></div>
+                <div class="stat-label">Premium 10 TiB 例 (ホット 8 TiB)</div>
+            </div>
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Premium/Ultra でクールアクセスを有効にすると、階層化されたデータ量に関係なく<b>一律の削減率</b>が適用 (Premium: 64 → 36 MiB/s/TiB、Ultra: 128 → 68 MiB/s/TiB)</li>
+                    <li>Premium の 10 TiB ボリュームでは、クール層へのデータ移動が少なくても、スループット上限が <b>640 MiB/s から 360 MiB/s に固定的に低下</b></li>
+                    <li>ホットデータ中心のワークロードでは、コスト削減のためにクールアクセスを有効化するとパフォーマンスが過剰に制限されるトレードオフ</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>スループット上限が「<b>ホット層データ量 × サービスレベルのレート + クール層データ量 × 16 MiB/s/TiB</b>」で動的に計算され、ホット層データは本来のパフォーマンス (Premium: 64、Ultra: 128 MiB/s/TiB) を維持</li>
+                    <li>クールアクセスのパターン変化に応じてスループットが<b>自動調整</b>されるため、手動チューニングや再構成が不要</li>
+                    <li>ホットとクールが混在するワークロードで、<b>コスト削減とパフォーマンスの両立</b>がしやすくなった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    App(["👤 アプリケーション / ユーザー"]) -->|読み書き| Vol["📁 ANF ボリューム&lt;br&gt;(Premium / Ultra)"]
+
+    subgraph Hot["🔥 ホット層 (Azure NetApp Files)"]
+        Vol --> Scan{"🌡️ 温度スキャン&lt;br&gt;Coolness Period 超過?"}
+    end
+
+    subgraph Cool["❄️ クール層 (Azure ストレージ)"]
+        Blob[("🗄️ Blob ストレージ&lt;br&gt;4 MiB オブジェクト")]
+    end
+
+    Scan -->|コールドデータを階層化| Blob
+    Blob -->|ランダム読み取りで&lt;br&gt;ホット層へ復帰| Vol
+    Scan -.->|階層化量に応じて| QoS["⚙️ QoS 自動調整&lt;br&gt;ホット: 64/128 MiB/s/TiB&lt;br&gt;クール: 16 MiB/s/TiB"]
+    QoS -.->|動的なスループット上限| Vol
+            </pre>
+        </div>
+        <p>非アクティブなデータブロックはホット層からクール層 (Azure ストレージ) へ透過的に移動され、今回の改善によりスループット上限がホット層・クール層それぞれのデータ量に基づいて動的に計算されるようになりました。</p>
+    </section>
+
+    <!-- サービスアップデートの詳細 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>サービスアップデートの詳細</h2>
+        <h3 class="sub-title">主要機能</h3>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>1. 階層化データ量に基づく動的スループット計算</h4>
+                <ul>
+                    <li>クールアクセス有効時、最大スループットは固定の削減率ではなく、クール層に階層化されたデータ量に基づいて動的に計算される</li>
+                    <li>対象は auto QoS が有効な Premium/Ultra サービスレベルの容量プール内で、クールアクセスデータが 100 GiB を超えるボリューム</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔥</div>
+            <div class="feature-content">
+                <h4>2. ホット層パフォーマンスの維持</h4>
+                <ul>
+                    <li>ホット層に残っているデータは、サービスレベル本来のスループットレート (Premium: 64 MiB/s/TiB、Ultra: 128 MiB/s/TiB) を維持</li>
+                    <li>スループットが調整されるのは、データがクール層に階層化されたときのみ</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>3. 手動チューニング不要の継続的な最適化</h4>
+                <ul>
+                    <li>クールアクセスのパターン変化に応じてプールとボリュームのスループットが継続的に最適化される</li>
+                    <li>手動での再構成やチューニングは不要</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3 class="sub-title">スループット計算式</h3>
+        <table>
+            <thead>
+                <tr><th>サービスレベル</th><th>クールアクセスなし</th><th>クールアクセスあり (新方式)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><b>Premium</b></td><td>クォータ (TiB) × 64 MiB/s</td><td>(ホット層データ TiB × 64 MiB/s) + (クール層データ TiB × 16 MiB/s)</td></tr>
+                <tr><td><b>Ultra</b></td><td>クォータ (TiB) × 128 MiB/s</td><td>(ホット層データ TiB × 128 MiB/s) + (クール層データ TiB × 16 MiB/s)</td></tr>
+            </tbody>
+        </table>
+
+        <div class="calc-example">
+            <h4>💡 計算例 (Premium、10 TiB ボリューム)</h4>
+            <ul>
+                <li>ホット層 10 TiB / クール層 0 TiB: 最大スループット <b>640 MiB/s</b></li>
+                <li>ホット層 8 TiB / クール層 2 TiB: 最大スループット <b>544 MiB/s</b> (8 × 64 + 2 × 16)</li>
+                <li>従来方式では階層化量に関係なく <b>360 MiB/s</b> (10 × 36) に固定されていた</li>
+            </ul>
+            <div class="calc-bars">
+                <div class="calc-bar-row">
+                    <div class="calc-bar-label">ホット 10 TiB / クール 0 TiB</div>
+                    <div class="calc-bar-track"><div class="calc-bar-fill full" style="width: 100%;">640 MiB/s</div></div>
+                </div>
+                <div class="calc-bar-row">
+                    <div class="calc-bar-label">新方式: ホット 8 / クール 2 TiB</div>
+                    <div class="calc-bar-track"><div class="calc-bar-fill new" style="width: 85%;">544 MiB/s</div></div>
+                </div>
+                <div class="calc-bar-row">
+                    <div class="calc-bar-label">従来方式 (固定削減)</div>
+                    <div class="calc-bar-track"><div class="calc-bar-fill old" style="width: 56.25%;">360 MiB/s</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="warning-box">
+            <b>⚠️ 既存ボリュームの扱い:</b> 本アップデート以前にクールアクセスを有効化した容量プール内の既存ボリュームには、引き続き従来の QoS 上限 (Premium: 36 MiB/s/TiB、Ultra: 68 MiB/s/TiB) が適用されます。新しい QoS 上限を利用するには、<b>新しい容量プールを作成し、既存ボリュームをそこへ移動する</b>必要があります。
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <thead><tr><th style="width: 40%;">項目</th><th>詳細</th></tr></thead>
+            <tbody>
+                <tr><td>対象サービスレベル</td><td>Premium、Ultra (クールアクセス自体は Flexible、Standard でも利用可能)</td></tr>
+                <tr><td>動的 QoS の適用条件</td><td>auto QoS 有効の容量プール内で、クールアクセスデータが 100 GiB 超のボリューム</td></tr>
+                <tr><td>スループット計算単位</td><td>ボリューム単位 (容量プール単位ではない)</td></tr>
+                <tr><td>クール層データのスループットレート</td><td>16 MiB/s per TiB (Premium/Ultra 共通)</td></tr>
+                <tr><td>Coolness Period (クールと判定するまでの日数)</td><td>2〜183 日 (既定値: 31 日)</td></tr>
+                <tr><td>階層化の単位</td><td>コールドブロックを 4 MiB オブジェクトにパッケージ化して Azure ストレージへ移動</td></tr>
+                <tr><td>取得ポリシー (Retrieval Policy)</td><td>Default (ランダム読み取りでホット層へ復帰) / On-Read (すべての読み取りで復帰) / Never (クール層から直接提供)</td></tr>
+                <tr><td>階層化ポリシー (Tiering Policy)</td><td>Auto (アクティブファイルシステム + スナップショット) / SnapshotOnly (スナップショットのみ)</td></tr>
+                <tr><td>メタデータ</td><td>常にホット層に保持 (階層化されない)</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+        <h3 class="sub-title">前提条件</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-body">Azure NetApp Files アカウントと容量プールが作成済みであること</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-body">容量プールでクールアクセスが有効化されていること (一度有効にするとプールレベルでは無効化できない)</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-body">既存のクールアクセス有効プールで新しい QoS 上限を利用する場合は、新しい容量プールを作成しボリュームを移動すること</div></div>
+        </div>
+
+        <h3 class="sub-title">Azure Portal — 容量プールでのクールアクセス有効化</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-body"><b>新規作成時:</b> 容量プールの作成画面で「Enable Cool Access」チェックボックスを選択</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-body"><b>既存プール:</b> 対象の容量プールを右クリックし「Enable Cool Access」を選択</div></div>
+        </div>
+
+        <h3 class="sub-title">Azure Portal — ボリュームでのクールアクセス設定</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-body">ボリュームの新規作成画面 (Basics タブ) または既存ボリュームの「Edit」画面で「<b>Enable Cool Access</b>」を選択</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-body"><b>Coolness Period</b> (2〜183 日、既定値 31 日) を設定</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-body"><b>Cool Access Retrieval Policy</b> (Default / On-Read / Never) を選択</div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-body"><b>Cool Access Tiering Policy</b> (Auto / SnapshotOnly) を選択</div></div>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>ホットデータのパフォーマンスを犠牲にせずクールアクセスによるコスト削減を導入できるため、<b>TCO 最適化の適用範囲が広がる</b></li>
+                    <li>手動チューニングや再構成が不要になり、<b>運用負荷が軽減</b>される</li>
+                    <li>クール層の料金はホット層より低く、全サービスレベルで同一レートのため、<b>コスト予測がしやすい</b></li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>スループット上限が実際の階層化状況を反映するため、<b>QoS 動作の予測可能性が向上</b></li>
+                    <li>アクセスパターンの変化 (データのクール化・ウォーム化) に応じてスループットが<b>自動的に追従</b></li>
+                    <li><b>ボリューム単位で計算</b>されるため、同一プール内でもボリュームごとに適切な上限が適用される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>本アップデート以前にクールアクセスを有効化した容量プール内の既存ボリュームには<b>従来の固定削減方式が適用され続ける</b>。新方式を利用するには新しい容量プールの作成とボリューム移動が必要</li>
+                <li>動的 QoS の適用にはクールアクセスデータが <b>100 GiB を超えている</b>必要がある</li>
+                <li>クール層のデータ読み取りは Azure ストレージアカウントからの取得となるため、<b>アクセスレイテンシに差</b>が生じる可能性がある (どのサービスレベルでも最大レイテンシの保証はない)</li>
+                <li>容量プールでクールアクセスを有効化すると、<b>プールレベルでは無効化できない</b> (ボリュームレベルでのオン/オフは可能)</li>
+                <li>クールアクセス有効ボリュームは、<b>クールアクセス有効な容量プールにのみ配置・移動</b>できる</li>
+                <li>ボリュームでクールアクセスを無効化しても、既にクール層へ移動したファイルはそのまま残る (各ファイルへの I/O 操作でのみホット層へ戻る)</li>
+                <li>Flexible サービスレベルのプールはユーザー構成のスループット上限が維持されるため、<b>本アップデートの対象外</b> (もともとクールアクセス有効化による性能削減がない)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>📁 ユースケース 1: ホット/クール混在のファイルサービス基盤のコスト最適化</h4>
+            <p><span class="label">シナリオ:</span> Premium サービスレベルで運用するファイル共有に、アクティブなプロジェクトデータと完了済みプロジェクトの古いデータが混在している。従来はクールアクセスを有効化するとボリューム全体のスループットが約 44% 削減されるため、パフォーマンス要件との兼ね合いで導入を見送っていた。</p>
+            <p><span class="effect-tag">効果</span> 新しい QoS 方式では、ホット層に残るアクティブデータは 64 MiB/s/TiB のフルパフォーマンスを維持したまま、古いデータのみがクール層へ移動してコストを削減できる。階層化の進行に応じてスループットが自動調整されるため、チューニング作業も不要。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>🚚 ユースケース 2: 既存クールアクセスボリュームの新 QoS への移行</h4>
+            <p><span class="label">シナリオ:</span> 本アップデート以前からクールアクセスを利用しており、固定削減方式 (Premium: 36 MiB/s/TiB) の制限を受けているボリュームのパフォーマンスを改善したい。</p>
+            <p class="label">実装例:</p>
+            <ol>
+                <li>クールアクセスを有効化した新しい容量プールを作成</li>
+                <li>既存ボリュームを新しい容量プールへ移動</li>
+                <li>移動後、階層化データ量に基づく動的 QoS が適用される</li>
+            </ol>
+            <p><span class="effect-tag">効果</span> ホット層データが多いボリュームでは、スループット上限が大幅に向上する (例: ホット層 8 TiB / クール層 2 TiB の Premium 10 TiB ボリュームで 360 MiB/s → 544 MiB/s)。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>クールアクセスの課金は以下の要素に基づきます。</p>
+        <table>
+            <thead><tr><th style="width: 30%;">課金要素</th><th>内容</th></tr></thead>
+            <tbody>
+                <tr><td>🔥 ホット層容量</td><td>クール層に階層化されていないデータと容量プール内の未割り当て容量は、サービスレベル (ホット層) のレートで課金</td></tr>
+                <tr><td>❄️ クール層容量</td><td>クール層のデータはクール層レートで課金 (ホット層より低額、全サービスレベルで同一レート)</td></tr>
+                <tr><td>🌐 ネットワーク転送</td><td>ホット層とクール層の間の転送 (Blob ストレージへの GET/PUT リクエストおよびプライベートリンク転送) に課金</td></tr>
+            </tbody>
+        </table>
+        <div class="highlight-box">
+            クールアクセス有効時はスループット削減を織り込んだクールアクセス価格が適用されます。具体的な料金は <a href="https://azure.microsoft.com/pricing/details/netapp/" target="_blank">Azure NetApp Files 料金ページ</a> を参照してください。また、<a href="https://aka.ms/anfcoolaccesscalc" target="_blank">Azure NetApp Files effective price estimator</a> でクールアクセスによる削減額を試算できます。
+        </div>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p>クールアクセス機能自体は、Azure NetApp Files が利用可能なすべてのリージョンで提供されています。Premium/Ultra サービスレベル向けのクールアクセススループット機能 (本アップデート) も<b>全 Azure NetApp Files 対応リージョンでサポート</b>されており、ドキュメントには以下を含む約 48 リージョンが列挙されています。</p>
+        <div class="region-chips">
+            <span class="region-chip jp">Japan East</span>
+            <span class="region-chip jp">Japan West</span>
+            <span class="region-chip">East US</span>
+            <span class="region-chip">East US 2</span>
+            <span class="region-chip">West US</span>
+            <span class="region-chip">West US 2</span>
+            <span class="region-chip">West US 3</span>
+            <span class="region-chip">Central US</span>
+            <span class="region-chip">North Central US</span>
+            <span class="region-chip">South Central US</span>
+            <span class="region-chip">North Europe</span>
+            <span class="region-chip">West Europe</span>
+            <span class="region-chip">UK South</span>
+            <span class="region-chip">UK West</span>
+            <span class="region-chip">Southeast Asia</span>
+            <span class="region-chip">East Asia</span>
+            <span class="region-chip">Australia East</span>
+            <span class="region-chip">Korea Central</span>
+            <span class="region-chip">US Gov Arizona</span>
+            <span class="region-chip">US Gov Texas</span>
+            <span class="region-chip">US Gov Virginia</span>
+            <span class="region-chip">ほか (約 48 リージョン)</span>
+        </div>
+        <p style="font-size: 13px; color: var(--ms-text-secondary);">最新のリージョン一覧は <a href="https://learn.microsoft.com/azure/azure-netapp-files/cool-access-introduction#supported-regions-for-cool-access-throughput-for-premium-and-ultra-service-levels-feature" target="_blank">Microsoft Learn のドキュメント</a> を参照してください。</p>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🗄️ Azure Blob Storage</h4>
+                <p>クール層の実体。コールドデータは 4 MiB オブジェクトとして Azure ストレージアカウントに格納される</p>
+            </div>
+            <div class="related-card">
+                <h4>📶 ANF サービスレベル (Flexible/Standard/Premium/Ultra)</h4>
+                <p>クールアクセスは 4 つのサービスレベルすべてで利用可能。本アップデートの動的 QoS は Premium/Ultra が対象</p>
+            </div>
+            <div class="related-card">
+                <h4>📦 ANF 大容量ボリューム (Large Volumes)</h4>
+                <p>クールアクセスと併用可能。クールアクセス有効時は 2,400 GiB〜7.2 PiB のボリュームを作成可能 (7.2 PiB までの大容量ボリュームでは 80% 超のデータがクール層にある必要あり)</p>
+            </div>
+            <div class="related-card">
+                <h4>🌐 クロスリージョン/クロスゾーンレプリケーション</h4>
+                <p>レプリケーション先ボリュームのみにクールアクセスを有効化し、ソースのレイテンシに影響を与えずコスト削減が可能</p>
+            </div>
+            <div class="related-card">
+                <h4>📈 Azure Monitor メトリック</h4>
+                <p>ボリューム単位でクール層サイズ、クール層データ読み取り/書き込みサイズのメトリックを提供</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure NetApp Files の Premium/Ultra サービスレベルにおけるクールアクセスの QoS 改善が GA となり、クールアクセス有効時のスループット上限が「固定削減」から「<b>階層化データ量に基づく動的計算</b>」へと変わりました。ホット層データは本来のパフォーマンス (Premium: 64 MiB/s/TiB、Ultra: 128 MiB/s/TiB) を維持しつつ、クール層データ分のみが 16 MiB/s/TiB で計算されるため、パフォーマンス要件を理由にクールアクセスの導入を見送っていたワークロードでも、<b>コスト削減とパフォーマンスの両立が現実的</b>になります。</p>
+            <p>既存のクールアクセス有効プール内のボリュームには従来方式が適用され続けるため、新方式の恩恵を受けるには<b>新しい容量プールの作成とボリューム移動が必要</b>です。Premium/Ultra でクールアクセスを利用中、または導入を検討している場合は、スループット計算式の変更内容を確認し、容量プールの再編を検討することを推奨します。</p>
+            <div class="tag-row">
+                <span class="tag">Azure NetApp Files</span>
+                <span class="tag">Storage</span>
+                <span class="tag">Cool Access</span>
+                <span class="tag">QoS</span>
+                <span class="tag">Premium</span>
+                <span class="tag">Ultra</span>
+                <span class="tag">GA</span>
+                <span class="tag">コスト最適化</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=573032" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-netapp-files/cool-access-introduction" target="_blank">Azure NetApp Files storage with cool access (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-netapp-files/manage-cool-access" target="_blank">Manage Azure NetApp Files storage with cool access (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-netapp-files/azure-netapp-files-service-levels" target="_blank">Service levels for Azure NetApp Files (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-netapp-files/whats-new" target="_blank">What's new in Azure NetApp Files (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/netapp/" target="_blank">Azure NetApp Files 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><b>出典:</b> <a href="https://azure.microsoft.com/updates?id=573032" target="_blank">Azure Updates (ID: 573032)</a> / <a href="https://learn.microsoft.com/azure/azure-netapp-files/cool-access-introduction" target="_blank">Microsoft Learn - Azure NetApp Files storage with cool access</a></p>
+        <p>Azure News Summary Report (2026-09-29) を基に生成 | Generated by Azure News Summary</p>
+    </footer>
+
+</div>
+</body>
+</html>

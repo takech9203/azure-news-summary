@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SQL Database: Hyperscale Serverless の自動一時停止・自動再開 (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .meta-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.header .release-date {
+    margin-top: 12px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    color: var(--azure-blue);
+    font-size: 22px;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--ms-blue-200);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    color: var(--ms-blue-800);
+    font-size: 18px;
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 30px; font-weight: bold; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content ul {
+    padding-left: 20px;
+    margin-top: 6px;
+}
+
+.feature-content li { margin-bottom: 4px; font-size: 14px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-tertiary); }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+    border-top: 4px solid var(--azure-blue);
+}
+
+.merit-card h4 { color: var(--ms-blue-800); margin-bottom: 10px; }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin-bottom: 8px; font-size: 14px; }
+
+.caution-list {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+.caution-list ul { padding-left: 20px; }
+.caution-list li { margin-bottom: 10px; font-size: 14px; }
+.caution-list ul ul { margin-top: 6px; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-right: 6px;
+}
+
+.usecase-card p { font-size: 14px; }
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Related / Links */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--ms-purple);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card h4 { color: var(--ms-purple); font-size: 15px; margin-bottom: 6px; }
+
+.link-list { list-style: none; }
+.link-list li {
+    margin-bottom: 8px;
+    padding-left: 24px;
+    position: relative;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0;
+}
+
+.footer a { color: var(--azure-blue); }
+
+.step-list { counter-reset: step; list-style: none; }
+.step-list li {
+    position: relative;
+    padding-left: 44px;
+    margin-bottom: 12px;
+}
+.step-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: white;
+    font-weight: bold;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="meta-badges">
+            <span class="service-badge">Azure SQL Database</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Hyperscale Serverless の自動一時停止・自動再開</h1>
+        <div class="subtitle">Hyperscale Serverless auto-pause and auto-resume — Hyperscale のスケーラビリティと Serverless のコスト効率を両立</div>
+        <div class="release-date">📅 リリース日: 2026-09-29 (Public Preview)</div>
+    </div>
+
+    <!-- 概要 -->
+    <div class="section">
+        <h2>📋 概要</h2>
+        <p>Azure SQL Database <strong>Hyperscale サービスレベル</strong>の <strong>Serverless コンピュートレベル</strong>において、<strong>自動一時停止 (auto-pause)</strong> と<strong>自動再開 (auto-resume)</strong> がパブリックプレビューとして利用可能になりました。非アクティブな期間が続くとデータベースを自動的に一時停止し、アクティビティが戻ると自動的に再開するように構成できます。</p>
+        <div class="highlight-box">
+            Serverless コンピュートレベルは、ワークロードの需要に応じてコンピュートを自動スケーリングし、<strong>秒単位で使用したコンピュート量に対して課金</strong>されるモデルです。これまで General Purpose サービスレベルでは自動一時停止・自動再開が利用可能でしたが、今回のアップデートにより Hyperscale サービスレベルでも (プレビューとして) 同じ機能が使えるようになり、<strong>Hyperscale の大規模・高速なストレージアーキテクチャと Serverless のコスト最適化を組み合わせられる</strong>ようになりました。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Hyperscale Serverless では自動一時停止がサポートされておらず、非アクティブな期間でも最小 vCore 分のコンピュート課金が継続していた</li>
+                    <li>断続的・予測不能な利用パターンのデータベースで Hyperscale のスケーラビリティを活かしつつコンピュートコストをゼロにする手段がなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>非アクティブな期間 (セッション数 0 かつユーザーワークロードの CPU 使用 0) が自動一時停止遅延時間続くと、データベースが自動的に一時停止される</li>
+                    <li>一時停止中はコンピュートコストがゼロになり、ストレージコストのみ課金される</li>
+                    <li>ログイン試行などのアクティビティが発生すると自動的に再開される (再開は通常 1 分程度)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">¥0</div>
+                <div class="stat-label">一時停止中のコンピュート課金</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">60 分</div>
+                <div class="stat-label">最小自動一時停止遅延 (Hyperscale)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">約 1 分</div>
+                <div class="stat-label">自動再開のレイテンシ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">7 日</div>
+                <div class="stat-label">最大自動一時停止遅延 (10,080 分)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- アーキテクチャ図 -->
+    <div class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    User([👤 アプリケーション / ユーザー])
+    DB[("🗄️ Hyperscale Serverless DB<br/>(稼働中: 秒単位課金)")]
+    Check{"⏱️ 非アクティブ判定<br/>セッション数 = 0<br/>ユーザー CPU = 0"}
+    Paused[("😴 一時停止状態<br/>コンピュート課金なし<br/>ストレージのみ課金")]
+    Login["🔑 ログイン試行 /<br/>管理操作イベント"]
+    Retry["🔁 リトライロジック<br/>(エラー 40613 後に再接続)"]
+
+    User -->|クエリ実行| DB
+    DB -->|自動一時停止遅延<br/>(最小 60 分) 経過| Check
+    Check -->|条件成立| Paused
+    Check -->|アクティビティあり| DB
+    Login -->|自動再開<br/>(約 1 分)| Paused
+    Paused -.->|再開完了| DB
+    User --> Retry
+    Retry --> Login
+            </pre>
+        </div>
+        <p>非アクティブ条件が自動一時停止遅延時間 (Hyperscale では最小 60 分) 継続するとデータベースが一時停止し、コンピュート課金が停止します。ログインなどのアクティビティで自動再開され、初回接続はエラー 40613 を返すためアプリケーション側のリトライロジックが重要です。</p>
+    </div>
+
+    <!-- 主要機能 -->
+    <div class="section">
+        <h2>⚙️ サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">⏸️</div>
+            <div class="feature-content">
+                <h4>1. 自動一時停止 (auto-pause)</h4>
+                <ul>
+                    <li>自動一時停止遅延時間の間、「セッション数 = 0」かつ「ユーザーリソースプールの CPU = 0」が継続すると自動的に一時停止</li>
+                    <li>Hyperscale の自動一時停止遅延は<strong>既定 60 分、最小 60 分、最大 10,080 分 (7 日)</strong>、1 分単位で設定可能 (General Purpose の最小は 15 分)</li>
+                    <li><code>-1</code> を設定することで自動一時停止を無効化可能</li>
+                    <li>一時停止までのレイテンシは条件成立後 1〜10 分程度</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">▶️</div>
+            <div class="feature-content">
+                <h4>2. 自動再開 (auto-resume)</h4>
+                <ul>
+                    <li>ログイン試行のほか、監査ログの参照、脅威検出設定の変更、データベースコピー、タグの追加・変更、vCore や自動一時停止遅延の変更など、さまざまな操作がトリガーとなる</li>
+                    <li>再開のレイテンシは<strong>通常 1 分程度</strong></li>
+                    <li>Azure Monitor アクティビティログの「Resume Databases」操作の <code>Caller</code> プロパティで再開トリガーを特定可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💰</div>
+            <div class="feature-content">
+                <h4>3. 一時停止中のコスト削減</h4>
+                <ul>
+                    <li>一時停止中は<strong>コンピュートコストがゼロ</strong>となり、ストレージコストのみ発生</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 技術仕様 -->
+    <div class="section">
+        <h2>🔧 技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象サービスレベル</td><td>Hyperscale (プレビュー)。General Purpose では従来から利用可能</td></tr>
+            <tr><td>購入モデル</td><td>vCore モデルのみ (DTU モデルは非対応)</td></tr>
+            <tr><td>ハードウェア</td><td>Standard シリーズ (Gen5)</td></tr>
+            <tr><td>自動一時停止遅延 (Hyperscale)</td><td>既定 60 分 / 最小 60 分 / 最大 10,080 分 (7 日) / 1 分単位 / <code>-1</code> で無効化</td></tr>
+            <tr><td>一時停止の条件</td><td>セッション数 = 0 かつ ユーザーリソースプールの CPU = 0 が遅延時間継続</td></tr>
+            <tr><td>再開レイテンシ</td><td>通常約 1 分</td></tr>
+            <tr><td>一時停止レイテンシ</td><td>条件成立後 1〜10 分程度</td></tr>
+            <tr><td>一時停止中の課金</td><td>コンピュート課金なし、ストレージのみ</td></tr>
+            <tr><td>課金粒度 (稼働中)</td><td>秒単位</td></tr>
+        </table>
+    </div>
+
+    <!-- 設定方法 -->
+    <div class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>Azure SQL Database Hyperscale サービスレベル、Serverless コンピュートモデル、Standard シリーズ (Gen5) ハードウェアのデータベース</li>
+            <li>geo レプリケーション、長期バックアップ保有 (LTR)、論理サーバーの DNS エイリアスなど、自動一時停止を妨げる機能を使用していないこと</li>
+        </ol>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">Azure CLI (bash)</span></div>
+            <pre><code class="language-bash"># 新規に Hyperscale Serverless データベースを作成 (自動一時停止遅延 60 分)
+az sql db create -g $resourceGroupName \
+  -s $serverName \
+  -n $databaseName \
+  -e Hyperscale \
+  --compute-model Serverless \
+  -f Gen5 \
+  --min-capacity 0.5 \
+  -c 2 \
+  --auto-pause-delay 60
+
+# 既存の Serverless データベースの自動一時停止遅延を変更
+az sql db update -g $resourceGroupName \
+  -s $serverName \
+  -n $databaseName \
+  --auto-pause-delay 1440</code></pre>
+        </div>
+
+        <h3>PowerShell</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">PowerShell</span></div>
+            <pre><code class="language-powershell"># 新規に Hyperscale Serverless データベースを作成
+$params = @{
+    ResourceGroupName = $resourceGroupName
+    ServerName = $serverName
+    DatabaseName = $databaseName
+    Edition = 'Hyperscale'
+    ComputeModel = 'Serverless'
+    ComputeGeneration = 'Gen5'
+    MinVcore = 0.5
+    MaxVcore = 2
+    AutoPauseDelayInMinutes = 60
+}
+New-AzSqlDatabase @params</code></pre>
+        </div>
+
+        <h3>Transact-SQL</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">T-SQL</span></div>
+            <pre><code class="language-sql">-- T-SQL では既定値 (最小 vCore、自動一時停止遅延) が適用される
+CREATE DATABASE testdb
+( EDITION = 'Hyperscale', SERVICE_OBJECTIVE = 'HS_S_Gen5_2' );</code></pre>
+        </div>
+    </div>
+
+    <!-- メリット -->
+    <div class="section">
+        <h2>👍 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>開発・テスト環境や利用が断続的なデータベースで、非アクティブ期間中のコンピュートコストをゼロにでき、TCO を削減できる</li>
+                    <li>Hyperscale の大規模ストレージ・高速スケーリングを、利用パターンが予測できないワークロードにもコスト効率よく適用できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>一時停止・再開が完全に自動化され、手動でのスケール操作やスケジュール化されたスクリプトが不要になる</li>
+                    <li>秒単位課金と自動スケーリング (最小/最大 vCore 設定) の組み合わせで、需要変動に自動追従する</li>
+                    <li>Azure Monitor アクティビティログで再開トリガーを特定でき、意図しない再開の調査が可能</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- デメリット・制約事項 -->
+    <div class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="caution-list">
+            <ul>
+                <li><strong>プレビュー機能</strong>である (General Purpose では GA 済みだが、Hyperscale ではプレビュー)</li>
+                <li>現在のプレビューでは、<strong>named replica は自動一時停止・自動再開と併用できない</strong></li>
+                <li>Hyperscale の最小自動一時停止遅延は <strong>60 分</strong> (General Purpose の 15 分より長い)。自動一時停止遅延を 60 分未満に設定した General Purpose Serverless データベースを Hyperscale にアップグレードすると、アップグレード後に自動一時停止が無効化されるため、手動で再有効化が必要</li>
+                <li>以下の機能を使用している場合、自動一時停止は行われない (自動スケーリングは利用可能):
+                    <ul>
+                        <li>geo レプリケーション (アクティブ geo レプリケーション、フェールオーバーグループ)</li>
+                        <li>長期バックアップ保有 (LTR)</li>
+                        <li>論理サーバーに作成された DNS エイリアス</li>
+                        <li>SQL Data Sync の同期データベース (ハブ・メンバーデータベースは一時停止可能)</li>
+                        <li>Elastic Jobs のジョブデータベース (ジョブのターゲットとしては一時停止可能)</li>
+                    </ul>
+                </li>
+                <li>一時停止中のデータベースへの初回接続はエラーコード <strong>40613</strong> を返すため、アプリケーションにリトライロジックが必須</li>
+                <li>開いたままのセッションが存在すると (CPU 使用がなくても) 自動一時停止が行われない。監視ツール等の常時接続に注意</li>
+                <li>カスタマーマネージドキー (BYOK) の TDE を使用している場合、キーのローテーションのたびにデータベースが自動再開される</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ユースケース -->
+    <div class="section">
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>ユースケース 1: 開発・テスト環境の Hyperscale データベースのコスト最適化</h4>
+            <p><span class="usecase-label">シナリオ</span>本番と同じ Hyperscale サービスレベルで開発・テスト環境を運用しているが、夜間・週末はほぼ利用がなく、コンピュートコストが無駄になっている。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">Azure CLI (bash)</span></div>
+                <pre><code class="language-bash"># 自動一時停止遅延 60 分の Hyperscale Serverless に変換
+az sql db update -g rg-dev \
+  -s sql-dev-server \
+  -n devdb \
+  --edition Hyperscale \
+  --compute-model Serverless \
+  --family Gen5 \
+  --min-capacity 0.5 \
+  --capacity 4 \
+  --auto-pause-delay 60</code></pre>
+            </div>
+            <div class="effect-box"><strong>効果</strong>: 非アクティブ期間中のコンピュート課金がゼロになり、ストレージコストのみで環境を維持できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>ユースケース 2: 利用が断続的な大規模データベース</h4>
+            <p><span class="usecase-label">シナリオ</span>データサイズが大きく Hyperscale が必要だが、アクセスが月次バッチや不定期な分析に限られるデータベース。</p>
+            <div class="effect-box"><strong>効果</strong>: Hyperscale のストレージスケーラビリティを維持しつつ、アクセスがない期間はコンピュートコストを発生させない。再開は通常 1 分程度のため、リトライロジックを備えたバッチ処理であれば運用への影響は限定的。</div>
+        </div>
+    </div>
+
+    <!-- 料金 -->
+    <div class="section">
+        <h2>💴 料金</h2>
+        <p>Serverless データベースのコストはコンピュートコストとストレージコストの合計です。</p>
+        <table>
+            <tr><th>状態</th><th>コンピュート課金</th></tr>
+            <tr><td>稼働中 (最小〜最大 vCore の範囲内)</td><td>使用した vCore とメモリに基づき秒単位で課金</td></tr>
+            <tr><td>稼働中 (使用量が最小構成未満)</td><td>構成した最小 vCore・最小メモリに基づき課金</td></tr>
+            <tr><td><strong>一時停止中</strong></td><td><strong>課金なし (ストレージコストのみ発生)</strong></td></tr>
+        </table>
+        <p>詳細な料金は <a href="https://azure.microsoft.com/pricing/details/azure-sql-database/single/" target="_blank">Azure SQL Database 料金ページ</a> および <a href="https://learn.microsoft.com/azure/azure-sql/database/serverless-tier-billing" target="_blank">Serverless compute tier billing</a> を参照してください。</p>
+    </div>
+
+    <!-- リージョン -->
+    <div class="section">
+        <h2>🌏 利用可能リージョン</h2>
+        <p>リージョン別の提供状況は <a href="https://learn.microsoft.com/azure/azure-sql/database/region-availability#serverless-region-availability" target="_blank">Serverless availability by region</a> を参照してください。</p>
+    </div>
+
+    <!-- 関連サービス -->
+    <div class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>Azure SQL Database Hyperscale</h4>
+                <p>最大 128 TB のストレージと高速スケーリングを提供するサービスレベル。今回のアップデートの対象</p>
+            </div>
+            <div class="related-card">
+                <h4>Serverless コンピュートレベル (General Purpose)</h4>
+                <p>自動一時停止・自動再開が GA 済み。最小自動一時停止遅延は 15 分</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Monitor アクティビティログ</h4>
+                <p>「Resume Databases」操作の <code>Caller</code> プロパティで自動再開のトリガーを特定可能</p>
+            </div>
+            <div class="related-card">
+                <h4>Elastic Pool</h4>
+                <p>複数データベースの断続的なワークロードを統合する場合の代替アプローチ (プロビジョニング済みコンピュート)</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- まとめ -->
+    <div class="section summary-box">
+        <h2>📝 まとめ</h2>
+        <p>Hyperscale Serverless の自動一時停止・自動再開のパブリックプレビューにより、<strong>Hyperscale のスケーラビリティと Serverless のコスト効率を両立</strong>できるようになりました。一時停止中はコンピュート課金がゼロになるため、開発・テスト環境や利用が断続的な大規模データベースのコスト削減に有効です。導入時は、最小自動一時停止遅延が 60 分であること、named replica や geo レプリケーション・LTR との併用制限、エラー 40613 に対するアプリケーションのリトライロジック整備を確認してください。</p>
+        <div class="tags">
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">Hyperscale</span>
+            <span class="tag">Serverless</span>
+            <span class="tag">Auto-pause</span>
+            <span class="tag">Auto-resume</span>
+            <span class="tag">Public Preview</span>
+            <span class="tag">Databases</span>
+            <span class="tag">コスト最適化</span>
+        </div>
+    </div>
+
+    <!-- 参考リンク -->
+    <div class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=571857" target="_blank">公式アップデート情報</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/serverless-tier-overview" target="_blank">Serverless compute tier - Azure SQL Database</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/serverless-tier-auto-pause-resume" target="_blank">Auto-pause and auto-resume in the serverless compute tier</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/serverless-tier-create-configure" target="_blank">Create and configure a serverless database</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/single/" target="_blank">料金ページ</a></li>
+        </ul>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=571857" target="_blank">Azure Updates - Hyperscale Serverless auto-pause and auto-resume (In preview)</a></p>
+        <p>リリース日: 2026-09-29 | Azure News Summary 自動生成インフォグラフィック</p>
+    </div>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

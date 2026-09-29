@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Container Apps: Azure Functions v1 ホスティングモデルの廃止</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+.container { max-width: 1000px; margin: 0 auto; padding: 24px; }
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "";
+    position: absolute;
+    right: -60px; top: -60px;
+    width: 220px; height: 220px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+}
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.service-badge {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.5);
+    color: #FFFFFF;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-retirement { background: var(--ms-red); }
+.header h1 { font-size: 26px; font-weight: 900; line-height: 1.4; margin-bottom: 12px; position: relative; z-index: 1; }
+.header .meta { font-size: 14px; opacity: 0.95; display: flex; flex-wrap: wrap; gap: 16px; }
+.header .meta span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Deadline banner */
+.deadline-banner {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 12px;
+    padding: 18px 24px;
+    margin: 0 0 28px 0;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+.deadline-banner .date {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--ms-red);
+    white-space: nowrap;
+}
+.deadline-banner .desc { font-size: 14px; color: var(--ms-text-primary); flex: 1; min-width: 260px; }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 22px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.section p { margin-bottom: 12px; font-size: 15px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+.note-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before, .after { border-radius: 8px; padding: 18px; }
+.before { background: #FFEBEE; border: 2px solid var(--ms-red); }
+.after { background: #E8F5E9; border: 2px solid var(--ms-green); }
+.before h4, .after h4 { font-size: 15px; margin-bottom: 10px; }
+.before h4 { color: var(--ms-red); }
+.after h4 { color: var(--ms-green); }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 14px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-card.red { background: linear-gradient(135deg, var(--ms-red), #A52D00); }
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.92; margin-top: 6px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 15px; margin-bottom: 4px; color: var(--ms-blue-800); }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Tables */
+.table-wrapper { overflow-x: auto; margin: 16px 0; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+td { padding: 10px 14px; border-bottom: 1px solid var(--ms-border); vertical-align: top; }
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+td.v1 { color: var(--ms-red); }
+td.v2 { color: var(--ms-green); font-weight: 500; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+code.inline {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* Steps */
+.step-list { counter-reset: step; list-style: none; margin: 16px 0; }
+.step-list li {
+    position: relative;
+    padding: 14px 16px 14px 60px;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+.step-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px; height: 32px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+.step-list li strong { color: var(--ms-blue-800); }
+
+/* Merit / demerit lists */
+ul.merit-list, ul.caution-list, ul.plain-list { padding-left: 4px; list-style: none; margin: 10px 0; }
+ul.merit-list li, ul.caution-list li, ul.plain-list li {
+    padding: 8px 12px 8px 34px;
+    position: relative;
+    font-size: 14px;
+    margin-bottom: 6px;
+    border-radius: 6px;
+}
+ul.merit-list li { background: #F1F8F1; }
+ul.merit-list li::before { content: "✅"; position: absolute; left: 8px; }
+ul.caution-list li { background: #FFF4F0; }
+ul.caution-list li::before { content: "⚠️"; position: absolute; left: 8px; }
+ul.plain-list li { background: var(--ms-blue-100); }
+ul.plain-list li::before { content: "🔗"; position: absolute; left: 8px; }
+
+/* Related services */
+.related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 16px 0; }
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card h4 { font-size: 14px; color: var(--ms-purple); margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.link-list { list-style: none; margin: 10px 0; }
+.link-list li {
+    padding: 10px 14px 10px 36px;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    position: relative;
+}
+.link-list li::before { content: "📄"; position: absolute; left: 10px; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    border: 1px solid var(--ms-border);
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+.footer a { word-break: break-all; }
+
+@media (max-width: 700px) {
+    .before-after { grid-template-columns: 1fr; }
+    .header h1 { font-size: 21px; }
+    .deadline-banner .date { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Container Apps</span>
+            <span class="service-badge">Azure Functions</span>
+            <span class="badge badge-retirement">Retirement (廃止)</span>
+        </div>
+        <h1>Azure Functions v1 ホスティングモデル on Azure Container Apps が廃止へ</h1>
+        <div class="meta">
+            <span>📅 発表日: 2026-09-29</span>
+            <span>⏳ 廃止日: 2027-09-29</span>
+            <span>🏷️ 対象: Functions v1 ホスティングモデル (Container Apps 上)</span>
+        </div>
+    </header>
+
+    <!-- Deadline banner -->
+    <div class="deadline-banner">
+        <div class="date">⏰ 2027 年 9 月 29 日 廃止</div>
+        <div class="desc">廃止日以降、Azure Container Apps 上の既存の Functions v1 アプリは<strong>動作を停止</strong>し、HTTP リクエストやイベント駆動トリガーを処理しなくなります。期限までに <strong>Functions v2 (ネイティブモデル)</strong> への移行が必要です。</div>
+    </div>
+
+    <!-- Overview -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Container Apps 上の Azure Functions v1 ホスティングモデルが <strong>2027 年 9 月 29 日に廃止</strong>されることが発表されました。廃止日以降、既存の Functions v1 アプリは動作を停止し、HTTP リクエストやイベント駆動トリガーを処理しなくなります。</p>
+        <p>Functions v1 は、Function App リソース (<code class="inline">Microsoft.Web</code> リソースプロバイダー) と裏側の隠れた Container App をペアで管理するレガシーな<strong>プロキシモデル</strong>です。後継の Functions v2 は、<code class="inline">kind=functionapp</code> を指定した単一のネイティブ Container App リソース (<code class="inline">Microsoft.App</code>) としてデプロイするモデルで、Container Apps のネイティブ機能をフル活用できます。</p>
+        <div class="note-box">
+            <strong>💡 影響範囲に注意:</strong> この廃止は Azure Container Apps 上の<strong>ホスティングモデル</strong>が対象であり、関数コードで使用する Azure Functions の<strong>プログラミングモデルのバージョンには影響しません</strong>。標準的な移行では既存のコンテナーイメージをそのまま再利用でき、関数コードの変更は不要です。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before: v1 モデルの制限</h4>
+                <ul>
+                    <li>プロキシ用 Function App と隠れた Container App の <strong>2 リソースを管理</strong>する必要があり、運用が複雑だった</li>
+                    <li>Easy Auth、ヘルスプローブ、カスタムドメイン、マネージド証明書、サイドカー、Container Apps シークレット、マルチリビジョンのトラフィック分割などの<strong>ネイティブ機能が利用できなかった</strong></li>
+                    <li>コンテナーへの直接アクセスやリアルタイムのコンソール出力がなく、トラブルシューティングは Log Analytics / Application Insights 経由に限られた</li>
+                    <li>.NET isolated と Dapr の組み合わせでビルド時・実行時に競合が発生するケースがあった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After: v2 モデルへの移行</h4>
+                <ul>
+                    <li><code class="inline">kind=functionapp</code> の<strong>単一ネイティブリソース</strong>となり、管理がシンプルになる</li>
+                    <li>Easy Auth、ヘルスプローブ、カスタムドメイン、シークレット、サイドカー、リビジョン管理、詳細なスケール設定など <strong>Container Apps の全機能が利用可能</strong>になる</li>
+                    <li>ライブログストリーミングや診断など、<strong>直接的なトラブルシューティング</strong>が可能になる</li>
+                    <li>今後のロードマップ機能 (関数一覧、キー管理、呼び出し数の表示など) は <strong>v2 のみに提供予定</strong></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["⚠️ Before: Functions v1 (2027-09-29 廃止)"]
+        U1(["👤 クライアント / イベント"]) --> FA["🌐 Function App プロキシ<br/>(Microsoft.Web)"]
+        FA --> HCA["📦 隠れた Container App<br/>(二重リソース管理)"]
+    end
+
+    subgraph After["✅ After: Functions v2 (推奨)"]
+        U2(["👤 クライアント / イベント"]) --> V2["🚀 ネイティブ Container App<br/>kind=functionapp (Microsoft.App)"]
+        V2 --> F1["🔐 Easy Auth / カスタムドメイン<br/>ヘルスプローブ / サイドカー"]
+        V2 --> F2["📈 KEDA 自動スケール<br/>リビジョン / ライブログ"]
+    end
+
+    Before -. "🔄 同一コンテナーイメージで移行<br/>(コード変更不要)" .-> After
+            </pre>
+        </div>
+        <p>v1 のプロキシ + 隠れた Container App という二重構造から、v2 では <code class="inline">kind=functionapp</code> の単一ネイティブリソースに移行します。既存のコンテナーイメージを再利用でき、標準的な移行では関数コードの変更は不要です。</p>
+    </section>
+
+    <!-- Details -->
+    <section class="section">
+        <h2>🔍 サービスアップデートの詳細</h2>
+
+        <h3>⚡ 廃止のポイント</h3>
+        <div class="feature-card">
+            <div class="feature-icon">📅</div>
+            <div class="feature-content">
+                <h4>廃止日: 2027 年 9 月 29 日</h4>
+                <p>この日以降、Azure Container Apps 上の Functions v1 アプリは実行を停止し、リクエストおよびイベント駆動トリガーを処理しなくなる</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>影響範囲はホスティングモデルのみ</h4>
+                <p>Azure Container Apps 上のホスティングモデル (v1) が対象。関数コードのプログラミングモデルのバージョンには影響しない</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>移行先は Functions v2 (ネイティブモデル)</h4>
+                <p><code class="inline">kind=functionapp</code> で構成されたネイティブ Azure Container App を使用する。既存のコンテナーイメージは再利用可能</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛠️</div>
+            <div class="feature-content">
+                <h4>移行アシスタントの提供</h4>
+                <p>Microsoft から「Azure Functions on Azure Container Apps v1 migration assistant」(Azure-Samples の GitHub リポジトリ) が提供されている</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚫</div>
+            <div class="feature-content">
+                <h4><code class="inline">kind=functionapp</code> なしの直接イメージデプロイは非サポート</h4>
+                <p><code class="inline">kind=functionapp</code> を指定せず Functions イメージを手動実行する構成はサポート対象外。自動スケールルールが構成されず、今後の v2 プラットフォーム機能も提供されない</p>
+            </div>
+        </div>
+
+        <h3>⚖️ v1 と v2 のモデル比較</h3>
+        <div class="table-wrapper">
+            <table>
+                <tr><th>項目</th><th>v1 (レガシー)</th><th>v2 (推奨)</th></tr>
+                <tr><td>リソースモデル</td><td class="v1">プロキシ Function App + 隠れた Container App</td><td class="v2">単一ネイティブ Container App (<code class="inline">kind=functionapp</code>)</td></tr>
+                <tr><td>ネイティブ機能 (リビジョン、シークレット、ヘルスプローブ、カスタムドメイン、サイドカー)</td><td class="v1">非サポート</td><td class="v2">サポート</td></tr>
+                <tr><td>スケール制御 (クールダウン、ポーリング間隔)</td><td class="v1">限定的</td><td class="v2">Container Apps の全スケールオプション</td></tr>
+                <tr><td>ログ・トラブルシューティング</td><td class="v1">間接的 (ライブコンソールなし)</td><td class="v2">直接的 (ライブログ・診断あり)</td></tr>
+                <tr><td>Dapr 統合</td><td class="v1">.NET isolated の一部シナリオで問題あり</td><td class="v2">標準パターンでサポート</td></tr>
+                <tr><td>認証 (Easy Auth)</td><td class="v1">利用不可</td><td class="v2">利用可能</td></tr>
+                <tr><td>証明書・カスタムドメイン</td><td class="v1">利用不可</td><td class="v2">利用可能</td></tr>
+                <tr><td>メトリクス・アラート</td><td class="v1">基本のみ</td><td class="v2">ネイティブのフル機能</td></tr>
+                <tr><td>今後のロードマップ (関数一覧、キー、呼び出し数)</td><td class="v1">提供予定なし</td><td class="v2">提供予定</td></tr>
+                <tr><td>運用の複雑さ</td><td class="v1">2 リソース管理</td><td class="v2">単一リソース</td></tr>
+                <tr><td>新規デプロイでの推奨</td><td class="v1">非推奨</td><td class="v2">推奨</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- Tech specs -->
+    <section class="section">
+        <h2>⚙️ 技術仕様</h2>
+        <div class="stats-grid">
+            <div class="stat-card red">
+                <div class="stat-value">2027-09-29</div>
+                <div class="stat-label">廃止日</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0 → 1,000</div>
+                <div class="stat-label">KEDA 自動スケール (ゼロスケール対応・最大インスタンス数)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">コード変更不要</div>
+                <div class="stat-label">同一コンテナーイメージで移行可能</div>
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table>
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>廃止対象</td><td>Azure Container Apps 上の Azure Functions v1 ホスティングモデル</td></tr>
+                <tr><td>廃止日</td><td>2027 年 9 月 29 日</td></tr>
+                <tr><td>廃止後の動作</td><td>v1 アプリは動作を停止し、リクエスト・イベント駆動トリガーを処理しない</td></tr>
+                <tr><td>移行先</td><td>Functions v2: <code class="inline">kind=functionapp</code> のネイティブ Container App (<code class="inline">Microsoft.App</code>)</td></tr>
+                <tr><td>コンテナーイメージ</td><td>既存イメージを再利用可能</td></tr>
+                <tr><td>関数コード</td><td>標準的な移行では変更不要</td></tr>
+                <tr><td>スケーリング (v2)</td><td>KEDA によるイベント駆動の自動スケール (ゼロスケール対応、最大 1,000 インスタンス)</td></tr>
+                <tr><td>移行支援ツール</td><td>Azure Functions on Azure Container Apps v1 migration assistant (GitHub / Azure-Samples)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- Migration -->
+    <section class="section">
+        <h2>🔧 設定方法 (移行手順)</h2>
+
+        <h3>📌 前提条件</h3>
+        <ol class="step-list">
+            <li>Azure サブスクリプションとリソース作成権限</li>
+            <li>最新の Azure CLI と拡張機能 (<code class="inline">az extension add --name containerapp</code>、必要に応じて <code class="inline">az extension add --name functionapp</code>)</li>
+            <li>v1 デプロイで使用中のコンテナーイメージへのアクセス</li>
+            <li>環境変数、シークレット、ストレージバインディング、ネットワーク設定のインベントリ</li>
+        </ol>
+
+        <h3>🗺️ 移行手順の概要</h3>
+        <ol class="step-list">
+            <li><strong>準備</strong>: 現在のデプロイが Functions v1 であることを確認し、環境変数・シークレット・接続文字列・カスタムバインディングなどの構成 (ID、ネットワーク、スケーリング含む) をすべて記録する。環境のクォータ (CPU、メモリ、最大インスタンス数) も確認する</li>
+            <li><strong>v2 アプリ作成</strong>: Container Apps 環境を作成 (または再利用) し、同一イメージで <code class="inline">kind=functionapp</code> の v2 アプリをデプロイして構成を再適用する</li>
+            <li><strong>検証</strong>: HTTP トリガーの呼び出し、各トリガータイプ (Event Hubs、Service Bus、タイマーなど) のテスト、Application Insights / Log Analytics の確認、負荷時のスケール動作確認を行う</li>
+            <li><strong>DNS / カスタムドメイン更新</strong> (必要な場合): 新しい v2 ホスト名へのマッピングと TLS 証明書の再バインド</li>
+            <li><strong>本番切り替え</strong>: トラフィックを移行し、レイテンシ・エラー・呼び出し数を監視する</li>
+            <li><strong>クリーンアップ</strong>: v1 側にトラフィックが残っていないことを確認したうえで、旧 v1 Functions アプリと関連リソースを廃止する</li>
+        </ol>
+
+        <h3>💻 Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>v2 アプリの作成</span></div>
+            <pre><code class="language-bash"># v2 (kind=functionapp) の Container App を同一イメージで作成
+az containerapp create \
+  --name my-func-v2 \
+  --resource-group &lt;RESOURCE_GROUP_NAME&gt; \
+  --environment &lt;ENVIRONMENT_NAME&gt; \
+  --image myregistry.azurecr.io/&lt;IMAGE_NAME&gt;:&lt;TAG_NAME&gt; \
+  --kind functionapp \
+  --ingress external --target-port &lt;TARGET_PORT&gt;</code></pre>
+        </div>
+
+        <h3>🖥️ Azure Portal</h3>
+        <div class="highlight-box">
+            Azure Portal では、Container App の作成時に「<strong>Optimize for Azure Functions</strong>」オプションを選択することで、Functions 向けに構成されたネイティブ Container App を作成できます。
+        </div>
+    </section>
+
+    <!-- Merits -->
+    <section class="section">
+        <h2>🌟 メリット (v2 移行による)</h2>
+        <h3>💼 ビジネス面</h3>
+        <ul class="merit-list">
+            <li>単一リソース管理による運用負荷・管理コストの削減</li>
+            <li>Azure Functions の今後のロードマップ (関数一覧、キー管理、呼び出し数表示など) に沿った構成となり、将来にわたるサポートを確保できる</li>
+            <li>Easy Auth やマネージド証明書により、セキュリティ対応の実装工数を削減できる</li>
+        </ul>
+        <h3>🛠️ 技術面</h3>
+        <ul class="merit-list">
+            <li>ヘルスプローブによる回復性の向上</li>
+            <li>マルチリビジョンデプロイとトラフィック分割による安全なリリース</li>
+            <li>ライブログストリーミングと診断による迅速なトラブルシューティング</li>
+            <li>ポーリング間隔やクールダウンなど詳細なスケールルール設定が可能</li>
+            <li>シークレットのネイティブ保存とサイドカーコンテナーのマウントに対応</li>
+        </ul>
+    </section>
+
+    <!-- Cautions -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li><strong>移行期限は 2027 年 9 月 29 日</strong>。期限までに移行しない場合、v1 アプリは動作を停止し、リクエストやイベント駆動トリガーを処理しなくなる</li>
+            <li>移行時にはシークレット、ID、ネットワーク、スケーリングなどの構成を v2 アプリへ手動で再適用する必要がある</li>
+            <li>カスタムドメイン利用時は、新しい v2 ホスト名への DNS 更新と証明書の再バインドが必要</li>
+            <li><code class="inline">kind=functionapp</code> を指定しない Functions イメージの直接デプロイはサポート対象外</li>
+            <li>Microsoft は、廃止日より十分前に移行と本番環境での検証を完了することを推奨している</li>
+        </ul>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Azure Container Apps 上の Azure Functions (v2) は、Azure Container Apps と同じ料金モデルに従います。環境で選択するプランに基づいて課金されます。</p>
+        <div class="table-wrapper">
+            <table>
+                <tr><th>項目</th><th>内容</th></tr>
+                <tr><td>Consumption プラン</td><td>アプリ実行中に使用したリソース (vCPU、メモリ、リクエスト) に対して課金されるサーバーレスオプション</td></tr>
+                <tr><td>Dedicated プラン</td><td>ワークロードプロファイルごとに割り当てられたインスタンスに対して課金</td></tr>
+                <tr><td>Functions プログラミングモデルの利用</td><td>Container Apps 内での利用に追加料金なし</td></tr>
+            </table>
+        </div>
+        <p>詳細は <a href="https://azure.microsoft.com/pricing/details/container-apps/" target="_blank" rel="noopener">Azure Container Apps の料金ページ</a> を参照してください。</p>
+    </section>
+
+    <!-- Related services -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>Azure Functions</h4>
+                <p>廃止対象は Container Apps 上のホスティングモデルのみ。Flex Consumption、Premium、Dedicated などの他のホスティングプランは本廃止の対象外</p>
+            </div>
+            <div class="related-card">
+                <h4>KEDA (Kubernetes Event-driven Autoscaling)</h4>
+                <p>v2 モデルではトリガー構成から KEDA スケールルールが自動生成され、ゼロスケールから最大 1,000 インスタンスまで自動スケールする</p>
+            </div>
+            <div class="related-card">
+                <h4>Dapr</h4>
+                <p>v2 モデルでは標準パターンで Dapr 統合をサポート (v1 では .NET isolated との組み合わせで問題があった)</p>
+            </div>
+            <div class="related-card">
+                <h4>Application Insights / Log Analytics</h4>
+                <p>移行後の検証でテレメトリとログの確認に使用する</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure API Management</h4>
+                <p>Functions のエンドポイント保護や API ゲートウェイシナリオで組み合わせて使用</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- References -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=570800" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/container-apps/migrate-functions" target="_blank" rel="noopener">移行ガイド: Migrate to Azure Functions v2 on Azure Container Apps</a></li>
+            <li><a href="https://learn.microsoft.com/azure/container-apps/functions-overview" target="_blank" rel="noopener">Azure Functions on Azure Container Apps overview</a></li>
+            <li><a href="https://learn.microsoft.com/azure/container-apps/functions-usage" target="_blank" rel="noopener">自動スケーリング付き Functions アプリの作成</a></li>
+            <li><a href="https://github.com/Azure-Samples/functions-on-container-apps-v1-migration-assistant" target="_blank" rel="noopener">v1 migration assistant (GitHub / Azure-Samples)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/container-apps/" target="_blank" rel="noopener">Azure Container Apps 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Summary -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Container Apps 上の Azure Functions v1 ホスティングモデルは <strong>2027 年 9 月 29 日に廃止</strong>され、それ以降 v1 アプリは動作を停止します。対象はホスティングモデルのみで関数のプログラミングモデルには影響せず、既存のコンテナーイメージを再利用して <code class="inline">kind=functionapp</code> の <strong>v2 ネイティブモデルへコード変更なしで移行</strong>できます。</p>
+            <p>v2 は Easy Auth、ヘルスプローブ、カスタムドメイン、リビジョン管理などのネイティブ機能が利用でき、運用面でも単一リソース管理に簡素化されます。Azure 環境を棚卸しして影響を受ける v1 アプリを特定し、移行アシスタントや移行ガイドを活用して、<strong>廃止日より十分前に移行と本番検証を完了する</strong>ことを推奨します。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Container Apps</span>
+            <span class="tag">Azure Functions</span>
+            <span class="tag">Retirement</span>
+            <span class="tag">Containers</span>
+            <span class="tag">Migration</span>
+            <span class="tag">KEDA</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=570800" target="_blank" rel="noopener">Azure Updates - Retirement: Azure Functions v1 hosting model on Azure Container Apps (ID: 570800)</a></p>
+        <p>本インフォグラフィックは Azure News Summary レポート (2026-09-29) をもとに生成されました。</p>
+    </footer>
+</div>
+
+<script>
+mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+        primaryColor: '#0078D4',
+        primaryTextColor: '#323130',
+        primaryBorderColor: '#0078D4',
+        lineColor: '#0078D4',
+        secondaryColor: '#F3F2F1',
+        tertiaryColor: '#FAFAFA',
+        background: '#FFFFFF',
+        mainBkg: '#E6F2FF',
+        nodeBorder: '#0078D4',
+        clusterBkg: '#E6F2FF',
+        clusterBorder: '#0078D4',
+        edgeLabelBackground: '#FFFFFF',
+        textColor: '#323130'
+    }
+});
+hljs.highlightAll();
+</script>
+</body>
+</html>

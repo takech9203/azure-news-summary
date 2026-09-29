@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SQL Database (MSSQL extension for VS Code): SQL Formatter の一般提供開始</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.header h1 {
+    font-size: 26px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+    font-size: 14px;
+}
+
+.header .meta-item {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 14px;
+    border-radius: 8px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.header .service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 20px;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; font-size: 14.5px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14.5px;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+    font-size: 15px;
+}
+
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 0; }
+.feature-content ul { padding-left: 18px; }
+.feature-content li { margin-bottom: 4px; }
+
+.feature-content code, .spec-table code, .use-case code, .section li code, .section p code {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12.5px;
+    color: var(--ms-blue-900);
+}
+
+/* Tables */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+
+.table-wrapper { overflow-x: auto; }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Steps */
+.step-list { counter-reset: step; list-style: none; margin: 16px 0; }
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 10px 10px 52px;
+    margin-bottom: 10px;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Benefit columns */
+.benefit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.benefit-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.benefit-business {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+}
+
+.benefit-tech {
+    background: #F3EDF9;
+    border: 2px solid var(--ms-purple);
+}
+
+.benefit-business h4 { color: var(--azure-blue); margin-bottom: 10px; }
+.benefit-tech h4 { color: var(--ms-purple); margin-bottom: 10px; }
+
+.benefit-card ul { padding-left: 20px; font-size: 14px; }
+.benefit-card li { margin-bottom: 8px; }
+
+/* Warning box */
+.warning-box {
+    background: #FFF8E6;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box ul { padding-left: 20px; font-size: 14px; }
+.warning-box li { margin-bottom: 8px; }
+
+/* Use cases */
+.use-case {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.use-case h3 {
+    color: var(--azure-blue);
+    margin: 0 0 12px;
+    font-size: 16px;
+}
+
+.use-case .uc-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-right: 8px;
+}
+
+.use-case p { font-size: 14px; }
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Related services */
+.related-list { list-style: none; margin: 8px 0; }
+
+.related-list li {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.related-list li strong { color: var(--ms-blue-800); }
+
+/* Links */
+.link-list { list-style: none; margin: 8px 0; }
+
+.link-list li {
+    padding: 8px 0 8px 28px;
+    position: relative;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+    word-break: break-all;
+}
+
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+.link-list a { color: var(--azure-blue); text-decoration: none; }
+.link-list a:hover { text-decoration: underline; }
+
+/* Keyboard shortcut display */
+.kbd {
+    display: inline-block;
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-text-disabled);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 8px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 12px;
+    color: var(--ms-text-primary);
+    white-space: nowrap;
+}
+
+.shortcut-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.shortcut-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+}
+
+.shortcut-card h5 { color: var(--ms-blue-800); font-size: 14px; margin-bottom: 8px; }
+.shortcut-card div { margin-bottom: 6px; }
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 20px 0 40px;
+}
+
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .benefit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 21px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure SQL Database</span>
+            <span class="service-badge">MSSQL extension for VS Code</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>SQL Formatter の一般提供開始</h1>
+        <p class="subtitle">VS Code の MSSQL 拡張機能に組み込まれた SQL Formatter が GA。エディター内で T-SQL の整形が完結し、保存時の自動フォーマットと 50 以上の設定項目によるカスタマイズに対応。</p>
+        <div class="meta">
+            <span class="meta-item">📅 リリース日: 2026-09-29</span>
+            <span class="meta-item">🛠️ 機能: SQL Formatter</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Visual Studio Code の MSSQL 拡張機能に組み込まれた <strong>SQL Formatter</strong> が一般提供 (GA) となりました。VS Code 上で T-SQL スクリプトを直接フォーマットできるようになり、一貫性のある読みやすい SQL コードを維持できます。オンデマンドでのフォーマット実行に加え、ファイル保存時の自動フォーマット (format on save) にも対応し、豊富な設定オプションによりチームや個人のコーディングスタイルに合わせたカスタマイズが可能です。</p>
+        <div class="highlight-box">
+            このフォーマット機能は、T-SQL を解析して抽象構文木 (AST) ベースでスクリプトを生成するオープンソースの .NET ライブラリ <strong>ScriptDOM</strong> 上に構築されています。MSSQL 拡張機能は Azure SQL Database、Azure SQL Managed Instance、SQL Server on Azure VM、SQL database in Microsoft Fabric、SQL Server をサポートしており、これらのデータベースを対象とした開発ワークフローで利用できます。
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>VS Code の MSSQL 拡張機能には T-SQL 向けの組み込みフォーマッターがなく、SQL スクリプトの整形にはサードパーティ拡張機能や外部ツールが必要だった</li>
+                    <li>チーム開発において SQL コードのスタイル (キーワードの大文字/小文字、カンマ位置、改行ルールなど) を統一する仕組みがエディター内になく、コードレビューや保守の負担になっていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>VS Code の標準操作 (Format Document / Format Selection) で T-SQL をエディター内で直接フォーマットできるようになった</li>
+                    <li><code>editor.formatOnSave</code> により保存時の自動フォーマットが可能になり、常に整形されたコードを維持できる</li>
+                    <li>キーワードの大文字/小文字、句の整列、カンマ位置、改行、インデントなど多数の <code>mssql.format.*</code> 設定でスタイルを細かくカスタマイズできる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    Dev([👤 開発者]) -->|Format Document /<br>Format on Save| VSCode["📝 VS Code +<br>MSSQL 拡張機能"]
+    VSCode -->|T-SQL スクリプト| ScriptDOM["⚙️ ScriptDOM<br>(オープンソース .NET ライブラリ)"]
+    ScriptDOM -->|パース| AST["🌳 抽象構文木 (AST)"]
+    AST -->|"mssql.format.* 設定を適用<br>してスクリプト再生成"| Formatted["✨ 整形済み T-SQL"]
+    Formatted --> VSCode
+            </pre>
+        </div>
+        <p>SQL Formatter は T-SQL を ScriptDOM で抽象構文木にパースし、ユーザーが設定したフォーマットオプションに基づいてスクリプトを再生成します。テキスト置換ベースではなく構文解析ベースのため、構文的に正確な整形が行われます。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⚡ サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🖱️</div>
+            <div class="feature-content">
+                <h4>1. オンデマンドフォーマット</h4>
+                <p>ドキュメント全体 (Format Document) または選択範囲のみ (Format Selection) をフォーマット可能。右クリックのコンテキストメニュー、コマンドパレット、キーボードショートカットから実行できます。</p>
+                <div class="shortcut-grid" style="margin-top: 10px;">
+                    <div class="shortcut-card">
+                        <h5>Format Document (全体)</h5>
+                        <div>Windows/Linux: <span class="kbd">Shift+Alt+F</span></div>
+                        <div>macOS: <span class="kbd">Shift+Option+F</span></div>
+                    </div>
+                    <div class="shortcut-card">
+                        <h5>Format Selection (選択範囲)</h5>
+                        <div>Windows/Linux: <span class="kbd">Ctrl+K, Ctrl+F</span></div>
+                        <div>macOS: <span class="kbd">Cmd+K, Cmd+F</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">💾</div>
+            <div class="feature-content">
+                <h4>2. 保存時の自動フォーマット (Format on Save)</h4>
+                <p>VS Code 標準の <code>editor.formatOnSave</code> 設定を SQL 言語スコープ (<code>"[sql]"</code>) に適用することで、保存のたびに自動整形されます。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎛️</div>
+            <div class="feature-content">
+                <h4>3. 豊富なカスタマイズオプション (mssql.format.*)</h4>
+                <ul>
+                    <li>整列 (Alignment)、大文字/小文字 (Casing)、カンマ位置、改行、インデント、複数行リスト化、ステートメント間の空行数、スペーシングなど <strong>50 以上の設定項目</strong></li>
+                    <li>設定 UI (Mssql &gt; Format) または <code>settings.json</code> で構成可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌳</div>
+            <div class="feature-content">
+                <h4>4. ScriptDOM ベースの構文解析</h4>
+                <ul>
+                    <li>オープンソースの .NET ライブラリ ScriptDOM により T-SQL をパースし、AST からスクリプトを生成</li>
+                    <li>パースできない T-SQL がある場合は通知を表示 (<code>mssql.format.showParseErrorNotification</code>、既定で有効)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <div class="table-wrapper">
+            <table class="spec-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>提供形態</td><td>MSSQL extension for Visual Studio Code の組み込み機能</td></tr>
+                <tr><td>対象データベース</td><td>Azure SQL Database、Azure SQL Managed Instance、SQL Server on Azure VM、SQL database in Microsoft Fabric、SQL Server</td></tr>
+                <tr><td>フォーマットエンジン</td><td>ScriptDOM (オープンソース .NET ライブラリ、AST ベース)</td></tr>
+                <tr><td>T-SQL バージョン</td><td><code>mssql.format.options.sqlVersion</code> で指定 (既定: <code>sql170</code>)</td></tr>
+                <tr><td>エンジンタイプ</td><td><code>mssql.format.options.sqlEngineType</code> で指定 (<code>all</code> / <code>standalone</code> / <code>sqlAzure</code>、既定: <code>all</code>)</td></tr>
+                <tr><td>対応 OS (拡張機能)</td><td>Windows 10/11 (x64, Arm64)、macOS (Intel, Apple Silicon)、Linux (x64, Arm64)</td></tr>
+            </table>
+        </div>
+
+        <h3>代表的なフォーマット設定</h3>
+        <div class="table-wrapper">
+            <table class="spec-table">
+                <tr><th>設定</th><th>既定値</th><th>説明</th></tr>
+                <tr><td><code>mssql.format.options.keywordCasing</code></td><td><code>uppercase</code></td><td>キーワードの大文字/小文字スタイル (<code>uppercase</code> / <code>lowercase</code> / <code>pascalCase</code>)</td></tr>
+                <tr><td><code>mssql.format.options.identifierCasing</code></td><td><code>preserve</code></td><td>オブジェクト識別子の大文字/小文字スタイル</td></tr>
+                <tr><td><code>mssql.format.options.builtInFunctionCasing</code></td><td><code>preserve</code></td><td>組み込み関数名 (<code>GETDATE</code>、<code>COALESCE</code> など) のスタイル</td></tr>
+                <tr><td><code>mssql.format.options.identifierBracketing</code></td><td><code>preserve</code></td><td>識別子の角かっこ <code>[]</code> を保持/追加/削除</td></tr>
+                <tr><td><code>mssql.format.options.commaPlacement</code></td><td><code>trailing</code></td><td>カンマを行末 (<code>trailing</code>) か行頭 (<code>leading</code>) に配置</td></tr>
+                <tr><td><code>mssql.format.options.columnAliasStyle</code></td><td><code>asKeyword</code></td><td>列エイリアスを <code>AS</code> / 等号 / 元の構文で表記</td></tr>
+                <tr><td><code>mssql.format.options.alignClauseBodies</code></td><td><code>true</code></td><td><code>FROM</code>、<code>WHERE</code>、<code>GROUP BY</code> などの句の本体を整列</td></tr>
+                <tr><td><code>mssql.format.options.multilineSelectElementsList</code></td><td><code>true</code></td><td><code>SELECT</code> の列リストを複数行で整形</td></tr>
+                <tr><td><code>mssql.format.options.newLineBeforeWhereClause</code></td><td><code>true</code></td><td><code>WHERE</code> 句の前に改行を挿入</td></tr>
+                <tr><td><code>mssql.format.options.preserveComments</code></td><td><code>true</code></td><td>フォーマット時にコメントを保持</td></tr>
+                <tr><td><code>mssql.format.options.numNewlinesAfterStatement</code></td><td><code>1</code></td><td>各ステートメント後の改行数 (0〜5)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>⚙️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>Visual Studio Code がインストールされていること</li>
+            <li>MSSQL extension for Visual Studio Code (<code>ms-mssql.mssql</code>) がインストールされていること (拡張機能ビューで <code>mssql</code> を検索してインストール)</li>
+        </ol>
+
+        <h3>VS Code settings.json での構成</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">JSON — settings.json</span></div>
+            <pre><code class="language-json">{
+  "[sql]": {
+    "editor.defaultFormatter": "ms-mssql.mssql",
+    "editor.formatOnSave": true
+  },
+  "mssql.format.options.keywordCasing": "lowercase",
+  "mssql.format.options.alignClauseBodies": false,
+  "mssql.format.options.numNewlinesAfterStatement": 2
+}</code></pre>
+        </div>
+        <ul style="padding-left: 20px; font-size: 14px;">
+            <li style="margin-bottom: 8px;">既定のフォーマッターに設定するには、コマンドの <strong>Configure Default Formatter...</strong> から <strong>SQL Server (mssql)</strong> を選択するか、上記のように <code>editor.defaultFormatter</code> を指定します</li>
+            <li>フォーマットオプションは設定 UI で <strong>Mssql &gt; Format</strong> を検索して構成することもできます</li>
+        </ul>
+
+        <h3>フォーマットの実行</h3>
+        <ol class="step-list">
+            <li>T-SQL ファイルをエディターで開く</li>
+            <li>右クリック → <strong>Format Document</strong> (全体) または <strong>Format Selection</strong> (選択範囲)、あるいはキーボードショートカット (<span class="kbd">Shift+Alt+F</span> など) を実行</li>
+        </ol>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>💡 メリット</h2>
+        <div class="benefit-grid">
+            <div class="benefit-card benefit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>SQL コードのスタイルがチーム全体で統一され、コードレビューの効率と保守性が向上する</li>
+                    <li>追加のサードパーティツールを導入せずに、標準の開発環境 (VS Code) 内で SQL の品質を担保できる</li>
+                    <li>ワークスペース単位の <code>settings.json</code> でプロジェクトごとのフォーマット規約を共有・強制できる</li>
+                </ul>
+            </div>
+            <div class="benefit-card benefit-tech">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>ScriptDOM による AST ベースの整形のため、構文的に正確なフォーマットが得られる</li>
+                    <li>format on save により整形作業が自動化され、手作業での整形が不要になる</li>
+                    <li>50 以上の設定項目で、キーワードの大文字/小文字からカンマ位置・改行ルールまで細かくスタイルを制御できる</li>
+                    <li>選択範囲のみのフォーマットに対応し、大きな既存スクリプトへの段階的な適用が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>フォーマッターが T-SQL を完全にパースできない場合があり、その際は通知が表示される (<code>mssql.format.showParseErrorNotification</code> で制御)</li>
+                <li><code>mssql.format.options.leadingCommaSpaceCount</code> は <code>0</code> または <code>1</code> のみ、改行数系の設定は 0〜5 の範囲のみなど、一部オプションには値の範囲制限がある</li>
+                <li>format on save は MSSQL 拡張機能固有の設定ではなく VS Code 標準の <code>editor.formatOnSave</code> に依存するため、SQL 言語スコープでの設定が必要</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>🎯 ユースケース</h2>
+
+        <div class="use-case">
+            <h3><span class="uc-label">CASE 1</span>チーム開発での SQL コーディング規約の統一</h3>
+            <p><strong>シナリオ</strong>: 複数の開発者が Azure SQL Database 向けのストアドプロシージャやマイグレーションスクリプトを共同開発しており、キーワードの大文字/小文字やカンマ位置がバラバラでレビューに時間がかかっている。</p>
+            <p style="margin-top: 10px;"><strong>実装例</strong>: リポジトリの <code>.vscode/settings.json</code> にフォーマット規約をコミットして共有する。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">JSON — .vscode/settings.json</span></div>
+                <pre><code class="language-json">{
+  "[sql]": {
+    "editor.defaultFormatter": "ms-mssql.mssql",
+    "editor.formatOnSave": true
+  },
+  "mssql.format.options.keywordCasing": "uppercase",
+  "mssql.format.options.commaPlacement": "leading",
+  "mssql.format.options.identifierBracketing": "includeBrackets"
+}</code></pre>
+            </div>
+            <div class="effect-box">
+                <strong>✅ 効果</strong>: 保存のたびに全員のコードが同一スタイルに自動整形され、スタイル指摘のないコードレビューが実現し、差分も本質的な変更のみになる。
+            </div>
+        </div>
+
+        <div class="use-case">
+            <h3><span class="uc-label">CASE 2</span>既存のレガシー SQL スクリプトの段階的な整形</h3>
+            <p><strong>シナリオ</strong>: 長年メンテナンスされてきた大規模な T-SQL スクリプトの可読性が低く、修正のたびに読み解きに時間がかかっている。</p>
+            <p style="margin-top: 10px;"><strong>実装例</strong>: 修正対象の範囲を選択し <strong>Format Selection</strong> (<span class="kbd">Ctrl+K, Ctrl+F</span>) を実行して、触った箇所のみを整形する。全体を一括整形する場合は <strong>Format Document</strong> (<span class="kbd">Shift+Alt+F</span>) を使用する。</p>
+            <div class="effect-box">
+                <strong>✅ 効果</strong>: 差分を最小限に抑えながら段階的にコードベースの可読性を改善でき、AST ベースの整形により構文を壊すリスクなく整形できる。
+            </div>
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <ul class="related-list">
+            <li><strong>Azure SQL Database / Azure SQL Managed Instance / SQL Server on Azure VM</strong>: MSSQL 拡張機能が接続・開発をサポートする対象データベース。SQL Formatter はこれらに対する開発スクリプトの整形に利用できる</li>
+            <li><strong>SQL database in Microsoft Fabric</strong>: MSSQL 拡張機能のサポート対象。Fabric ワークスペースの参照や SQL データベースのプロビジョニングにも対応</li>
+            <li><strong>GitHub Copilot integration (MSSQL 拡張機能)</strong>: 自然言語チャットやエージェントモードによる AI 支援 SQL 開発。生成されたコードの整形に SQL Formatter を組み合わせられる</li>
+            <li><strong>ScriptDOM</strong>: SQL Formatter の基盤となるオープンソースの T-SQL パーサー/スクリプト生成ライブラリ</li>
+            <li><strong>SQL notebooks / Schema designer / Schema compare (MSSQL 拡張機能)</strong>: 同拡張機能で GA 済みの開発支援機能群。VS Code を中心とした SQL 開発ワークフローを構成する</li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📌 まとめ</h2>
+        <div class="highlight-box">
+            VS Code の MSSQL 拡張機能に組み込まれた SQL Formatter が GA となり、Azure SQL Database をはじめとする SQL 系データベースの開発において、エディター内で T-SQL の整形が完結するようになりました。ScriptDOM ベースの構文解析による正確なフォーマット、format on save による自動化、50 以上の設定項目によるスタイルのカスタマイズが特長です。VS Code で SQL 開発を行うチームは、ワークスペースの <code>settings.json</code> にフォーマット規約を定義して共有することを推奨します。これにより、コーディングスタイルの統一とレビュー効率の向上が期待できます。
+        </div>
+        <div class="tags">
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">MSSQL Extension</span>
+            <span class="tag">Visual Studio Code</span>
+            <span class="tag">SQL Formatter</span>
+            <span class="tag">T-SQL</span>
+            <span class="tag">ScriptDOM</span>
+            <span class="tag">Developer Tools</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=571872" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/sql/tools/visual-studio-code-extensions/mssql/mssql-sql-formatter" target="_blank" rel="noopener">Format T-SQL in the MSSQL Extension for Visual Studio Code (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/sql/tools/visual-studio-code-extensions/mssql/mssql-extension-visual-studio-code" target="_blank" rel="noopener">MSSQL extension for Visual Studio Code の概要 (Microsoft Learn)</a></li>
+            <li><a href="https://marketplace.visualstudio.com/items?itemName=ms-mssql.mssql" target="_blank" rel="noopener">MSSQL 拡張機能 (Visual Studio Marketplace)</a></li>
+            <li><a href="https://github.com/microsoft/sqlscriptdom" target="_blank" rel="noopener">ScriptDOM (GitHub)</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=571872" target="_blank" rel="noopener">Azure Updates (ID: 571872)</a> / Microsoft Learn ドキュメント</p>
+        <p>リリース日: 2026-09-29 | ステータス: Launched (GA) | Azure News Summary により生成</p>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

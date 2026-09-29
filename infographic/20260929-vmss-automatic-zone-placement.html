@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VMSS Automatic Zone Placement (自動ゾーン配置) - Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 220px;
+    height: 220px;
+    background: rgba(80, 230, 255, 0.15);
+    border-radius: 50%;
+}
+.header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-preview {
+    background: var(--ms-yellow);
+    color: var(--ms-text-primary);
+}
+.header h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin-bottom: 8px;
+    position: relative;
+    z-index: 1;
+}
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+.release-date {
+    margin-top: 14px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section h2 {
+    font-size: 22px;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+.section p { margin-bottom: 12px; }
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { padding-left: 20px; margin-top: 6px; }
+.feature-content li { font-size: 14px; margin-bottom: 4px; }
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--azure-blue);
+    color: white;
+    text-align: left;
+    padding: 10px 14px;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+code.inline {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+/* Merit / demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-box {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+    border-top: 4px solid var(--azure-blue);
+}
+.merit-box h4 { color: var(--ms-blue-800); margin-bottom: 10px; }
+.merit-box ul { padding-left: 20px; }
+.merit-box li { font-size: 14px; margin-bottom: 8px; }
+.warning-box {
+    background: #FFF8E6;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin-bottom: 8px; font-size: 14px; }
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.usecase-card h4 {
+    color: white;
+    background: var(--azure-blue);
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+.usecase-label {
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin-top: 12px;
+    margin-bottom: 4px;
+    font-size: 14px;
+}
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+/* Related services */
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.related-card strong { color: var(--ms-blue-800); }
+/* Steps */
+.step-list { counter-reset: step; list-style: none; margin: 16px 0; }
+.step-list li {
+    position: relative;
+    padding: 10px 0 10px 48px;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+.step-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+/* Links */
+.link-list { padding-left: 20px; }
+.link-list li { margin-bottom: 8px; font-size: 14px; }
+a { color: var(--azure-blue); }
+/* Summary */
+.summary-section {
+    background: linear-gradient(135deg, var(--ms-blue-100), #FFFFFF);
+    border: 2px solid var(--ms-blue-300);
+}
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+}
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 8px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+.footer a { color: var(--azure-blue); }
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="header-meta">
+            <span class="service-badge">Azure Virtual Machine Scale Sets (VMSS)</span>
+            <span class="badge badge-preview">In Preview (Public Preview)</span>
+        </div>
+        <h1>Automatic Zone Placement (自動ゾーン配置)</h1>
+        <p class="subtitle">SKU の提供状況・キャパシティ・配置要件に基づき、Azure が最適な可用性ゾーンを自動選択</p>
+        <p class="release-date">📅 リリース日: 2026-09-29</p>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Virtual Machine Scale Sets (VMSS) の <strong>Automatic Zone Placement (自動ゾーン配置)</strong> がパブリックプレビューとして発表されました。この機能を有効にすると、SKU の提供状況、キャパシティ、および構成した配置要件に基づいて、Azure がスケールセットに最適な可用性ゾーンを自動的に選択します。従来のようにリージョンごとにゾーンのリストを手動で維持する必要がなくなり、複数リージョンにまたがるデプロイでも一貫した構成を利用できます。</p>
+        <div class="highlight-box">
+            <strong>デフォルト動作</strong>: インスタンスを 3 つの可用性ゾーンに均等に分散し、最低 2 ゾーンへの分散を必須とし、単一ゾーンへの配置を全インスタンスの 50% までに制限。スケールアウト時にキャパシティが不足した場合は、リージョン内の追加の対象ゾーン (例: 4 番目のゾーン) へ拡張できます。対象ゾーン (<code class="inline">includeZones</code> / <code class="inline">excludeZones</code>)、最大ゾーン数、バランシング動作、ゾーンあたりのキャパシティ上限はカスタマイズ可能です。
+        </div>
+        <p>本機能は<strong>新規インスタンスの配置のみ</strong>に作用し、既存 VM の再配置 (リバランス) は行いません。既存デプロイのゾーン不均衡の是正には、別機能である <strong>Automatic Zone Balance</strong> を利用できます。Uniform / Flexible 両方のオーケストレーションモードに対応し、新規・既存いずれのスケールセットでも利用可能です。Azure Portal、CLI、PowerShell、REST API から構成できます。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">3 ゾーン</div>
+                <div class="stat-label">デフォルトの均等分散目標</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最低 2</div>
+                <div class="stat-label">必須のゾーン分散数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">50%</div>
+                <div class="stat-label">単一ゾーンへの配置上限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">+1 ゾーン</div>
+                <div class="stat-label">キャパシティ不足時の自動拡張</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before: アップデート前の課題</h4>
+                <ul>
+                    <li>リージョンごとにゾーン内の SKU 提供状況が異なるため、<code class="inline">zones</code> プロパティでリージョン固有のゾーンリストを手動で維持する必要があった</li>
+                    <li>ゾーン選択時に現在のキャパシティ状況が考慮されず、特定ゾーンのキャパシティ不足によりデプロイやスケールアウトが失敗することがあった</li>
+                    <li>指定したゾーンのキャパシティが枯渇しても、リージョン内の他の利用可能なゾーンへ自動的に拡張できなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After: アップデート後の改善</h4>
+                <ul>
+                    <li>ゾーン選択を Azure に委譲でき、リージョン固有のゾーン管理が不要になり、マルチリージョンデプロイの構成を統一できる</li>
+                    <li>キャパシティを考慮したゾーン選択により、デプロイおよびスケールアウトの成功率が向上する</li>
+                    <li>ゾーン分散数やゾーンあたりのキャパシティ上限など、柔軟なレジリエンシー制御を定義できる</li>
+                    <li>必要に応じて追加の対象ゾーンを利用できるため、割り当ての柔軟性が向上する</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["😓 Before: 手動ゾーン指定"]
+        U1([👤 管理者]) -->|"リージョンごとに zones: [1,2,3] を手動管理"| V1["🖥️ VMSS"]
+        V1 -->|"指定ゾーンのキャパシティ不足で失敗も"| Z1["📍 固定ゾーン 1/2/3"]
+    end
+    subgraph After["😀 After: Automatic Zone Placement"]
+        U2([👤 管理者]) -->|"zonePlacementPolicy: auto を指定するだけ"| V2["🖥️ VMSS"]
+        V2 --> P{"🤖 Azure が SKU・キャパシティ・制約を評価"}
+        P -->|"3 ゾーンへ均等分散 (単一ゾーン上限 50%)"| Z2["☁️ 最適なゾーンを自動選択"]
+        P -->|"キャパシティ不足時"| Z3["➕ 追加ゾーンへ拡張"]
+    end
+            </pre>
+        </div>
+        <p>従来はリージョンごとにゾーンリストを手動指定していましたが、Automatic Zone Placement では <code class="inline">auto</code> ポリシーを指定するだけで、Azure が SKU 提供状況とキャパシティに基づいて最適なゾーンを選択・拡張します。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⚙️ サービスアップデートの詳細: 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>1. キャパシティを考慮した自動ゾーン選択</h4>
+                <ul>
+                    <li>SKU の提供状況、キャパシティ、構成した配置制約を評価して可用性ゾーンを選択し、VM インスタンスを配置する</li>
+                    <li>デフォルトで 3 ゾーンへの均等分散を目標とし、最低 2 ゾーンへの分散を必須、単一ゾーンは全体の 50% までに制限</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">➕</div>
+            <div class="feature-content">
+                <h4>2. 追加ゾーンへの自動拡張</h4>
+                <ul>
+                    <li><code class="inline">maxZoneCount</code> 未指定でリージョンに 4 つ以上のゾーンがある場合、既存ゾーンでスケールアウト要求を満たせないときに 4 番目のゾーンなどへ拡張可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎛️</div>
+            <div class="feature-content">
+                <h4>3. 柔軟な配置制御</h4>
+                <ul>
+                    <li><code class="inline">includeZones</code> / <code class="inline">excludeZones</code> で対象ゾーンを制限・除外 (両方の併用は不可)</li>
+                    <li><code class="inline">maxZoneCount</code> で使用ゾーン数の上限を指定 (1 にすると単一ゾーン構成)</li>
+                    <li><code class="inline">maxInstancePercentPerZonePolicy</code> で単一ゾーンに配置できるインスタンスの最大割合を指定 (<code class="inline">zoneBalance: false</code> の場合のみ)</li>
+                    <li><code class="inline">zoneBalance: true</code> で厳密なゾーンバランス (各ゾーンのインスタンス数の差を 1 以内に維持) を要求可能。この場合 <code class="inline">maxZoneCount</code> の指定が必須</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>4. 新規・既存スケールセットの両方に対応</h4>
+                <ul>
+                    <li>Uniform / Flexible の両オーケストレーションモードをサポート</li>
+                    <li>顧客選択ゾーンまたはリージョナル (非ゾーン) の既存スケールセットにも有効化可能。既存インスタンスは移動・再作成されず、新規インスタンスから自動ゾーン配置が適用される</li>
+                    <li>注意: リージョナルスケールセットで有効化すると、リージョナル配置には戻せない (自動ゾーン配置から顧客選択ゾーンへの切り替えは可能)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <table>
+            <tr><th style="width: 36%;">項目</th><th>詳細</th></tr>
+            <tr><td>有効化方法</td><td><code class="inline">placement.zonePlacementPolicy</code> を <code class="inline">"auto"</code> に設定 (必須プロパティはこれのみ)</td></tr>
+            <tr><td>必要な機能登録 (AFEC)</td><td><code class="inline">Microsoft.Compute/VmssAutomaticZonePlacement</code></td></tr>
+            <tr><td>必要な API バージョン</td><td>Compute API <code class="inline">2026-03-01</code> 以降</td></tr>
+            <tr><td>オーケストレーションモード</td><td>Uniform / Flexible の両方をサポート</td></tr>
+            <tr><td>デフォルト動作</td><td>3 ゾーンへ均等分散、最低 2 ゾーン、単一ゾーン上限 50%、キャパシティ不足時は追加ゾーンへ拡張</td></tr>
+            <tr><td><code class="inline">includeZones</code> / <code class="inline">excludeZones</code></td><td>配置対象ゾーンの限定 / 除外 (併用不可)</td></tr>
+            <tr><td><code class="inline">maxZoneCount</code></td><td>使用ゾーン数の上限。<code class="inline">zoneBalance: true</code> の場合は必須</td></tr>
+            <tr><td><code class="inline">maxInstancePercentPerZonePolicy</code></td><td>単一ゾーンの最大インスタンス割合。最小値は <code class="inline">ceil(100 / 対象ゾーン数)</code></td></tr>
+            <tr><td>ゾーンあたり最大インスタンス数</td><td><code class="inline">ceil(最大割合 × ターゲットキャパシティ / 100)</code> (切り上げ)</td></tr>
+            <tr><td>部分割り当て</td><td>全配置要件を満たすキャパシティがない場合、ポリシーの範囲内で可能な数だけ割り当て、残りはプロビジョニング失敗となる (要求全体の失敗ではない)</td></tr>
+            <tr><td>構成手段</td><td>Azure Portal、Azure CLI、PowerShell、REST API</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>サブスクリプションを AFEC フラグ <code class="inline">Microsoft.Compute/VmssAutomaticZonePlacement</code> に登録する</li>
+            <li>Compute API バージョン <code class="inline">2026-03-01</code> 以降を使用する</li>
+            <li>可用性ゾーンをサポートするパブリック Azure リージョンにデプロイする</li>
+            <li><code class="inline">overprovision</code> を <code class="inline">false</code> に設定する (オーバープロビジョニングは非サポートのため、有効のままだとデプロイが失敗する)</li>
+        </ol>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code class="language-bash"># 機能登録 (AFEC)
+az feature register \
+  --namespace Microsoft.Compute \
+  --name VmssAutomaticZonePlacement
+
+# 登録状態の確認
+az feature show \
+  --namespace Microsoft.Compute \
+  --name VmssAutomaticZonePlacement
+
+# 自動ゾーン配置を有効にしてスケールセットを新規作成
+az vmss create \
+  --resource-group myResourceGroup \
+  --name myScaleSet \
+  --image Ubuntu2204 \
+  --admin-username azureuser \
+  --generate-ssh-keys \
+  --instance-count 3 \
+  --zone-placement-policy Auto
+
+# 対象ゾーンを 1 と 2 に限定する例
+az vmss create \
+  --resource-group myResourceGroup \
+  --name myScaleSet \
+  --image Ubuntu2204 \
+  --admin-username azureuser \
+  --generate-ssh-keys \
+  --instance-count 3 \
+  --zone-placement-policy Auto \
+  --include-zones 1 2
+
+# 既存の顧客選択ゾーンのスケールセットを自動ゾーン配置へ切り替え
+az vmss update \
+  --resource-group myResourceGroup \
+  --name myScaleSet \
+  --zone-placement-policy Auto \
+  --set zones=[]</code></pre>
+        </div>
+
+        <h3>Azure Portal</h3>
+        <p>機能登録は Azure Portal から行えます。</p>
+        <ol class="step-list">
+            <li>Azure Portal にサインインし、検索ボックスで「subscriptions」を検索して <strong>サブスクリプション</strong> を選択</li>
+            <li>対象サブスクリプションを選択し、<strong>設定</strong> &gt; <strong>プレビュー機能</strong> を開く</li>
+            <li><strong>VmssAutomaticZonePlacement</strong> を検索して選択し、<strong>登録</strong> を選択</li>
+        </ol>
+        <p>スケールセット作成時に Auto ゾーン配置ポリシーを構成できます (パブリックプレビューでは Portal、CLI、PowerShell、REST API から利用可能)。</p>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>💪 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-box">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>リージョン固有のゾーン管理が不要になり、マルチリージョン展開の構成・運用コストを削減できる</li>
+                    <li>キャパシティを考慮したゾーン選択により、デプロイ・スケールアウトの失敗が減り、サービス提供の安定性が向上する</li>
+                </ul>
+            </div>
+            <div class="merit-box">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>全リージョンで同一の IaC テンプレート (ゾーンリストなし) を再利用でき、環境差分を減らせる</li>
+                    <li>ゾーン分散数 (<code class="inline">maxZoneCount</code>)、単一ゾーン上限 (<code class="inline">maxInstancePercentPerZonePolicy</code>)、厳密バランス (<code class="inline">zoneBalance</code>) など、レジリエンシー要件をポリシーとして宣言的に定義できる</li>
+                    <li>キャパシティ不足時に追加の対象ゾーンへ自動拡張でき、割り当ての柔軟性が高まる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>パブリックプレビューであり、プレビューの追加利用条件が適用される。GA までに仕様が変更される可能性がある</li>
+                <li><code class="inline">zones</code> プロパティ (顧客選択ゾーン) と <code class="inline">placement.zonePlacementPolicy</code> (自動ゾーン配置) は同一スケールセットで併用できない</li>
+                <li>以下は非サポート: 近接配置グループ、キャパシティ予約グループ、Instance Mix (GA までにサポート予定)、スタンバイプール、専用ホストグループ、Edge Zone、オーバープロビジョニング、Service Fabric スケールセット</li>
+                <li>新規 VM を作成してアタッチする操作は非サポート (既存のゾーン VM は、配置構成に適合するゾーンであればアタッチ可能)</li>
+                <li>既存インスタンスの再配置は行わない (新規インスタンスの配置のみ)。既存の不均衡是正には Automatic Zone Balance を使用する</li>
+                <li>リージョナル (非ゾーン) スケールセットで有効化した後は、リージョナル配置には戻せない</li>
+                <li>配置要件を満たすキャパシティがない場合、一部インスタンスがプロビジョニング失敗となる (部分割り当て)。厳密ゾーンバランス (<code class="inline">zoneBalance: true</code>) はベストエフォートに比べ割り当て成功率が低下し得る</li>
+                <li><code class="inline">includeZones</code> と <code class="inline">excludeZones</code> は併用不可</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>ユースケース 1</h4>
+            <h3 style="margin-top: 0;">マルチリージョン展開の IaC テンプレート統一</h3>
+            <p class="usecase-label">シナリオ</p>
+            <p>複数リージョンに同一構成の VMSS を展開しているが、リージョンごとに SKU が利用可能なゾーンが異なるため、リージョン別のゾーンリストをテンプレートに埋め込んで維持している。</p>
+            <p class="usecase-label">実装例</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span></div>
+                <pre><code class="language-bash"># ゾーンリストを指定せず、全リージョンで共通のコマンド/テンプレートを使用
+az vmss create \
+  --resource-group myResourceGroup \
+  --name myScaleSet \
+  --image Ubuntu2204 \
+  --admin-username azureuser \
+  --generate-ssh-keys \
+  --instance-count 3 \
+  --zone-placement-policy Auto</code></pre>
+            </div>
+            <div class="effect-box"><strong>効果</strong>: リージョン固有のゾーンリスト管理が不要になり、テンプレートの重複と保守負担を削減できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>ユースケース 2</h4>
+            <h3 style="margin-top: 0;">割り当て成功率を優先した大規模スケールアウト</h3>
+            <p class="usecase-label">シナリオ</p>
+            <p>需要ピーク時に大量のインスタンスをスケールアウトするワークロードで、特定ゾーンのキャパシティ不足による割り当て失敗を減らしたい。デフォルトの単一ゾーン 50% 制限では、ゾーン間のキャパシティ偏りがあるときに一部インスタンスが失敗する。</p>
+            <p class="usecase-label">実装例</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span></div>
+                <pre><code class="language-bash"># 単一ゾーンへの最大割合を 85% に引き上げ、割り当ての柔軟性を優先
+az vmss create \
+  --resource-group myResourceGroup \
+  --name myScaleSet \
+  --image Ubuntu2204 \
+  --admin-username azureuser \
+  --generate-ssh-keys \
+  --instance-count 3 \
+  --zone-placement-policy Auto \
+  --instance-percent-policy true \
+  --max-instance-percent 85</code></pre>
+            </div>
+            <div class="effect-box"><strong>効果</strong>: ゾーン間のキャパシティ偏在時にも割り当て成功率が向上する (ただし単一ゾーンへの集中度は高まるため、レジリエンシー要件とのトレードオフを考慮する)。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>ユースケース 3</h4>
+            <h3 style="margin-top: 0;">厳密なゾーンバランスが必要なワークロード</h3>
+            <p class="usecase-label">シナリオ</p>
+            <p>高可用性要件により、各ゾーンのインスタンス数を常にほぼ均等 (差 1 以内) に維持する必要がある。</p>
+            <p class="usecase-label">実装例</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span></div>
+                <pre><code class="language-bash"># 厳密なゾーンバランスを 3 ゾーンで有効化 (maxZoneCount の指定が必須)
+az vmss create \
+  --resource-group myResourceGroup \
+  --name myScaleSet \
+  --image Ubuntu2204 \
+  --admin-username azureuser \
+  --generate-ssh-keys \
+  --instance-count 3 \
+  --zone-placement-policy Auto \
+  --zone-balance true \
+  --max-zone-count 3</code></pre>
+            </div>
+            <div class="effect-box"><strong>効果</strong>: ゾーン障害時の影響を全体の約 1/3 に抑えられる均等分散を Azure が維持する (キャパシティ不足時はポリシーに適合しないインスタンスのプロビジョニングが失敗する点に注意)。</div>
+        </div>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2>🌏 利用可能リージョン</h2>
+        <p>可用性ゾーンをサポートするパブリック Azure リージョンで利用できます (Edge Zone は非サポート)。対応リージョンの一覧は <a href="https://learn.microsoft.com/azure/reliability/availability-zones-region-support" target="_blank" rel="noopener">Azure regions with availability zone support</a> を参照してください。</p>
+    </section>
+
+    <!-- 関連サービス -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-card"><strong>Automatic Zone Balance</strong>: 既存のゾーン不均衡を能動的に検出し、不足ゾーンに代替 VM を作成して過剰ゾーンの VM を削除することで是正する機能。Automatic Zone Placement は新規インスタンスの配置のみを制御するため、既存デプロイの是正には本機能を組み合わせる</div>
+        <div class="related-card"><strong>Zone balancing (ゾーンバランシング)</strong>: スケーリング操作時のゾーン間分散を制御する仕組み (ベストエフォート / 厳密)。ゾーン選択方法 (顧客選択 / 自動) に関わらず適用される</div>
+        <div class="related-card"><strong>Customer-selected zones (顧客選択ゾーン)</strong>: すべての配置操作で特定ゾーンの使用が必須なワークロード向けの従来方式。<code class="inline">zones</code> プロパティで指定し、自動ゾーン配置とは排他</div>
+        <div class="related-card"><strong>Azure Availability Zones</strong>: リージョン内の障害分離された拠点。ゾーン間はラウンドトリップ遅延 2 ミリ秒未満の高性能ネットワークで接続され、複数ゾーンへの分散で 99.99% の SLA を満たす</div>
+        <div class="related-card"><strong>VMSS Autoscale</strong>: CPU / メモリ使用率ベースの自動スケールルール。ゾーン障害時に残存ゾーンでのスケールアウトを自動化するベストプラクティスとして推奨</div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section summary-section">
+        <h2>📌 まとめ</h2>
+        <p>Automatic Zone Placement は、VMSS のゾーン選択を Azure に委譲することで、リージョン固有のゾーンリスト管理を不要にし、キャパシティを考慮した配置によりデプロイ・スケールアウトの成功率を高めるパブリックプレビュー機能です。マルチリージョン展開の IaC テンプレート統一や、大規模スケールアウト時の割り当て失敗の軽減に効果が期待できます。</p>
+        <p>一方で、近接配置グループやキャパシティ予約グループなど多くの機能との併用が現時点で非サポートであり、既存インスタンスの再配置は行わない点に注意が必要です。検証環境で AFEC 登録 (<code class="inline">Microsoft.Compute/VmssAutomaticZonePlacement</code>) と Compute API <code class="inline">2026-03-01</code> 以降を用いて動作を確認し、デフォルトの分散ポリシー (3 ゾーン均等、最低 2 ゾーン、単一ゾーン 50% 上限) が自社のレジリエンシー要件に適合するか評価することを推奨します。</p>
+        <div class="tags">
+            <span class="tag">#Azure</span>
+            <span class="tag">#VMSS</span>
+            <span class="tag">#VirtualMachineScaleSets</span>
+            <span class="tag">#AvailabilityZones</span>
+            <span class="tag">#Compute</span>
+            <span class="tag">#HighAvailability</span>
+            <span class="tag">#PublicPreview</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=571075" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-automatic-zone-placement" target="_blank" rel="noopener">Automatic zone placement for Virtual Machine Scale Sets (Preview) - Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-use-availability-zones" target="_blank" rel="noopener">Availability zone options for Azure Virtual Machine Scale Sets - Microsoft Learn</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-machine-scale-sets/" target="_blank" rel="noopener">Virtual Machine Scale Sets 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=571075" target="_blank" rel="noopener">Azure Updates - Automatic Zone Placement for Virtual Machine Scale Sets (Preview)</a> / <a href="https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-automatic-zone-placement" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>このインフォグラフィックは Azure News レポート (2026-09-29) を基に生成されました。</p>
+    </footer>
+</div>
+
+<script>
+mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+        primaryColor: '#0078D4',
+        primaryTextColor: '#323130',
+        primaryBorderColor: '#0078D4',
+        lineColor: '#0078D4',
+        secondaryColor: '#F3F2F1',
+        tertiaryColor: '#FAFAFA',
+        background: '#FFFFFF',
+        mainBkg: '#E6F2FF',
+        nodeBorder: '#0078D4',
+        clusterBkg: '#E6F2FF',
+        clusterBorder: '#0078D4',
+        edgeLabelBackground: '#FFFFFF',
+        textColor: '#323130'
+    }
+});
+hljs.highlightAll();
+</script>
+</body>
+</html>

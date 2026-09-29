@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Arc から Azure SQL Database (Hyperscale 含む) への直接移行 | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 15px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 4px;
+}
+
+.feature-content p, .feature-content ul {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin: 4px 0 0;
+}
+
+.feature-content ul { padding-left: 20px; }
+.feature-content li { margin: 4px 0; }
+
+/* Table */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+td:first-child { font-weight: 500; white-space: nowrap; }
+
+/* Steps */
+.steps { counter-reset: step; list-style: none; margin: 16px 0; }
+
+.step {
+    position: relative;
+    padding: 12px 16px 12px 56px;
+    margin: 10px 0;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.step::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.merit-business { background: var(--ms-blue-100); border: 2px solid var(--ms-blue-500); }
+.merit-tech { background: #F3EEF9; border: 2px solid var(--ms-purple); }
+
+.merit-card h4 { margin-bottom: 10px; }
+.merit-business h4 { color: var(--ms-blue-800); }
+.merit-tech h4 { color: var(--ms-purple); }
+
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 8px 0; font-size: 14px; }
+
+.warning-box {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin: 8px 0; font-size: 14px; }
+
+/* Use case */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+
+.usecase-item { margin: 8px 0; font-size: 14px; }
+
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-right: 6px;
+}
+
+/* Prereq list */
+.prereq-list { padding-left: 22px; margin: 12px 0; }
+.prereq-list li { margin: 8px 0; font-size: 14px; }
+.prereq-list ul { padding-left: 20px; margin-top: 6px; }
+
+/* Related services */
+.related-card {
+    background: var(--ms-surface-secondary);
+    border-left: 4px solid var(--ms-purple);
+    padding: 12px 16px;
+    margin: 10px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--azure-dark-blue); }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { padding-left: 22px; }
+.link-list li { margin: 8px 0; font-size: 14px; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+}
+
+/* Code blocks (highlight.js) */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 24px 0;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer a { word-break: break-all; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure SQL Database</span>
+            <span class="service-badge">Azure Arc-enabled SQL Server</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Azure Arc から Azure SQL Database (Hyperscale 含む) へ直接移行</h1>
+        <div class="meta">📅 リリース日: 2026-09-29 ｜ 🔧 機能: Azure Arc のデータベース移行エクスペリエンスから Azure SQL Database (Hyperscale 含む) へ直接移行</div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <div class="highlight-box">
+            Azure Arc のデータベース移行エクスペリエンスにおいて、移行ターゲットとして <strong>Azure SQL Database (Hyperscale サービスレベルを含む)</strong> を直接選択できるようになりました (Public Preview)。DMS と SHIR のセットアップがガイド付きポータル操作に組み込まれ、<strong>アセスメント → ターゲット選択 → 移行構成 → 監視</strong>を Azure Arc の画面から離れることなく実行できます。
+        </div>
+        <p>これまでは、アセスメントから移行までのパスで Arc の外に出て、別のサービス (DMS) を学習し、ランタイムを構成し、複数のツールを行き来する必要があり、この追加の手間がモダナイゼーションプロジェクトを遅らせていました。今回のリリースにより、Arc が「移行可能」と判定したデータベースを、アセスメントを実施したその場ですぐに移行アクションに移せます。</p>
+        <p>他の Azure SQL 移行先ですでに使われているものと同じ移行ダッシュボード・監視エクスペリエンス・ガイド付きワークフローが利用できるため、Hyperscale を選択する場合でも新しい移行手法を学ぶ必要はありません。ランタイムのセットアップはガイド付きで、ポータル内の手順に従って 1 回だけ完了させれば済みます。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>アセスメントから移行に進むには Azure Arc の外に出て、別のサービス (DMS) を個別に学習・構成する必要があった</li>
+                    <li>SHIR の構成やツール間の移動など追加の作業が発生し、モダナイゼーションプロジェクトの進行が遅くなっていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Azure Arc の移行エクスペリエンス内で Azure SQL Database (Hyperscale 含む) をターゲットとして直接選択可能に</li>
+                    <li>DMS と SHIR のセットアップがガイド付きワークフローに統合され、アセスメント・ターゲット選択・移行構成・監視を Arc 内で完結</li>
+                    <li>他の Azure SQL 移行先と共通の移行ダッシュボードと監視エクスペリエンスをそのまま利用可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph OnPrem["🏢 オンプレミス / 他クラウド"]
+        SRC[("🗄️ SQL Server<br>(Arc-enabled)")]
+        SHIR["⚙️ Self-hosted<br>Integration Runtime"]
+    end
+    subgraph Azure["☁️ Azure Cloud"]
+        ARC["🌐 Azure Arc<br>移行エクスペリエンス"]
+        DMS["🚚 Azure Database<br>Migration Service"]
+        SQLDB[("💠 Azure SQL Database<br>(Hyperscale 含む)")]
+        MON["📊 移行ダッシュボード<br>(監視)"]
+    end
+    ARC -->|"1️⃣ アセスメント &<br>移行構成"| DMS
+    DMS -->|"2️⃣ 接続"| SHIR
+    SRC -->|"3️⃣ スキーマ &<br>データコピー"| SHIR
+    SHIR -->|"4️⃣ 論理移行<br>(オフライン)"| SQLDB
+    DMS --> MON
+            </pre>
+        </div>
+        <p class="diagram-caption">Azure Arc のポータル画面から移行を構成すると、DMS が SHIR 経由でソース SQL Server に接続し、スキーマとデータをターゲットの Azure SQL Database へ論理移行 (オフライン) でコピーします。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⚡ 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>1. Azure SQL Database (Hyperscale 含む) をターゲットとして直接選択</h4>
+                <p>Azure Arc のデータベース移行エクスペリエンスから、Azure SQL Database をターゲットとして選択し、既存ターゲットの利用または新規作成が可能。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧭</div>
+            <div class="feature-content">
+                <h4>2. ガイド付きの DMS / SHIR セットアップ</h4>
+                <ul>
+                    <li>既存の DMS インスタンスの選択、または「Auto create new DMS」による自動作成に対応</li>
+                    <li>SHIR のダウンロード・インストール・登録手順がポータル内でガイドされ、セットアップは 1 回のみで完了</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🪜</div>
+            <div class="feature-content">
+                <h4>3. 4 ステージのガイド付きワークフロー</h4>
+                <p>「ソースインスタンスのアセスメント」→「ターゲット選択」→「データ移行」→「移行の監視」を Database migration ペインで一貫して実施。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🗂️</div>
+            <div class="feature-content">
+                <h4>4. スキーマ移行とデータ移行の選択</h4>
+                <ul>
+                    <li>「Migrate data」(既存スキーマへのデータ移行)、「Migrate schema」(オブジェクトのみ作成)、または両方を選択可能</li>
+                    <li>ターゲットに一致するスキーマが検出された場合はスキーマ移行が自動的に無効化される</li>
+                    <li>テーブル単位で移行対象を選択可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>5. Microsoft Copilot 支援</h4>
+                <p>移行エクスペリエンスに Copilot が組み込まれ、アセスメントに関する質問、ターゲット比較、移行の開始・監視、トラブルシューティングを支援。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔬 技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>移行方式</td><td>論理移行 (DMS + SHIR 経由でスキーマとデータをコピー)。Azure Blob Storage へのバックアップステージングは不要</td></tr>
+                <tr><td>移行モード</td><td>オフラインのみ (オンライン移行は現時点で未対応。移行開始後のソース変更はキャプチャされない)</td></tr>
+                <tr><td>ソース</td><td>Azure Arc-enabled SQL Server (SQL Server 2017 〜 2025 のドキュメント対象バージョン)。オンライン状態のデータベースのみ移行可能</td></tr>
+                <tr><td>ターゲット</td><td>Azure SQL Database (Hyperscale サービスレベルを含む)</td></tr>
+                <tr><td>SHIR バージョン</td><td>スキーマ移行には SHIR 5.37 以降が必要</td></tr>
+                <tr><td>SHIR の制約</td><td>Azure Data Factory で作成済みの既存 SHIR は DMS の移行には使用不可</td></tr>
+                <tr><td>データ移動基盤</td><td>DMS は Azure Data Factory パイプラインを使用するため、Azure Data Factory の制限が適用される</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+        <h3>前提条件</h3>
+        <ol class="prereq-list">
+            <li>アクティブな Azure サブスクリプション</li>
+            <li>Azure Arc-enabled SQL Server インスタンスと、最新バージョンの Azure extension for SQL Server</li>
+            <li>ターゲットの Azure SQL Database (事前作成。ソースワークロードに十分なサービスレベルを選択)</li>
+            <li>サブスクリプションで <strong>Microsoft.DataMigration</strong> リソースプロバイダーを登録済みであること</li>
+            <li>SHIR からソース SQL Server とターゲット Azure SQL Database への両方向のネットワーク接続</li>
+            <li>必要なアクセス許可:
+                <ul>
+                    <li><strong>Azure 側</strong>: ターゲット Azure SQL Database への <strong>Contributor</strong> ロール、ターゲットを含むリソースグループへの <strong>Reader</strong> ロール、DMS を新規作成する場合はサブスクリプションの <strong>Owner</strong> または <strong>Contributor</strong> ロール</li>
+                    <li><strong>ソース SQL Server ログイン</strong>: ソースデータベースの <strong>db_datareader</strong> ロール + <strong>VIEW ANY DEFINITION</strong> サーバー権限 (スキーマ移行時は <strong>db_owner</strong> ロール)</li>
+                    <li><strong>ターゲットログイン</strong>: ターゲットデータベースの <strong>db_owner</strong> ロール</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h3>Azure Portal での手順</h3>
+        <ol class="steps">
+            <li class="step">Azure Portal で対象の SQL Server インスタンス (Arc-enabled) に移動し、<strong>Migration</strong> &gt; <strong>Database migration</strong> を選択</li>
+            <li class="step"><strong>Assess source instance</strong> で <strong>View report</strong> を選択し、アセスメントが最新でなければ <strong>Run assessment</strong> を実行。<strong>Azure SQL Database</strong> タイルでアセスメント詳細 (準備状況、ブロッキング問題、警告、推奨ターゲット構成) を確認</li>
+            <li class="step"><strong>Create or select target</strong> から既存の Azure SQL Database を選択、または新規作成 (サブスクリプション、リソースグループ、論理サーバー、データベース、認証情報を指定)</li>
+            <li class="step"><strong>Migrate data</strong> を選択し、移行方法として <strong>Migration using DMS (preview)</strong> を選択して Migration wizard を開く</li>
+            <li class="step">ウィザードに従い、(1) SHIR のセットアップ (既存 DMS の選択または自動作成、認証キーでランタイム登録、Online 状態を確認)、(2) ソース / ターゲットへの接続と検証、(3) ソース / ターゲットデータベースのマッピング、(4) 移行対象テーブルとスキーマ/データ移行オプションの選択を実施</li>
+            <li class="step"><strong>Review + create</strong> &gt; <strong>Create</strong> で移行を開始</li>
+            <li class="step"><strong>Monitor migrations</strong> で移行とテーブルごとのステータスを監視し、<strong>Succeeded</strong> になったらスキーマ・データ・アプリケーション接続を検証</li>
+        </ol>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>👍 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>アセスメントから移行までを単一のポータル体験で完結でき、モダナイゼーションプロジェクトのリードタイムを短縮できる</li>
+                    <li>Hyperscale を含む PaaS への移行で、フルマネージドなデータベース基盤による運用負荷軽減が期待できる</li>
+                    <li>Copilot 支援により、移行判断やトラブルシューティングのハードルが下がる</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>他の Azure SQL 移行先と共通の移行ダッシュボード・監視・ガイド付きワークフローを利用でき、新しい移行手法の学習が不要</li>
+                    <li>DMS / SHIR のセットアップがガイド化され、ランタイム構成は 1 回で完了</li>
+                    <li>Azure Blob Storage へのバックアップステージングが不要な論理移行方式</li>
+                    <li>アセスメントで互換性の問題を事前に特定し、適切なサービスレベルと構成を選択できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>現在 <strong>Public Preview</strong> であり、本番利用前に十分な検証が必要</li>
+                <li><strong>オンライン移行は未対応</strong>。オフライン移行のため、移行開始からカットオーバー完了までアプリケーションのダウンタイムが発生する (許容可否をテストで確認することが推奨されている)</li>
+                <li>オンライン状態のデータベースのみ移行可能 (他の状態のデータベースは選択不可)</li>
+                <li>ターゲットテーブルが空でない場合、そのテーブルを選択すると既存のターゲットデータが置き換えられる</li>
+                <li>Azure Data Factory で作成した既存の SHIR は流用できず、DMS 用に別途登録が必要</li>
+                <li>DMS は Azure Data Factory パイプラインを使用するため、Azure Data Factory の制限が適用される</li>
+                <li>移行速度はターゲットのサービスレベルと SHIR ホストのリソースに依存する</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🏢 ユースケース 1: オンプレミス SQL Server 資産の Hyperscale への段階的モダナイゼーション</h4>
+            <p class="usecase-item"><span class="usecase-label">シナリオ</span>Azure Arc で管理しているオンプレミスの SQL Server 群について、アセスメントで「移行可能」と判定された大規模データベースを Azure SQL Database Hyperscale へ移行し、ストレージのスケーラビリティと PaaS の運用性を獲得する。</p>
+            <p class="usecase-item"><span class="usecase-label">実装例</span>Azure Portal の Arc-enabled SQL Server インスタンスで <strong>Database migration</strong> ペインを開き、アセスメント → Hyperscale ターゲットの選択 → DMS/SHIR のガイド付きセットアップ → テーブル選択 → 移行実行・監視を一貫して実施する。</p>
+            <p class="usecase-item"><span class="usecase-label">効果</span>複数ツールの行き来や個別の DMS 学習が不要になり、アセスメント結果からそのまま移行アクションに進めるため、モダナイゼーションの計画から実行までの期間を短縮できる。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>🗃️ ユースケース 2: スキーマとデータの分離移行</h4>
+            <p class="usecase-item"><span class="usecase-label">シナリオ</span>事前にターゲット側でスキーマを整備してからデータのみを移行したい、あるいはスキーマのみ先行して作成したい。</p>
+            <p class="usecase-item"><span class="usecase-label">実装例</span>Migration wizard のテーブル選択ステップで「Migrate schema」のみを選択してオブジェクトを先行作成し、検証後に「Migrate data」でデータを移行する。ポータルがターゲット上の既存スキーマを自動検出するため、重複するスキーマ移行は無効化される。</p>
+            <p class="usecase-item"><span class="usecase-label">効果</span>スキーマ検証とデータ移行を分離でき、移行の失敗リスクとダウンタイム中の作業を最小化できる。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Azure Arc の移行エクスペリエンス自体に関する追加料金の記載は確認できませんでした。移行に使用する Azure Database Migration Service の料金ページでは、以下の体系が公開されています (詳細は料金ページを参照)。</p>
+        <div class="table-wrap">
+            <table>
+                <tr><th>項目</th><th>料金</th></tr>
+                <tr><td>DMS Standard 層 (オフライン移行、1/2/4 vCore)</td><td>無料</td></tr>
+                <tr><td>DMS Premium 層 (4 vCore、オンライン/オフライン)</td><td>時間単位の課金 (サービス作成から 183 日間は無料)</td></tr>
+                <tr><td>ターゲット Azure SQL Database (Hyperscale 等)</td><td>選択したサービスレベルに応じて別途課金</td></tr>
+            </table>
+        </div>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/database-migration/" target="_blank" rel="noopener">Azure Database Migration Service の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/" target="_blank" rel="noopener">Azure SQL Database の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-card"><strong>Azure Arc-enabled SQL Server</strong>: 移行のソースとなる、Azure Arc で管理された SQL Server インスタンス。Azure extension for SQL Server がアセスメントと移行機能を提供する</div>
+        <div class="related-card"><strong>Azure Database Migration Service (DMS)</strong>: 実際のスキーマ・データ移行を実行するサービス。Azure Data Factory パイプラインをデータ移動に使用する</div>
+        <div class="related-card"><strong>Self-hosted Integration Runtime (SHIR)</strong>: DMS がソース SQL Server に接続しデータを Azure SQL Database へ移動するためのランタイム。ソースとターゲット双方へのネットワーク接続が必要</div>
+        <div class="related-card"><strong>Azure SQL Database Hyperscale</strong>: 大規模ワークロード向けにストレージとコンピュートを独立してスケールできるサービスレベル。今回のアップデートで Arc からの直接移行ターゲットとして選択可能になった</div>
+        <div class="related-card"><strong>Microsoft Copilot</strong>: 移行エクスペリエンスに組み込まれ、アセスメントの質問、ターゲット比較、移行の開始・監視、トラブルシューティングを支援</div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            Azure Arc のデータベース移行エクスペリエンスから、Azure SQL Database (Hyperscale 含む) への移行を直接実行できるようになりました (Public Preview)。DMS と SHIR のセットアップがガイド付きワークフローに統合され、アセスメントから移行・監視までを Arc 内で完結できるため、SQL Server 資産のモダナイゼーションを大幅に効率化できます。一方で、現時点ではオフライン移行のみの対応であり、移行開始からカットオーバーまでダウンタイムが発生する点に注意が必要です。Arc-enabled SQL Server を運用中で PaaS 移行を検討している場合は、アセスメントの実行とテスト移行によるダウンタイム評価から着手することを推奨します。
+        </div>
+        <div class="tags">
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">Azure Arc</span>
+            <span class="tag">Hyperscale</span>
+            <span class="tag">Azure Database Migration Service</span>
+            <span class="tag">Self-hosted Integration Runtime</span>
+            <span class="tag">Migration</span>
+            <span class="tag">Databases</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク / フッター -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=571795" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/sql/sql-server/azure-arc/migrate-to-azure-sql-database" target="_blank" rel="noopener">Migration to Azure SQL Database (Preview) - SQL Server migration in Azure Arc</a></li>
+            <li><a href="https://learn.microsoft.com/sql/sql-server/azure-arc/migration-sql-database-prepare" target="_blank" rel="noopener">Prepare for migration to Azure SQL Database - SQL Server migration in Azure Arc</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/database-migration/" target="_blank" rel="noopener">Azure Database Migration Service の料金</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=571795" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=571795</a></p>
+        <p>Microsoft Learn: <a href="https://learn.microsoft.com/sql/sql-server/azure-arc/migrate-to-azure-sql-database" target="_blank" rel="noopener">Migration to Azure SQL Database (Preview)</a></p>
+        <p>Azure News Summary ｜ レポート日: 2026-09-29 ｜ 本インフォグラフィックは Azure News レポートを基に生成されています</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

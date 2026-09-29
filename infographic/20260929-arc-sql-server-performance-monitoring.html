@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Arc: Arc-enabled SQL Server のパフォーマンス監視 (Public Preview 拡張)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 240px;
+    height: 240px;
+    background: rgba(80, 230, 255, 0.15);
+    border-radius: 50%;
+}
+
+.header::before {
+    content: "";
+    position: absolute;
+    right: 60px;
+    bottom: -90px;
+    width: 180px;
+    height: 180px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+    position: relative;
+    z-index: 1;
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    position: relative;
+    z-index: 1;
+}
+
+.header .subtitle {
+    margin-top: 12px;
+    font-size: 15px;
+    opacity: 0.92;
+    position: relative;
+    z-index: 1;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-preview {
+    background: var(--ms-yellow);
+    color: var(--ms-text-primary);
+}
+
+.date-badge {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 20px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 26px;
+}
+
+.section h3 {
+    color: var(--ms-blue-700);
+    font-size: 17px;
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.keyword {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 1px 8px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content p {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin: 4px 0;
+}
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--ms-red);
+    word-break: break-all;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Steps */
+.steps {
+    counter-reset: step;
+    list-style: none;
+    margin: 16px 0;
+}
+
+.steps li {
+    position: relative;
+    padding: 12px 12px 12px 56px;
+    margin: 10px 0;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+    border: 2px solid var(--ms-blue-400);
+    background: var(--ms-blue-100);
+}
+
+.merit-card h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+}
+
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 8px 0; font-size: 14px; }
+
+.warning-box {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin: 8px 0; font-size: 14px; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--ms-purple);
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+
+.usecase-label {
+    display: inline-block;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin-right: 6px;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 30px;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 6px;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.related-card h4 {
+    color: var(--azure-blue);
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.related-card p {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    margin: 0;
+}
+
+/* Links */
+a { color: var(--azure-blue); }
+
+.link-list { padding-left: 20px; }
+.link-list li { margin: 8px 0; font-size: 14px; word-break: break-all; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+}
+
+/* Tags */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+}
+
+.footer a { word-break: break-all; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">🔗 Azure Arc (SQL Server enabled by Azure Arc)</span>
+            <span class="badge badge-preview">In Preview</span>
+            <span class="date-badge">📅 リリース日: 2026-09-29</span>
+        </div>
+        <h1>Arc-enabled SQL Server のパフォーマンス監視<br>(Public Preview 拡張)</h1>
+        <p class="subtitle">テレメトリエンドポイント / Grafana ダッシュボード / Fabric Database Hub 統合</p>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>SQL Server enabled by Azure Arc のパフォーマンス監視 (Public Preview) が拡張され、パフォーマンスデータの探索・可視化の方法がより柔軟になりました。Microsoft が管理する監視データを <span class="keyword">テレメトリエンドポイント</span> 経由で直接クエリできるようになり、Azure Portal の組み込み監視エクスペリエンスは <span class="keyword">Grafana ダッシュボード</span> を採用しました。これにより、監視パイプラインを自前でデプロイ・管理することなく、すぐに使えるビューが提供されます。</p>
+        <p>さらに、同じテレメトリエンドポイントに自社の Grafana 環境を接続し、運用ニーズに合わせたカスタムダッシュボードを構築することも可能です。<span class="keyword">Fabric Database Hub</span> との統合により、このテレメトリを Azure データベース資産全体 (estate レベル) の統一された監視エクスペリエンスに取り込めます。データベースをインスタンス単位で個別に監視する必要がなくなり、資産全体の健全性とパフォーマンスを一元的に把握できます。</p>
+        <div class="highlight-box">
+            パフォーマンスメトリックは、対象の Arc-enabled SQL Server インスタンス上の<strong>動的管理ビュー (DMV) データセット</strong>から自動的に収集され、Azure テレメトリパイプラインに送信されて<strong>ほぼリアルタイム</strong>に処理されます。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">最短 10 秒</div>
+                <div class="stat-label">DMV メトリック収集間隔</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">9 種類</div>
+                <div class="stat-label">収集される DMV データセット</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3 経路</div>
+                <div class="stat-label">Portal / 自社 Grafana / Fabric</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">無料</div>
+                <div class="stat-label">プレビュー期間中の利用料金</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Microsoft 管理の監視データは Azure Portal のパフォーマンスダッシュボードでの閲覧が中心で、外部ツールから直接クエリする手段がなかった</li>
+                    <li>独自の可視化を行うには、監視パイプライン (データ収集・保存・可視化基盤) を自前でデプロイ・管理する必要があった</li>
+                    <li>ハイブリッド環境のデータベースをインスタンス単位で個別に監視する必要があり、資産全体を横断する統一ビューがなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>テレメトリエンドポイント経由で Microsoft 管理の監視データを直接クエリ可能になった</li>
+                    <li>Azure Portal の組み込みエクスペリエンスが Grafana ダッシュボードとなり、パイプライン管理不要ですぐに使えるビューを提供</li>
+                    <li>自社の Grafana 環境を同じテレメトリエンドポイントに接続し、カスタムダッシュボードを構築可能</li>
+                    <li>Fabric Database Hub 統合により、Azure データベース資産全体の estate レベル監視が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph OnPrem["🏢 オンプレミス / マルチクラウド"]
+        SQL[("🗄️ SQL Server<br/>(Azure Arc 対応)")]
+        EXT["🔌 Azure Extension<br/>for SQL Server"]
+    end
+    subgraph Azure["☁️ Azure"]
+        PIPE["📡 Azure テレメトリ<br/>パイプライン"]
+        TEP["🔗 テレメトリ<br/>エンドポイント"]
+        PORTAL["📊 Azure Portal<br/>(Grafana ダッシュボード)"]
+        FABRIC["🧩 Fabric<br/>Database Hub"]
+    end
+    GRAFANA["📈 自社 Grafana 環境"]
+
+    SQL -->|"DMV データセット収集"| EXT
+    EXT -->|"送信"| PIPE
+    PIPE --> TEP
+    TEP --> PORTAL
+    TEP --> GRAFANA
+    TEP --> FABRIC
+            </pre>
+        </div>
+        <p class="diagram-caption">Arc-enabled SQL Server の DMV から収集されたパフォーマンスデータは Azure テレメトリパイプラインで処理され、テレメトリエンドポイントを介して Azure Portal の Grafana ダッシュボード、自社 Grafana 環境、Fabric Database Hub から利用できます。</p>
+    </section>
+
+    <!-- サービスアップデートの詳細 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>1. テレメトリエンドポイントによる直接クエリ</h4>
+                <p>Microsoft が管理する監視データを、テレメトリエンドポイント経由で直接クエリ可能。</p>
+                <p>自前の監視データ保存基盤を構築せずに、収集済みデータへアクセスできる。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>2. Azure Portal 組み込みの Grafana ダッシュボード</h4>
+                <p>Azure Portal のパフォーマンス監視エクスペリエンスが Grafana ダッシュボードを採用。</p>
+                <p>監視パイプラインのデプロイ・管理なしで、すぐに使えるビューを提供。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <div class="feature-content">
+                <h4>3. 自社 Grafana 環境の接続</h4>
+                <p>同じテレメトリエンドポイントに自社の Grafana を接続可能。</p>
+                <p>運用ニーズに合わせたカスタムダッシュボードを構築できる。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>4. Fabric Database Hub との統合</h4>
+                <p>テレメトリを Fabric Database Hub に取り込み、estate レベルの統一監視を実現。</p>
+                <p>Azure データベース資産全体の健全性・パフォーマンスを一元的に可視化。</p>
+            </div>
+        </div>
+
+        <h3>📦 収集されるデータセット (DMV ベース)</h3>
+        <p>Azure Portal が Arc-enabled SQL Server から収集する主な監視データセットは以下のとおりです (個人データや顧客コンテンツは収集されません)。</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>データセット</th><th>内容</th><th>収集頻度</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>SqlServerActiveSessions</td><td>実行中・ブロック・オープントランザクションを持つセッション</td><td>30 秒</td></tr>
+                    <tr><td>SqlServerCPUUtilization</td><td>CPU 使用率の推移</td><td>10 秒</td></tr>
+                    <tr><td>SqlServerDatabaseProperties</td><td>データベースオプション・メタデータ</td><td>5 分</td></tr>
+                    <tr><td>SqlServerDatabaseStorageUtilization</td><td>ストレージ使用量・永続バージョンストア</td><td>1 分</td></tr>
+                    <tr><td>SqlServerMemoryUtilization</td><td>メモリクラークとメモリ消費</td><td>10 秒</td></tr>
+                    <tr><td>SqlServerPerformanceCountersCommon</td><td>一般的なパフォーマンスカウンター (Batch Requests/sec、Page life expectancy など)</td><td>1 分</td></tr>
+                    <tr><td>SqlServerPerformanceCountersDetailed</td><td>詳細パフォーマンスカウンター (Log Growths、Version Store Size など)</td><td>1 分</td></tr>
+                    <tr><td>SqlServerStorageIO</td><td>IOPS・スループット・レイテンシ統計</td><td>10 秒</td></tr>
+                    <tr><td>SqlServerWaitStats</td><td>待機の種類と待機統計 (現時点ではダッシュボードでの可視化非対応)</td><td>10 秒</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>詳細</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>データソース</td><td>動的管理ビュー (DMV) データセット</td></tr>
+                    <tr><td>処理方式</td><td>Azure テレメトリパイプラインによるほぼリアルタイム処理</td></tr>
+                    <tr><td>可視化</td><td>Azure Portal (Grafana ダッシュボード)、自社 Grafana、Fabric Database Hub</td></tr>
+                    <tr><td>データアクセス</td><td>テレメトリエンドポイント経由の直接クエリ</td></tr>
+                    <tr><td>必要な RBAC アクション</td><td><code class="inline">Microsoft.AzureArcData/sqlServerInstances/getTelemetry/</code> (組み込みロール: Azure Hybrid Database Administrator - Read Only Service Role)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3>✅ 前提条件</h3>
+        <ol class="steps">
+            <li>Azure Extension for SQL Server (<code class="inline">WindowsAgent.SqlServer</code>) のバージョンが <strong>v1.1.2504.99 以降</strong>であること</li>
+            <li>Arc-enabled SQL Server が <strong>Windows OS</strong> 上で稼働していること (Windows Server 2012 R2 以前は非対応)</li>
+            <li>SQL Server のエディションが <strong>Standard または Enterprise</strong> であること</li>
+            <li>SQL Server のバージョンが <strong>2016 SP1 以降</strong>であること</li>
+            <li>サーバーから <code class="inline">*.&lt;region&gt;.arcdataservices.com</code> への接続性があること</li>
+            <li>ライセンスタイプが <strong>Software Assurance または従量課金 (pay-as-you-go)</strong> であること</li>
+            <li><code class="inline">Microsoft.AzureArcData/sqlServerInstances/getTelemetry/</code> アクションを含む Azure ロールを保持していること</li>
+        </ol>
+
+        <h3>💻 Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI による監視データ収集の有効化 / 無効化</span></div>
+            <pre><code class="language-bash"># 監視データ収集の有効化
+az resource update \
+  --ids "/subscriptions/&lt;sub_id&gt;/resourceGroups/&lt;resource_group&gt;/providers/Microsoft.AzureArcData/SqlServerInstances/&lt;resource_name&gt;" \
+  --set 'properties.monitoring.enabled=true' \
+  --api-version 2023-09-01-preview
+
+# 監視データ収集の無効化
+az resource update \
+  --ids "/subscriptions/&lt;sub_id&gt;/resourceGroups/&lt;resource_group&gt;/providers/Microsoft.AzureArcData/SqlServerInstances/&lt;resource_name&gt;" \
+  --set 'properties.monitoring.enabled=false' \
+  --api-version 2023-09-01-preview</code></pre>
+        </div>
+
+        <h3>🖥️ Azure Portal</h3>
+        <ol class="steps">
+            <li>Arc-enabled SQL Server インスタンスのリソースページで <strong>Performance Dashboard (preview)</strong> を選択</li>
+            <li><strong>Performance Dashboard</strong> ペイン上部の <strong>Configure</strong> を選択</li>
+            <li><strong>Configure monitoring settings</strong> ペインで、トグルにより監視データ収集をオン/オフ</li>
+            <li><strong>Apply settings</strong> を選択</li>
+        </ol>
+        <div class="highlight-box">
+            前提条件をすべて満たしていれば、監視は自動的に行われます。メトリックの表示は、対象インスタンスで <strong>Monitoring</strong> &gt; <strong>Performance Dashboard</strong> を選択します。
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>監視基盤 (収集・保存・可視化パイプライン) の構築・運用コストを削減できる</li>
+                    <li>ハイブリッド/マルチクラウドに分散する SQL Server 資産を一元的に把握でき、運用の属人化を軽減</li>
+                    <li>プレビュー期間中は監視機能を無料で利用可能</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>Microsoft 管理のテレメトリデータをエンドポイント経由で直接クエリでき、既存の Grafana 資産を活かせる</li>
+                    <li>Azure Portal でパイプライン管理不要の Grafana ダッシュボードをすぐに利用可能</li>
+                    <li>Fabric Database Hub との統合により、インスタンス単位ではなく estate レベルでの監視が可能</li>
+                    <li>DMV ベースのメトリックが最短 10 秒間隔で自動収集され、ほぼリアルタイムに処理される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>パブリックプレビュー機能であり、Microsoft Azure プレビューの追加利用規約が適用される</li>
+                <li>フェールオーバークラスターインスタンス (FCI) は現時点で非対応</li>
+                <li>Windows OS 上の SQL Server のみ対応 (Windows Server 2012 R2 以前は非対応)</li>
+                <li>SQL Server 2016 SP1 以降かつ Standard / Enterprise エディションが対象</li>
+                <li>ライセンスタイプが Software Assurance または従量課金であることが必要</li>
+                <li>待機統計 (Wait statistics) は収集されるが、現時点ではパフォーマンスダッシュボードで可視化できない</li>
+                <li>GA 後の料金は未定</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>📈 ユースケース 1: 既存 Grafana 環境によるカスタム監視</h4>
+            <p><span class="usecase-label">シナリオ:</span>オンプレミスの SQL Server 群を Azure Arc で管理しており、社内標準の可視化ツールとして Grafana を運用しているチームが、SQL Server のパフォーマンスも同じ Grafana で監視したい。</p>
+            <p><span class="usecase-label">実装:</span>自社の Grafana 環境をテレメトリエンドポイントに接続し、CPU 使用率・ストレージ I/O・メモリ使用量などのデータセットを使って運用ニーズに合わせたダッシュボードを構築する。</p>
+            <p><span class="usecase-label">効果:</span>監視データの収集・保存基盤を自前で構築せずに、既存の Grafana 運用に SQL Server パフォーマンス監視を統合できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🧩 ユースケース 2: Fabric Database Hub による estate レベル監視</h4>
+            <p><span class="usecase-label">シナリオ:</span>Azure とオンプレミスにデータベースが分散しており、インスタンスを 1 台ずつ確認する運用から脱却したい。</p>
+            <p><span class="usecase-label">実装:</span>Arc-enabled SQL Server のテレメトリを Fabric Database Hub に統合し、Azure データベース資産全体の健全性・パフォーマンスを一元的なビューで確認する。</p>
+            <p><span class="usecase-label">効果:</span>インスタンス単位の個別監視が不要になり、資産全体を横断した状況把握と優先順位付けが可能になる。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>プレビュー期間中、監視機能は <strong>無料</strong> で利用できます。GA 後の料金は未定 (to be determined) です。</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>料金</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>パフォーマンス監視 (プレビュー期間中)</td><td><strong>無料</strong></td></tr>
+                    <tr><td>GA 後</td><td>未定</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🖥️ Azure Arc-enabled servers</h4>
+                <p>Arc-enabled SQL Server の基盤。サーバーを Azure に接続し、Azure Extension for SQL Server を通じて監視データを収集する。</p>
+            </div>
+            <div class="related-card">
+                <h4>📊 Grafana</h4>
+                <p>Azure Portal 組み込みダッシュボードの基盤であり、自社環境からもテレメトリエンドポイントに接続して利用可能。</p>
+            </div>
+            <div class="related-card">
+                <h4>🧩 Microsoft Fabric (Database Hub)</h4>
+                <p>テレメトリを取り込み、データベース資産全体の estate レベル監視を提供。</p>
+            </div>
+            <div class="related-card">
+                <h4>🔐 Azure RBAC</h4>
+                <p>テレメトリ取得には getTelemetry アクションを含むロール (Azure Hybrid Database Administrator - Read Only Service Role など) が必要。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=571904" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/sql/sql-server/azure-arc/sql-monitoring" target="_blank" rel="noopener">Microsoft Learn: Monitor SQL Server enabled by Azure Arc</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-arc/servers/network-requirements" target="_blank" rel="noopener">Azure Arc-enabled servers のネットワーク要件</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Arc-enabled SQL Server のパフォーマンス監視プレビューが拡張され、<strong>テレメトリエンドポイントによる直接クエリ</strong>、<strong>Azure Portal 組み込みの Grafana ダッシュボード</strong>、<strong>自社 Grafana 接続</strong>、<strong>Fabric Database Hub 統合</strong>が利用可能になりました。ハイブリッド環境の SQL Server を運用する Solutions Architect にとって、監視パイプラインを自前で構築せずに estate レベルの統一監視を実現できる重要なアップデートです。</p>
+            <p>プレビュー期間中は無料のため、前提条件 (拡張機能バージョン v1.1.2504.99 以降、SQL Server 2016 SP1 以降の Standard/Enterprise、Windows OS など) を確認のうえ、検証環境での評価を推奨します。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure Arc</span>
+            <span class="tag">SQL Server</span>
+            <span class="tag">Hybrid + multicloud</span>
+            <span class="tag">Monitoring</span>
+            <span class="tag">Grafana</span>
+            <span class="tag">Microsoft Fabric</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=571904" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=571904</a></p>
+        <p>Azure News Summary — Arc-enabled SQL Server パフォーマンス監視 (Public Preview 拡張) | 生成日: 2026-09-29</p>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
