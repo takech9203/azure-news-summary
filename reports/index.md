@@ -5,6 +5,12 @@
 
 ## 2026 年
 
+- [2026-09-30 - Azure Virtual Machines: NVv3 / NVv4 シリーズ VM のリタイアメント](2026/2026-09-30-nvv3-nvv4-vm-retirement.md)
+- [2026-09-30 - Azure Virtual Machines: Dv3, Dsv3, Ev3, Esv3 シリーズのリタイアメント](2026/2026-09-30-dv3-ev3-vm-retirement.md)
+- [2026-09-30 - Azure Copilot: Azure canvases for GitHub Copilot の発表](2026/2026-09-30-azure-canvases-github-copilot.md)
+- [2026-09-30 - Azure Monitor Application Insights: URL ping tests のリタイアメント期限を 2028 年 9 月 30 日に延長 (standard tests への移行が必要)](2026/2026-09-30-application-insights-url-ping-tests-retirement.md)
+- [2026-09-30 - Azure Kubernetes Service (AKS): Ubuntu 26.04 サポート (Public Preview)](2026/2026-09-30-aks-ubuntu-2604-support.md)
+- [2026-09-30 - SQL Server on Azure Virtual Machines: SQL パフォーマンス監視 (Public Preview)](2026/2026-09-30-sql-server-azure-vm-performance-monitoring.md)
 - [2026-09-29 - SQL Server Management Studio (SSMS): Database DevOps (SQL projects) の一般提供開始](2026/2026-09-29-ssms-database-devops-sql-projects.md)
 - [2026-09-29 - Azure SQL: 2026 年 9 月下旬のアップデートまとめ (Public Preview)](2026/2026-09-29-sql-late-september-preview-updates.md)
 - [2026-09-29 - Azure SQL: SQL Migration Agent Skills (評価・移行・検証) の一般提供開始](2026/2026-09-29-sql-migration-agent-skills.md)
