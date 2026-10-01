@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-10-01 - Azure Virtual Machines: DCsv3 / DCdsv3 シリーズ VM のリタイア (2029 年 10 月 31 日)](2026/2026-10-01-dcsv3-dcdsv3-vm-retirement.md)
+- [2026-10-01 - Azure Database for MySQL: リーダーエンドポイント (Public Preview)](2026/2026-10-01-mysql-reader-endpoint.md)
 - [2026-09-30 - Azure Virtual Machines: NVv3 / NVv4 シリーズ VM のリタイアメント](2026/2026-09-30-nvv3-nvv4-vm-retirement.md)
 - [2026-09-30 - Azure Virtual Machines: Dv3, Dsv3, Ev3, Esv3 シリーズのリタイアメント](2026/2026-09-30-dv3-ev3-vm-retirement.md)
 - [2026-09-30 - Azure Copilot: Azure canvases for GitHub Copilot の発表](2026/2026-09-30-azure-canvases-github-copilot.md)

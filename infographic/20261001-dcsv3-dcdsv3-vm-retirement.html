@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Virtual Machines: DCsv3 / DCdsv3 シリーズ VM のリタイア (2029 年 10 月 31 日)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+.badge-retirement { background: var(--ms-red); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .release-date {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.danger-box {
+    background: #FFEBEE;
+    border-left: 4px solid var(--ms-red);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+strong { color: var(--ms-red); font-weight: 700; }
+.highlight-box strong, .section .no-red strong { color: var(--azure-dark-blue); }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 6px 0; font-size: 14px; }
+
+/* Timeline */
+.timeline {
+    position: relative;
+    margin: 24px 0;
+    padding-left: 8px;
+}
+
+.timeline-item {
+    display: flex;
+    gap: 20px;
+    position: relative;
+    padding-bottom: 28px;
+}
+
+.timeline-item:last-child { padding-bottom: 0; }
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 69px;
+    top: 28px;
+    bottom: 0;
+    width: 3px;
+    background: var(--ms-blue-300);
+}
+
+.timeline-item:last-child::before { display: none; }
+
+.timeline-date {
+    min-width: 140px;
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--azure-dark-blue);
+    text-align: right;
+    padding-top: 2px;
+}
+
+.timeline-marker {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--azure-blue);
+    border: 4px solid var(--ms-blue-200);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    margin-top: 2px;
+}
+
+.timeline-marker.final { background: var(--ms-red); border-color: #FFCDD2; }
+.timeline-marker.warn { background: var(--ms-orange); border-color: #FFE0B2; }
+
+.timeline-content {
+    flex: 1;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+}
+
+.timeline-content strong { color: var(--ms-text-primary); }
+
+/* Tables */
+.table-wrapper { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.feature-content p { font-size: 14px; margin: 2px 0; color: var(--ms-text-secondary); }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-card.red { background: linear-gradient(135deg, var(--ms-red), #A52D00); }
+.stat-card.orange { background: linear-gradient(135deg, var(--ms-orange), #D97700); }
+
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.92; margin-top: 6px; }
+
+/* Steps */
+.step-list { counter-reset: step; list-style: none; }
+
+.step-item {
+    display: flex;
+    gap: 16px;
+    margin: 16px 0;
+    align-items: flex-start;
+}
+
+.step-number {
+    counter-increment: step;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.step-body h4 { color: var(--ms-blue-800); font-size: 15px; margin-bottom: 4px; }
+.step-body ul { padding-left: 20px; font-size: 14px; }
+.step-body li { margin: 4px 0; }
+
+/* Lists */
+.section ul.plain-list { padding-left: 24px; margin: 10px 0; }
+.section ul.plain-list li { margin: 8px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Code blocks (not used by Mermaid) */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { list-style: none; }
+
+.link-list li {
+    padding: 8px 12px;
+    margin: 6px 0;
+    background: var(--ms-blue-100);
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.link-list li::before { content: '🔗 '; }
+
+/* Footer */
+.footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    font-size: 13px;
+    margin-bottom: 24px;
+}
+
+.footer a { color: var(--azure-light-blue); }
+.footer p { margin: 4px 0; }
+
+/* Tags */
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.tag {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 3px 12px;
+    font-size: 12px;
+}
+
+@media (max-width: 640px) {
+    .before-after { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .timeline-date { min-width: 90px; font-size: 13px; }
+    .timeline-item::before { left: 119px; display: none; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">🖥️ Azure Virtual Machines (Confidential Computing)</span>
+            <span class="badge badge-retirement">Retirement announcement</span>
+        </div>
+        <h1>DCsv3 / DCdsv3 シリーズ VM のリタイア<br>(2029 年 10 月 31 日)</h1>
+        <div class="release-date">📅 リリース日: 2026-10-01　|　機能: DCsv3 / DCdsv3 シリーズ VM のリタイア発表</div>
+    </header>
+
+    <!-- Key dates stats -->
+    <div class="stats-grid">
+        <div class="stat-card orange">
+            <div class="stat-value">2026-10-31</div>
+            <div class="stat-label">RI (3 年 / 1 年) の購入・更新が終了</div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-value">2026-11-01</div>
+            <div class="stat-label">容量制限・新規サブスクリプション利用不可</div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-value">2029-10-31</div>
+            <div class="stat-label">完全リタイア (利用・購入不可)</div>
+        </div>
+    </div>
+
+    <!-- Overview -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Intel SGX (Software Guard Extensions) ベースの機密コンピューティング VM である DCsv3 および DCdsv3 シリーズ (Linux / Windows / Dedicated Host) が、<strong>2029 年 10 月 31 日にリタイア</strong>することが発表された。リタイア日以降、これらの VM は利用・購入ともに不可となる。</p>
+        <div class="warning-box">
+            リタイアに先立ち、段階的な制限が適用される。<strong>2026 年 10 月 31 日</strong>には 3 年および 1 年の Reserved VM Instances (RI) の購入・更新が終了し、<strong>2026 年 11 月 1 日</strong>からは DCsv3 / DCdsv3 シリーズに容量制限が適用され、新規サブスクリプションでの利用ができなくなる。
+        </div>
+        <div class="highlight-box no-red">
+            移行先としては、VM ベースのプログラミングモデルを継続する場合は第 6 世代の機密 VM (CVM) である <strong>DCasv6 / DCadsv6 / DCesv6 / DCedsv6</strong> シリーズ (メモリ最適化は ECasv6 / ECadsv6 / ECesv6 / ECedsv6)、コンテナ化アプリケーションの場合は <strong>Azure Confidential Container Instances (C-ACI)</strong> または AKS 向け <strong>Virtual nodes on Azure Container Instances (C-VN2)</strong> が推奨されている。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>⚠️ リタイアによる影響</h4>
+                <ul>
+                    <li>DCsv3 / DCdsv3 上の Linux / Windows / Dedicated Host VM、Virtual Machine Scale Sets、および AKS 上のエンクレーブ対応コンテナ (app-enclave aware containers) がすべて影響を受ける</li>
+                    <li>2029 年 10 月のリタイア時には、AKS や VMSS 上での利用を含むすべての DCsv3 / DCdsv3 SKU の用途が同時に終了する</li>
+                    <li>リタイア期間中の新機能追加や新リージョンへの展開は行われない (SLA、インフラ更新、メンテナンスはリタイア日まで継続)</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ 移行による改善</h4>
+                <ul>
+                    <li>新世代の機密コンピューティング製品は、価格性能比の向上、vCPU あたりのメモリ増加、高速な SSD ストレージ、より広いリージョン展開を提供する</li>
+                    <li>コンテナ化・サーバーレス (C-ACI / C-VN2) によるクラウドネイティブな機密コンピューティングへの移行パスも用意されている</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section">
+        <h2>🗺️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Legacy["⚠️ リタイア対象 (2029-10-31)"]
+        DC3["🖥️ DCsv3 / DCdsv3 シリーズ&lt;br/&gt;Intel SGX (Ice Lake)&lt;br/&gt;Linux / Windows / Dedicated Host"]
+    end
+
+    subgraph Timeline["📅 タイムライン"]
+        T1["2026-10-31&lt;br/&gt;RI 購入・更新の終了"] --> T2["2026-11-01&lt;br/&gt;容量制限・新規サブスクリプション不可"] --> T3["2029-10-31&lt;br/&gt;完全リタイア"]
+    end
+
+    subgraph Target["☁️ 推奨移行先"]
+        AMD["🖥️ DCasv6 / DCadsv6&lt;br/&gt;ECasv6 / ECadsv6&lt;br/&gt;(AMD 第 4 世代 EPYC CVM)"]
+        INTEL["🖥️ DCesv6 / DCedsv6&lt;br/&gt;ECesv6 / ECedsv6&lt;br/&gt;(Intel 第 5 世代 Xeon CVM)"]
+        CACI["📦 C-ACI / C-VN2 for AKS&lt;br/&gt;(機密コンテナ)"]
+    end
+
+    DC3 -->|"VM ベース (AMD)"| AMD
+    DC3 -->|"VM ベース (Intel)"| INTEL
+    DC3 -->|"コンテナ化アプリ"| CACI
+            </pre>
+        </div>
+        <p>DCsv3 / DCdsv3 シリーズから第 6 世代機密 VM (CVM) または機密コンテナへの移行パスと、リタイアまでのタイムラインを示す。ワークロードの形態 (VM ベースかコンテナ化か) に応じて移行先を選択する。</p>
+    </section>
+
+    <!-- Schedule -->
+    <section class="section">
+        <h2>📅 サービスアップデートの詳細</h2>
+        <h3>リタイアスケジュール</h3>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">2026-10-31</div>
+                <div class="timeline-marker warn"></div>
+                <div class="timeline-content"><strong>RI 購入・更新の終了</strong><br>3 年 / 1 年 Reserved VM Instances (RI) の購入・更新が終了</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">2026-11-01</div>
+                <div class="timeline-marker warn"></div>
+                <div class="timeline-content"><strong>容量制限の適用開始</strong><br>DCsv3 / DCdsv3 シリーズに容量制限を適用、新規サブスクリプションでの利用不可</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">2029-10-31</div>
+                <div class="timeline-marker final"></div>
+                <div class="timeline-content"><strong>完全リタイア</strong><br>以降は利用・購入ともに不可、残存 VM は動作停止 (課金も停止)</div>
+            </div>
+        </div>
+
+        <h3>推奨される移行先</h3>
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>1. VM ベースのプログラミングモデル (AMD)</h4>
+                <p>AMD 第 4 世代 EPYC プロセッサ搭載の DCasv6 / DCadsv6 シリーズ、またはメモリ最適化の ECasv6 / ECadsv6 シリーズ</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>2. VM ベースのプログラミングモデル (Intel)</h4>
+                <p>Intel 第 5 世代 Xeon Scalable プロセッサ搭載の DCesv6 / DCedsv6 シリーズ、またはメモリ最適化の ECesv6 / ECedsv6 シリーズの機密 VM (CVM)</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <div class="feature-content">
+                <h4>3. コンテナ化アプリケーション</h4>
+                <p>Azure Confidential Container Instances (C-ACI) によるサーバーレス実行</p>
+                <p>コンテナのオーケストレーションが必要な場合は AKS 向け Virtual nodes on Azure Container Instances (C-VN2)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech specs -->
+    <section class="section">
+        <h2>⚙️ 技術仕様 (リタイア対象の DCsv3 シリーズ)</h2>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>詳細</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>プロセッサ</td><td>第 3 世代 Intel Xeon Scalable (Ice Lake)、Intel Turbo Boost Max 3.0 で最大 3.5 GHz</td></tr>
+                    <tr><td>機密コンピューティング技術</td><td>Intel SGX、Intel Total Memory Encryption - Multi Key</td></tr>
+                    <tr><td>vCPU</td><td>1〜48 (Standard_DC1s_v3 〜 Standard_DC48s_v3)</td></tr>
+                    <tr><td>メモリ</td><td>8〜384 GiB</td></tr>
+                    <tr><td>EPC (暗号化) メモリ</td><td>4〜256 GiB</td></tr>
+                    <tr><td>ローカルストレージ</td><td>なし (DCdsv3 はローカルディスク付きバリアント)</td></tr>
+                    <tr><td>Premium Storage</td><td>サポート (キャッシュは非サポート)</td></tr>
+                    <tr><td>Accelerated Networking</td><td>非サポート</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Migration steps -->
+    <section class="section">
+        <h2>🚚 移行手順</h2>
+        <ol class="step-list">
+            <li class="step-item">
+                <div class="step-number">1</div>
+                <div class="step-body">
+                    <h4>移行先の特定</h4>
+                    <ul>
+                        <li>現在の VM のワークロードと性能要件を評価し、推奨オプション (CVM / C-ACI / C-VN2) から移行先を特定する</li>
+                    </ul>
+                </div>
+            </li>
+            <li class="step-item">
+                <div class="step-number">2</div>
+                <div class="step-body">
+                    <h4>クォータの確認とリクエスト</h4>
+                    <ul>
+                        <li>移行前に、対象サブスクリプションに移行先 VM シリーズの十分な vCPU クォータがあることを確認する</li>
+                        <li>不足する場合は Azure Portal からクォータ引き上げをリクエストする</li>
+                    </ul>
+                </div>
+            </li>
+            <li class="step-item">
+                <div class="step-number">3</div>
+                <div class="step-body">
+                    <h4>移行の実施</h4>
+                    <ul>
+                        <li>ビジネスへの影響を防ぐため、できるだけ早期に移行を完了する</li>
+                        <li>選択した移行先オプションのドキュメントに従って移行する</li>
+                        <li>現在のリージョンで CVM が利用できない場合は、近隣リージョンでの利用可否を確認するか、Azure サポートに相談する</li>
+                    </ul>
+                </div>
+            </li>
+        </ol>
+
+        <h3>💰 Reserved Instances (RI) を利用している場合</h3>
+        <p>Azure Portal でアクティブな RI を確認し、リタイアの影響を受ける RI を特定したうえで、以下のいずれかで対応する。</p>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>交換</h4>
+                <p>既存 RI をペナルティなしで新しい VM シリーズの RI に交換する</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💱</div>
+            <div class="feature-content">
+                <h4>Savings Plan へのトレードイン</h4>
+                <p>既存 RI を Azure Savings Plan for compute に変換する (VM ファミリ・リージョンをまたぐ柔軟性を確保)</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛒</div>
+            <div class="feature-content">
+                <h4>新規購入</h4>
+                <p>新しい VM シリーズに合わせた RI を購入する (柔軟性を重視する場合は 1 年の短期を検討)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Constraints -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="danger-box">
+            <ul class="plain-list" style="margin: 0; padding-left: 20px;">
+                <li>2026 年 11 月 1 日以降、DCsv3 / DCdsv3 に容量制限が適用され、新規サブスクリプションでの利用ができなくなる</li>
+                <li>リタイア期間中、DCsv3 / DCdsv3 への新機能追加・機能リクエスト受付は行われない</li>
+                <li>DCsv3 / DCdsv3 の新規リージョン展開は行われない</li>
+                <li>AKS 上のエンクレーブ対応コンテナや VMSS を含む、DCsv3 / DCdsv3 SKU 上に構築されたすべてのサービスが 2029 年 10 月に同時に終了する</li>
+                <li>移行により課金が変わる可能性がある (詳細は料金ページを参照)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section">
+        <h2>💲 料金</h2>
+        <p>移行に伴い Azure Virtual Machines の課金が変わる可能性がある。詳細は以下の料金ページを参照。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-machines/linux-previous/" target="_blank" rel="noopener">Azure Virtual Machines 料金ページ (Linux)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/calculator/" target="_blank" rel="noopener">料金計算ツール</a></li>
+        </ul>
+    </section>
+
+    <!-- Regions -->
+    <section class="section">
+        <h2>🌏 利用可能リージョン</h2>
+        <p>DCsv3 / DCdsv3 シリーズの新規リージョン展開は行われない。移行先 CVM のリージョン可用性は各シリーズのドキュメントおよび<a href="https://azure.microsoft.com/global-infrastructure/services/" target="_blank" rel="noopener">リージョン別製品一覧</a>で確認する。</p>
+    </section>
+
+    <!-- Related services -->
+    <section class="section">
+        <h2>🧩 関連サービス・機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>Azure Confidential Computing (CVM)</h4>
+                <p>DCasv6 / DCesv6 系は VM 全体を保護する機密 VM であり、SGX のアプリケーションエンクレーブとはプログラミングモデルが異なる。移行先の中心的な選択肢</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <div class="feature-content">
+                <h4>Azure Confidential Container Instances (C-ACI)</h4>
+                <p>コンテナ化された機密ワークロード向けのサーバーレス実行環境</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">☸️</div>
+            <div class="feature-content">
+                <h4>Azure Kubernetes Service (AKS)</h4>
+                <p>DCsv3 / DCdsv3 ノード上のエンクレーブ対応コンテナも本リタイアの対象。C-VN2 (Virtual nodes on ACI) への移行が推奨される</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💰</div>
+            <div class="feature-content">
+                <h4>Azure Reservations / Savings Plan</h4>
+                <p>既存 RI の交換・トレードインによりコスト最適化を維持しながら移行できる</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📒</div>
+            <div class="feature-content">
+                <h4>Azure Retirement Workbook</h4>
+                <p>リタイア対象リソースの把握に利用できる (発表内容の反映には最大 2 週間かかる場合あり)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Summary -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="highlight-box">
+            <p>Intel SGX ベースの機密コンピューティング VM である DCsv3 / DCdsv3 シリーズが 2029 年 10 月 31 日にリタイアする。最終リタイアまでは 3 年あるが、<strong>2026 年 10 月 31 日に RI の購入・更新が終了し、2026 年 11 月 1 日から容量制限と新規サブスクリプション制限が始まる</strong>ため、実質的な対応期限は近い。</p>
+            <p>DCsv3 / DCdsv3 を利用中の場合は、まず Azure Retirement Workbook や Portal で対象リソースと RI を棚卸しし、ワークロードの形態に応じて第 6 世代 CVM (DCasv6 / DCesv6 系) または機密コンテナ (C-ACI / C-VN2) への移行計画を早期に策定することを推奨する。SGX のアプリケーションエンクレーブを前提としたアプリケーションは移行先でプログラミングモデルが変わる点に注意が必要である。</p>
+        </div>
+    </section>
+
+    <!-- References -->
+    <section class="section">
+        <h2>🔗 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=569592" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machines/sizes/retirement/dcsv3-series-retirement" target="_blank" rel="noopener">DCsv3 / DCdsv3 シリーズ リタイアメントガイド (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dcsv3-series" target="_blank" rel="noopener">DCsv3 シリーズの仕様 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dcesv6-series" target="_blank" rel="noopener">DCesv6 シリーズ (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dcasv6-series" target="_blank" rel="noopener">DCasv6 シリーズ (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/container-instances/container-instances-confidential-overview" target="_blank" rel="noopener">Confidential Container Instances の概要 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/cost-management-billing/reservations/exchange-and-refund-azure-reservations" target="_blank" rel="noopener">RI の交換と返金 (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-machines/linux-previous/" target="_blank" rel="noopener">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong style="color: #FFFFFF;">出典</strong></p>
+        <p>Azure Updates: <a href="https://azure.microsoft.com/updates?id=569592" target="_blank" rel="noopener">DCsv3 and DCdsv3 series Azure Virtual Machines retirement (ID: 569592)</a></p>
+        <p>Microsoft Learn: <a href="https://learn.microsoft.com/azure/virtual-machines/sizes/retirement/dcsv3-series-retirement" target="_blank" rel="noopener">DCsv3 / DCdsv3 シリーズ リタイアメントガイド</a></p>
+        <p>ソースレポート: reports/2026/2026-10-01-dcsv3-dcdsv3-vm-retirement.md (Azure News Summary, 2026-10-01)</p>
+        <div class="tag-row">
+            <span class="tag">Azure Virtual Machines</span>
+            <span class="tag">Confidential Computing</span>
+            <span class="tag">DCsv3</span>
+            <span class="tag">DCdsv3</span>
+            <span class="tag">Retirement</span>
+            <span class="tag">Intel SGX</span>
+            <span class="tag">Confidential VM</span>
+            <span class="tag">Compute</span>
+        </div>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
