@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Database for PostgreSQL: elastic clusters のメジャーバージョンアップグレード (MVU) | Azure News</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+
+    /* Database category color */
+    --db-yellow: #FFB900;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "🐘";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+
+.header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.95;
+}
+
+.header .meta {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    font-size: 14px;
+    opacity: 0.92;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--ms-blue-200);
+}
+
+.section-title .icon {
+    font-size: 26px;
+}
+
+.sub-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+p.lead {
+    font-size: 15px;
+    margin-bottom: 14px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+.highlight-box strong { color: var(--ms-blue-800); }
+
+.note-box {
+    background: #FFF8E6;
+    border-left: 4px solid var(--ms-yellow);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+/* ===== Keyword chips ===== */
+.keyword-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 14px 0;
+}
+
+.chip {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 14px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+.ba-arrow {
+    text-align: center;
+    font-size: 28px;
+    color: var(--azure-blue);
+    margin: -6px 0 2px;
+    font-weight: 900;
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    text-align: center;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin-top: 4px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content p, .feature-content ul {
+    font-size: 14px;
+    color: var(--ms-text-primary);
+}
+
+.feature-content ul { padding-left: 20px; margin-top: 4px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* ===== Steps ===== */
+.steps {
+    counter-reset: step;
+    margin: 16px 0;
+}
+
+.step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+
+.step-num {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: white;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.step-num::before { content: counter(step); }
+
+.step-body { font-size: 14px; padding-top: 5px; }
+.step-body strong { color: var(--ms-blue-800); }
+
+/* ===== Table ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+
+.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+.spec-table td:first-child {
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    white-space: nowrap;
+}
+
+/* ===== Pros / Cons ===== */
+.pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.pros-box, .cons-box {
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+
+.pros-box {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+}
+
+.cons-box {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+}
+
+.pros-box h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.cons-box h4 { color: var(--ms-orange); margin-bottom: 10px; font-size: 16px; }
+.pros-box ul, .cons-box ul { padding-left: 20px; font-size: 14px; }
+.pros-box li, .cons-box li { margin-bottom: 8px; }
+
+.benefit-group-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 10px 0 6px;
+}
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 14px 0;
+}
+
+.usecase-card h4 {
+    font-size: 16px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.usecase-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.usecase-tag {
+    min-width: 72px;
+    text-align: center;
+    background: var(--ms-blue-300);
+    color: var(--ms-blue-900);
+    font-weight: 700;
+    font-size: 12px;
+    border-radius: 6px;
+    padding: 2px 8px;
+    height: fit-content;
+    margin-top: 2px;
+}
+
+.usecase-tag.effect { background: #C8E6C9; color: var(--ms-green); }
+
+/* ===== Code block ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    background: #1E1E1E;
+}
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+.related-card h5 {
+    font-size: 14px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.related-card p { font-size: 13px; color: var(--ms-text-primary); }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 0 8px 28px;
+    border-bottom: 1px dashed var(--ms-border);
+    position: relative;
+    font-size: 14px;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+.summary-box .summary-head {
+    font-size: 18px;
+    font-weight: 900;
+    color: var(--azure-dark-blue);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 24px 12px 40px;
+}
+
+.footer .tags {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+
+.footer .tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 2px 10px;
+    font-size: 12px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+    .before-after, .pros-cons { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title Area ===== -->
+    <header class="header">
+        <div class="header-badges">
+            <span class="service-badge">🐘 Azure Database for PostgreSQL</span>
+            <span class="badge badge-preview">🧪 In Preview</span>
+        </div>
+        <h1>elastic clusters のメジャーバージョンアップグレード (MVU)</h1>
+        <p class="subtitle">Citus ベースの分散 PostgreSQL クラスターを、データ移行なし・エンドポイント変更なしでインプレースアップグレード</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-02</span>
+            <span>🏷️ Databases / Hybrid + multicloud</span>
+            <span>📰 Public Preview</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p class="lead">
+            Azure Database for PostgreSQL の <strong>elastic clusters</strong> で、<strong>メジャーバージョンアップグレード (MVU)</strong> がパブリックプレビューとして利用可能になりました。既存の elastic cluster を、<strong>置き換え用クラスターのプロビジョニング・分散データの移行・接続エンドポイントの変更なし</strong>で、サポート対象の新しい PostgreSQL バージョンへ<strong>インプレース</strong>でアップグレードできます。
+        </p>
+        <div class="highlight-box">
+            <strong>elastic clusters とは?</strong> オープンソースの <strong>Citus 拡張機能</strong>をマネージド提供する機能で、複数の Flexible Server ノードによる PostgreSQL の水平シャーディング (行ベース / スキーマベース) を実現します。今回のアップデートで、Flexible Server のインプレースアップグレード体験が elastic clusters にも拡張され、既存のクラスタートポロジと構成を維持したまま、シャーディングされたワークロードのバージョンライフサイクルを効率的に管理できます。
+        </div>
+        <div class="keyword-chips">
+            <span class="chip">インプレース MVU</span>
+            <span class="chip">Citus 分散 PostgreSQL</span>
+            <span class="chip">データ移行不要</span>
+            <span class="chip">エンドポイント維持</span>
+            <span class="chip">トポロジ・構成維持</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">0 回</div>
+                <div class="stat-label">分散データの移行作業</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">変更不要</div>
+                <div class="stat-label">アプリの接続エンドポイント</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">維持</div>
+                <div class="stat-label">クラスタートポロジと構成</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">PG 17 / 18</div>
+                <div class="stat-label">elastic clusters 対応バージョン</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>elastic clusters では MVU 非サポート。バージョンを上げるには<strong>新クラスターを別途プロビジョニング</strong>する必要があった</li>
+                    <li><code>pg_dump</code> / <code>pg_restore</code> / <code>pgcopydb</code> などの論理移行ツールで分散データを移行する必要があり、<strong>ダウンタイム・複雑さ・運用負荷が大</strong></li>
+                    <li>移行後は<strong>アプリの接続エンドポイント (接続文字列) の変更が必要</strong>だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>既存の elastic cluster を<strong>インプレースで新バージョンへアップグレード</strong>可能に</li>
+                    <li>置き換えクラスターのプロビジョニングやデータ移行が不要になり、<strong>ダウンタイム・複雑さ・運用負荷を削減</strong></li>
+                    <li>接続エンドポイント・トポロジ・構成を維持したままアップグレードでき、<strong>アプリ側の変更が不要</strong></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["❌ Before: 移行ベースのアップグレード"]
+        OldC[("🗄️ 既存クラスター (旧バージョン)")]
+        NewC[("🆕 新規クラスターをプロビジョニング")]
+        Mig["📦 pg_dump / pgcopydb で分散データ移行"]
+        App1(["👤 アプリ: 接続文字列の変更が必要"])
+        OldC --> Mig --> NewC --> App1
+    end
+    subgraph After["✅ After: インプレース MVU (Public Preview)"]
+        Cluster[("🗄️ 既存 elastic cluster")]
+        MVU["⚙️ マネージド MVU (インプレース)"]
+        App2(["👤 アプリ: 接続エンドポイント変更不要"])
+        Cluster --> MVU --> Cluster
+        Cluster --> App2
+    end
+            </pre>
+        </div>
+        <p class="diagram-caption">従来は新クラスターの作成と論理移行が必要でしたが、MVU により既存クラスターをそのままインプレースでアップグレードでき、接続エンドポイントも維持されます。</p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⭐</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-content">
+                <h4>1. インプレースのメジャーバージョンアップグレード</h4>
+                <ul>
+                    <li>置き換えクラスターのプロビジョニングや分散データの移行なしに、既存の elastic cluster をサポート対象の新しい PostgreSQL バージョンへアップグレード</li>
+                    <li>クラスタートポロジ (ノード構成) と既存の構成を維持したままアップグレード可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔌</div>
+            <div class="feature-content">
+                <h4>2. 接続エンドポイントの維持</h4>
+                <p>アプリケーションの接続エンドポイントを変更する必要がなく、アプリケーション側の改修を最小化できます。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>3. Flexible Server のアップグレード体験の拡張</h4>
+                <ul>
+                    <li>Flexible Server で提供されているインプレース MVU (内部的に <code>pg_upgrade</code> ツールを使用) の体験が elastic clusters に拡張</li>
+                    <li>最新の PostgreSQL / Citus のパフォーマンス改善・新機能・セキュリティ更新を取り込める</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3 class="sub-title">🔍 Flexible Server のインプレース MVU の仕組み (参考)</h3>
+        <p class="lead" style="font-size: 14px;">Microsoft Learn の MVU ドキュメントによると、Flexible Server のインプレース MVU には以下の特徴があります (elastic clusters は Flexible Server のアップグレード体験を拡張したもの)。</p>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num"></div>
+                <div class="step-body"><strong>プリチェック (事前検証)</strong> — アップグレード前に実行し、失敗要因となる非互換を検出</div>
+            </div>
+            <div class="step">
+                <div class="step-num"></div>
+                <div class="step-body"><strong>暗黙的バックアップ</strong> — プリチェック成功後、サービスを停止して暗黙的なバックアップを取得してからアップグレードを実行 (エラー時の復元に使用)</div>
+            </div>
+            <div class="step">
+                <div class="step-num"></div>
+                <div class="step-body"><strong><a href="https://www.postgresql.org/docs/current/pgupgrade.html">pg_upgrade</a> によるアップグレード</strong> — バージョンをスキップして直接新しいバージョンへアップグレードすることも可能</div>
+            </div>
+            <div class="step">
+                <div class="step-num"></div>
+                <div class="step-body"><strong>拡張機能の自動更新</strong> — ほとんどの拡張機能はアップグレード中に自動的に新バージョンへ更新される (一部例外あり)</div>
+            </div>
+            <div class="step">
+                <div class="step-num"></div>
+                <div class="step-body"><strong>戻し方は PITR のみ</strong> — アップグレード成功後に以前のバージョンへ自動で戻す手段はなく、戻す場合はアップグレード前時点へのポイントインタイムリストア (PITR) で新しいサーバーに復元</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📐</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr>
+                <td>対象</td>
+                <td>Azure Database for PostgreSQL の elastic clusters</td>
+            </tr>
+            <tr>
+                <td>ステータス</td>
+                <td>Public Preview (2026 年 10 月)</td>
+            </tr>
+            <tr>
+                <td>アップグレード方式</td>
+                <td>インプレース (置き換えクラスター・データ移行・接続エンドポイント変更が不要)</td>
+            </tr>
+            <tr>
+                <td>対応 PostgreSQL バージョン</td>
+                <td>elastic clusters は 17 および 18 をサポート (Microsoft Learn の elastic clusters 制限事項 FAQ より)</td>
+            </tr>
+            <tr>
+                <td>基盤技術</td>
+                <td>Citus 拡張による分散 PostgreSQL (Flexible Server ノードで構成)</td>
+            </tr>
+            <tr>
+                <td>アップグレード後の戻し方</td>
+                <td>自動リバートなし。アップグレード前時点への PITR で別サーバーに復元 (Flexible Server MVU ドキュメントより)</td>
+            </tr>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 class="sub-title">✅ 前提条件 (Flexible Server MVU ドキュメントより)</h3>
+        <div class="steps">
+            <div class="step">
+                <div class="step-num"></div>
+                <div class="step-body"><strong>サポート対象バージョン</strong> — ターゲットバージョンがアップグレード時点で Azure が公式にサポートするバージョンであること</div>
+            </div>
+            <div class="step">
+                <div class="step-num"></div>
+                <div class="step-body"><strong>空きストレージ 10〜20% 以上</strong> — アップグレード中の一時ログ・メタデータ操作でディスク使用量が増加するため、開始前にサーバーに十分な空き容量を確保すること</div>
+            </div>
+            <div class="step">
+                <div class="step-num"></div>
+                <div class="step-body"><strong>Upgrade Validation Checks の実行</strong> — アップグレード前に検証チェックを実行し、ブロッキング要因 (非サポート拡張、論理レプリケーションスロット、イベントトリガーなど) がないことを確認すること</div>
+            </div>
+        </div>
+        <div class="note-box">
+            📖 elastic clusters 固有の詳細手順については、公式ドキュメント (<a href="https://aka.ms/ECMVU">aka.ms/ECMVU</a>) を参照してください。
+        </div>
+
+        <h3 class="sub-title">🔄 事後作業</h3>
+        <p class="lead" style="font-size: 14px;">
+            アップグレード完了後は、各データベースで <code>ANALYZE</code> を実行して統計情報 (<code>pg_statistic</code>) を更新することが推奨されています。統計情報が古いままだとクエリプランが悪化し、パフォーマンス低下やメモリの過剰消費につながる可能性があります。
+        </p>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">SQL</span>
+                <span class="code-desc">アップグレード後に各データベースで実行</span>
+            </div>
+            <pre><code class="language-sql">ANALYZE;</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== Merits / Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚖️</span>メリットと制約事項</h2>
+        <div class="pros-cons">
+            <div class="pros-box">
+                <h4>👍 メリット</h4>
+                <div class="benefit-group-title">💼 ビジネス面</div>
+                <ul>
+                    <li>従来の移行ベースのアップグレードに比べて、ダウンタイム・複雑さ・運用工数を削減</li>
+                    <li>サポート対象バージョンを維持しやすくなり、サポート切れバージョンの利用リスクを低減</li>
+                    <li>最新の PostgreSQL / Citus のセキュリティ更新を迅速に適用可能</li>
+                </ul>
+                <div class="benefit-group-title">🔧 技術面</div>
+                <ul>
+                    <li>置き換えクラスターのプロビジョニングと分散データの論理移行が不要</li>
+                    <li>接続エンドポイントが変わらず、接続文字列の変更が不要</li>
+                    <li>既存のクラスタートポロジと構成を維持したままアップグレード可能</li>
+                    <li>最新の PostgreSQL / Citus のパフォーマンス改善・新機能を取り込める</li>
+                </ul>
+            </div>
+            <div class="cons-box">
+                <h4>⚠️ デメリット・制約事項</h4>
+                <ul>
+                    <li>現時点では<strong>パブリックプレビュー</strong>であり、本番環境での利用は推奨されない (プレビューは非本番・テスト用途向け)</li>
+                    <li>アップグレード成功後に以前のバージョンへ<strong>自動で戻す手段はない</strong> (アップグレード前時点への PITR が必要)</li>
+                    <li>一部の拡張機能や構成 (イベントトリガー、特定拡張など) がアップグレードを<strong>ブロック</strong>するため、事前の検証チェックと対処が必要</li>
+                    <li>elastic clusters 固有のプレビュー時点での制約は、公式ドキュメント (<a href="https://aka.ms/ECMVU">aka.ms/ECMVU</a>) で最新情報を確認すること</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🏢 ユースケース 1: シャーディングされたマルチテナント SaaS ワークロードのバージョン更新</h4>
+            <div class="usecase-row">
+                <span class="usecase-tag">シナリオ</span>
+                <span>Citus のスキーマベース / 行ベースシャーディングで大規模マルチテナント SaaS を elastic clusters 上で運用。PostgreSQL 新バージョンの機能・性能改善を取り込みたいが、分散データの移行とエンドポイント変更に伴うダウンタイムとリスクを避けたい。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-tag">実装例</span>
+                <span>アップグレード検証チェックで非互換を事前に確認し、メンテナンスウィンドウ内でインプレース MVU を実行。アップグレード後に <code>ANALYZE</code> を実行して統計情報を更新する。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-tag effect">効果</span>
+                <span>新クラスターの構築や <code>pg_dump</code> / <code>pgcopydb</code> による移行作業なしで、既存のトポロジ・接続エンドポイントを維持したままバージョンを更新。計画停止時間と運用工数を大幅に削減。</span>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>📆 ユースケース 2: サポート終了が近いバージョンからの計画的な移行</h4>
+            <div class="usecase-row">
+                <span class="usecase-tag">シナリオ</span>
+                <span>elastic clusters 上の分散 PostgreSQL ワークロードが、コミュニティ / Azure のサポート終了が近いバージョンで稼働している。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-tag">実装例</span>
+                <span>非本番の elastic cluster でプレビューの MVU を検証し、拡張機能やアプリケーションの互換性を確認したうえで、本番適用の計画を策定する (GA 後の適用を推奨)。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-tag effect">効果</span>
+                <span>サポート対象バージョンへの移行パスをインプレースで確保でき、移行ベースのアップグレードに比べて計画・実行の負荷を低減。</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing & Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金・利用可能リージョン</h2>
+        <div class="feature-card">
+            <div class="feature-icon">💵</div>
+            <div class="feature-content">
+                <h4>料金</h4>
+                <p>このアップデートに固有の追加料金に関する公式情報は確認できませんでした。詳細は <a href="https://azure.microsoft.com/pricing/details/postgresql/">Azure Database for PostgreSQL の料金ページ</a>を参照してください。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌏</div>
+            <div class="feature-content">
+                <h4>利用可能リージョン</h4>
+                <p>リージョン別の提供状況に関する公式情報は確認できませんでした。なお、elastic clusters 自体は Azure Database for PostgreSQL flexible server と同じリージョンで利用可能です (<a href="https://azure.microsoft.com/explore/global-infrastructure/products-by-region/">リージョン別の提供状況</a>)。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>🖥️ Azure Database for PostgreSQL flexible server</h5>
+                <p>elastic clusters の各ノードは Flexible Server インスタンスで構成。今回の MVU は Flexible Server のインプレースアップグレード体験を elastic clusters に拡張したもの。</p>
+            </div>
+            <div class="related-card">
+                <h5>🔀 Citus 拡張</h5>
+                <p>elastic clusters の基盤となる PostgreSQL の水平シャーディング拡張。MVU により最新の Citus の改善も取り込める。</p>
+            </div>
+            <div class="related-card">
+                <h5>🔎 Upgrade Validation Checks</h5>
+                <p>MVU 実行前にアップグレード準備状況を評価する検証機能。非サポート拡張や非互換構成を事前に検出できる。</p>
+            </div>
+            <div class="related-card">
+                <h5>⏪ ポイントインタイムリストア (PITR)</h5>
+                <p>アップグレード後に以前のバージョンに戻す必要がある場合、アップグレード前時点への PITR を使用する。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <div class="summary-head">🎯 Solutions Architect の視点</div>
+            <p>
+                elastic clusters の MVU のパブリックプレビュー提供により、Citus ベースの分散 PostgreSQL ワークロードのメジャーバージョン更新が、<strong>新クラスターの構築・分散データ移行・接続エンドポイント変更なし</strong>のインプレース操作で行えるようになりました。これまで elastic clusters ではメジャーバージョンアップグレードがサポートされておらず、移行ベースの手段しかなかったため、<strong>運用面での改善インパクトは大きい</strong>アップデートです。
+            </p>
+            <p style="margin-top: 12px;">
+                elastic clusters を利用中、または採用を検討している場合は、まず<strong>非本番環境でアップグレード検証チェックと MVU の動作を確認</strong>し、GA に向けたバージョンアップ計画に組み込むことを推奨します。
+            </p>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=571504">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/postgresql/configure-maintain/concepts-major-version-upgrade">Major version upgrades - Azure Database for PostgreSQL (Microsoft Learn)</a> — aka.ms/ECMVU のリンク先</li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/postgresql/elastic-clusters/concepts-elastic-clusters">Elastic clusters の概要 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/postgresql/elastic-clusters/concepts-elastic-clusters-limitations">Elastic clusters の制限事項 FAQ (Microsoft Learn)</a></li>
+            <li><a href="https://www.postgresql.org/docs/current/pgupgrade.html">pg_upgrade (PostgreSQL 公式ドキュメント)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/postgresql/">Azure Database for PostgreSQL の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=571504">Azure Updates (ID: 571504)</a> / <a href="https://learn.microsoft.com/en-us/azure/postgresql/configure-maintain/concepts-major-version-upgrade">Microsoft Learn</a></p>
+        <p>Azure News Summary — 自動生成インフォグラフィック (生成日: 2026-10-02)</p>
+        <div class="tags">
+            <span class="tag">Azure Database for PostgreSQL</span>
+            <span class="tag">elastic clusters</span>
+            <span class="tag">Citus</span>
+            <span class="tag">Major Version Upgrade</span>
+            <span class="tag">In preview</span>
+            <span class="tag">Databases</span>
+            <span class="tag">Hybrid + multicloud</span>
+        </div>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
