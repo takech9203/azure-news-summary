@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure HorizonDB: 追加リージョンへの提供拡大 (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px 28px;
+    margin-bottom: 24px;
+}
+
+.hero .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.hero h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.hero .meta {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 20px;
+    color: var(--azure-blue);
+    border-bottom: 2px solid var(--ms-blue-200);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin: 18px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 8px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 6px 0; font-size: 14px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin: 4px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-tertiary); }
+
+/* Merit / caution lists */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.merit-card h4 { color: var(--ms-blue-800); margin-bottom: 8px; }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 6px 0; font-size: 14px; }
+
+.caution-box {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+.caution-box ul { padding-left: 20px; }
+.caution-box li { margin: 6px 0; font-size: 14px; }
+.caution-box ul ul { margin-top: 4px; }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { padding-left: 20px; }
+.link-list li { margin: 6px 0; font-size: 14px; }
+
+/* Code blocks (dark) — Mermaid excluded */
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 20px 24px;
+}
+
+/* Tags */
+.tags { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 8px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 28px;
+}
+.footer p { margin: 4px 0; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Title area -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure HorizonDB</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>追加リージョンへの提供拡大 (Regional Expansion)</h1>
+        <div class="meta">リリース日: 2026-10-05 ｜ カテゴリ: Databases / PostgreSQL</div>
+    </header>
+
+    <!-- Overview -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure HorizonDB の提供リージョンが拡大されました。Azure HorizonDB は、オープンソースの PostgreSQL エンジンをベースに構築された、フルマネージドで AI 対応の Database-as-a-Service (DBaaS) です。コンピュートとストレージを分離したアーキテクチャと「database-as-a-log」設計により、ミッションクリティカルなワークロードに対して予測可能なパフォーマンス、エンタープライズグレードのセキュリティ、高可用性、シームレスなスケーラビリティを提供します。</p>
+        <div class="highlight-box">
+            今回のリージョン拡大により、PostgreSQL ワークロードをアプリケーションやユーザーのより近くにデプロイできる柔軟性が高まり、Azure HorizonDB のデプロイ先の選択肢が増えました。Azure HorizonDB は 2026 年 6 月にパブリックプレビューとして発表されたサービスであり、提供開始からリージョン展開が継続的に進められています。
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before</h4>
+                <ul>
+                    <li>Azure HorizonDB が利用できるリージョンが限られており、アプリケーションやユーザーの所在地によってはデータベースを近接リージョンにデプロイできなかった</li>
+                    <li>リージョンの制約により、レイテンシー要件やデータ所在地 (データレジデンシー) 要件を満たせないケースがあった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After</h4>
+                <ul>
+                    <li>追加リージョンでの提供により、アプリケーションやユーザーに近い場所に PostgreSQL ワークロードをデプロイ可能になった</li>
+                    <li>デプロイ先リージョンの選択肢が増え、設計の柔軟性が向上した</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    APP([🧑‍💻 アプリケーション / ユーザー])
+
+    subgraph Region["🌍 選択可能なリージョンが拡大"]
+        subgraph Cluster["☁️ Azure HorizonDB クラスター"]
+            RW["🔀 読み書きエンドポイント"]
+            RO["🔀 読み取り専用エンドポイント"]
+            P["🖥️ プライマリレプリカ&lt;br/&gt;(書き込み可能)"]
+            S["🖥️ スタンバイレプリカ&lt;br/&gt;(読み取り / フェールオーバー候補)"]
+        end
+        WAL[("📝 WAL サービス&lt;br/&gt;(ログストレージ)")]
+        DATA[("🗄️ データストレージ&lt;br/&gt;(ゾーン回復性)")]
+        BLOB[("💾 Azure Blob Storage&lt;br/&gt;(耐久性 / バックアップ)")]
+    end
+
+    APP --> RW --> P
+    APP --> RO --> S
+    P -->|WAL 書き込み| WAL
+    WAL -->|WAL 適用| DATA
+    DATA --> BLOB
+    WAL -->|WAL 配信| S
+            </pre>
+        </div>
+        <p>Azure HorizonDB はコンピュート (レプリカ) とストレージ (WAL サービス / データストレージ / Blob Storage) を分離したアーキテクチャを採用しています。今回のアップデートで、このクラスター構成をデプロイできるリージョンの選択肢が拡大しました。</p>
+    </section>
+
+    <!-- Key features -->
+    <section class="section">
+        <h2>⚙️ サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🌍</div>
+            <div class="feature-content">
+                <h4>提供リージョンの拡大</h4>
+                <p>Azure HorizonDB (パブリックプレビュー) がデプロイ可能な Azure リージョンが追加され、アプリケーションやユーザーに近い場所に PostgreSQL ワークロードを配置できるようになりました。</p>
+                <p>なお、今回追加された個別のリージョン名はアップデート発表には明記されていないため、最新のリージョン一覧は <a href="https://azure.microsoft.com/explore/global-infrastructure/products-by-region" target="_blank" rel="noopener">リージョン別の利用可能な製品</a> または Azure Portal で確認が必要です。</p>
+            </div>
+        </div>
+        <h3>Azure HorizonDB の特徴 (おさらい)</h3>
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>コンピュートとストレージの分離</h4>
+                <p>ステートレスなコンピュートレプリカをストレージとは独立してスケール可能。レプリカは同一ストレージを共有するため、読み取りレプリカの追加が高速です。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📝</div>
+            <div class="feature-content">
+                <h4>Database-as-a-log 設計</h4>
+                <p>コンピュートからストレージへは WAL (先行書き込みログ) のみを書き込み、ストレージノード側でページを再構成。書き込み増幅を抑え、データベースサイズによらず一貫した書き込みレイテンシーを実現します。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>AI 対応</h4>
+                <p>ベクトル埋め込みのネイティブサポート (pgvector、DiskANN インデックス)、SQL 内 AI 関数、セマンティック検索・ハイブリッド検索、Azure AI Foundry Tools との統合を提供します。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🐘</div>
+            <div class="feature-content">
+                <h4>PostgreSQL 完全互換</h4>
+                <p>既存の PostgreSQL アプリケーションを容易に移行可能です。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech specs -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <table>
+            <thead>
+                <tr><th>項目</th><th>詳細</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ベースエンジン</td><td>オープンソース PostgreSQL (完全互換)</td></tr>
+                <tr><td>クラスター構成</td><td>1 つの書き込み可能なプライマリレプリカ + 読み取り可能なスタンバイレプリカ (複数可)</td></tr>
+                <tr><td>エンドポイント</td><td>読み書きエンドポイント (プライマリ向け) と読み取り専用エンドポイント (全読み取りレプリカへ負荷分散)</td></tr>
+                <tr><td>コンピュート</td><td>コアあたり 8 GB メモリ、ローカル NVMe SSD キャッシュ搭載</td></tr>
+                <tr><td>ストレージ</td><td>WAL 専用フリートとデータ専用フリートの 2 系統、Azure Blob Storage で耐久性を確保</td></tr>
+                <tr><td>ストレージのスケール</td><td>データ増加に応じて自動拡張 (ストレージサイズや IOPS の事前構成が不要)</td></tr>
+                <tr><td>ゾーン回復性</td><td>ストレージは既定でゾーン回復性あり。コンピュートのゾーン回復には 2 レプリカ以上が必要</td></tr>
+                <tr><td>バックアップ保持</td><td>現在は 7 日間固定 (1〜35 日の構成可能化は開発中)</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- Merits -->
+    <section class="section">
+        <h2>💡 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>📈 ビジネス面</h4>
+                <ul>
+                    <li>アプリケーションやユーザーに近いリージョンへのデプロイにより、エンドユーザー体験 (応答性) を改善できる</li>
+                    <li>デプロイ先リージョンの選択肢が増えることで、データ所在地や組織のリージョンポリシーに合わせた設計がしやすくなる</li>
+                    <li>プレビュー段階からリージョン展開が進んでおり、GA に向けたサービス拡充が確認できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>データベースをアプリケーションと同一または近接リージョンに配置することで、ネットワークレイテンシーを低減できる</li>
+                    <li>コンピュートとストレージの独立スケール、共有ストレージによる高速なレプリカ追加・フェールオーバーといった HorizonDB の特長を、より多くのリージョンで利用できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Limitations -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>Azure HorizonDB は現在パブリックプレビューであり、本番ワークロードでの利用は推奨されない</li>
+                <li>今回のアップデート発表では追加されたリージョンの具体名が明記されておらず、利用可否は Azure Portal 等での確認が必要</li>
+                <li>プレビュー時点では以下の機能が未提供 (開発中):
+                    <ul>
+                        <li>クロスリージョン読み取りレプリカ (リージョン間 DR 用レプリケーション)</li>
+                        <li>カスタマーマネージドキー (CMK) による暗号化 (現在はサービスマネージドキーのみ)</li>
+                        <li>バックアップ保持期間の構成 (現在は 7 日間固定)、長期保持 (LTR)</li>
+                        <li>メンテナンスウィンドウの構成 (現在はシステム管理)</li>
+                        <li>組み込み接続プーリング (PgBouncer) — 外部プーラーで代替可能</li>
+                        <li>仮想ネットワークインジェクション (現在は Private Link のみサポート)</li>
+                        <li>インデックスチューニング</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Azure HorizonDB の課金対象は以下のとおりです (詳細な単価は公式ページを参照)。</p>
+        <table>
+            <thead>
+                <tr><th>項目</th><th>課金方式</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>コンピュート</td><td>プロビジョニングされたコア時間 (core hours)</td></tr>
+                <tr><td>データベースストレージ</td><td>使用量ベース (GB/月)</td></tr>
+                <tr><td>バックアップストレージ</td><td>短期保持期間分の使用量ベース</td></tr>
+            </tbody>
+        </table>
+        <p>詳細は <a href="https://azure.microsoft.com/products/horizondb" target="_blank" rel="noopener">Azure HorizonDB 製品ページ</a> を参照してください。</p>
+    </section>
+
+    <!-- Regions -->
+    <section class="section">
+        <h2>🗺️ 利用可能リージョン</h2>
+        <p>今回のアップデートで追加された個別のリージョン名は、発表およびドキュメントからは確認できませんでした。参考として、Microsoft Learn のドキュメント (2026 年 9 月 22 日更新時点) に記載されている提供リージョンは以下のとおりです。</p>
+        <table>
+            <thead>
+                <tr><th>地域</th><th>リージョン</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>南北アメリカ</td><td>Canada Central, Central US, East US, West US 2, West US 3</td></tr>
+                <tr><td>ヨーロッパ</td><td>Germany West Central, Sweden Central</td></tr>
+                <tr><td>アジア太平洋</td><td>Australia East, Korea Central</td></tr>
+            </tbody>
+        </table>
+        <p>最新のリージョン提供状況は <a href="https://azure.microsoft.com/explore/global-infrastructure/products-by-region" target="_blank" rel="noopener">リージョン別の利用可能な製品</a> または Azure Portal で確認してください。</p>
+    </section>
+
+    <!-- Related services -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>Azure Database for PostgreSQL</strong>
+                既存のフルマネージド PostgreSQL サービス。HorizonDB はコンピュート/ストレージ分離アーキテクチャを採用したクラウドネイティブな代替選択肢
+            </div>
+            <div class="related-card">
+                <strong>Azure AI Foundry (Foundry Tools)</strong>
+                HorizonDB の AI 機能 (AI 関数、エージェント、AI パイプライン) と統合し、インテリジェントアプリケーション構築を支援
+            </div>
+            <div class="related-card">
+                <strong>Azure Blob Storage</strong>
+                HorizonDB のデータ耐久性と WAL アーカイブ、バックアップ (スナップショット) の基盤
+            </div>
+            <div class="related-card">
+                <strong>Microsoft Fabric (OneLake)</strong>
+                トランザクションデータを OneLake にミラーリングし、分析データと統合可能
+            </div>
+            <div class="related-card">
+                <strong>Azure Private Link</strong>
+                現時点での HorizonDB のプライベートネットワーク接続手段
+            </div>
+        </div>
+    </section>
+
+    <!-- Summary -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Azure HorizonDB のパブリックプレビューが追加リージョンに拡大され、PostgreSQL ワークロードをアプリケーションやユーザーの近くに配置できる選択肢が広がりました。HorizonDB はコンピュート/ストレージ分離と database-as-a-log 設計による高いスケーラビリティと、pgvector/DiskANN などの AI 機能を備えた次世代の PostgreSQL サービスであり、リージョン展開の進行は GA に向けた重要なマイルストーンです。</p>
+            <p>評価を検討している場合は、自社のアプリケーションに近いリージョンでの提供可否を Azure Portal で確認し、非本番環境での検証から始めることを推奨します。なおプレビュー段階のため、クロスリージョンレプリカや CMK など未提供の機能がある点には注意が必要です。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure HorizonDB</span>
+            <span class="tag">PostgreSQL</span>
+            <span class="tag">Databases</span>
+            <span class="tag">Public Preview</span>
+            <span class="tag">リージョン拡大</span>
+            <span class="tag">AI-ready</span>
+            <span class="tag">DBaaS</span>
+        </div>
+    </section>
+
+    <!-- References -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=572940" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li><a href="https://learn.microsoft.com/azure/horizondb/" target="_blank" rel="noopener">Microsoft Learn: Azure HorizonDB ドキュメント</a></li>
+            <li><a href="https://learn.microsoft.com/azure/horizondb/overview" target="_blank" rel="noopener">Microsoft Learn: What is Azure HorizonDB?</a></li>
+            <li><a href="https://learn.microsoft.com/azure/horizondb/release-notes/release-notes" target="_blank" rel="noopener">Microsoft Learn: Azure HorizonDB リリースノート</a></li>
+            <li><a href="https://azure.microsoft.com/products/horizondb" target="_blank" rel="noopener">Azure HorizonDB 製品ページ (料金)</a></li>
+            <li><a href="https://azure.microsoft.com/explore/global-infrastructure/products-by-region" target="_blank" rel="noopener">リージョン別の利用可能な製品</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=572940" target="_blank" rel="noopener">Azure Updates (ID: 572940)</a> ｜ <a href="https://learn.microsoft.com/azure/horizondb/" target="_blank" rel="noopener">Microsoft Learn: Azure HorizonDB</a></p>
+        <p>ソースレポート: reports/2026/2026-10-05-horizondb-regional-expansion.md (Azure News Summary)</p>
+        <p>作成日: 2026-10-05</p>
+    </footer>
+
+</div>
+</body>
+</html>

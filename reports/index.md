@@ -5,6 +5,11 @@
 
 ## 2026 年
 
+- [2026-10-05 - Application Gateway: WAF の IPv6 サポート (Public Preview)](2026/2026-10-05-application-gateway-waf-ipv6.md)
+- [2026-10-05 - SQL Server on Azure Virtual Machines: Azure Bleu (フランス ソブリンクラウド) で一般提供開始](2026/2026-10-05-sql-server-azure-vms-azure-bleu.md)
+- [2026-10-05 - Azure HorizonDB: 追加リージョンへの提供拡大 (Public Preview)](2026/2026-10-05-horizondb-regional-expansion.md)
+- [2026-10-05 - Azure Backup: PostgreSQL flexible server / elastic cluster 向けバックアップ (v2) パブリックプレビュー](2026/2026-10-05-azure-backup-postgresql-v2.md)
+- [2026-10-05 - Microsoft Fabric: OneLake Catalog 検索でのテーブル検出 (Table discovery)](2026/2026-10-05-fabric-onelake-catalog-table-discovery.md)
 - [2026-10-02 - Azure Database for PostgreSQL: elastic clusters のメジャーバージョンアップグレード (MVU) (Public Preview)](2026/2026-10-02-postgresql-elastic-clusters-mvu.md)
 - [2026-10-01 - Azure Virtual Machines: DCsv3 / DCdsv3 シリーズ VM のリタイア (2029 年 10 月 31 日)](2026/2026-10-01-dcsv3-dcdsv3-vm-retirement.md)
 - [2026-10-01 - Azure Database for MySQL: リーダーエンドポイント (Public Preview)](2026/2026-10-01-mysql-reader-endpoint.md)

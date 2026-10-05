@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL Server on Azure Virtual Machines: Azure Bleu (フランス ソブリンクラウド) で一般提供開始</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+}
+
+.hero .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+.hero h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.hero .meta {
+    font-size: 14px;
+    opacity: 0.9;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.badge-category {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    color: var(--azure-blue);
+    font-size: 22px;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--ms-blue-200);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    color: var(--ms-blue-800);
+    font-size: 17px;
+    margin: 20px 0 10px;
+}
+
+.section p {
+    margin: 10px 0;
+    color: var(--ms-text-primary);
+}
+
+.note {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+}
+
+/* Highlight */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul {
+    padding-left: 20px;
+}
+
+.before li, .after li {
+    margin: 6px 0;
+    font-size: 14px;
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+.feature-content p, .feature-content li {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content ul {
+    padding-left: 18px;
+    margin-top: 4px;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td {
+    background: var(--ms-blue-100);
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.merit-business {
+    background: var(--ms-blue-100);
+    border-top: 4px solid var(--azure-blue);
+}
+
+.merit-tech {
+    background: #F3EDF9;
+    border-top: 4px solid var(--ms-purple);
+}
+
+.merit-card h4 {
+    margin-bottom: 10px;
+}
+
+.merit-business h4 { color: var(--azure-blue); }
+.merit-tech h4 { color: var(--ms-purple); }
+
+.merit-card ul {
+    padding-left: 20px;
+}
+
+.merit-card li {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box ul {
+    padding-left: 20px;
+}
+
+.warning-box li {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* Use case */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-blue);
+    margin-bottom: 12px;
+    font-size: 16px;
+}
+
+.usecase-row {
+    display: flex;
+    gap: 12px;
+    margin: 10px 0;
+    align-items: flex-start;
+}
+
+.usecase-label {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.usecase-label.effect {
+    background: var(--ms-green);
+}
+
+.usecase-row p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Region */
+.region-box {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.region-box .flag {
+    font-size: 36px;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card strong {
+    color: var(--ms-blue-800);
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* Links */
+a {
+    color: var(--azure-blue);
+}
+
+.link-list {
+    padding-left: 20px;
+}
+
+.link-list li {
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 10px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+
+footer a {
+    color: var(--azure-blue);
+}
+
+/* Code blocks (not used but keep rule safe for pre) */
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid {
+        grid-template-columns: 1fr;
+    }
+    .hero h1 {
+        font-size: 22px;
+    }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <div class="hero">
+        <div class="badges">
+            <span class="service-badge">SQL Server on Azure Virtual Machines</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="badge badge-category">Compute</span>
+            <span class="badge badge-category">Databases</span>
+        </div>
+        <h1>SQL Server on Azure Virtual Machines<br>Azure Bleu (フランス ソブリンクラウド) で一般提供開始</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-05</span>
+            <span>🧩 機能: Azure Bleu での一般提供 (GA)</span>
+        </div>
+    </div>
+
+    <!-- 概要 -->
+    <div class="section">
+        <h2>📋 概要</h2>
+        <p>SQL Server on Azure Virtual Machines が、フランスのソブリンクラウド環境である <strong>Azure Bleu</strong> で一般提供 (GA) されました。これにより、データレジデンシー (データ所在地) およびデータ主権の要件を満たしながら、フランスのソブリンクラウド環境で SQL Server ワークロードをデプロイ・管理できるようになります。</p>
+        <div class="highlight-box">
+            <p><strong>🇫🇷 Azure Bleu とは</strong>: Microsoft のソブリンクラウド戦略における <strong>National Partner Clouds (国家パートナークラウド)</strong> の 1 つで、<strong>Orange と Capgemini の合弁会社</strong>が運営するフランスのクラウド。フランスのセキュリティ認証制度である <strong>SecNumCloud</strong> の要件を満たすことを目的として設計されており、Microsoft が技術スタックを提供する一方、インフラは物理的・論理的に分離され、現地の人員によって運営され、国内のコンプライアンスフレームワークの下で管理されます。</p>
+        </div>
+        <p>SQL Server on Azure Virtual Machines は、オンプレミスのハードウェアを管理することなく、フル機能の SQL Server をクラウド上の仮想マシンで実行できるサービスです。今回の GA により、厳格な主権要件を持つフランスの政府機関・公共部門・重要インフラ事業者が、この IaaS 型の SQL Server をソブリン環境で利用できるようになります。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure Bleu 環境では SQL Server on Azure Virtual Machines が利用できず、SecNumCloud 等の主権要件を持つ組織はソブリンクラウド環境で SQL Server ワークロードを実行する選択肢が限られていた</li>
+                    <li>データレジデンシーおよびデータ主権の要件により、グローバルの Azure パブリッククラウドを利用できない組織が存在した</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>フランスのソブリンクラウド環境 (Azure Bleu) で SQL Server ワークロードをデプロイ・管理できるようになった</li>
+                    <li>データレジデンシーおよび主権要件を満たしながら、クラウド上でフル機能の SQL Server を利用可能になった</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- アーキテクチャ図 -->
+    <div class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Users([🏛️ フランスの政府機関・公共部門・重要インフラ事業者])
+    Users --> Bleu
+
+    subgraph Bleu["🇫🇷 Azure Bleu (フランス ソブリンクラウド)"]
+        Operator["🤝 Bleu (Orange × Capgemini 合弁) が運営"]
+        subgraph SQLVM["💻 SQL Server on Azure Virtual Machines"]
+            DB[("🗄️ SQL Server データベース")]
+        end
+        Operator --> SQLVM
+    end
+
+    MS["☁️ Microsoft (技術スタックを提供)"] -.-> Bleu
+    Gov["🛡️ SecNumCloud 要件 / 国内コンプライアンスフレームワーク"] -.-> Bleu
+            </pre>
+        </div>
+        <p class="note">Microsoft が技術スタックを提供し、Orange と Capgemini の合弁会社 Bleu が国内法の下で運営するソブリンクラウド環境に、SQL Server on Azure VMs をデプロイできるようになった構成を示しています。</p>
+    </div>
+
+    <!-- サービスアップデートの詳細 -->
+    <div class="section">
+        <h2>⚙️ サービスアップデートの詳細</h2>
+        <h3>主要機能</h3>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>1. Azure Bleu での SQL Server on Azure VMs の一般提供</h4>
+                <ul>
+                    <li>フランスのソブリンクラウド環境で、フル機能の SQL Server を仮想マシン上にデプロイ・管理できる</li>
+                    <li>データレジデンシーおよびデータ主権の要件を満たしながら SQL Server ワークロードを実行可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>2. National Partner Cloud としての分離・独立運営</h4>
+                <ul>
+                    <li>Azure Bleu は物理的・論理的に分離された環境で、現地人員により運営される</li>
+                    <li>Microsoft からの運営上の独立性が求められるシナリオ (国家安全保障、公共部門規制、地政学的リスク緩和など) に対応</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>SQL Server on Azure Virtual Machines の特徴 (参考)</h3>
+        <p class="note">Microsoft Learn のドキュメントによると、SQL Server on Azure Virtual Machines では以下が提供されます (Azure Bleu 環境での個別機能の提供状況は公式ドキュメントを確認してください)。</p>
+        <div class="feature-card">
+            <div class="feature-icon">💻</div>
+            <div class="feature-content">
+                <h4>フルバージョンの SQL Server をクラウド上で実行</h4>
+                <p>オンプレミスのハードウェア管理が不要</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧰</div>
+            <div class="feature-content">
+                <h4>SQL IaaS Agent extension への登録 (無料)</h4>
+                <p>自動バックアップ、自動パッチ適用、Azure Key Vault 統合、ポータルからの管理、Microsoft Entra 認証、SQL ベストプラクティス評価などの機能を利用可能</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔁</div>
+            <div class="feature-content">
+                <h4>高可用性・ディザスターリカバリー</h4>
+                <p>Always On 可用性グループ、Always On フェールオーバークラスターインスタンスによる HA / DR</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💳</div>
+            <div class="feature-content">
+                <h4>柔軟なライセンスモデル</h4>
+                <p>従量課金 (pay-as-you-go) と Azure Hybrid Benefit (ライセンス持ち込み) を選択可能</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 技術仕様 -->
+    <div class="section">
+        <h2>📐 技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>ステータス</td><td>Launched (GA)、2026 年 10 月</td></tr>
+            <tr><td>提供環境</td><td>Azure Bleu (フランスのソブリンクラウド)</td></tr>
+            <tr><td>運営主体</td><td>Bleu (Orange と Capgemini の合弁会社)</td></tr>
+            <tr><td>Microsoft の役割</td><td>技術スタックの提供 (運営は現地事業体)</td></tr>
+            <tr><td>対象コンプライアンス</td><td>SecNumCloud 要件への対応を目的に設計、国内コンプライアンスフレームワークの下で管理</td></tr>
+            <tr><td>カテゴリ</td><td>Compute、Databases</td></tr>
+        </table>
+    </div>
+
+    <!-- メリット -->
+    <div class="section">
+        <h2>👍 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>フランスの国内法・認証フレームワーク (SecNumCloud) への準拠が求められる組織でも、クラウド上で SQL Server を利用可能</li>
+                    <li>外国の司法権の影響に対する耐性、運営の透明性・監査可能性といったソブリンクラウドの特性を享受できる</li>
+                    <li>オンプレミスのハードウェア管理が不要になり、公共部門・重要インフラ事業者のクラウド移行を促進</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>フル機能の SQL Server (エディション・バージョンを選択可能) を仮想マシン上で実行でき、既存の SQL Server ワークロードとの互換性が高い</li>
+                    <li>Azure の仮想マシン基盤上で動作するため、既存の SQL Server 運用ノウハウを活かしたリフト & シフト移行がしやすい</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- デメリット・制約事項 -->
+    <div class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>Azure Bleu は Microsoft ではなく現地事業体 (Bleu) が運営する独立したクラウド環境であり、利用には Bleu との契約・アクセス手続きが必要</li>
+                <li>Azure Bleu 環境における個別機能 (SQL IaaS Agent extension の各機能など) の提供状況は、本アップデート情報からは確認できないため、公式ドキュメントおよび Bleu の提供情報を確認する必要がある</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- ユースケース -->
+    <div class="section">
+        <h2>💡 ユースケース</h2>
+        <div class="usecase-card">
+            <h4>ユースケース 1: フランス公共部門の SQL Server ワークロードのソブリンクラウド移行</h4>
+            <div class="usecase-row">
+                <span class="usecase-label">シナリオ</span>
+                <p>フランスの政府機関が、データ主権・SecNumCloud 要件によりグローバルの Azure パブリッククラウドを利用できず、オンプレミスで SQL Server を運用している。</p>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-label effect">効果</span>
+                <p>Azure Bleu 上の SQL Server on Azure VMs へリフト & シフトすることで、データレジデンシー・主権要件を満たしながら、ハードウェア管理の負担を軽減しクラウドの運用メリットを得られる。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 料金 -->
+    <div class="section">
+        <h2>💰 料金</h2>
+        <p class="note">Azure Bleu 環境における料金は本アップデート情報からは確認できませんでした。参考として、SQL Server on Azure Virtual Machines の一般的な料金モデル (Azure パブリッククラウド) は以下のとおりです。</p>
+        <table>
+            <tr><th>項目</th><th>内容</th></tr>
+            <tr><td>従量課金 (pay-as-you-go)</td><td>VM の秒単位の実行コストに SQL Server ライセンス料が含まれる。ライセンス料は vCPU 数に依存し、バージョンによらず同一</td></tr>
+            <tr><td>Azure Hybrid Benefit</td><td>Software Assurance 付きの既存 SQL Server ライセンスを持ち込み、ライセンス料を割引。コンピュート (ベースレート)、ストレージ、バックアップの費用は別途発生</td></tr>
+            <tr><td>無料ライセンスエディション</td><td>Developer エディション (開発・テスト用途) および Express エディション (軽量ワークロード) は SQL Server ライセンス費用が不要 (VM 費用のみ)</td></tr>
+        </table>
+        <p>詳細は公式の料金情報を確認してください。</p>
+        <ul class="link-list">
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/virtual-machines/windows/pricing-guidance" target="_blank" rel="noopener">SQL Server on Azure VMs の料金ガイダンス</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-machines/windows/" target="_blank" rel="noopener">Windows Virtual Machines の料金</a></li>
+        </ul>
+    </div>
+
+    <!-- 利用可能リージョン -->
+    <div class="section">
+        <h2>🌍 利用可能リージョン</h2>
+        <div class="region-box">
+            <span class="flag">🇫🇷</span>
+            <p><strong>Azure Bleu (フランスのソブリンクラウド環境)</strong> で利用可能です。Azure Bleu 内の詳細な提供範囲は公式情報を確認してください。</p>
+        </div>
+    </div>
+
+    <!-- 関連サービス・機能 -->
+    <div class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>Azure Virtual Machines</strong>
+                SQL Server on Azure VMs の基盤となる IaaS コンピュートサービス
+            </div>
+            <div class="related-card">
+                <strong>SQL IaaS Agent extension</strong>
+                SQL Server VM の自動バックアップ、自動パッチ適用、ポータル管理などを有効化する拡張機能 (登録は無料)
+            </div>
+            <div class="related-card">
+                <strong>Microsoft Sovereign Cloud / National Partner Clouds</strong>
+                Azure Bleu (フランス) や Delos Cloud (ドイツ) など、現地事業体が運営するソブリンクラウドの枠組み
+            </div>
+            <div class="related-card">
+                <strong>Azure SQL Database / Azure SQL Managed Instance</strong>
+                IaaS 型の SQL Server on Azure VMs に対する PaaS 型の代替・補完サービス
+            </div>
+        </div>
+    </div>
+
+    <!-- まとめ -->
+    <div class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>SQL Server on Azure Virtual Machines が Azure Bleu で GA となり、フランスの政府機関・公共部門・重要インフラ事業者が、SecNumCloud をはじめとする主権・データレジデンシー要件を満たしながら、クラウド上でフル機能の SQL Server を実行できるようになりました。フランス国内の規制対象顧客を持つ Solutions Architect は、オンプレミス SQL Server ワークロードのソブリンクラウド移行の選択肢として Azure Bleu を検討するとよいでしょう。利用にあたっては、Azure Bleu での個別機能の提供状況と契約条件を Bleu および公式ドキュメントで確認することを推奨します。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">SQL Server on Azure VMs</span>
+            <span class="tag">Azure Bleu</span>
+            <span class="tag">ソブリンクラウド</span>
+            <span class="tag">SecNumCloud</span>
+            <span class="tag">データレジデンシー</span>
+            <span class="tag">Compute</span>
+            <span class="tag">Databases</span>
+            <span class="tag">GA</span>
+        </div>
+    </div>
+
+    <!-- 参考リンク -->
+    <div class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=571499" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/virtual-machines/windows/sql-server-on-azure-vm-iaas-what-is-overview" target="_blank" rel="noopener">SQL Server on Azure Virtual Machines の概要 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sovereign-clouds/partner/overview-national-partner-clouds" target="_blank" rel="noopener">National Partner Clouds の概要 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sovereign-clouds/" target="_blank" rel="noopener">Microsoft Sovereign Cloud ドキュメント</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/virtual-machines/windows/pricing-guidance" target="_blank" rel="noopener">料金ガイダンス (Microsoft Learn)</a></li>
+        </ul>
+    </div>
+
+    <footer>
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=571499" target="_blank" rel="noopener">Azure Updates - SQL Server on Azure Virtual Machines: Generally Available in Azure Bleu</a> / <a href="https://learn.microsoft.com/azure/azure-sql/virtual-machines/windows/sql-server-on-azure-vm-iaas-what-is-overview" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>リリース日: 2026-10-05 | インフォグラフィック生成日: 2026-10-05 | Azure News Summary プロジェクト</p>
+    </footer>
+
+</div>
+</body>
+</html>
