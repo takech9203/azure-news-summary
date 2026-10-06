@@ -5,6 +5,10 @@
 
 ## 2026 年
 
+- [2026-10-06 - Azure App Service on Azure Stack Hub: リタイアメント発表](2026/2026-10-06-app-service-azure-stack-hub-retirement.md)
+- [2026-10-06 - Azure Kubernetes Service (AKS): AKS on bare metal の Ubuntu サポート (Public Preview)](2026/2026-10-06-aks-bare-metal-ubuntu.md)
+- [2026-10-06 - Azure App Service: Java 8 / 11 / 17 のサポートが 2027 年 9 月 1 日に終了](2026/2026-10-06-app-service-java-8-11-17-retirement.md)
+- [2026-10-06 - Azure SQL Database: Always Encrypted with Intel SGX Enclaves の廃止](2026/2026-10-06-sql-database-always-encrypted-sgx-retirement.md)
 - [2026-10-05 - Application Gateway: WAF の IPv6 サポート (Public Preview)](2026/2026-10-05-application-gateway-waf-ipv6.md)
 - [2026-10-05 - SQL Server on Azure Virtual Machines: Azure Bleu (フランス ソブリンクラウド) で一般提供開始](2026/2026-10-05-sql-server-azure-vms-azure-bleu.md)
 - [2026-10-05 - Azure HorizonDB: 追加リージョンへの提供拡大 (Public Preview)](2026/2026-10-05-horizondb-regional-expansion.md)
