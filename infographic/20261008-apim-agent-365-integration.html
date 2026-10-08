@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure API Management: Microsoft Agent 365 との統合 (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 240px;
+    height: 240px;
+    border-radius: 50%;
+    background: rgba(80, 230, 255, 0.15);
+}
+.hero .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hero h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+.hero .subtitle { font-size: 15px; opacity: 0.95; }
+.hero .meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 16px; font-size: 14px; opacity: 0.9; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--ms-blue-200);
+}
+.section-title .icon {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 10px;
+    font-size: 22px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--azure-dark-blue); }
+
+p.lead { margin-bottom: 14px; font-size: 15px; }
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; background: #FFFFFF; }
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 8px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { color: var(--azure-dark-blue); margin-bottom: 4px; font-size: 16px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content .tag-mini {
+    display: inline-block;
+    background: var(--ms-purple);
+    color: #FFF;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 10px;
+    padding: 1px 10px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+/* Tables */
+.table-wrap { overflow-x: auto; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+td.center, th.center { text-align: center; }
+.check { color: var(--ms-green); font-weight: 700; }
+.dash { color: var(--ms-text-disabled); }
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 10px;
+    padding: 18px 20px;
+    border: 1px solid var(--ms-border);
+}
+.merit-card.biz { background: var(--ms-blue-100); border-top: 4px solid var(--azure-blue); }
+.merit-card.tech { background: #F3EEFB; border-top: 4px solid var(--ms-purple); }
+.merit-card h4 { margin-bottom: 10px; }
+.merit-card.biz h4 { color: var(--azure-dark-blue); }
+.merit-card.tech h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin-bottom: 8px; }
+
+.caution-box {
+    background: #FFF8E6;
+    border: 2px solid var(--ms-yellow);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 16px 0;
+}
+.caution-box ul { padding-left: 20px; font-size: 14px; }
+.caution-box li { margin-bottom: 8px; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 14px 0;
+}
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.usecase-num {
+    background: var(--azure-blue);
+    color: #FFF;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+}
+.usecase-card p { font-size: 14px; margin-bottom: 8px; }
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    font-size: 14px;
+}
+.usecase-effect strong { color: var(--ms-green); }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-blue-500);
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+.related-card h5 { color: var(--azure-dark-blue); font-size: 14px; margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.link-list { padding-left: 20px; font-size: 14px; }
+.link-list li { margin-bottom: 8px; }
+
+/* Pricing */
+.pricing-note {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 14px;
+}
+.pricing-note ul { padding-left: 20px; margin-top: 10px; }
+.pricing-note li { margin-bottom: 6px; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Code blocks (not used but kept consistent with theme) */
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    border-radius: 8px;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+footer p { margin-bottom: 6px; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Title -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure API Management</span>
+            <span class="service-badge">Microsoft Agent 365</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Azure API Management:<br>Microsoft Agent 365 との統合 (Public Preview)</h1>
+        <div class="subtitle">MCP サーバー・ツールの集中ガバナンスとランタイム制御を接続</div>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-08</span>
+            <span>🧩 サービス: Azure API Management / Microsoft Agent 365</span>
+        </div>
+    </header>
+
+    <!-- Overview -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p class="lead">Microsoft Agent 365 と Azure API Management (APIM) の統合がパブリックプレビューになりました。この統合により、Agent 365 による「集中ガバナンス」と、APIM による「ランタイムでのポリシー強制」を接続し、組織内の <strong>MCP (Model Context Protocol) サーバーとツールを一元的に統制</strong>できるようになります。</p>
+        <p class="lead">Microsoft Agent 365 は、組織内で増え続ける AI エージェントを「観測 (Observe)・統制 (Govern)・保護 (Secure)」するためのコントロールプレーンで、Microsoft 365 管理センターのエージェントレジストリを中心に、Microsoft Entra、Microsoft Purview、Microsoft Defender と連携します。一方、Azure API Management は AI ゲートウェイ機能により、REST API の MCP サーバー化や既存 MCP サーバーの公開・保護・監視を担います。今回の統合は、この 2 つを接続するものです。</p>
+        <div class="highlight-box">
+            <strong>運用モデル</strong>: AI 管理者が Agent 365 でガバナンスを集中管理し、プラットフォームチームがそのポリシーを顧客自身の Azure 環境内の APIM を通じてランタイムで強制する、という役割分担が可能になります。APIM v2 ティアは MCP インベントリの集中管理とサーバー単位のブロック/ブロック解除をサポートし、現在プレビュー中の AI Gateway ティアでは、ツール単位のブロック、ツールアクティビティの可観測性、ツール脅威保護が追加されます。
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Agent 365 のエージェントガバナンス (レジストリ、アクセス制御、コンプライアンス) と、APIM ゲートウェイでの MCP サーバーのランタイム制御が分離しており、組織横断で一貫した統制を適用する仕組みがなかった</li>
+                    <li>APIM ゲートウェイで管理されている MCP サーバー・ツールを、Microsoft 365 側の AI 管理者が一元的に把握するインベントリがなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Agent 365 から APIM ゲートウェイと MCP サーバーを検出し、ゲートウェイ管理下のツールの集中インベントリを作成できる</li>
+                    <li>Agent 365 で定義したアクセス制御を、APIM がランタイムで強制する (サーバー単位、および AI Gateway ティアではツール単位)</li>
+                    <li>ツールアクティビティの監視により、監査・運用可視化・インシデント調査を支援</li>
+                    <li>Microsoft Defender と Microsoft Purview により、ツールの要求・応答をセキュリティ脅威や機微情報リスクの観点で評価・保護できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    Admin([👤 AI 管理者])
+    Agent(["🤖 AI エージェント&lt;br/&gt;(MCP クライアント)"])
+
+    subgraph M365["🏢 Microsoft Agent 365 (集中ガバナンス)"]
+        Registry["📒 MCP インベントリ&lt;br/&gt;(ゲートウェイ・MCP サーバーの検出)"]
+        Policy["🛡️ アクセス制御&lt;br/&gt;(サーバー / ツール単位)"]
+    end
+
+    subgraph Azure["☁️ 顧客の Azure 環境 (ランタイム強制)"]
+        APIM["🚪 Azure API Management&lt;br/&gt;(AI Gateway)"]
+        MCP["🧰 MCP サーバー / ツール"]
+    end
+
+    Sec["🔍 Microsoft Defender / Purview&lt;br/&gt;(脅威・機微情報リスクの評価)"]
+    Mon["📊 ツールアクティビティ監視&lt;br/&gt;(監査・インシデント調査)"]
+
+    Admin --&gt;|"ガバナンス定義"| Policy
+    Registry &lt;--&gt;|"検出・インベントリ同期"| APIM
+    Policy --&gt;|"ポリシー配信"| APIM
+    Agent --&gt;|"MCP ツール呼び出し"| APIM
+    APIM --&gt;|"許可されたツールのみ"| MCP
+    APIM --- Sec
+    APIM --- Mon
+            </pre>
+        </div>
+        <div class="diagram-caption">AI 管理者が Agent 365 でガバナンス (インベントリ・アクセス制御) を集中管理し、顧客の Azure 環境内の APIM が MCP ツール呼び出しをランタイムで強制します。Defender / Purview がツールの要求・応答を保護し、アクティビティ監視が監査を支援します。</div>
+    </section>
+
+    <!-- Features -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔎</div>
+            <div class="feature-content">
+                <h4>1. APIM ゲートウェイと MCP サーバーの検出 (Discover)</h4>
+                <p>Agent 365 から Azure API Management のゲートウェイと MCP サーバーを検出し、ゲートウェイ管理下のツールの集中インベントリを作成する</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>2. MCP サーバーへのアクセス制御 (Control)</h4>
+                <p>Agent 365 から MCP サーバーへのアクセスを制御し、Azure API Management がランタイムで強制を適用する</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>3. ツール単位のアクセス制御<span class="tag-mini">AI Gateway ティア</span></h4>
+                <p>APIM の AI Gateway ティア (プレビュー) を使用すると、MCP サーバー全体を無効化することなく、個々のツールだけをブロックできる</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>4. ツールアクティビティの監視 (Monitor)</h4>
+                <p>ツールアクティビティを監視し、監査、運用の可視化、インシデント調査を支援する</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>5. ツールインタラクションの保護 (Protect)</h4>
+                <p>Microsoft Defender と Microsoft Purview の機能を使用して、ツールの要求と応答をセキュリティ脅威および機微情報リスクの観点で評価する</p>
+            </div>
+        </div>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 24px 0 4px;">ティアごとの機能差</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>機能</th>
+                        <th class="center">APIM v2 ティア</th>
+                        <th class="center">AI Gateway ティア (プレビュー)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>MCP インベントリの集中管理</td><td class="center check">✅</td><td class="center check">✅</td></tr>
+                    <tr><td>サーバー単位のブロック / ブロック解除</td><td class="center check">✅</td><td class="center check">✅</td></tr>
+                    <tr><td>ツール単位のブロック</td><td class="center dash">-</td><td class="center check">✅</td></tr>
+                    <tr><td>ツールアクティビティの可観測性</td><td class="center dash">-</td><td class="center check">✅</td></tr>
+                    <tr><td>ツール脅威保護</td><td class="center dash">-</td><td class="center check">✅</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Technical specs -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th style="width: 36%;">項目</th><th>詳細</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>統合対象</td><td>Microsoft Agent 365 (集中ガバナンス) × Azure API Management (ランタイム強制)</td></tr>
+                    <tr><td>統制対象</td><td>APIM ゲートウェイで管理される MCP サーバーとツール</td></tr>
+                    <tr><td>ランタイム強制の実行場所</td><td>顧客自身の Azure 環境内の APIM</td></tr>
+                    <tr><td>v2 ティアのサポート範囲</td><td>MCP インベントリの集中管理、サーバー単位のブロック / ブロック解除</td></tr>
+                    <tr><td>AI Gateway ティア (プレビュー) の追加機能</td><td>ツール単位のブロック、ツールアクティビティの可観測性、ツール脅威保護</td></tr>
+                    <tr><td>セキュリティ連携</td><td>Microsoft Defender (脅威検出)、Microsoft Purview (機微情報リスク評価)</td></tr>
+                    <tr><td>APIM の MCP サーバー公開方法</td><td>REST API の MCP サーバー化、または既存 MCP サーバーの公開 (ツールのみ対応。MCP リソース / プロンプトは非対応)</td></tr>
+                    <tr><td>Agent 365 の前提</td><td>少なくとも 1 ユーザーに対象ライセンスが必要 (ユーザー単位ライセンス。Microsoft E5 との併用が推奨)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Merits -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card biz">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>AI 管理者 (Microsoft 365 側) とプラットフォームチーム (Azure 側) の役割分担を保ったまま、組織全体で一貫した MCP ガバナンスを実現できる</li>
+                    <li>ゲートウェイ管理下のツールの集中インベントリにより、組織内の AI エージェントが利用できるツールを可視化し、監査対応 (audit-ready) を支援する</li>
+                    <li>インシデント発生時に、ツールアクティビティの記録を調査に活用できる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>ガバナンスポリシーが APIM によりランタイムで強制されるため、「定義されたポリシー」と「実際の挙動」の乖離を防げる</li>
+                    <li>AI Gateway ティアでは、問題のあるツールだけをピンポイントでブロックでき、MCP サーバー全体を停止する必要がない</li>
+                    <li>Defender / Purview との連携により、ツールの要求・応答レベルで脅威と機微情報リスクを評価できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Constraints -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>パブリックプレビューであり、本番環境での利用は想定されていない (SLA なし)</li>
+                <li>ツール単位のブロック、ツールアクティビティの可観測性、ツール脅威保護には、現在プレビュー中の APIM AI Gateway ティアが必要</li>
+                <li>APIM の MCP サーバー機能は現時点でツールのみをサポートし、MCP リソースやプロンプトは非対応。ワークスペースでも MCP サーバー機能は非サポート</li>
+                <li>Agent 365 の利用には対象ライセンスが必要 (ユーザー単位課金)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Use cases -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4><span class="usecase-num">1</span>組織内 MCP ツールの集中インベントリとガバナンス</h4>
+            <p><strong>シナリオ</strong>: 複数のチームが APIM 経由で MCP サーバーを公開している企業で、AI 管理者が Agent 365 からゲートウェイと MCP サーバーを検出し、組織全体のツールインベントリを作成。利用を許可する MCP サーバー・ツールをポリシーとして定義し、APIM がランタイムで強制する。</p>
+            <div class="usecase-effect"><strong>効果</strong>: シャドー化しがちな MCP ツールを可視化し、承認されていないツールへのエージェントのアクセスを実行時にブロックできる。</div>
+        </div>
+        <div class="usecase-card">
+            <h4><span class="usecase-num">2</span>インシデント発生時の個別ツールの緊急ブロック</h4>
+            <p><strong>シナリオ</strong>: ある MCP サーバーの特定ツールに脆弱性や情報漏えいリスクが見つかった際、AI Gateway ティアのツール単位ブロックを使用して、該当ツールのみを即座に無効化する。サーバー上の他のツールは引き続き利用可能なまま、ツールアクティビティの記録を使ってインシデント調査を行う。</p>
+            <div class="usecase-effect"><strong>効果</strong>: MCP サーバー全体を停止することなくリスクを封じ込め、業務影響を最小化しながら調査・対応を進められる。</div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="pricing-note">
+            このアップデートに固有の料金情報は公式発表では確認できませんでした。関連する料金は以下を参照してください。
+            <ul>
+                <li><a href="https://azure.microsoft.com/pricing/details/api-management/" target="_blank" rel="noopener">Azure API Management 料金ページ</a></li>
+                <li><a href="https://www.microsoft.com/microsoft-agent-365" target="_blank" rel="noopener">Microsoft Agent 365 プランと価格</a> (ユーザー単位ライセンス)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Related services -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>🏢 Microsoft Agent 365</h5>
+                <p>AI エージェントの観測・統制・保護を担うコントロールプレーン。Microsoft 365 管理センターのエージェントレジストリでエージェントとツールを集中管理する</p>
+            </div>
+            <div class="related-card">
+                <h5>🚪 Azure API Management (AI Gateway)</h5>
+                <p>REST API の MCP サーバー化や既存 MCP サーバーの公開を行い、認証・認可・レート制限・監視などのポリシーをランタイムで強制する</p>
+            </div>
+            <div class="related-card">
+                <h5>🛡️ Microsoft Defender</h5>
+                <p>ツールインタラクションに対する継続的な脅威検出と保護</p>
+            </div>
+            <div class="related-card">
+                <h5>🔍 Microsoft Purview</h5>
+                <p>情報保護・DLP によるツールの要求・応答の機微情報リスク評価</p>
+            </div>
+            <div class="related-card">
+                <h5>🪪 Microsoft Entra ID</h5>
+                <p>ユーザーおよびユーザーの代理として動作するエージェントへの一貫したリスクベースのアクセス制御</p>
+            </div>
+            <div class="related-card">
+                <h5>📚 Azure API Center</h5>
+                <p>組織内の MCP サーバーの登録・検出を行うエンタープライズ向けレジストリ (APIM 外部でホストされるサーバーも対象)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reference links -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=574204" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li><a href="https://learn.microsoft.com/azure/api-management/mcp-server-overview" target="_blank" rel="noopener">Microsoft Learn: MCP servers in Azure API Management (概要)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/api-management/export-rest-mcp-server" target="_blank" rel="noopener">Microsoft Learn: REST API を MCP サーバーとして公開する</a></li>
+            <li><a href="https://learn.microsoft.com/microsoft-agent-365/overview" target="_blank" rel="noopener">Microsoft Learn: Microsoft Agent 365 overview</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/api-management/" target="_blank" rel="noopener">Azure API Management 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Summary -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            Microsoft Agent 365 と Azure API Management の統合により、AI エージェントが利用する MCP サーバー・ツールに対して「Agent 365 での集中ガバナンス定義」と「APIM でのランタイム強制」を接続する統制モデルがパブリックプレビューとして利用可能になりました。v2 ティアでのインベントリ集中管理・サーバー単位ブロックに加え、プレビュー中の AI Gateway ティアではツール単位のブロック・可観測性・脅威保護まで踏み込める点が特徴です。組織内で MCP サーバーの導入が進んでいる、あるいは AI エージェントのガバナンス体制を検討中の Solutions Architect は、APIM のティア要件 (v2 / AI Gateway) と Agent 365 のライセンス要件を確認のうえ、プレビュー環境での評価を推奨します。
+        </div>
+        <div class="tags">
+            <span class="tag">Azure API Management</span>
+            <span class="tag">Microsoft Agent 365</span>
+            <span class="tag">MCP</span>
+            <span class="tag">AI Gateway</span>
+            <span class="tag">AI エージェント</span>
+            <span class="tag">ガバナンス</span>
+            <span class="tag">セキュリティ</span>
+            <span class="tag">Microsoft Defender</span>
+            <span class="tag">Microsoft Purview</span>
+            <span class="tag">Integration</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <footer>
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=574204" target="_blank" rel="noopener">Azure Updates - Microsoft Agent 365 integration with Azure API Management (ID: 574204)</a></p>
+        <p>Microsoft Learn: <a href="https://learn.microsoft.com/azure/api-management/mcp-server-overview" target="_blank" rel="noopener">MCP servers in Azure API Management</a> / <a href="https://learn.microsoft.com/microsoft-agent-365/overview" target="_blank" rel="noopener">Microsoft Agent 365 overview</a></p>
+        <p>このインフォグラフィックは Azure News Summary プロジェクトのレポート (2026-10-08) を基に生成されました。</p>
+    </footer>
+
+</div>
+</body>
+</html>

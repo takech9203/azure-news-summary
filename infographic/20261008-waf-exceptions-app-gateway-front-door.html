@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure WAF Exceptions 機能 GA - Application Gateway / Front Door | Azure News</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "🛡️";
+    position: absolute;
+    right: 24px;
+    bottom: -20px;
+    font-size: 140px;
+    opacity: 0.12;
+}
+
+.header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 14px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.92;
+    max-width: 760px;
+}
+
+.header-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+.header-meta span { display: inline-flex; align-items: center; gap: 6px; }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 10px;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.sub-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ===== Highlight ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong { color: var(--ms-blue-800); }
+
+.key-point {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 18px 22px;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before, .after {
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-unit { font-size: 15px; font-weight: 500; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Tables ===== */
+.table-wrapper { overflow-x: auto; margin: 16px 0; }
+
+table.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    min-width: 560px;
+}
+
+table.info-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+table.info-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+table.info-table tr:nth-child(even) { background: var(--ms-blue-100); }
+
+table.info-table tr.highlight-row {
+    background: #E8F5E9;
+    font-weight: 500;
+}
+
+table.info-table tr.highlight-row td:first-child { color: var(--ms-green); font-weight: 700; }
+
+table.info-table td.label-cell {
+    background: var(--ms-blue-200);
+    font-weight: 700;
+    color: var(--ms-blue-900);
+    white-space: nowrap;
+}
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-note {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 8px;
+}
+
+/* ===== Code ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A0A0A0; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Steps ===== */
+.steps { list-style: none; counter-reset: step; margin: 16px 0; }
+
+.steps li {
+    counter-increment: step;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 10px 0;
+    font-size: 14px;
+}
+
+.steps li::before {
+    content: counter(step);
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+/* ===== Merits / Cautions ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 10px;
+    padding: 18px;
+}
+
+.merit-card.business {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--ms-blue-400);
+}
+
+.merit-card.technical {
+    background: #F3EEF9;
+    border: 2px solid var(--ms-purple);
+}
+
+.merit-card h4 { font-size: 16px; margin-bottom: 10px; }
+.merit-card.business h4 { color: var(--ms-blue-800); }
+.merit-card.technical h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 14px; margin-bottom: 8px; }
+
+.caution-list { list-style: none; margin: 12px 0; }
+
+.caution-list li {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.caution-list li::before { content: "⚠️ "; }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.usecase-number {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 8px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.usecase-header h4 { font-size: 16px; color: var(--azure-dark-blue); }
+
+.usecase-row { margin-bottom: 8px; font-size: 14px; }
+
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 6px;
+    padding: 1px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 8px;
+}
+
+.usecase-label.effect { background: #E8F5E9; color: var(--ms-green); }
+
+/* ===== Related / Links ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13px;
+    border-top: 3px solid var(--azure-blue);
+}
+
+.related-card strong { display: block; color: var(--ms-blue-800); font-size: 14px; margin-bottom: 4px; }
+
+.link-list { list-style: none; margin: 12px 0; }
+
+.link-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+}
+
+.link-list li::before { content: "🔗 "; }
+
+.link-list a {
+    color: var(--azure-blue);
+    text-decoration: none;
+    word-break: break-all;
+}
+
+.link-list a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 26px 28px;
+    font-size: 15px;
+}
+
+.summary-box h3 { font-size: 19px; margin-bottom: 12px; }
+.summary-box ul { padding-left: 20px; }
+.summary-box li { margin-bottom: 10px; }
+
+/* ===== Tags / Footer ===== */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 14px;
+    padding: 4px 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 24px 0 8px;
+}
+
+.footer a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+.footer a:hover { text-decoration: underline; }
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .header h1 { font-size: 23px; }
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .section { padding: 20px 16px; }
+    .container { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="header">
+        <div class="header-badges">
+            <span class="service-badge">Azure Web Application Firewall</span>
+            <span class="service-badge">Application Gateway</span>
+            <span class="service-badge">Azure Front Door</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>WAF「Exceptions (例外)」機能が一般提供開始<br>— 誤検知をピンポイントで解消</h1>
+        <p class="subtitle">条件 (URI / リモート IP / ヘッダー) に一致したリクエストを、ルール単位・ルールグループ単位・ルールセット全体のスコープで選択的にバイパス。他の保護は有効なまま WAF ポリシーを精密にチューニング。</p>
+        <div class="header-meta">
+            <span>📅 リリース日: 2026-10-08</span>
+            <span>⚙️ 機能: Exceptions in WAF for Azure Application Gateway and Azure Front Door</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Application Gateway および Azure Front Door 上の Web Application Firewall (WAF) における<strong>「例外 (Exceptions)」機能の一般提供 (GA)</strong> が発表されました。Azure WAF は Web アプリケーションを一般的な脅威や攻撃から保護しますが、安全で想定されたリクエストを誤ってブロック (<strong>誤検知 / False Positive</strong>) してしまう場合があります。</p>
+        <div class="key-point">
+            従来の「除外 (Exclusions)」はヘッダー・Cookie・クエリ引数・本文フィールドといった<strong>「リクエスト属性」の部分除外</strong>でしたが、Exceptions は条件に一致した<strong>「特定のリクエスト」そのもの</strong>を、<strong>ルール単位・ルールグループ単位・マネージドルールセット全体</strong>のいずれかのスコープで WAF 検査からバイパスします。条件はリクエスト URI、リモート IP アドレス、リクエストヘッダーの名前と値で定義できます。
+        </div>
+        <p>これにより、カスタムルールの Allow アクション (全マネージドルールセットを一括バイパス) と Exclusions (リクエスト属性の部分除外) の<strong>中間にあたる、きめ細かな誤検知チューニング</strong>が可能になり、他の保護を有効に保ちながら WAF ポリシーをより正確に調整できます。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Exclusions は「リクエストの一部分」しか除外できず、特定の URI や送信元 IP からの<strong>リクエスト全体</strong>を特定ルールの評価対象外にする手段がなかった</li>
+                    <li>カスタムルールの Allow アクションでは DRS/CRS と Bot Protection の検査が<strong>一括かつ無条件にバイパス</strong>され、選択的な適用ができなかった (シグネチャ検知・異常スコアリングが実質無効化)</li>
+                    <li>特定の 1 ルールだけが正当なトラフィックをブロックするケースでも、ルール無効化や広範な許可設定など<strong>保護レベルを下げるトレードオフ</strong>を伴う対処が必要だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>条件 (リクエスト URI / リモート IP / リクエストヘッダー) に一致するリクエストを、<strong>特定ルール・ルールグループ・ルールセット全体の 3 段階のスコープ</strong>で選択的にバイパス可能に</li>
+                    <li>問題のある 1 ルールのみ検査を外し、<strong>他のすべての保護</strong> (他の DRS/CRS ルール、Bot Protection、HTTP DDoS 保護) は有効なまま維持できる</li>
+                    <li>DRS、CRS、Bot Protection に加えて <strong>HTTP DDoS ルールセット</strong>にも適用でき、カスタムルール Allow では不可能だった粒度の制御が可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Client([👤 クライアント]) --> Entry["🌐 Azure Front Door /<br/>Application Gateway v2"]
+    Entry --> Policy["🛡️ WAF ポリシー"]
+
+    subgraph Policy_Eval["WAF ポリシー評価"]
+        Custom["📋 カスタムルール"] --> ExCheck{"❓ Exception 条件に一致?<br/>(URI / リモート IP / ヘッダー)"}
+        ExCheck -- "一致 (スコープ内)" --> Bypass["⏭️ 対象ルール / ルールグループ /<br/>ルールセットの検査をスキップ"]
+        ExCheck -- "不一致" --> Managed["🔍 マネージドルールセット<br/>(DRS 2.1+ / CRS 3.2+ / Bot / DDoS)"]
+    end
+
+    Policy --> Custom
+    Bypass --> Backend[("🖥️ バックエンド<br/>アプリケーション")]
+    Managed -- "許可" --> Backend
+    Managed -- "検知" --> Block["🚫 ブロック / ログ"]
+            </pre>
+        </div>
+        <p class="diagram-note">💡 Exception 条件に一致したリクエストは、指定したスコープ (特定ルール / ルールグループ / ルールセット全体) の検査のみをバイパスし、スコープ外の保護は引き続き適用されます。</p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⭐</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>1. リクエスト単位の選択的バイパス</h4>
+                <p>条件に一致したリクエストに対して WAF 検査をバイパス。Exclusions (リクエスト属性の部分除外) と異なり、<strong>リクエスト全体を対象に特定ルールの評価をスキップ</strong>できます。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📐</div>
+            <div class="feature-content">
+                <h4>2. 3 段階の適用スコープ</h4>
+                <p>特定ルール (per-rule)、ルールグループ、マネージドルールセット全体のいずれかを選択可能。公式ドキュメントでは、攻撃者に悪用される余地を避けるため、<strong>可能な限り per-rule の最小スコープを推奨</strong>しています。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔧</div>
+            <div class="feature-content">
+                <h4>3. 柔軟なマッチ条件</h4>
+                <p>リクエスト URI、リモート IP アドレス、リクエストヘッダー (名前と値) の 3 種類の属性で条件を定義。演算子は <strong>Equals / Starts with / Ends with / Contains / IP Match</strong> をサポートします。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>4. 幅広いルールセットへの適用</h4>
+                <p>DRS、CRS、Bot Protection に加え、<strong>HTTP DDoS ルールセットにも適用可能</strong>。カスタムルールの Allow アクションでは HTTP DDoS ルールセットはバイパスされないため、Exceptions ならではの制御です。</p>
+            </div>
+        </div>
+
+        <h3 class="sub-title">🔀 誤検知対応 3 手段の使い分け (Before/After)</h3>
+        <div class="table-wrapper">
+            <table class="info-table">
+                <thead>
+                    <tr><th>手段</th><th>バイパス対象</th><th>粒度</th><th>特徴</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Exclusions (従来)</td>
+                        <td>リクエストの特定属性 (ヘッダー、Cookie、クエリ引数、本文フィールド)</td>
+                        <td>属性単位</td>
+                        <td>リクエストの残りの部分は通常どおり検査される</td>
+                    </tr>
+                    <tr>
+                        <td>カスタムルール Allow (従来)</td>
+                        <td>リクエスト全体</td>
+                        <td>全ルールセット一括</td>
+                        <td>DRS/CRS/Bot Protection を無条件に一括バイパス (選択不可)。HTTP DDoS 保護のみ継続</td>
+                    </tr>
+                    <tr class="highlight-row">
+                        <td>Exceptions (今回 GA)</td>
+                        <td>リクエスト全体</td>
+                        <td>ルール / ルールグループ / ルールセット単位で選択可能</td>
+                        <td>問題のあるルールのみスキップし、他の保護は維持。DDoS ルールセットにも適用可</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📊</span>技術仕様</h2>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">3<span class="stat-unit"> 段階</span></div>
+                <div class="stat-label">適用スコープ<br>(ルール / グループ / セット)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">60<span class="stat-unit"> 例外</span></div>
+                <div class="stat-label">ポリシーあたりの上限<br>(ゲートウェイ合計も 60)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">600<span class="stat-unit"> 件</span></div>
+                <div class="stat-label">1 例外あたりの<br>IP アドレス上限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5<span class="stat-unit"> 種類</span></div>
+                <div class="stat-label">演算子 (Equals / Starts /<br>Ends / Contains / IP Match)</div>
+            </div>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="info-table">
+                <tbody>
+                    <tr><td class="label-cell">対象サービス</td><td>Azure Application Gateway v2 (WAF)、Azure Front Door Premium (WAF)</td></tr>
+                    <tr><td class="label-cell">必要なルールセットバージョン</td><td>Application Gateway: CRS 3.2 / DRS 2.1 以降、Front Door: DRS 2.1 以降</td></tr>
+                    <tr><td class="label-cell">WAF エンジン</td><td>次世代 WAF エンジンのみサポート</td></tr>
+                    <tr><td class="label-cell">マッチ変数</td><td>リクエスト URI、リモート IP アドレス、リクエストヘッダー (名前と値)</td></tr>
+                    <tr><td class="label-cell">演算子</td><td>Equals、Starts with、Ends with、Contains、IP Match</td></tr>
+                    <tr><td class="label-cell">適用スコープ</td><td>特定ルール / ルールグループ / マネージドルールセット全体</td></tr>
+                    <tr><td class="label-cell">ポリシーあたりの上限</td><td>60 例外</td></tr>
+                    <tr><td class="label-cell">ゲートウェイあたりの上限</td><td>60 例外 (関連付けられた全 WAF ポリシーの合計)</td></tr>
+                    <tr><td class="label-cell">1 例外あたりの上限</td><td>IP アドレス 600 件、または URI 10 件、またはリクエストヘッダー 10 件</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 class="sub-title">✅ 前提条件</h3>
+        <ol class="steps">
+            <li>Application Gateway v2 または Azure Front Door Premium に WAF ポリシーが関連付けられていること</li>
+            <li>マネージドルールセットが CRS 3.2 / DRS 2.1 以降であること (古いバージョンの場合はルールセットのアップグレードが必要)</li>
+        </ol>
+
+        <h3 class="sub-title">🖥️ Azure Portal</h3>
+        <ol class="steps">
+            <li>WAF ポリシーに移動し、<strong>Settings</strong> の <strong>Managed rules</strong> を選択</li>
+            <li><strong>Exceptions</strong> タブで <strong>Add exceptions</strong> を選択</li>
+            <li><strong>Applies to</strong> で対象ルールセット (例: <code>Microsoft_DefaultRuleSet_2.1</code>) とスコープ (ルールセット全体 / ルールグループ / 特定ルール) を選択</li>
+            <li><strong>Add exception</strong> でマッチ変数、演算子、値を設定し、<strong>Add</strong> → <strong>Save</strong> で適用</li>
+        </ol>
+
+        <h3 class="sub-title">⌨️ Azure CLI (Application Gateway の例)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">SQL インジェクションルール評価時に特定 URI の検査をバイパスする例外を追加</span></div>
+            <pre><code class="language-bash">az network application-gateway waf-policy managed-rule exception add \
+    -g "myResourceGroup" \
+    --policy-name "myWAF" \
+    --match-variable "RequestURI" \
+    --value-operator Equals \
+    --values "login.php" "default.aspx" "account/images" \
+    --rule-sets [0].rule-set-type=Microsoft_Default_Ruleset [0].rule-set-version=2.1</code></pre>
+        </div>
+
+        <h3 class="sub-title">💠 Azure PowerShell (Application Gateway の例)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">powershell</span><span class="code-desc">SQLI ルールグループを対象とした例外を作成</span></div>
+            <pre><code class="language-powershell">$ruleGroupEntry = New-AzApplicationGatewayFirewallPolicyExclusionManagedRuleGroup `
+    -RuleGroupName 'REQUEST-942-APPLICATION-ATTACK-SQLI'
+
+$exclusionManagedRuleSet = New-AzApplicationGatewayFirewallPolicyExclusionManagedRuleSet `
+    -RuleSetType 'Microsoft_DefaultRuleSet' `
+    -RuleSetVersion '2.1' `
+    -RuleGroup $ruleGroupEntry
+
+$exceptionEntry = New-AzApplicationGatewayFirewallPolicyException `
+    -MatchVariable "RequestURI" `
+    -ValueMatchOperator 'Equals' `
+    -Values login.php, logout.php `
+    -ExceptionManagedRuleSet $exclusionManagedRuleSet
+
+$wafPolicy = Get-AzApplicationGatewayFirewallPolicy `
+    -Name $wafPolicyName `
+    -ResourceGroupName $resourceGroupName
+
+$wafPolicy.ManagedRules[0].Exceptions.Add($exceptionEntry)
+$wafPolicy | Set-AzApplicationGatewayFirewallPolicy</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>誤検知による正当なユーザートラフィックのブロックを、保護レベルを大きく下げずに解消でき、<strong>サービス可用性とユーザー体験を維持</strong>できる</li>
+                    <li>ルール無効化や広範な Allow ルールに頼らないため、<strong>セキュリティ態勢 (コンプライアンス) を保ったまま</strong>運用上の例外に対応できる</li>
+                </ul>
+            </div>
+            <div class="merit-card technical">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>誤検知の原因となる特定ルールのみを<strong>ピンポイントでスキップ</strong>し、他の DRS/CRS ルール、Bot Protection、HTTP DDoS 保護は継続適用される</li>
+                    <li>URI・リモート IP・ヘッダーという<strong>運用で特定しやすい条件</strong>で例外を定義でき、Portal / CLI / PowerShell で管理可能</li>
+                    <li>カスタムルール Allow と異なり HTTP DDoS ルールセットを含めた適用対象の選択が可能で、<strong>WAF チューニングの表現力が向上</strong></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Limitations ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🚧</span>デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li>次世代 WAF エンジンのみのサポートであり、ルールセットが <strong>CRS 3.2 / DRS 2.1 以降</strong>であることが必要 (古い CRS を使用中の場合はアップグレードが前提)</li>
+            <li>Front Door では <strong>Premium レベルが対象</strong> (ドキュメントの Applies to は Front Door Premium)</li>
+            <li>WAF ポリシーあたり<strong>最大 60 例外</strong>、ゲートウェイ / Front Door あたり合計最大 60 例外の上限がある</li>
+            <li>1 例外あたり <strong>IP アドレス 600 件 / URI 10 件 / リクエストヘッダー 10 件</strong>の上限がある</li>
+            <li>例外は条件一致リクエストの検査をバイパスするため、スコープを広く取りすぎると<strong>攻撃の侵入経路になり得る</strong>。公式ドキュメントは可能な限り per-rule の最小スコープを推奨</li>
+        </ul>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">
+                <span class="usecase-number">CASE 1</span>
+                <h4>🔐 ログインページの SQL インジェクション誤検知対応</h4>
+            </div>
+            <p class="usecase-row"><span class="usecase-label">シナリオ</span><code>/login.php</code> と <code>/logout.php</code> への正当なリクエストが SQL インジェクションルール (REQUEST-942 グループ) で誤検知されブロックされる。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">実装例</span></div>
+                <pre><code class="language-bash">az network application-gateway waf-policy managed-rule exception add \
+    -g "myResourceGroup" \
+    --policy-name "myWAF" \
+    --match-variable "RequestURI" \
+    --value-operator Equals \
+    --values "login.php" "logout.php" \
+    --rule-sets [0].rule-set-type=Microsoft_Default_Ruleset [0].rule-set-version=2.1</code></pre>
+            </div>
+            <p class="usecase-row"><span class="usecase-label effect">効果</span>対象 URI へのリクエストのみ SQL インジェクションルールの検査をスキップし、他のルールと保護はすべて有効なまま誤検知を解消できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">
+                <span class="usecase-number">CASE 2</span>
+                <h4>📱 モバイルアプリの Content-Type 誤検知対応</h4>
+            </div>
+            <p class="usecase-row"><span class="usecase-label">シナリオ</span>単一の DRS ルール (例: Restrict Content-Type Header) が正当なモバイルアプリのリクエストをブロックしている。</p>
+            <p class="usecase-row"><span class="usecase-label">実装</span>該当ルール 1 件のみを対象とした per-rule の例外を作成する。</p>
+            <p class="usecase-row"><span class="usecase-label effect">効果</span>他のすべての DRS ルール、Bot Protection、DDoS 保護は引き続きトラフィックに適用され、保護レベルの低下を最小限にとどめられる。従来のカスタムルール Allow では全マネージドルールセットが一括バイパスされていたのに対し、影響範囲を 1 ルールに限定できる。</p>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="highlight-box">
+            このアップデートに関する<strong>追加料金の情報は、公式アップデートおよびドキュメントでは確認できませんでした</strong>。WAF の料金は Application Gateway (WAF_v2) および Azure Front Door Premium の料金体系に従います。詳細は料金ページを参照してください。
+        </div>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/application-gateway/" target="_blank" rel="noopener">Application Gateway の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">Azure Front Door の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/web-application-firewall/" target="_blank" rel="noopener">Web Application Firewall の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>Azure Application Gateway (v2)</strong>
+                WAF ポリシーを関連付けるリージョナル L7 ロードバランサー。本機能の適用対象。
+            </div>
+            <div class="related-card">
+                <strong>Azure Front Door (Premium)</strong>
+                WAF ポリシーを関連付けるグローバルエッジ配信サービス。本機能の適用対象。
+            </div>
+            <div class="related-card">
+                <strong>WAF Exclusions (除外リスト)</strong>
+                ヘッダー・Cookie・クエリ引数・本文フィールドなどリクエストの一部分を検査から外す従来機能。Exceptions と使い分ける。
+            </div>
+            <div class="related-card">
+                <strong>WAF カスタムルール (Allow アクション)</strong>
+                信頼できるトラフィックに対して DRS/CRS/Bot Protection を一括バイパスする手段。Exceptions より粒度が粗い。
+            </div>
+            <div class="related-card">
+                <strong>マネージドルールセット (DRS / CRS / Bot Manager)</strong>
+                Exceptions の適用対象。CRS 3.2 / DRS 2.1 以降が必要。
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section summary-box">
+        <h3>📝 まとめ</h3>
+        <ul>
+            <li>Azure WAF の <strong>Exceptions 機能が Application Gateway と Azure Front Door で GA</strong>。誤検知対応の選択肢が「属性単位の Exclusions」「全ルールセット一括のカスタムルール Allow」に加えて「<strong>ルール / ルールグループ / ルールセット単位の選択的バイパス</strong>」へと広がった</li>
+            <li><strong>URI・リモート IP・ヘッダーを条件</strong>に、問題のあるルールだけをスキップして他の保護を維持できるため、保護レベルを犠牲にした広範な許可設定やルール無効化で誤検知に対処している環境では、<strong>Exceptions への置き換えを検討する価値がある</strong></li>
+            <li>利用には<strong>次世代 WAF エンジンと CRS 3.2 / DRS 2.1 以降のルールセットが必要</strong>。古い CRS を使用中の場合はまずルールセットのアップグレードを計画する</li>
+            <li>例外のスコープは <strong>per-rule を基本に最小限に絞る</strong>ことが推奨される</li>
+        </ul>
+    </section>
+
+    <!-- ===== Tags ===== -->
+    <div class="tag-list">
+        <span class="tag">Networking</span>
+        <span class="tag">Security</span>
+        <span class="tag">Application Gateway</span>
+        <span class="tag">Azure Front Door</span>
+        <span class="tag">Web Application Firewall</span>
+        <span class="tag">Features</span>
+        <span class="tag">GA</span>
+    </div>
+
+    <!-- ===== References / Footer ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク (出典)</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=574343" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/web-application-firewall/ag/application-gateway-exceptions" target="_blank" rel="noopener">Application Gateway WAF Exceptions ドキュメント (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/web-application-firewall/afds/front-door-exceptions" target="_blank" rel="noopener">Front Door WAF Exceptions ドキュメント (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/web-application-firewall/ag/application-gateway-waf-configuration" target="_blank" rel="noopener">Application Gateway WAF Exclusion Lists (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/web-application-firewall/" target="_blank" rel="noopener">Web Application Firewall の料金</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=574343" target="_blank" rel="noopener">Azure Updates (ID: 574343)</a> / Microsoft Learn</p>
+        <p>Azure News Summary — レポート: reports/2026/2026-10-08-waf-exceptions-app-gateway-front-door.md (生成日: 2026-10-08)</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

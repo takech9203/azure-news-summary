@@ -5,6 +5,12 @@
 
 ## 2026 年
 
+- [2026-10-08 - Azure API Management: Microsoft Agent 365 との統合 (Public Preview)](2026/2026-10-08-apim-agent-365-integration.md)
+- [2026-10-08 - Azure Deployment Environments: 2027 年 2 月 22 日にサービス廃止](2026/2026-10-08-deployment-environments-retirement.md)
+- [2026-10-08 - Azure Database for PostgreSQL: フレキシブルサーバーが East US 3 リージョンで一般提供開始](2026/2026-10-08-postgresql-flexible-server-east-us-3.md)
+- [2026-10-08 - Azure Web Application Firewall: Application Gateway / Front Door 向け Exceptions (例外) 機能が一般提供開始](2026/2026-10-08-waf-exceptions-app-gateway-front-door.md)
+- [2026-10-08 - Microsoft Marketplace: マルチパーティプライベートオファーが香港に拡大](2026/2026-10-08-marketplace-multiparty-private-offers-hong-kong.md)
+- [2026-10-08 - Microsoft Dev Box: 2028 年 9 月 18 日にサービス廃止](2026/2026-10-08-dev-box-retirement.md)
 - [2026-10-07 - Azure Kubernetes Service (AKS): Anyscale on Azure の一般提供開始 (GA)](2026/2026-10-07-anyscale-on-azure.md)
 - [2026-10-07 - SQL Server on Linux: bulkadmin 固定サーバーロールのサポート (GA)](2026/2026-10-07-sql-server-linux-bulkadmin.md)
 - [2026-10-06 - Azure App Service on Azure Stack Hub: リタイアメント発表](2026/2026-10-06-app-service-azure-stack-hub-retirement.md)
