@@ -5,8 +5,10 @@
 
 ## 2026 年
 
+- [2026-10-09 - Azure Arc-enabled Kubernetes: Azure Key Vault Secrets Provider Extension の退役告知](2026/2026-10-09-arc-keyvault-secrets-provider-retirement.md)
 - [2026-10-08 - Azure API Management: Microsoft Agent 365 との統合 (Public Preview)](2026/2026-10-08-apim-agent-365-integration.md)
 - [2026-10-08 - Azure Deployment Environments: 2027 年 2 月 22 日にサービス廃止](2026/2026-10-08-deployment-environments-retirement.md)
+- [2026-10-08 - Azure Kubernetes Service (AKS): マネージド StandardV2 NAT Gateway が一般提供 (GA) 開始](2026/2026-10-08-aks-standardv2-nat-gateway-ga.md)
 - [2026-10-08 - Azure Database for PostgreSQL: フレキシブルサーバーが East US 3 リージョンで一般提供開始](2026/2026-10-08-postgresql-flexible-server-east-us-3.md)
 - [2026-10-08 - Azure Web Application Firewall: Application Gateway / Front Door 向け Exceptions (例外) 機能が一般提供開始](2026/2026-10-08-waf-exceptions-app-gateway-front-door.md)
 - [2026-10-08 - Microsoft Marketplace: マルチパーティプライベートオファーが香港に拡大](2026/2026-10-08-marketplace-multiparty-private-offers-hong-kong.md)

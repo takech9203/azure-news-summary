@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS: マネージド StandardV2 NAT Gateway が一般提供 (GA) 開始</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.7;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--ms-blue-900) 0%, var(--azure-blue) 60%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 240px;
+    height: 240px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+}
+.hero::before {
+    content: "";
+    position: absolute;
+    right: 60px;
+    bottom: -90px;
+    width: 180px;
+    height: 180px;
+    background: rgba(80, 230, 255, 0.12);
+    border-radius: 50%;
+}
+.hero .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; position: relative; z-index: 1; }
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.4;
+    position: relative;
+    z-index: 1;
+}
+.hero .subtitle {
+    margin-top: 12px;
+    font-size: 16px;
+    opacity: 0.92;
+    position: relative;
+    z-index: 1;
+}
+.hero .meta {
+    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+}
+.hero .meta span {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.service-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #FFFFFF;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--ms-blue-200);
+}
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    border-radius: 10px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.sub-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: 900; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before, .after { border-radius: 8px; padding: 18px; }
+.before { background: #FFEBEE; border: 2px solid var(--ms-red); }
+.after { background: #E8F5E9; border: 2px solid var(--ms-green); }
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; background: #FFFFFF; }
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-top: 12px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 18px;
+    margin: 14px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { padding-left: 20px; font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content li { margin: 5px 0; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+td.center { text-align: center; }
+.ok { color: var(--ms-green); font-weight: 700; }
+.ng { color: var(--ms-red); font-weight: 700; }
+
+/* ===== Code Blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+code.inline {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* ===== Pros / Cons ===== */
+.pros-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.pros-card { background: #E8F5E9; border-radius: 10px; padding: 18px; border-top: 4px solid var(--ms-green); }
+.pros-card h4 { color: var(--ms-green); font-size: 16px; margin-bottom: 10px; }
+.pros-card ul { padding-left: 20px; font-size: 14px; }
+.pros-card li { margin: 8px 0; }
+
+.cons-list { list-style: none; }
+.cons-list li {
+    background: #FFF8F0;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 22px;
+    margin: 18px 0;
+}
+.usecase-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 12px;
+}
+.usecase-num {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.usecase-label {
+    display: inline-block;
+    font-weight: 700;
+    font-size: 13px;
+    color: #FFFFFF;
+    background: var(--ms-blue-700);
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin: 10px 0 6px;
+}
+.usecase-card p { font-size: 14px; }
+.effect-box {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* ===== Prerequisites / Lists ===== */
+.check-list { list-style: none; }
+.check-list li {
+    padding: 10px 14px 10px 40px;
+    position: relative;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    margin: 8px 0;
+    font-size: 14px;
+}
+.check-list li::before {
+    content: "✔";
+    position: absolute;
+    left: 14px;
+    color: var(--azure-blue);
+    font-weight: 700;
+}
+
+/* ===== Region ===== */
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+.region-card {
+    background: #FFEBEE;
+    border: 1px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    text-align: center;
+    color: var(--ms-red);
+    font-weight: 500;
+}
+
+/* ===== Related / Links ===== */
+.related-card {
+    background: var(--ms-surface-secondary);
+    border-left: 4px solid var(--ms-purple);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.related-card strong { color: var(--ms-blue-900); }
+
+.link-list { list-style: none; }
+.link-list li {
+    margin: 8px 0;
+    padding: 10px 14px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.link-list a { color: var(--ms-blue-800); font-weight: 500; text-decoration: none; word-break: break-all; }
+.link-list a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+}
+.summary-box p { font-size: 15px; margin-bottom: 12px; }
+.action-list { list-style: none; counter-reset: action; margin-top: 8px; }
+.action-list li {
+    counter-increment: action;
+    background: var(--ms-surface);
+    border-radius: 8px;
+    padding: 12px 16px 12px 48px;
+    margin: 10px 0;
+    position: relative;
+    font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+.action-list li::before {
+    content: counter(action);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* ===== Tags & Footer ===== */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 24px 0;
+    font-size: 13px;
+}
+footer h4 { font-size: 15px; margin-bottom: 10px; color: var(--azure-light-blue); }
+footer ul { list-style: none; }
+footer li { margin: 6px 0; }
+footer a { color: #9CDCFE; text-decoration: none; word-break: break-all; }
+footer a:hover { text-decoration: underline; }
+footer .copyright { margin-top: 16px; opacity: 0.7; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 12px; }
+
+p + p { margin-top: 10px; }
+
+@media (max-width: 700px) {
+    .before-after, .pros-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="badges">
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="service-badge">Azure Kubernetes Service (AKS)</span>
+            <span class="service-badge">Azure NAT Gateway</span>
+        </div>
+        <h1>AKS: マネージド StandardV2 NAT Gateway が<br>一般提供 (GA) 開始</h1>
+        <div class="subtitle">Managed StandardV2 NAT Gateway for AKS — ゾーン冗長なアウトバウンド接続がデフォルトに</div>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-08</span>
+            <span>🔧 機能: Managed StandardV2 NAT Gateway for AKS</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>AKS のマネージド StandardV2 NAT Gateway が一般提供 (GA) になった。AKS マネージド仮想ネットワークを使用するクラスターにおいて、AKS が StandardV2 NAT Gateway のプロビジョニングと管理を自動的に行う。サポート対象リージョンでは、<code class="inline">managedNATGateway</code> アウトバウンドタイプを使用する新規クラスターのデフォルト SKU が StandardV2 になる。</p>
+        <p>StandardV2 NAT Gateway は、デフォルトでのゾーン冗長性、最大 100 Gbps のスループット (Standard は 50 Gbps)、IPv6 サポート、フローログサポートを提供する。既存の AKS クラスターは、マネージド Standard NAT Gateway またはロードバランサーからマネージド StandardV2 NAT Gateway へ移行できる。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">100 Gbps</div>
+                <div class="stat-label">最大スループット<br>(Standard は 50 Gbps)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">ゾーン冗長</div>
+                <div class="stat-label">デフォルトで全ゾーン対応</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">64,512</div>
+                <div class="stat-label">IP あたりの SNAT フロー<br>(最大 16 IP)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">追加費用 ¥0</div>
+                <div class="stat-label">Standard と同一料金</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <strong>🔄 Preview からの変更点:</strong> Preview 時には専用のアウトバウンドタイプ <code class="inline">managedNATGatewayV2</code> が使用されていたが、GA では API バージョン <code class="inline">2026-06-01</code> 以降で <code class="inline">managedNATGateway</code> アウトバウンドタイプに統合され、SKU は <code class="inline">natGatewayProfile.sku</code> プロパティで表現される。Preview API バージョン (<code class="inline">2026-01-02-preview</code> 〜 <code class="inline">2026-05-02-preview</code>) は約 1 年間 <code class="inline">managedNATGatewayV2</code> を引き続き受け付けるため、その間に明示的な <code class="inline">sku</code> 指定を伴う <code class="inline">managedNATGateway</code> への移行が推奨される。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>マネージド NAT Gateway (<code class="inline">managedNATGateway</code>) は Standard SKU のみで、単一アベイラビリティゾーンでの動作となり、ゾーン障害時にアウトバウンド接続が中断されるリスクがあった</li>
+                    <li>Standard SKU のマネージド NAT Gateway では IPv6 アウトバウンド IP とカスタマー定義のアウトバウンド IP がサポートされていなかった</li>
+                    <li>StandardV2 のマネージド型 (<code class="inline">managedNATGatewayV2</code>) はパブリックプレビュー段階であり、フィーチャーフラグの登録が必要で、SLA の対象外だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>サポート対象リージョンの新規クラスターでは StandardV2 がデフォルト SKU となり、追加設定なしでゾーン冗長なアウトバウンド接続が得られる</li>
+                    <li>フィーチャーフラグや専用アウトバウンドタイプが不要になり、標準の <code class="inline">managedNATGateway</code> アウトバウンドタイプで StandardV2 を利用できる</li>
+                    <li>StandardV2 では Azure マネージド IPv6 アウトバウンド IP と、カスタマー定義のアウトバウンド IP アドレス / プレフィックス (StandardV2 SKU) の両方がサポートされる</li>
+                    <li>既存のマネージド Standard NAT Gateway クラスターは <code class="inline">natGatewayProfile.sku</code> を <code class="inline">StandardV2</code> に設定することでアップグレードできる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    User(["👤 ユーザー / ワークロード"]) --> AKS
+
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph VNet["🔗 AKS マネージド VNet"]
+            subgraph AKS["🚢 AKS クラスター (outboundType: managedNATGateway)"]
+                Z1["🖥️ ノード (ゾーン 1)"]
+                Z2["🖥️ ノード (ゾーン 2)"]
+                Z3["🖥️ ノード (ゾーン 3)"]
+            end
+        end
+        NATGW["🌐 StandardV2 NAT Gateway<br/>(ゾーン冗長 / 最大 100 Gbps)"]
+        PIP["📍 StandardV2 パブリック IP<br/>(IPv4 / IPv6)"]
+    end
+
+    Z1 --> NATGW
+    Z2 --> NATGW
+    Z3 --> NATGW
+    NATGW --> PIP
+    PIP -->|"SNAT 変換"| Internet["🌍 インターネット"]
+            </pre>
+        </div>
+        <div class="diagram-note">
+            この図は、AKS マネージド VNet 内の複数ゾーンに分散したノードが、AKS が自動プロビジョニングするゾーン冗長な StandardV2 NAT Gateway を経由してインターネットへアウトバウンド接続する構成を示している。NAT Gateway と IP の作成・管理は AKS が行うため、ユーザーの運用負荷なしでゾーン冗長なアウトバウンド接続が実現される。
+        </div>
+    </section>
+
+    <!-- ===== Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>1. StandardV2 が新規クラスターのデフォルト SKU に</h4>
+                <ul>
+                    <li>API バージョン <code class="inline">2026-06-01</code> 以降、SKU 未指定の新規クラスターはサポート対象リージョンで <code class="inline">StandardV2</code> がデフォルトになる</li>
+                    <li>AKS がリージョンの StandardV2 対応状況を検証し、未対応リージョンでは自動的に <code class="inline">Standard</code> が使用される</li>
+                    <li><code class="inline">Standard</code> を明示的に選択することも引き続き可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>2. <code class="inline">managedNATGateway</code> アウトバウンドタイプへの統合</h4>
+                <ul>
+                    <li>Preview 時の <code class="inline">managedNATGatewayV2</code> アウトバウンドタイプは廃止され、<code class="inline">managedNATGateway</code> + <code class="inline">networkProfile.natGatewayProfile.sku</code> に統合された</li>
+                    <li>Preview API バージョン (<code class="inline">2026-01-02-preview</code> 〜 <code class="inline">2026-05-02-preview</code>) は約 1 年間 <code class="inline">managedNATGatewayV2</code> を受け付ける (移行猶予期間)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⬆️</div>
+            <div class="feature-content">
+                <h4>3. Standard から StandardV2 へのアップグレード</h4>
+                <ul>
+                    <li>既存のマネージド Standard NAT Gateway クラスターは <code class="inline">natGatewayProfile.sku</code> を <code class="inline">StandardV2</code> に設定することでアップグレード可能</li>
+                    <li>StandardV2 から Standard へのダウングレードは不可</li>
+                    <li>既存の Standard クラスターは何もしなければそのまま Standard NAT Gateway を使い続ける (API からは読み取り専用の <code class="inline">natGatewayProfile.sku: Standard</code> として返される)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>4. 柔軟なアウトバウンド IP 構成 (StandardV2)</h4>
+                <ul>
+                    <li>Azure マネージド IP: <code class="inline">managedOutboundIPProfile</code> で IPv4 / IPv6 の個数を指定 (各 1〜16)</li>
+                    <li>カスタマー定義 IP: 事前作成した StandardV2 SKU のパブリック IP アドレス / プレフィックスを <code class="inline">outboundIPs</code> / <code class="inline">outboundIPPrefixes</code> で指定</li>
+                    <li>両モデルの併用は不可で、NAT Gateway 作成時に選択したモデルは後から変更できない</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>5. StandardV2 SKU の機能 (Azure NAT Gateway 側)</h4>
+                <ul>
+                    <li>ゾーン冗長: リージョン内の全アベイラビリティゾーンにまたがって動作し、単一ゾーン障害時も接続を維持</li>
+                    <li>最大 100 Gbps のスループット (Standard は 50 Gbps)</li>
+                    <li>IPv4 / IPv6 両方のパブリック IP アドレス / プレフィックスをサポート</li>
+                    <li>フローログによるアウトバウンドトラフィックの監視・分析</li>
+                    <li>NAT64 変換 (IPv6 のみのワークロードから IPv4 宛先への通信。別途 DNS64 ソリューションが必要)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Technical Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📊</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>項目</th>
+                        <th>StandardV2</th>
+                        <th>Standard</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>新規クラスターのデフォルト</td>
+                        <td class="ok">サポート対象リージョンでデフォルト</td>
+                        <td>明示選択時、または StandardV2 未対応リージョン</td>
+                    </tr>
+                    <tr>
+                        <td>アベイラビリティゾーン</td>
+                        <td class="ok">デフォルトでゾーン冗長</td>
+                        <td>ゾーナルまたは非ゾーナル</td>
+                    </tr>
+                    <tr>
+                        <td>最大スループット</td>
+                        <td class="ok">100 Gbps</td>
+                        <td>50 Gbps</td>
+                    </tr>
+                    <tr>
+                        <td>Azure マネージド アウトバウンド IPv4</td>
+                        <td class="ok">サポート</td>
+                        <td class="ok">サポート</td>
+                    </tr>
+                    <tr>
+                        <td>Azure マネージド アウトバウンド IPv6</td>
+                        <td class="ok">サポート</td>
+                        <td class="ng">非サポート</td>
+                    </tr>
+                    <tr>
+                        <td>カスタマー定義アウトバウンド IP / プレフィックス</td>
+                        <td class="ok">サポート (StandardV2 SKU の IP が必要)</td>
+                        <td class="ng">AKS マネージド NAT Gateway では非サポート</td>
+                    </tr>
+                    <tr>
+                        <td>対応パブリック IP SKU</td>
+                        <td>StandardV2 のみ</td>
+                        <td>Standard のみ</td>
+                    </tr>
+                    <tr>
+                        <td>SKU 変更</td>
+                        <td>Standard → StandardV2 のアップグレードは可、ダウングレードは不可</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>必要 API バージョン</td>
+                        <td><code class="inline">2026-06-01</code> 以降</td>
+                        <td>-</td>
+                    </tr>
+                    <tr>
+                        <td>アウトバウンドフロー</td>
+                        <td>IP あたり 64,512 (TCP/UDP)、最大 16 IP</td>
+                        <td>同左</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 class="sub-title">前提条件</h3>
+        <ul class="check-list">
+            <li>Azure CLI の最新バージョンがインストールされていること</li>
+            <li>Kubernetes バージョン 1.20.x 以上</li>
+            <li>マネージド NAT Gateway はカスタム VNet (BYO VNet) とは併用不可 (AKS マネージド VNet のみ)</li>
+            <li>カスタマー定義 IP を使用する場合は StandardV2 SKU のパブリック IP アドレス / プレフィックスが必要</li>
+        </ul>
+
+        <h3 class="sub-title">Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">managedNATGateway でクラスターを作成</span></div>
+            <pre><code class="language-bash"># managedNATGateway アウトバウンドタイプでクラスターを作成
+# (サポート対象リージョンでは StandardV2 がデフォルトで使用される)
+az aks create \
+    --resource-group &lt;resource-group&gt; \
+    --name &lt;cluster-name&gt; \
+    --location &lt;location&gt; \
+    --outbound-type managedNATGateway \
+    --nat-gateway-managed-outbound-ip-count 1 \
+    --generate-ssh-keys</code></pre>
+        </div>
+
+        <p>カスタマー定義 IP を使用する場合は、事前に StandardV2 SKU のパブリック IP を作成する。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">ゾーン冗長な StandardV2 パブリック IP の作成</span></div>
+            <pre><code class="language-bash"># ゾーン冗長な StandardV2 パブリック IP の作成
+az network public-ip create \
+    --resource-group &lt;resource-group&gt; \
+    --name &lt;public-ip-name&gt; \
+    --location eastus2 \
+    --sku StandardV2 \
+    --allocation-method Static \
+    --version IPv4 \
+    --zone 1 2 3</code></pre>
+        </div>
+
+        <p>クラスター構成 (ARM / API) では <code class="inline">networkProfile.natGatewayProfile</code> で IP モデルを指定する。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">json</span><span class="code-desc">networkProfile.natGatewayProfile の構成例</span></div>
+            <pre><code class="language-json">{
+  "properties": {
+    "networkProfile": {
+      "outboundType": "managedNATGateway",
+      "natGatewayProfile": {
+        "managedOutboundIPProfile": {
+          "count": 1,
+          "countIPv6": 1
+        }
+      }
+    }
+  }
+}</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== Benefits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="pros-grid">
+            <div class="pros-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>ゾーン冗長なアウトバウンド接続がデフォルトになり、ゾーン障害時のサービス中断リスクが追加コストなしで低減される (Standard と StandardV2 の料金は同一)</li>
+                    <li>GA により SLA の対象となり、プロダクション環境で安心して利用できる</li>
+                    <li>フィーチャーフラグや Preview CLI 拡張が不要になり、導入の手間が削減される</li>
+                </ul>
+            </div>
+            <div class="pros-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>新規クラスターは SKU を意識せずに作成するだけで、サポート対象リージョンでは自動的に StandardV2 (ゾーン冗長、100 Gbps) が適用される</li>
+                    <li>既存のマネージド Standard NAT Gateway クラスターは SKU 設定の変更のみで StandardV2 へアップグレードできる</li>
+                    <li>Standard SKU のマネージド NAT Gateway では不可能だった IPv6 アウトバウンド IP とカスタマー定義 IP / プレフィックスが利用可能になる</li>
+                    <li>フローログによりアウトバウンドトラフィックの可視化・分析が可能になる</li>
+                    <li>IP あたり 64,512 の SNAT ポートにより、ロードバランサーアウトバウンドと比較して SNAT ポート枯渇のリスクが低減される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="cons-list">
+            <li>StandardV2 NAT Gateway は StandardV2 SKU のパブリック IP アドレス / プレフィックスのみをサポートし、既存の Standard SKU パブリック IP は使用できない</li>
+            <li><code class="inline">type: LoadBalancer</code> の Service を処理する AKS マネージドロードバランサーは引き続き Standard Load Balancer であり、Standard パブリック IP が必要。タグ付きパブリック IP を事前プロビジョニングする場合は、NAT Gateway 用 (StandardV2) と受信 Service 用 (Standard) の両 SKU を計画する必要がある</li>
+            <li>StandardV2 から Standard へのダウングレードは不可</li>
+            <li>Azure マネージド IP とカスタマー定義 IP のモデルは NAT Gateway 作成時に決定され、後から切り替えられない</li>
+            <li>マネージド NAT Gateway はカスタム VNet (BYO VNet) と併用できない (BYO VNet では <code class="inline">userAssignedNATGateway</code> を使用する)</li>
+            <li>一部リージョン (Canada East、India South Central、Sweden South、West India) では StandardV2 NAT Gateway が未サポートであり、これらのリージョンでは Standard SKU が使用される</li>
+            <li>StandardV2 NAT Gateway をサブネットに関連付けると、ロードバランサーアウトバウンドルールを使用した IPv6 アウトバウンドトラフィックが中断される既知の問題がある</li>
+        </ul>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-num">1</span>新規プロダクションクラスターのゾーン冗長アウトバウンド接続</h4>
+            <span class="usecase-label">シナリオ</span>
+            <p>高可用性が求められるプロダクション環境向けに、複数アベイラビリティゾーンに分散した AKS クラスターを新規構築する。アウトバウンド接続もゾーン障害に耐える構成にしたい。</p>
+            <span class="usecase-label">実装例</span>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">ゾーン分散クラスターの新規作成</span></div>
+                <pre><code class="language-bash"># サポート対象リージョンで作成すると StandardV2 がデフォルトで適用される
+az aks create \
+    --resource-group prod-rg \
+    --name prod-aks-cluster \
+    --location eastus2 \
+    --node-count 6 \
+    --zones 1 2 3 \
+    --outbound-type managedNATGateway \
+    --nat-gateway-managed-outbound-ip-count 2 \
+    --generate-ssh-keys</code></pre>
+            </div>
+            <div class="effect-box"><strong>✨ 効果:</strong> ノードとアウトバウンド経路の両方がゾーン冗長となり、単一ゾーン障害時でも外部 API やコンテナーレジストリへのアウトバウンド通信が維持される。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-num">2</span>既存クラスターの Standard NAT Gateway からのアップグレード</h4>
+            <span class="usecase-label">シナリオ</span>
+            <p>マネージド Standard NAT Gateway を使用している既存の AKS クラスターで、ゾーン冗長性と高スループットを得るために StandardV2 へ移行したい。</p>
+            <span class="usecase-label">実装例</span>
+            <p>クラスター構成の <code class="inline">networkProfile.natGatewayProfile.sku</code> を <code class="inline">StandardV2</code> に設定して更新する (API バージョン <code class="inline">2026-06-01</code> 以降)。</p>
+            <div class="effect-box"><strong>✨ 効果:</strong> クラスターを再作成することなく、アウトバウンド接続をゾーン冗長な StandardV2 NAT Gateway へアップグレードできる。ダウングレードは不可のため、事前に StandardV2 の制約 (StandardV2 パブリック IP 要件など) を確認した上で実施する。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-num">3</span>Preview の <code class="inline">managedNATGatewayV2</code> からの移行</h4>
+            <span class="usecase-label">シナリオ</span>
+            <p>Preview 期間中に <code class="inline">managedNATGatewayV2</code> アウトバウンドタイプで構築したクラスターを、GA の API に合わせて移行したい。</p>
+            <span class="usecase-label">実装例</span>
+            <p>API バージョン <code class="inline">2026-06-01</code> 以降を使用し、<code class="inline">outboundType: managedNATGateway</code> + <code class="inline">natGatewayProfile.sku: StandardV2</code> の明示指定へ構成を更新する。</p>
+            <div class="effect-box"><strong>✨ 効果:</strong> Preview API バージョン (<code class="inline">2026-01-02-preview</code> 〜 <code class="inline">2026-05-02-preview</code>) は約 1 年間 <code class="inline">managedNATGatewayV2</code> を受け付けるが、廃止前に GA の表現へ移行することで、IaC テンプレートや自動化パイプラインの継続性が確保される。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="highlight-box">
+            <strong>Standard と StandardV2 の NAT Gateway の料金は同一</strong>である (公式料金ページに「2 つの SKU 間でコスト差はない」と明記)。
+        </div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>課金内容</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>リソース時間</td>
+                        <td>NAT Gateway がデプロイされている時間に基づく時間課金 (1 時間未満は 1 時間として課金)</td>
+                    </tr>
+                    <tr>
+                        <td>データ処理</td>
+                        <td>NAT Gateway を経由したアウトバウンドおよび戻りトラフィックのデータ量に基づく課金</td>
+                    </tr>
+                    <tr>
+                        <td>フローログ (StandardV2)</td>
+                        <td>有効化した時間に応じた月額固定料金 (NatGatewayFlowlogsV1)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p>StandardV2 パブリック IP アドレスの料金と帯域幅 (Bandwidth) 料金は別途発生する。具体的な単価は <a href="https://azure.microsoft.com/pricing/details/azure-nat-gateway/" style="color: var(--ms-blue-800);">Azure NAT Gateway の料金ページ</a>を参照されたい。</p>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗺️</span>利用可能リージョン</h2>
+        <p>StandardV2 がデフォルト SKU となるのは「サポート対象リージョン」であり、AKS がクラスター作成時にリージョンの対応状況を検証する。以下のリージョンでは StandardV2 NAT Gateway が<strong>未サポート</strong>であり、Standard SKU が使用される。</p>
+        <div class="region-grid">
+            <div class="region-card">🚫 Canada East</div>
+            <div class="region-card">🚫 India South Central</div>
+            <div class="region-card">🚫 Sweden South</div>
+            <div class="region-card">🚫 West India</div>
+        </div>
+        <p style="font-size: 14px; color: var(--ms-text-secondary);">最新の未サポートリージョン一覧は <a href="https://learn.microsoft.com/azure/nat-gateway/nat-overview#key-limitations-of-standardv2" style="color: var(--ms-blue-800);">Azure NAT Gateway の概要 (StandardV2 の主な制限)</a> を参照されたい。</p>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card"><strong>Azure NAT Gateway</strong>: AKS のアウトバウンド接続を提供する基盤サービス。StandardV2 SKU がゾーン冗長性、高スループット、IPv6、フローログ、NAT64 を提供する</div>
+        <div class="related-card"><strong>Azure Kubernetes Service (AKS)</strong>: 本アップデートの対象。AKS Automatic クラスターには事前構成済みのマネージド NAT Gateway が含まれる</div>
+        <div class="related-card"><strong>Azure Load Balancer</strong>: AKS のデフォルトのアウトバウンドタイプ。SNAT ポート数に制限があり、大規模環境では NAT Gateway への移行が推奨される。<code class="inline">type: LoadBalancer</code> Service の受信経路としては引き続き Standard Load Balancer が使用される</div>
+        <div class="related-card"><strong>Azure Virtual Network</strong>: マネージド NAT Gateway は AKS マネージド VNet でのみ使用可能。BYO VNet では <code class="inline">userAssignedNATGateway</code> アウトバウンドタイプで Standard / StandardV2 の NAT Gateway を関連付ける</div>
+        <div class="related-card"><strong>StandardV2 パブリック IP アドレス / プレフィックス</strong>: StandardV2 NAT Gateway のアウトバウンド IP に必須の SKU</div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>AKS のマネージド StandardV2 NAT Gateway が GA となり、サポート対象リージョンの新規クラスターでは <code class="inline">managedNATGateway</code> アウトバウンドタイプのデフォルト SKU が StandardV2 になった。追加コストなし (Standard と同一料金) でゾーン冗長なアウトバウンド接続、最大 100 Gbps のスループット、IPv6 サポートが得られる点は、プロダクション環境の可用性設計において大きな前進である。</p>
+            <p><strong>Solutions Architect への推奨アクション:</strong></p>
+            <ol class="action-list">
+                <li>新規クラスターは API バージョン <code class="inline">2026-06-01</code> 以降で作成し、デフォルトの StandardV2 を活用する</li>
+                <li>既存のマネージド Standard NAT Gateway クラスターは、StandardV2 パブリック IP 要件とダウングレード不可の制約を確認した上で、SKU アップグレードを計画する</li>
+                <li>Preview の <code class="inline">managedNATGatewayV2</code> アウトバウンドタイプを使用している場合は、Preview API の廃止 (約 1 年の猶予) までに <code class="inline">managedNATGateway</code> + 明示的な <code class="inline">sku</code> 指定へ移行する</li>
+            </ol>
+            <p style="margin-top: 12px;">また、タグ付きパブリック IP を事前プロビジョニングしている環境では、NAT Gateway 用 StandardV2 と受信 Service 用 Standard の両 SKU の IP 在庫計画を見直されたい。</p>
+        </div>
+
+        <div class="tags">
+            <span class="tag">#Azure</span>
+            <span class="tag">#AKS</span>
+            <span class="tag">#Kubernetes</span>
+            <span class="tag">#NATGateway</span>
+            <span class="tag">#StandardV2</span>
+            <span class="tag">#ZoneRedundant</span>
+            <span class="tag">#IPv6</span>
+            <span class="tag">#Networking</span>
+            <span class="tag">#GA</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <h4>📚 出典・参考リンク</h4>
+        <ul>
+            <li>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=574430">https://azure.microsoft.com/updates?id=574430</a></li>
+            <li>Microsoft Learn - AKS での NAT Gateway の作成: <a href="https://learn.microsoft.com/azure/aks/nat-gateway">https://learn.microsoft.com/azure/aks/nat-gateway</a></li>
+            <li>Microsoft Learn - Azure NAT Gateway の概要: <a href="https://learn.microsoft.com/azure/nat-gateway/nat-overview">https://learn.microsoft.com/azure/nat-gateway/nat-overview</a></li>
+            <li>Azure NAT Gateway 料金ページ: <a href="https://azure.microsoft.com/pricing/details/azure-nat-gateway/">https://azure.microsoft.com/pricing/details/azure-nat-gateway/</a></li>
+        </ul>
+        <div class="copyright">
+            このインフォグラフィックは Azure News Summary レポート (2026-10-08: AKS マネージド StandardV2 NAT Gateway GA) を基に生成されました。<br>
+            生成日: 2026-10-09 | Source: reports/2026/2026-10-08-aks-standardv2-nat-gateway-ga.md
+        </div>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
