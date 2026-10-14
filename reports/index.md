@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-10-14 - Azure Site Recovery: Azure Arc 対応 Windows VMware VM / 物理サーバーのディザスターリカバリーサポート (GA)](2026/2026-10-14-site-recovery-arc-enabled-windows-servers.md)
+- [2026-10-14 - Azure Cloud HSM: ハードウェア監査ログ (Hardware Audit Logging) の一般提供開始](2026/2026-10-14-cloud-hsm-hardware-audit-logging.md)
 - [2026-10-09 - Azure Arc-enabled Kubernetes: Azure Key Vault Secrets Provider Extension の退役告知](2026/2026-10-09-arc-keyvault-secrets-provider-retirement.md)
 - [2026-10-08 - Azure API Management: Microsoft Agent 365 との統合 (Public Preview)](2026/2026-10-08-apim-agent-365-integration.md)
 - [2026-10-08 - Azure Deployment Environments: 2027 年 2 月 22 日にサービス廃止](2026/2026-10-08-deployment-environments-retirement.md)
