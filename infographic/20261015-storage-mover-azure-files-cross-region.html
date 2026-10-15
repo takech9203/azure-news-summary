@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Storage Mover: Azure Files クロスリージョン データコピー・同期 (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Storage category color */
+    --storage-cyan: #00BCF2;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue) 70%, var(--storage-cyan));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "📁";
+    position: absolute;
+    right: 24px;
+    bottom: -10px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+.hero .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hero h1 {
+    margin: 0 0 10px;
+    font-size: 28px;
+    line-height: 1.4;
+}
+.hero p.subtitle { margin: 0; font-size: 15px; opacity: 0.9; }
+.hero .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 18px;
+    font-size: 14px;
+}
+.hero .meta span {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 12px;
+    border-radius: 6px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section > h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 21px;
+    margin: 0 0 16px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+}
+.section h3 {
+    color: var(--ms-blue-800);
+    font-size: 17px;
+    margin: 20px 0 10px;
+}
+.section-icon {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--azure-dark-blue); }
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4, .after h4 { margin: 0 0 10px; font-size: 15px; }
+.before h4 { color: var(--ms-red); }
+.after h4 { color: var(--ms-green); }
+.before ul, .after ul { margin: 0; padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 6px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { margin: 0 0 6px; font-size: 16px; color: var(--ms-blue-800); }
+.feature-content p, .feature-content ul { margin: 0; font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; }
+.feature-content li { margin: 4px 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--ms-blue-800);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+td:first-child { font-weight: 500; white-space: normal; color: var(--ms-blue-900); }
+
+/* Steps */
+.steps { counter-reset: step; list-style: none; margin: 16px 0; padding: 0; }
+.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 0 0 18px 52px;
+    font-size: 14px;
+}
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+.steps li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    top: 36px;
+    bottom: 2px;
+    width: 2px;
+    background: var(--ms-blue-300);
+}
+.steps li strong { color: var(--ms-blue-800); }
+
+/* Pros / cons */
+.pros-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.pros-card {
+    border-radius: 8px;
+    padding: 16px;
+    border: 2px solid var(--ms-blue-400);
+    background: var(--ms-blue-100);
+}
+.pros-card h4 { margin: 0 0 8px; font-size: 15px; color: var(--ms-blue-800); }
+.pros-card ul { margin: 0; padding-left: 20px; font-size: 14px; }
+.pros-card li { margin: 6px 0; }
+
+.caution-list { margin: 0; padding: 0; list-style: none; }
+.caution-list li {
+    background: #FFF8E6;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* Use cases */
+.usecase-card {
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--storage-cyan);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 14px 0;
+    background: var(--ms-surface);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.usecase-card h4 { margin: 0 0 10px; font-size: 16px; color: var(--azure-dark-blue); }
+.usecase-card p { margin: 8px 0; font-size: 14px; }
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-right: 6px;
+}
+.usecase-effect {
+    background: #E8F5E9;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 14px;
+    margin-top: 10px;
+}
+.usecase-effect strong { color: var(--ms-green); }
+
+/* Regions */
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+.region-chip {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 14px;
+    text-align: center;
+    font-weight: 500;
+    color: var(--ms-blue-900);
+}
+.region-chip small { display: block; color: var(--ms-text-secondary); font-weight: 400; }
+
+/* Related services */
+.related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+}
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.link-list { margin: 0; padding-left: 22px; font-size: 14px; }
+.link-list li { margin: 6px 0; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), #FFFFFF);
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-size: 15px;
+}
+
+/* Code block guard (not used but keeps mermaid safe) */
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    color: #E8E8E8;
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 24px 12px 36px;
+}
+footer a { word-break: break-all; }
+
+@media (max-width: 700px) {
+    .before-after, .pros-grid, .related-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure Storage Mover</span>
+            <span class="service-badge">Azure Files</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Azure Files クロスリージョン<br>データコピー・同期 (Public Preview)</h1>
+        <p class="subtitle">Azure Files cross-region data copy and synchronization with Azure Storage Mover</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-15</span>
+            <span>🏷️ Storage / Disaster Recovery</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2><span class="section-icon">📋</span>概要</h2>
+        <p>Azure Storage Mover を使用して、<strong>SMB Azure ファイル共有</strong>のデータを別のストレージアカウント・別の Azure リージョン・別のサブスクリプション (同一 Microsoft Entra テナント内) のファイル共有へ<strong>コピー・同期</strong>できる機能がパブリックプレビューになりました。単発実行だけでなく、<strong>スケジュールによる定期的な増分転送</strong>をサポートし、ビジネス継続性 (BCP/DR) を支えるセカンダリコピーを維持できます。</p>
+        <p>各ジョブ実行時にはソースファイル共有の<strong>共有スナップショットが自動作成</strong>され、そのスナップショットからデータがコピーされるため、ソースを利用中でも一貫性のあるコピーが得られます。コピーはファイルデータだけでなく、<strong>ACL (アクセス許可) やタイムスタンプなどのメタデータ</strong>にも適用されます。</p>
+        <div class="highlight-box">
+            ⚠️ <strong>プレビュー利用の注意</strong>: プレビューへのアクセスはサブスクリプション単位の有効化が必要で、サインアップフォームからの申請が必要です。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure Files のジオ冗長 (GRS/GZRS) は<strong>ペアリージョンへの複製に限定</strong>され、任意のリージョンにセカンダリコピーを置けなかった</li>
+                    <li>Premium (SSD) ファイル共有は <strong>GRS 非サポート</strong>で、リージョン障害に備えたコピー維持にはカスタムのコピー処理が必要だった</li>
+                    <li>Storage Mover のクラウド間転送は Azure Blob 間や AWS S3 → Azure などが対象で、<strong>Azure ファイル共有間のコピーは非サポート</strong>だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>ペアリージョンに限らず、<strong>任意の Azure リージョン・ストレージアカウント・サブスクリプション</strong> (同一テナント内) のファイル共有へコピー・同期可能に</li>
+                    <li>時間単位 (1/2/3/4/6/8/12 時間)・日次・週次・月次の<strong>定期スケジュールで増分コピーを自動実行</strong>し、DR 用セカンダリコピーを維持</li>
+                    <li><strong>マネージドサービス</strong>として実行され、エージェント VM や自前のコピースクリプトの運用が不要に</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">任意</div>
+                <div class="stat-label">コピー先リージョン<br>(ペアリージョン非依存)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">7 種</div>
+                <div class="stat-label">Hourly 間隔<br>(1/2/3/4/6/8/12 時間)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2 モード</div>
+                <div class="stat-label">Merge / Mirror<br>コピーモード</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">無料</div>
+                <div class="stat-label">Storage Mover<br>サービス利用料</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2><span class="section-icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph SrcRegion["🌍 リージョン A (プライマリ)"]
+        SRC[("📁 ソース SMB ファイル共有<br/>(SSD Provisioned v2)")]
+        SNAP["📸 共有スナップショット<br/>(実行ごとに自動作成)"]
+    end
+    subgraph Mover["⚙️ Azure Storage Mover"]
+        JOB["📋 コピージョブ<br/>(Merge / Mirror)"]
+        SCHED["⏰ スケジュール<br/>(時間/日/週/月)"]
+    end
+    subgraph DstRegion["🌏 リージョン B (セカンダリ)"]
+        DST[("📁 ターゲット SMB ファイル共有<br/>(読み取り専用として運用)")]
+    end
+    SRC --> SNAP
+    SNAP --> JOB
+    SCHED --> JOB
+    JOB -->|"増分転送<br/>(データ + ACL + タイムスタンプ)"| DST
+            </pre>
+        </div>
+        <p class="diagram-note">Storage Mover のコピージョブは、ソース共有のスナップショットから一貫性のあるデータを読み取り、別リージョン・別サブスクリプションのターゲット共有へ増分転送します。スケジュールを有効化すると定期的に同期が実行され、DR 用のセカンダリコピーが維持されます。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2><span class="section-icon">⚡</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>1. Azure Files 間のクロスリージョン・クロスサブスクリプション コピー</h4>
+                <ul>
+                    <li>ソースとターゲットは別のストレージアカウント・サブスクリプション・リージョンに配置可能 (同一 Microsoft Entra テナント内であることが条件)</li>
+                    <li>ペアリージョンに限定されず、任意のリージョンを DR 先として選択可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⏰</div>
+            <div class="feature-content">
+                <h4>2. スケジュールによる増分同期</h4>
+                <ul>
+                    <li>「スケジュールなし (手動実行)」「1 回限り」「定期実行」から選択</li>
+                    <li>定期実行は Hourly (1/2/3/4/6/8/12 時間間隔、既定 12 時間)・Daily・Weekly・Monthly をサポート</li>
+                    <li>終了日はスケジュール作成日から 1 年以内、開始日は作成日から 90 日以内に設定</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>3. 2 つのコピーモード</h4>
+                <ul>
+                    <li><strong>Merge content into target</strong>: ソースに存在しないファイルもターゲットに保持。名前・パスが一致するファイルはソースに合わせて更新 (複数共有の統合に有用)</li>
+                    <li><strong>Mirror source to target</strong>: ソースに存在しないファイルはターゲットから削除し、ソースと一致させる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📸</div>
+            <div class="feature-content">
+                <h4>4. スナップショットベースの一貫性コピー</h4>
+                <ul>
+                    <li>ジョブ実行ごとにソース共有の共有スナップショットを作成し、そこからコピーするため、ソース利用中でも一貫性を確保</li>
+                    <li>スナップショットはジョブ完了時に自動削除 (削除できなかった場合は警告付き完了となり手動削除が必要)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>5. RBAC ロールの自動割り当て</h4>
+                <p>ジョブ開始時に Storage Mover のマネージド ID へ、ソース/ターゲットのファイル共有に対する「Storage File Data Privileged Contributor」、ストレージアカウントに対する「Storage Account Contributor」ロールが自動割り当てされる</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>6. モニタリングとログ</h4>
+                <ul>
+                    <li>Monitoring タブで処理ファイル数、データ量、処理内訳 (Copied / Failed / Unsupported / Skipped / No copy needed)、スループットを確認可能</li>
+                    <li>コピーログ・ジョブ実行ログによるファイル単位の結果トレースに対応</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2><span class="section-icon">🔧</span>技術仕様</h2>
+        <table>
+            <tr><th style="width: 38%;">項目</th><th>詳細</th></tr>
+            <tr><td>対象プロトコル</td><td>SMB Azure ファイル共有のみ (NFS は非サポート)</td></tr>
+            <tr><td>推奨メディア階層 (プレビュー期間中)</td><td>ソース・ターゲットともに SSD Provisioned v2 共有</td></tr>
+            <tr><td>テナント要件</td><td>ソースとターゲットは同一 Microsoft Entra テナント内</td></tr>
+            <tr><td>コピー範囲</td><td>ファイル共有全体 (サブディレクトリの選択は不可)</td></tr>
+            <tr><td>コピー対象</td><td>ファイルデータ + メタデータ (ACL、タイムスタンプ)</td></tr>
+            <tr><td>同時実行ジョブ数</td><td>サブスクリプションあたり各 Storage Mover リージョンで 10 (サポートリクエストで引き上げ可、ただし 1 Storage Mover リソースあたり 50 まで)</td></tr>
+            <tr><td>操作インターフェース</td><td>Azure Portal のみ (プレビュー期間中は PowerShell / CLI 非サポート)</td></tr>
+            <tr><td>Storage Mover リソースの利用可能リージョン</td><td>North Europe、Sweden Central、East US、East US 2、West Central US、West US 3 の 6 リージョン</td></tr>
+            <tr><td>プレビュー利用</td><td>サインアップフォームによるサブスクリプション単位の申請・有効化が必要</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2><span class="section-icon">🛠️</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="steps">
+            <li>Azure サブスクリプションに <strong>Storage Mover リソースをデプロイ済み</strong>であること</li>
+            <li>ソースおよびターゲットの <strong>SMB Azure ファイル共有</strong> (プレビューでは SSD Provisioned v2 を使用)。異なるストレージアカウント・サブスクリプション・リージョンでもよいが、<strong>同一 Microsoft Entra テナント内</strong>であること</li>
+            <li><strong>プレビューのサインアップが完了</strong>し、サブスクリプションで機能が有効化されていること</li>
+        </ol>
+
+        <h3>Azure Portal での設定手順</h3>
+        <div class="highlight-box">プレビュー期間中は <strong>Azure Portal のみ</strong>サポートされます。</div>
+        <ol class="steps">
+            <li><strong>ソースエンドポイントの作成</strong>: Storage Mover リソースの「Storage endpoints」→「Source endpoints」→「Create endpoint」で、Migration type に「Azure to Azure」、Source type に「Azure File share (Preview)」を選択し、サブスクリプション・ストレージアカウント・ファイル共有を指定 (プロトコルは SMB)</li>
+            <li><strong>ターゲットエンドポイントの作成</strong>: 「Target endpoints」タブから同様にターゲットのファイル共有を指定</li>
+            <li><strong>プロジェクトの作成</strong>: 「Projects」の Get started タブで「Azure to Azure」+「Azure File share (Preview)」を選択し、ソース・ターゲット・プロジェクトをガイドに沿って設定</li>
+            <li><strong>ジョブ定義の作成</strong>: ジョブ名を入力し、Schedule タブでスケジュール (なし / 1 回 / 定期) を設定、Settings タブでコピーモード (Merge / Mirror) を選択して作成</li>
+            <li><strong>ジョブの実行</strong>: 「Start job」で RBAC ロールの自動割り当てを確認して開始。スケジュールを設定した場合は「Schedule」→「Enable」で有効化</li>
+        </ol>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2><span class="section-icon">👍</span>メリット</h2>
+        <div class="pros-grid">
+            <div class="pros-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>Premium (SSD) ファイル共有を含め、GRS に依存せず任意のリージョンに DR 用セカンダリコピーを維持でき、ビジネス継続性計画の選択肢が拡大</li>
+                    <li>ターゲット共有は読み取り可能なため、プライマリワークロードに影響を与えずに DR 訓練や検証に利用可能</li>
+                    <li>リージョン統合、データレジデンシー要件への対応、コンピュートに近いリージョンへのデータ再配置を計画的に実行可能</li>
+                </ul>
+            </div>
+            <div class="pros-card">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>フルマネージドのコピー・同期で、エージェント VM やカスタムスクリプト (AzCopy の定期実行など) の運用が不要</li>
+                    <li>スナップショットベースのコピーにより、ソース共有を利用中でも一貫性のあるコピーを取得</li>
+                    <li>ACL・タイムスタンプを含むメタデータが維持されるため、SMB アクセス制御をそのままセカンダリに引き継げる</li>
+                    <li>Merge モードで複数のファイル共有を 1 つの共有に統合可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2><span class="section-icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li><strong>RPO (目標復旧時点) の保証はない</strong>。復旧ポイントは「最後に成功したジョブ実行の完了時刻」であり、スケジュール頻度ではない</li>
+            <li><strong>NFS Azure ファイル共有は非サポート</strong> (SMB のみ)。プレビューでは SSD Provisioned v2 共有の使用が推奨され、他の構成は本番前に十分なテストが必要</li>
+            <li>コピー範囲は<strong>ファイル共有全体のみ</strong>で、サブディレクトリ単位の指定は不可</li>
+            <li><strong>ジョブ実行間にターゲット共有を変更してはならない</strong> (競合解決は行われず、変更が上書き・消失する可能性があるため、ターゲットは読み取り専用として扱う)</li>
+            <li>前回の実行中に次のスケジュール実行が開始されると<strong>エラーで失敗</strong>する (頻発する場合は実行間隔を長くする)</li>
+            <li>同時実行ジョブはサブスクリプションあたり各 Storage Mover リージョンで <strong>10 まで</strong> (引き上げ可、1 リソースあたり上限 50)</li>
+            <li>定期スケジュールの終了日は作成日から <strong>1 年以内</strong>、開始日は <strong>90 日以内</strong></li>
+            <li>同一ジョブで同じソースとターゲットのエンドポイントは指定不可。また<strong>「移動」ではなく「コピー」</strong>であり、ソース共有はそのまま残る</li>
+            <li>プレビュー利用には<strong>サインアップフォームからの申請</strong>とサブスクリプション単位の有効化が必要</li>
+        </ul>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2><span class="section-icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🛡️ ユースケース 1: Premium ファイル共有のクロスリージョン DR コピー</h4>
+            <p><span class="usecase-label">シナリオ</span>GRS をサポートしない Premium (SSD) ファイル共有について、ペアリージョン以外の任意のリージョンにセカンダリコピーを維持し、プライマリリージョン障害時の復旧ポイントとして利用する。</p>
+            <p><span class="usecase-label">実装例</span>ソース共有 (例: East US) とターゲット共有 (例: West US 3) のエンドポイントを作成し、Mirror モード + 12 時間間隔の定期スケジュールでコピージョブを構成。ターゲットは読み取り専用として運用し、DR 訓練時の検証にも活用する。</p>
+            <div class="usecase-effect"><strong>効果</strong>: GRS 非対応の Premium 共有でもリージョン障害に備えたセカンダリコピーを自動維持でき、復旧先リージョンを自由に選択できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🚚 ユースケース 2: リージョン移行・データレジデンシー対応</h4>
+            <p><span class="usecase-label">シナリオ</span>リージョン統合やデータレジデンシー要件、またはデータを利用するコンピュートへの近接配置のため、ファイル共有データを別リージョンへ移行する。</p>
+            <p><span class="usecase-label">実装例</span>初回フルコピーの後、定期スケジュールで増分同期を継続し、カットオーバー時に最終同期を実行してワークロードをターゲット共有へ切り替える。</p>
+            <div class="usecase-effect"><strong>効果</strong>: ダウンタイムを最小化しながら、ACL・タイムスタンプを維持したままリージョン間移行を完了できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🗂️ ユースケース 3: 複数ファイル共有の統合</h4>
+            <p><span class="usecase-label">シナリオ</span>複数のファイル共有の内容を 1 つの共有に統合してストレージアカウントを再編成する。</p>
+            <p><span class="usecase-label">実装例</span>ソース共有ごとにコピージョブを作成し、同一のターゲット共有に対して「Merge content into target」モードで実行する。</p>
+            <div class="usecase-effect"><strong>効果</strong>: 既存ファイルを保持しながら複数共有のコンテンツを 1 つの共有へ集約できる。</div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2><span class="section-icon">💰</span>料金</h2>
+        <p>Azure Storage Mover サービス自体の現行機能は<strong>すべて無料</strong>で提供されています。ただし、以下の関連コストが発生する可能性があります。</p>
+        <table>
+            <tr><th style="width: 32%;">項目</th><th>内容</th></tr>
+            <tr><td>Storage Mover サービス利用料</td><td>現行機能は無料</td></tr>
+            <tr><td>ターゲットストレージ</td><td>Provisioned 課金モデル (SSD Provisioned v2 など) ではプロビジョニング容量に課金。従量課金モデルではトランザクションと使用容量に課金</td></tr>
+            <tr><td>ネットワーク</td><td>転送帯域には通常の Azure トラフィックと同じ料金が適用され、Storage Mover 固有の追加料金はない</td></tr>
+        </table>
+        <p style="font-size: 14px;">本機能 (Azure Files 間コピー) 固有の料金は公式ページで確認できませんでした。詳細は以下を参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://learn.microsoft.com/azure/storage-mover/billing" target="_blank" rel="noopener">Azure Storage Mover の課金について (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/storage/files/" target="_blank" rel="noopener">Azure Files 料金ページ</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/bandwidth/" target="_blank" rel="noopener">帯域幅 (データ転送) 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2><span class="section-icon">🌍</span>利用可能リージョン</h2>
+        <p>Storage Mover リソースは以下の <strong>6 リージョン</strong>で利用可能です (ターゲットファイル共有に最も近いリージョンへのデプロイが推奨されます)。</p>
+        <div class="region-grid">
+            <div class="region-chip">North Europe<small>(Europe)</small></div>
+            <div class="region-chip">Sweden Central<small>(Europe)</small></div>
+            <div class="region-chip">East US<small>(US)</small></div>
+            <div class="region-chip">East US 2<small>(US)</small></div>
+            <div class="region-chip">West Central US<small>(US)</small></div>
+            <div class="region-chip">West US 3<small>(US)</small></div>
+        </div>
+        <div class="highlight-box">プレビューの有効化は<strong>サブスクリプション単位</strong>で行われ、対象リージョンで利用可能になった時点で通知されます。</div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2><span class="section-icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>📁 Azure Files</strong>コピー対象となる SMB ファイル共有サービス。本機能はソース・ターゲットの両方に Azure Files を使用する</div>
+            <div class="related-card"><strong>📸 Azure Files 共有スナップショット</strong>ジョブ実行ごとに自動作成され、一貫性のあるコピーの読み取り元として利用される</div>
+            <div class="related-card"><strong>🌐 Azure Storage の冗長性 (GRS/GZRS)</strong>ペアリージョンへの複製を提供する既存の冗長オプション。本機能は任意リージョンへのコピーという補完的な選択肢を提供する</div>
+            <div class="related-card"><strong>📊 Azure Monitor / ログ</strong>Storage Mover のコピーログ・ジョブ実行ログを有効化して、ファイル単位の転送結果をトレース可能</div>
+            <div class="related-card"><strong>🔐 Azure RBAC / マネージド ID</strong>ジョブ開始時に Storage Mover のマネージド ID へ必要なロールが自動割り当てされる</div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2><span class="section-icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=576542" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage-mover/azure-files-to-azure-files-copy" target="_blank" rel="noopener">Get started with Azure Files-to-Azure Files data copy in Azure Storage Mover (preview) - Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage-mover/service-overview" target="_blank" rel="noopener">What is Azure Storage Mover? - Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage-mover/job-scheduling" target="_blank" rel="noopener">Job scheduling in Azure Storage Mover - Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage-mover/billing" target="_blank" rel="noopener">Understanding Azure Storage Mover billing - Microsoft Learn</a></li>
+            <li><a href="https://forms.cloud.microsoft/pages/responsepage.aspx?id=v4j5cvGGr0GRqy180BHbR8CNg9dCXCtNsi4tmyLcYApUOENIOThaQlpMRzlVTk9JVURNNEVUWDVGSC4u&amp;origin=lprLink&amp;route=shorturl" target="_blank" rel="noopener">プレビュー サインアップフォーム</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2><span class="section-icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            Azure Storage Mover による Azure Files 間のクロスリージョン コピー・同期機能のパブリックプレビューにより、GRS を利用できない Premium (SSD) ファイル共有を含め、<strong>任意のリージョン・サブスクリプションへセカンダリコピーをスケジュール維持</strong>できるようになりました。特に DR 戦略でペアリージョン以外への複製が求められる環境や、リージョン移行・共有統合を計画している組織にとって重要なアップデートです。利用にはプレビューのサインアップが必要で、現時点では SMB 共有 (SSD Provisioned v2 推奨)・Azure Portal のみのサポート、RPO 保証なしといった制約があるため、<strong>本番適用前に要件との適合性を検証する</strong>ことを推奨します。
+        </div>
+        <p style="font-size: 13px; color: var(--ms-text-secondary); margin-top: 14px;"><strong>タグ</strong>: Azure Storage Mover, Azure Files, Storage, Disaster Recovery, Cross-Region, Data Copy, Synchronization, Public Preview</p>
+    </section>
+
+    <footer>
+        <p><strong>出典</strong>:
+            <a href="https://azure.microsoft.com/updates?id=576542" target="_blank" rel="noopener">Azure Updates (ID: 576542)</a> /
+            <a href="https://learn.microsoft.com/azure/storage-mover/azure-files-to-azure-files-copy" target="_blank" rel="noopener">Microsoft Learn: Azure Files-to-Azure Files data copy</a> /
+            <a href="https://learn.microsoft.com/azure/storage-mover/service-overview" target="_blank" rel="noopener">Microsoft Learn: What is Azure Storage Mover?</a>
+        </p>
+        <p>リリース日: 2026-10-15 | ステータス: In Preview | Azure News Summary プロジェクトにより生成</p>
+    </footer>
+
+</div>
+</body>
+</html>

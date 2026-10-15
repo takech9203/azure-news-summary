@@ -5,6 +5,9 @@
 
 ## 2026 年
 
+- [2026-10-15 - Azure Private Link: Standard service endpoint の一般提供開始 (GA)](2026/2026-10-15-private-link-standard-service-endpoint.md)
+- [2026-10-15 - Azure Virtual Machine Scale Sets: Automatic Zone Balance の一般提供開始 (GA)](2026/2026-10-15-vmss-automatic-zone-balance.md)
+- [2026-10-15 - Azure Storage Mover: Azure Files クロスリージョン データコピー・同期 (Public Preview)](2026/2026-10-15-storage-mover-azure-files-cross-region.md)
 - [2026-10-14 - Azure Site Recovery: Azure Arc 対応 Windows VMware VM / 物理サーバーのディザスターリカバリーサポート (GA)](2026/2026-10-14-site-recovery-arc-enabled-windows-servers.md)
 - [2026-10-14 - Azure Cloud HSM: ハードウェア監査ログ (Hardware Audit Logging) の一般提供開始](2026/2026-10-14-cloud-hsm-hardware-audit-logging.md)
 - [2026-10-09 - Azure Arc-enabled Kubernetes: Azure Key Vault Secrets Provider Extension の退役告知](2026/2026-10-09-arc-keyvault-secrets-provider-retirement.md)

@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure VMSS: Automatic Zone Balance の一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #FFFFFF;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+}
+
+.header .meta {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 24px; }
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin-bottom: 12px; }
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.note-box {
+    background: #FFF8E7;
+    border-left: 4px solid var(--ms-yellow);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; font-size: 16px; }
+.feature-content ul { padding-left: 20px; font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content li { margin-bottom: 6px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 30px; font-weight: bold; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+/* Table */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+}
+
+.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+.spec-table td:first-child { font-weight: 500; white-space: nowrap; color: var(--ms-blue-800); }
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--azure-dark-blue);
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Code block */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Steps */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+.step-num {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+.step-text { font-size: 14px; padding-top: 3px; }
+
+/* Pros / Cons */
+.pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
+.pros, .cons {
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.pros { background: #E8F5E9; border-top: 4px solid var(--ms-green); }
+.cons { background: #FFF4EC; border-top: 4px solid var(--ms-orange); }
+.pros h4 { color: var(--ms-green); margin-bottom: 10px; }
+.cons h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.pros ul, .cons ul { padding-left: 20px; font-size: 14px; }
+.pros li, .cons li { margin-bottom: 8px; }
+
+/* Constraint cards */
+.constraint-card {
+    display: flex;
+    gap: 12px;
+    background: #FFF4EC;
+    border-left: 4px solid var(--ms-orange);
+    padding: 12px 16px;
+    margin: 10px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+}
+.constraint-card .c-icon { font-size: 20px; }
+.constraint-card strong { color: var(--ms-red); }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card h4 { color: var(--ms-blue-800); margin-bottom: 6px; font-size: 15px; }
+
+/* Links */
+a { color: var(--azure-blue); }
+.link-list { padding-left: 20px; font-size: 14px; }
+.link-list li { margin-bottom: 8px; }
+
+ul.plain { padding-left: 22px; margin: 10px 0; }
+ul.plain li { margin-bottom: 8px; }
+
+ol.plain { padding-left: 22px; margin: 10px 0; font-size: 14px; }
+ol.plain li { margin-bottom: 8px; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 8px;
+}
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .pros-cons { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Virtual Machine Scale Sets (VMSS)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Automatic Zone Balance の一般提供開始 (GA)</h1>
+        <p class="subtitle">ゾーン間の VM インスタンス不均衡を自動検出し、Create-before-delete 方式で安全に再分散</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-15</span>
+            <span>🧩 機能: Automatic Zone Balance (ゾーン間の VM インスタンス自動再分散)</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Virtual Machine Scale Sets (VMSS) の <strong>Automatic Zone Balance (自動ゾーンバランス)</strong> が一般提供 (GA) となりました。複数の可用性ゾーンにまたがってデプロイされたスケールセットを継続的に監視し、ゾーン間で VM インスタンス数の不均衡が発生した場合に、自動的に VM を再分散します。</p>
+        <p>複数ゾーンにまたがるスケールセットは VM をできる限り均等にゾーンへ分散しようとしますが、<strong>キャパシティ制約やスケーリング操作</strong>などの要因により、時間の経過とともにゾーン間の不均衡が発生することがあります。この不均衡は気付かれないまま放置されがちで、単一ゾーンの障害時に想定以上の割合の VM が影響を受け、アプリケーションの可用性が低下するリスクを高めます。Automatic Zone Balance はこの不均衡をバックグラウンドで検出・是正し、手動介入を減らしてレジリエンシーを向上させます。</p>
+        <div class="highlight-box">
+            <strong>既存機能との違い:</strong> 従来からある「ゾーンバランシング (best-effort / strict)」は<strong>スケーリング操作時のインスタンス配置</strong>を制御する仕組みであるのに対し、Automatic Zone Balance は<strong>既に発生した不均衡をプロアクティブに検出</strong>し、不足ゾーンへの VM 作成と過剰ゾーンからの VM 削除によって是正する機能です。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>キャパシティ制約やスケーリング操作により、ゾーン間不均衡が時間とともに発生し、気付かれないまま放置されることがあった</li>
+                    <li>不均衡状態では、単一ゾーン障害時に想定以上の割合の VM が影響を受け、アプリケーションの可用性が低下するリスクがあった</li>
+                    <li>不均衡の検出と是正に手動での介入 (監視・再分散) が必要だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>ゾーン間不均衡を継続的に自動監視し、検出時にバックグラウンドで自動的に再分散</li>
+                    <li>Create-before-delete 方式 (新 VM の正常性を確認してから旧 VM を削除) により、アプリケーションへの影響を最小限に抑えて再分散</li>
+                    <li>手動介入が不要になり、ゾーンレベルのレジリエンシーが維持される</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">±1 台</div>
+                <div class="stat-label">バランス判定の基準 (ゾーン間の VM 数の差)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1 台</div>
+                <div class="stat-label">1 回の再分散操作で移動する VM 数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">90 分</div>
+                <div class="stat-label">新 VM の正常化を待機する最大時間</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">60 分</div>
+                <div class="stat-label">再分散前に操作がないことを確認する期間</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🔴 Before: 手動での検出・是正が必要"]
+        B1["⚖️ ゾーン不均衡が発生<br/>(例: Zone1: 1台 / Zone2: 3台 / Zone3: 3台)"]
+        B2(["👤 運用者が不均衡を検出し手動で対応"])
+        B1 --> B2
+    end
+    subgraph After["🟢 After: Automatic Zone Balance (GA)"]
+        A1["👁️ スケールセットを継続監視<br/>(不均衡を自動検出)"]
+        A2["➕ 不足ゾーンに新 VM を作成<br/>(Create-before-delete)"]
+        A3{"🩺 新 VM が 90 分以内に<br/>正常 (healthy) になった?"}
+        A4["➖ 過剰ゾーンの VM を削除<br/>→ バランス回復"]
+        A5["↩️ 新 VM を削除<br/>(正常な既存 VM を維持)"]
+        A1 --> A2 --> A3
+        A3 -->|Yes| A4
+        A3 -->|No| A5
+    end
+    Before -.->|"GA により自動化"| After
+            </pre>
+        </div>
+        <p>従来は運用者がゾーン不均衡を検出して対応する必要がありましたが、GA となった Automatic Zone Balance が不均衡を継続的に監視し、<strong>不足ゾーンへの VM 作成 → 正常性確認 → 過剰ゾーンの VM 削除</strong>という安全な手順で自動的に再分散します。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">👁️</div>
+            <div class="feature-content">
+                <h4>1. ゾーン不均衡の継続監視</h4>
+                <ul>
+                    <li>2 つ以上の可用性ゾーンにまたがるスケールセットを常時監視し、ゾーン間の VM 数の差が <strong>±1 台を超える</strong>不均衡を検出</li>
+                    <li>不均衡を検出し、安全条件を満たし、不足ゾーンにキャパシティがある場合、即座に再分散を開始</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>2. Create-before-delete による安全な再分散</h4>
+                <ul>
+                    <li>最も VM が少ないゾーン (under-provisioned zone) に新しい VM を作成し、正常 (healthy) になったことを確認してから、最も VM が多いゾーン (over-provisioned zone) の VM を削除</li>
+                    <li>新 VM が 90 分以内に正常にならない場合、ソース VM が正常であれば新 VM を削除して元の状態を維持 (ワークロードの健全性を優先)</li>
+                    <li>1 回の再分散操作で移動する VM は 1 台のみ。操作間にはクールダウン期間が設けられ、変更が段階的かつ制御された形で行われる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>3. 安全チェック (Safety checks)</h4>
+                <ul>
+                    <li>スケールセットが削除対象でないこと、過去 60 分以内に PUT/PATCH/POST 操作 (VM の追加・削除、アップグレードなど) がないことを確認してから再分散を開始</li>
+                    <li>インスタンス保護ポリシーが適用された VM、割り当て解除状態・削除予定の VM は移動対象外</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔧</div>
+            <div class="feature-content">
+                <h4>4. Automatic Instance Repairs との統合</h4>
+                <ul>
+                    <li>Automatic Zone Balance を有効化すると、既定で Automatic Instance Repairs (インスタンスの自動修復) も有効になり、インスタンスレベルの健全性監視とゾーンレベルのレジリエンシーの両方を確保できる (個別に無効化も可能)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📐</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象</td><td>2 つ以上の可用性ゾーンにまたがる (zone-spanning) スケールセット。すべての VM がゾーンに割り当てられている必要があり、リージョナル (非ゾーン) VM を含むスケールセットは対象外</td></tr>
+            <tr><td>バランスの定義</td><td>各ゾーンの VM 数が他のゾーンと比べて ±1 台以内であれば「バランスされている」とみなす</td></tr>
+            <tr><td>再分散方式</td><td>Create-before-delete (RebalanceBehavior: <code class="inline">CreateBeforeDelete</code>)、Recreate (RebalanceStrategy: <code class="inline">Recreate</code>)。1 回につき 1 台のみ移動</td></tr>
+            <tr><td>正常性判定</td><td>Application Health Extension または Load Balancer Health Probe によるアプリケーション正常性監視が必須。新 VM の正常化を最大 90 分待機</td></tr>
+            <tr><td>API バージョン</td><td>Compute API 2024-07-01 以降</td></tr>
+            <tr><td>設定プロパティ</td><td><code class="inline">properties.resiliencyPolicy.AutomaticZoneRebalancingPolicy</code></td></tr>
+            <tr><td>一時的なキャパシティ増加</td><td>再分散中はスケールセットのキャパシティが一時的に 1 台分増加する (クォータとオートスケールの上限に余裕が必要)</td></tr>
+            <tr><td>SKU</td><td>再分散で作成される新 VM は常にスケールセットモデルの最新 SKU を使用 (異なる SKU の VM は再分散後に元の SKU を保持しない)</td></tr>
+            <tr><td>監視</td><td>Azure Monitor アクティビティログ (<code class="inline">BalanceVMsAcrossZones</code> 操作)、Uniform モードでは Instance View API の <code class="inline">orchestrationServices</code> (<code class="inline">AutomaticZoneRebalancing</code>) で状態確認可能</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="plain">
+            <li>アプリケーション正常性監視の有効化 (Application Health Extension または Load Balancer Health Probe のいずれか一方)</li>
+            <li>スケールセットが 2 つ以上の可用性ゾーンにまたがって構成されていること (すべての VM がゾーンに割り当て済み)</li>
+            <li>Compute API バージョン 2024-07-01 以降を使用すること</li>
+            <li>(プレビュー時点のドキュメントでは) サブスクリプションでの機能フラグ <code class="inline">Microsoft.Compute.AutomaticZoneRebalancing</code> の登録が必要とされていた</li>
+            <li>オートスケールの最大インスタンス数とサブスクリプションのクォータに、再分散中の一時的な 1 台分の増加を許容する余裕があること</li>
+        </ol>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">bash</span>
+                <span class="code-desc">Azure CLI による有効化</span>
+            </div>
+            <pre><code class="language-bash"># Application Health Extension を追加 (Automatic Zone Balance に必須)
+az vmss extension set \
+    --resource-group myResourceGroup \
+    --vmss-name myVMScaleSet \
+    --name ApplicationHealthLinux \
+    --publisher Microsoft.ManagedServices \
+    --version 2.0 \
+    --settings '{"protocol": "http", "port": 80, "requestPath": "/healthEndpoint"}'
+
+# インスタンスをアップグレードして拡張機能をインストール
+az vmss update-instances \
+    --resource-group myResourceGroup \
+    --name myVMScaleSet \
+    --instance-ids "*"
+
+# Automatic Zone Balance を有効化
+az vmss update \
+    --resource-group myResourceGroup \
+    --name myVMScaleSet \
+    --enable-automatic-zone-balancing true \
+    --automatic-zone-balancing-behavior CreateBeforeDelete \
+    --automatic-zone-balancing-strategy Recreate</code></pre>
+        </div>
+
+        <h3>Azure Portal — 新規スケールセット作成時</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-text">スケールセット作成の「Basics」タブで、「Availability zone」で 2 つ以上のゾーンを選択</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-text">「Health」タブでアプリケーション正常性監視を有効化・構成</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-text">「Automatic zone balancing」のチェックボックスを選択して作成</div></div>
+        </div>
+
+        <h3>Azure Portal — 既存のスケールセット</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-text">スケールセットの「Availability + scale」>「Availability」で 2 つ以上のゾーンが選択されていることを確認</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-text">「Operations」>「Health and repair」でアプリケーション正常性監視が有効であることを確認</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-text">「Resiliency」セクションで「Automatic zone balancing」のチェックボックスを選択して保存</div></div>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="pros-cons">
+            <div class="pros">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>ゾーン障害時に影響を受ける VM の割合を抑え、アプリケーションの可用性低下リスクを低減できる</li>
+                    <li>ゾーン不均衡の監視・是正にかかる運用負荷 (手動介入) を削減できる</li>
+                    <li>GA となったことで本番環境での利用が正式にサポートされる</li>
+                </ul>
+            </div>
+            <div class="pros" style="border-top-color: var(--azure-blue);">
+                <h4 style="color: var(--azure-blue);">🔧 技術面</h4>
+                <ul>
+                    <li>Create-before-delete 方式と正常性確認により、再分散中もワークロードの健全性が優先される</li>
+                    <li>1 回 1 台の移動・クールダウン期間・事前の安全チェックにより、変更が段階的かつ制御された形で行われる</li>
+                    <li>Automatic Instance Repairs との統合により、インスタンスレベルとゾーンレベルの両方のレジリエンシーを一度に確保できる</li>
+                    <li>アクティビティログや Instance View API で再分散操作を監視・追跡できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="constraint-card"><span class="c-icon">📦</span><div><strong>ステートレスワークロード向けに推奨:</strong> 再分散は VM の削除・再作成によって行われるため、インスタンス ID、ネットワーク構成、ディスクは保持されない</div></div>
+        <div class="constraint-card"><span class="c-icon">🎯</span><div><strong>ベストエフォート動作:</strong> 不足ゾーンのキャパシティが限られている場合、再分散が遅延または開始されないことがある</div></div>
+        <div class="constraint-card"><span class="c-icon">📊</span><div><strong>クォータの制約:</strong> 再分散中に一時的に VM 数が 1 台増加するため、サブスクリプションに十分なクォータが必要 (不足している場合は再分散が実行されない)</div></div>
+        <div class="constraint-card"><span class="c-icon">🏷️</span><div><strong>SKU の非保持:</strong> 新 VM は常にスケールセットモデルの最新 SKU で作成されるため、異なる SKU の VM は再分散後に元の SKU を保持しない (特定の VM を再分散対象から除外したい場合はインスタンス保護ポリシーを適用する)</div></div>
+        <div class="constraint-card"><span class="c-icon">🚫</span><div><strong>ゾーン障害復旧の代替にはならない:</strong> 本機能は VM の正常性を監視してゾーン障害を検出するものではなく、ゾーンダウン時の復旧メカニズムとして使用すべきではない</div></div>
+    </section>
+
+    <!-- 料金 / リージョン -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金・利用可能リージョン</h2>
+        <h3>料金</h3>
+        <p>Automatic Zone Balance 自体の追加料金に関する公式情報は、今回のアップデート情報からは確認できませんでした。なお、再分散中はスケールセットのキャパシティが一時的に 1 台分増加する点に留意してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-machine-scale-sets/" target="_blank" rel="noopener">Virtual Machine Scale Sets の価格</a></li>
+        </ul>
+        <h3>利用可能リージョン</h3>
+        <p>リージョンに関する公式情報は確認できませんでした。可用性ゾーンをサポートするリージョンの一覧は以下を参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://learn.microsoft.com/azure/reliability/availability-zones-region-support" target="_blank" rel="noopener">可用性ゾーンをサポートする Azure リージョン</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🔧 Automatic Instance Repairs</h4>
+                <p>不健全な VM インスタンスを監視・修復する機能。Automatic Zone Balance の有効化時に既定で併せて有効化され、インスタンスレベルの健全性とゾーンレベルのレジリエンシーを両立する。</p>
+            </div>
+            <div class="related-card">
+                <h4>🩺 Application Health Extension / Load Balancer Health Probe</h4>
+                <p>Automatic Zone Balance の前提条件となるアプリケーション正常性監視。再分散時に新 VM の正常性判定に使用される。</p>
+            </div>
+            <div class="related-card">
+                <h4>⚖️ ゾーンバランシング (best-effort / strict)</h4>
+                <p>スケーリング操作時のインスタンス配置を制御する既存機能。Automatic Zone Balance は既存の不均衡を是正する点で補完関係にある。</p>
+            </div>
+            <div class="related-card">
+                <h4>🛡️ インスタンス保護ポリシー</h4>
+                <p>特定の VM を再分散対象から除外するために使用できる。</p>
+            </div>
+            <div class="related-card">
+                <h4>📊 Azure Monitor アクティビティログ</h4>
+                <p><code class="inline">BalanceVMsAcrossZones</code> 操作のログで再分散の実行状況を監視できる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>VMSS の Automatic Zone Balance が GA となり、可用性ゾーンにまたがるスケールセットのゾーン間不均衡を<strong>自動的に検出・是正</strong>できるようになりました。従来は気付かれにくかった不均衡によるゾーン障害時の可用性リスクを、<strong>手動介入なしで低減</strong>できる点が大きな価値です。</p>
+            <p style="margin-top: 12px;">マルチゾーン構成の VMSS を運用している場合、特に<strong>ステートレスワークロード</strong>では有効化を検討することを推奨します。有効化にあたっては、アプリケーション正常性監視の構成、クォータとオートスケール上限の 1 台分の余裕、再分散時にインスタンス ID・ディスクが保持されない点を事前に確認してください。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">#Azure</span>
+            <span class="tag">#VMSS</span>
+            <span class="tag">#VirtualMachineScaleSets</span>
+            <span class="tag">#AvailabilityZones</span>
+            <span class="tag">#Resiliency</span>
+            <span class="tag">#HighAvailability</span>
+            <span class="tag">#GA</span>
+            <span class="tag">#Compute</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=576334" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machine-scale-sets/auto-zone-balance-overview" target="_blank" rel="noopener">Microsoft Learn: Automatic zone balance for Virtual Machine Scale Sets</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machine-scale-sets/auto-zone-balance-enable" target="_blank" rel="noopener">Microsoft Learn: Enable Automatic Zone Balance on Virtual Machine Scale Sets</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machine-scale-sets/virtual-machine-scale-sets-use-availability-zones" target="_blank" rel="noopener">Microsoft Learn: Availability zone options for Azure Virtual Machine Scale Sets</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-machine-scale-sets/" target="_blank" rel="noopener">料金ページ (Virtual Machine Scale Sets)</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=576334" target="_blank" rel="noopener">Azure Updates (ID: 576334)</a> |
+        <a href="https://learn.microsoft.com/azure/virtual-machine-scale-sets/auto-zone-balance-overview" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>レポート: 2026-10-15-vmss-automatic-zone-balance.md | Azure News Summary プロジェクトにより生成</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
