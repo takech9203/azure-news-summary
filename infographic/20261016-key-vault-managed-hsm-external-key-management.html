@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Key Vault Managed HSM: External key management (外部キー管理) が GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+}
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+.header .subtitle { font-size: 16px; opacity: 0.95; }
+.header .meta { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 16px; font-size: 14px; opacity: 0.9; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* ===== Sections ===== */
+.section { margin: 32px 0; }
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+}
+.section-title .icon { font-size: 24px; }
+
+.card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.note-box {
+    background: #FFF8E6;
+    border-left: 4px solid var(--ms-yellow);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { color: var(--azure-dark-blue); margin-bottom: 6px; }
+.feature-content p, .feature-content li { font-size: 14px; color: var(--ms-text-primary); }
+.feature-content ul { padding-left: 18px; margin-top: 6px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+td:first-child { font-weight: 500; white-space: nowrap; color: var(--azure-dark-blue); }
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+.merit-card h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin: 8px 0; }
+
+.caution-card {
+    background: #FFF4EC;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+}
+.caution-card h4 { color: var(--ms-red); margin-bottom: 8px; }
+.caution-card ul { padding-left: 20px; font-size: 14px; }
+.caution-card li { margin: 8px 0; }
+
+/* ===== Code ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+code.inline {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    background: var(--ms-surface-tertiary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* ===== Use Case ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.usecase-card h4 { color: var(--ms-purple); margin-bottom: 10px; font-size: 17px; }
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-purple);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-right: 8px;
+}
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+
+/* ===== Steps ===== */
+.step-list { list-style: none; counter-reset: step; margin: 16px 0; }
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 10px 10px 52px;
+    margin: 10px 0;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* ===== Region ===== */
+.region-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(135deg, var(--ms-blue-200), var(--ms-blue-100));
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.region-banner .globe { font-size: 40px; }
+.region-banner strong { color: var(--azure-dark-blue); }
+.region-banner p { font-size: 14px; }
+
+/* ===== Related / Links ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card h5 { color: var(--azure-blue); margin-bottom: 6px; font-size: 14px; }
+
+.link-list { list-style: none; }
+.link-list li {
+    margin: 8px 0;
+    padding-left: 24px;
+    position: relative;
+    font-size: 14px;
+    word-break: break-all;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), #FFFFFF);
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* ===== Tags & Footer ===== */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.footer {
+    margin-top: 40px;
+    padding: 24px;
+    background: var(--ms-surface-tertiary);
+    border-radius: 12px;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+}
+.footer h4 { color: var(--ms-text-primary); margin-bottom: 10px; font-size: 14px; }
+.footer ul { list-style: none; }
+.footer li { margin: 6px 0; word-break: break-all; }
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    td:first-child { white-space: normal; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">🔑 Azure Key Vault Managed HSM</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>External key management (外部キー管理) が一般提供開始</h1>
+        <p class="subtitle">外部 HSM に保持したキー暗号化キー (KEK) で Azure サービスの CMK 暗号化を本番利用可能に</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-16</span>
+            <span>🧩 機能: External key management (EKM)</span>
+            <span>🌍 すべての Azure パブリックリージョン</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <div class="highlight-box">
+            <p>Azure Key Vault Managed HSM の <strong>External key management (EKM)</strong> が、<strong>すべての Azure パブリックリージョンで一般提供 (GA)</strong> になりました。EKM は、キー暗号化キー (KEK) を物理的に自社管理下に置くことを求める<strong>規制・主権 (ソブリンティ) 要件</strong>を持つ組織向けの機能です。Managed HSM と連携するカスタマーマネージドキー (CMK) 対応の Azure サービスが、Microsoft インフラストラクチャの外部にある<strong>顧客運用のハードウェアセキュリティモジュール (HSM)</strong> に保持されたキーを利用できるようになります。</p>
+        </div>
+        <div class="card">
+            <p>Managed HSM は、キーの Wrap / Unwrap 操作を顧客が運用する「<strong>EKM Proxy</strong>」経由で外部 HSM に委譲します。外部のキー素材 (KEK) は Microsoft インフラストラクチャの外部に留まり、<strong>Microsoft 側に渡ることはありません</strong>。GA 時点では EKM Proxy へのパブリックインターネット経由の接続が利用可能で、Azure Private Link 統合はパブリックプレビューです。外部 HSM・Proxy・ネットワークの可用性は顧客または HSM ベンダーの責任範囲であり、<strong>Managed HSM の SLA の対象外</strong>です。</p>
+        </div>
+        <div class="note-box">
+            ⚠️ Azure Updates ページでは「アクセスには Microsoft アカウントチームを通じた有効化が必要」と記載されている一方、Microsoft Learn ドキュメントではサブスクリプションごとの機能登録 (<code class="inline">MHSM_EKM</code>、登録は自動承認) の手順が案内されています。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Managed HSM は Azure 内の FIPS 140-3 Level 3 HSM にキーを保持するため、「キー素材を Microsoft インフラストラクチャの外に物理的に保持しなければならない」という法規制・契約上の要件を持つ組織は、Managed HSM 経由の CMK 暗号化を利用できなかった</li>
+                    <li>EKM は 2026 年 7 月からプレビュー提供されており、本番利用には GA を待つ必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>CMK (Managed HSM) 対応の Azure サービスで、外部 HSM に保持した KEK を使ったサービス側暗号化 (encryption at rest) が本番利用可能に</li>
+                    <li>すべての Azure パブリックリージョンで利用可能になり、パブリックインターネット経由の Proxy 接続が GA (Private Link 統合はプレビュー)</li>
+                    <li>Microsoft が公開する標準の EKM Proxy API により、任意の HSM ベンダー製品 (または自前実装の Proxy) を利用できるベンダー非依存の構成が可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Microsoft Azure (Microsoft の責任範囲)"]
+        SVC["📦 CMK 対応 Azure サービス<br>(例: Azure Storage)"]
+        MHSM["🔑 Managed HSM<br>認証・認可 / ローカル RBAC"]
+        SVC -->|"1. Managed HSM キー URI で<br>DEK の Wrap / Unwrap を要求"| MHSM
+    end
+
+    subgraph Customer["🏢 顧客 / HSM ベンダーのインフラ (SLA 対象外・顧客の責任範囲)"]
+        PROXY["🔀 EKM Proxy<br>(顧客またはベンダーが運用)"]
+        EHSM[("🔐 外部 HSM<br>KEK を保持・外部に出さない")]
+        PROXY -->|"3. キー操作を変換"| EHSM
+    end
+
+    MHSM -->|"2. mTLS で委譲<br>(パブリックインターネット: GA /<br>Private Link: プレビュー)"| PROXY
+            </pre>
+        </div>
+        <div class="card">
+            <p>Azure サービスは従来どおり Managed HSM のキー URI を参照し、Managed HSM が認証・認可を行ったうえでキー操作を mTLS 経由で顧客運用の EKM Proxy に委譲、外部 HSM が KEK を外部に出すことなく Wrap / Unwrap を実行して DEK のみを返します。<strong>セキュリティ境界 (Microsoft の責任範囲と顧客の責任範囲) が Managed HSM と EKM Proxy の間に明確に引かれています</strong>。</p>
+        </div>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>1. 外部 HSM に保持した KEK による CMK 暗号化</h4>
+                <ul>
+                    <li>エンベロープ暗号化の KEK 操作 (DEK の Wrap / Unwrap) を外部 HSM に移す。Unwrap は DEK を Azure サービスに返すのみで、外部 KEK 自体は決して Microsoft インフラストラクチャに保存・通過しない</li>
+                    <li>対象は「CMK with Managed HSM」をサポートする Azure サービスのサービス側暗号化 (encryption at rest)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>2. 標準 EKM Proxy API によるベンダー非依存の統合</h4>
+                <ul>
+                    <li>Microsoft は公開 API 仕様を提供し、Proxy 自体は提供しない。HSM ベンダーが準拠 Proxy を実装するほか、顧客自身で実装することも可能</li>
+                    <li>対応ベンダー (ドキュメント記載): Entrust、Eviden、Fortanix、Futurex、Securosys SA、Thales、Utimaco</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>3. 既存の Managed HSM 統合をそのまま利用</h4>
+                <ul>
+                    <li>Azure サービスはベンダー固有 API を呼ばず、既存の Managed HSM キー URI と統合を使用。アクセス制御は Managed HSM のローカル RBAC で管理</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>4. ネットワーク接続オプション</h4>
+                <ul>
+                    <li>EKM Proxy への接続は mTLS で保護。パブリックインターネットモデルが GA、Azure Private Link モデルはパブリックプレビュー</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <thead>
+                <tr><th>項目</th><th>詳細</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>キー素材の場所</td><td>Microsoft インフラストラクチャ外の顧客所有 HSM (Managed HSM キーは Azure 内 FIPS 140-3 Level 3 HSM)</td></tr>
+                <tr><td>対象シナリオ</td><td>CMK (Managed HSM) 対応 Azure サービスの encryption at rest (エンベロープ暗号化の KEK 操作)</td></tr>
+                <tr><td>有効化</td><td>サブスクリプションごとに機能登録が必要 (<code class="inline">Microsoft.KeyVault/MHSM_EKM</code>、自動承認)</td></tr>
+                <tr><td>ネットワーク</td><td>パブリックインターネット (GA) / Azure Private Link (プレビュー)、いずれも mTLS</td></tr>
+                <tr><td>SLA</td><td>Managed HSM サービス自体は SLA 対象。EKM Proxy・外部 HSM・外部キーのエンドツーエンド可用性は SLA 対象外</td></tr>
+                <tr><td>geo レプリケーション</td><td>外部キーでは非サポート (Managed HSM のマルチリージョンレプリケーションは使用不可)</td></tr>
+                <tr><td>Secure Key Release (SKR)</td><td>非サポート (SKR を要する Confidential VM ディスク暗号化シナリオも非サポート)</td></tr>
+                <tr><td>バックアップ / リストア</td><td>外部キーでは非サポート (リストアを試みると Managed HSM リソースが劣化状態になる可能性。外部キー参照の再作成で回復)</td></tr>
+                <tr><td>外部キー識別子</td><td>割り当て後は不変 (イミュータブル)。ローテーションは新しいキーバージョンの作成で行う</td></tr>
+                <tr><td>ログ</td><td>Managed HSM 側は Azure Monitor。Proxy / 外部 HSM のログは顧客の責任</td></tr>
+                <tr><td>レイテンシー</td><td>各キー操作に Proxy + 外部 HSM へのネットワーク往復が追加され、Managed HSM キーより高くなる</td></tr>
+                <tr><td>提供リージョン</td><td>すべての Azure パブリックリージョン (Azure Government / Azure China などソブリンクラウドは対象外)</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 16px 0 8px;">前提条件</h3>
+        <ol class="step-list">
+            <li>利用する Azure サービスが「CMK with Managed HSM」をサポートしていることを確認する</li>
+            <li>外部 HSM と EKM Proxy を顧客 (または HSM ベンダー) 側で展開し、可用性・運用体制を整える</li>
+            <li>サブスクリプションの機能登録を行える権限 (Contributor / Owner など <code class="inline">Microsoft.Features/*</code> 権限) を持つこと。これは Managed HSM データプレーンのロールとは別</li>
+        </ol>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 20px 0 8px;">Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>EKM 機能の登録</span></div>
+            <pre><code class="language-bash"># サブスクリプションで EKM 機能を登録する
+SUBSCRIPTION_ID="&lt;subscription-id&gt;"
+
+az feature register \
+    --namespace Microsoft.KeyVault \
+    --name MHSM_EKM \
+    --subscription "$SUBSCRIPTION_ID"
+
+# 登録状態を確認する (Registered になるまで待機)
+az feature show \
+    --namespace Microsoft.KeyVault \
+    --name MHSM_EKM \
+    --subscription "$SUBSCRIPTION_ID" \
+    --query properties.state \
+    --output tsv</code></pre>
+        </div>
+        <div class="card">
+            <p>登録後、Proxy 接続の登録と外部キー参照の作成を Azure CLI または Azure Portal のクイックスタートに従って行い、Azure サービスにキーへのアクセスを許可して CMK 設定に Managed HSM キー URI を指定します。</p>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>キー素材を物理的に自社管理下に置くことを求める法規制・契約・主権要件 (physical HSM possession) に準拠しながら Azure サービスを利用できる</li>
+                    <li>標準 EKM Proxy API によりベンダーロックインを回避でき、既存の HSM 投資 (Thales、Entrust など) を活用できる</li>
+                    <li>Microsoft による追加の操作課金はなく、標準の Managed HSM 料金のみ (Proxy インフラと HSM ベンダーライセンスのコストは顧客負担)</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>Azure サービス側は既存の Managed HSM 統合 (キー URI、ローカル RBAC) をそのまま使用でき、サービスごとの個別対応が不要</li>
+                    <li>KEK は外部 HSM から一切出ず、Unwrap は DEK のみを返す設計で「キーが Microsoft インフラを通過しない」ことが保証される</li>
+                    <li>Microsoft (Managed HSM まで) と顧客 (Proxy・外部 HSM・ネットワーク) の責任境界が明確</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-card">
+            <ul>
+                <li><strong>エンドツーエンドの Microsoft SLA がない</strong>: EKM Proxy や外部 HSM の障害は依存する Azure ワークロードを停止させ得るが、Azure サービスや Managed HSM の SLA にはカウントされない。外部コンポーネントの高可用性・DR・サポートは顧客または運用委託先の責任</li>
+                <li><strong>可用性・性能の低下</strong>: すべての外部キー操作に Proxy と外部 HSM へのネットワーク往復が加わる。Managed HSM キーの方が高速・高可用</li>
+                <li><strong>運用コストの増加</strong>: Proxy と外部 HSM のプロビジョニング、パッチ適用、スケーリング、監視は顧客の責任。Microsoft は Proxy / 外部 HSM を提供・サポートしない</li>
+                <li><strong>機能制約</strong>: geo レプリケーション非対応、Secure Key Release (SKR) 非対応、外部キーのバックアップ / リストア非対応、外部キー識別子は変更不可</li>
+                <li>Microsoft Learn は「外部保管の要件がない場合は Managed HSM キーを使うべきであり、EKM は法的・契約的要件がある場合の<strong>最終手段 (last-resort)</strong> であって汎用的なアップグレードではない」と明記している</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 1</span>規制業種におけるキーの物理的保持要件への対応</h4>
+            <p><strong>シナリオ</strong>: 金融機関や公共部門など、法規制・契約により「暗号鍵を物理的に自社 (国内) の HSM に保持すること」が義務付けられている組織が、Azure Storage などの CMK 対応サービスでデータを暗号化したい。</p>
+            <p><strong>実装例</strong>:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>実装手順</span></div>
+                <pre><code class="language-bash"># 1. サブスクリプションで EKM を有効化
+az feature register --namespace Microsoft.KeyVault --name MHSM_EKM
+
+# 2. 外部 HSM / EKM Proxy を展開 (ベンダー製品または自前実装) し、
+#    Managed HSM に Proxy 接続と外部キー参照を登録 (クイックスタート参照)
+# 3. Azure サービスの CMK 設定に Managed HSM のキー URI を指定し、
+#    保護対象ワークロードで読み書きを検証</code></pre>
+            </div>
+            <p><strong>効果</strong>: KEK が Microsoft インフラストラクチャに存在・通過しないことを保証しつつ、Azure サービスの CMK 暗号化を本番利用できる。</p>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="card">
+            <p>External key management 自体に Microsoft の追加の操作課金はなく、<strong>標準の Managed HSM 料金</strong>が適用されます。EKM Proxy のインフラコストと外部 HSM (ベンダーライセンス含む) のコストは顧客負担です。</p>
+            <p style="margin-top: 8px;">詳細: <a href="https://azure.microsoft.com/pricing/details/key-vault/" target="_blank" rel="noopener">Azure Key Vault の料金</a></p>
+        </div>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <div class="region-banner">
+            <div class="globe">🌐</div>
+            <div>
+                <p><strong>すべての Azure パブリックリージョン</strong>で、External key management および Azure Private Link 統合 (プレビュー) が利用可能</p>
+                <p>※ ソブリンクラウド (Azure Government、Azure China) は対象外</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>📦 CMK 対応 Azure サービス</h5>
+                <p>Azure Storage など「CMK with Managed HSM」をサポートするサービスが EKM の利用対象。各サービスの CMK 構成ドキュメントに従って設定する</p>
+            </div>
+            <div class="related-card">
+                <h5>🔒 Azure Private Link</h5>
+                <p>Managed HSM から EKM Proxy への閉域接続を提供 (パブリックプレビュー)</p>
+            </div>
+            <div class="related-card">
+                <h5>📊 Azure Monitor</h5>
+                <p>Managed HSM 側の操作ログを提供。Proxy / 外部 HSM 起因の失敗もログで識別可能 (Proxy・HSM 自体のログは顧客責任)</p>
+            </div>
+            <div class="related-card">
+                <h5>🌐 Managed HSM マルチリージョンレプリケーション</h5>
+                <p>Managed HSM キーでは利用可能だが、外部キーでは非サポート</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Key Vault Managed HSM の External key management の GA により、キー素材を Microsoft インフラストラクチャ外に物理的に保持する必要がある組織でも、CMK 対応 Azure サービスの暗号化を本番環境で利用できるようになりました (プレビュー開始は 2026 年 7 月、GA ではパブリックインターネット接続が正式提供、Private Link はプレビュー継続)。</p>
+            <p style="margin-top: 10px;">一方で、EKM Proxy と外部 HSM は SLA 対象外の顧客責任領域であり、可用性・性能・運用コストのトレードオフが大きいため、<strong>「物理的なキー保持の規制要件がある場合の最終手段」という位置付け</strong>を理解したうえで採用を判断すべきです。該当要件を持つ組織は、共有責任モデルと制約事項 (geo レプリケーション・SKR・バックアップ非対応) を確認し、HSM ベンダーの Proxy 実装の評価から着手することを推奨します。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Key Vault</span>
+            <span class="tag">Managed HSM</span>
+            <span class="tag">External Key Management</span>
+            <span class="tag">Security</span>
+            <span class="tag">Customer-Managed Keys</span>
+            <span class="tag">HSM</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <h4>📚 出典・参考リンク</h4>
+        <ul>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=574296" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/azure/key-vault/managed-hsm/external-key-management-overview" target="_blank" rel="noopener">Microsoft Learn: What is Managed HSM external key management?</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/azure/key-vault/managed-hsm/external-key-management-networking" target="_blank" rel="noopener">Microsoft Learn: EKM のネットワークと mTLS 構成</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/azure/key-vault/managed-hsm/external-key-management-shared-responsibility" target="_blank" rel="noopener">Microsoft Learn: EKM の SLA と共有責任モデル</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/key-vault/" target="_blank" rel="noopener">料金ページ (Azure Key Vault)</a></li>
+        </ul>
+        <p style="margin-top: 14px;">ソース: Azure News Summary レポート「Azure Key Vault Managed HSM: External key management (外部キー管理) が一般提供開始」(2026-10-16)</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

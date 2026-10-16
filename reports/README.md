@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-10-16 - Azure Databricks: Private network gateway (Public Preview)](2026/2026-10-16-databricks-private-network-gateway.md)
+- [2026-10-16 - Azure Key Vault Managed HSM: External key management (外部キー管理) が一般提供開始](2026/2026-10-16-key-vault-managed-hsm-external-key-management.md)
 - [2026-10-15 - Azure Private Link: Standard service endpoint の一般提供開始 (GA)](2026/2026-10-15-private-link-standard-service-endpoint.md)
 - [2026-10-15 - Azure Virtual Machine Scale Sets: Automatic Zone Balance の一般提供開始 (GA)](2026/2026-10-15-vmss-automatic-zone-balance.md)
 - [2026-10-15 - Azure Storage Mover: Azure Files クロスリージョン データコピー・同期 (Public Preview)](2026/2026-10-15-storage-mover-azure-files-cross-region.md)
