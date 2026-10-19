@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-10-19 - Azure DNS: Traffic Manager リンクレコードによる DNS ベースの負荷分散が一般提供 (GA)](2026/2026-10-19-azure-dns-traffic-manager-linked-records.md)
+- [2026-10-19 - Azure Monitor: Azure Monitor ワークスペース向け Metrics usage insights の一般提供開始](2026/2026-10-19-azure-monitor-metrics-usage-insights.md)
 - [2026-10-16 - Azure Databricks: Private network gateway (Public Preview)](2026/2026-10-16-databricks-private-network-gateway.md)
 - [2026-10-16 - Azure Key Vault Managed HSM: External key management (外部キー管理) が一般提供開始](2026/2026-10-16-key-vault-managed-hsm-external-key-management.md)
 - [2026-10-15 - Azure Private Link: Standard service endpoint の一般提供開始 (GA)](2026/2026-10-15-private-link-standard-service-endpoint.md)
