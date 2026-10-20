@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Front Door Premium WAF: サービスタグ一致条件 GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, var(--ms-blue-900), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.hero .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.hero .subtitle { font-size: 16px; opacity: 0.92; }
+
+.hero .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 18px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+.hero .meta span {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 12px;
+    border-radius: 6px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.hero .service-badge { background: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255,255,255,0.5); }
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 24px; }
+
+h3.sub-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-700);
+    margin: 22px 0 10px;
+}
+
+p.lead { margin-bottom: 12px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; font-size: 16px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { font-size: 14px; color: var(--ms-text-secondary); padding-left: 18px; margin-top: 4px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* Tables */
+table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) { background: var(--ms-surface-tertiary); }
+.spec-table td:first-child { font-weight: 700; color: var(--ms-blue-800); white-space: nowrap; }
+
+code.inline {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-title { color: #CCCCCC; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Merit / Caution lists */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.merit-card h4 { color: var(--ms-blue-800); margin-bottom: 10px; }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin-bottom: 8px; }
+
+.caution-list { list-style: none; }
+
+.caution-list li {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.caution-list li strong { color: var(--ms-red); }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 14px 0;
+}
+
+.usecase-card h4 {
+    color: var(--ms-blue-800);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-card p { font-size: 14px; margin-bottom: 6px; }
+.usecase-card .label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--ms-blue-600);
+    border-radius: 4px;
+    padding: 1px 8px;
+    margin-right: 6px;
+}
+.usecase-card .label.effect { background: var(--ms-green); }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card h4 { color: var(--ms-blue-800); font-size: 15px; margin-bottom: 6px; }
+.related-card p { color: var(--ms-text-secondary); }
+
+/* Links */
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+}
+.link-list li:last-child { border-bottom: none; }
+.link-list a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+.link-list a:hover { text-decoration: underline; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+.summary-box p { margin-bottom: 12px; }
+.summary-box p:last-child { margin-bottom: 0; }
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 16px 40px;
+}
+footer a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+footer a:hover { text-decoration: underline; }
+footer .sources { margin-top: 8px; line-height: 1.9; }
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure Front Door</span>
+            <span class="service-badge">Azure Web Application Firewall</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Azure Front Door Premium WAF<br>サービスタグ一致条件の一般提供開始 (GA)</h1>
+        <div class="subtitle">WAF カスタムルールで送信元 IP をサービスタグと照合 — IP リストの保守から解放</div>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-20</span>
+            <span>🛡️ 機能: Service tag match condition</span>
+            <span>💎 対象: Front Door Premium</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📰</span>概要</h2>
+        <p class="lead">Azure Front Door Premium 上の Azure Web Application Firewall (WAF) カスタムルールで、<strong>サービスタグ一致条件 (Service tag match condition)</strong> が一般提供 (GA) となりました。</p>
+        <p class="lead">サービスタグは、Azure サービスが使用する IP アドレスプレフィックスのグループを表すもので、アドレスの変更に応じて Microsoft が自動的に更新します。今回の GA により、カスタムルールで HTTP リクエストの送信元 IP アドレスをサービスタグと照合できるようになり、IP アドレスのリストを自分で作成・保守することなく、Azure サービスからのトラフィックを制御できます。</p>
+        <div class="highlight-box">
+            カスタムルールでは、一致変数 (match variable) に <code class="inline">SocketAddr</code> または <code class="inline">RemoteAddr</code> を指定し、演算子 (operator) に <code class="inline">ServiceTagMatch</code> を指定することでサービスタグ一致を利用します。許可 (Allow)・ブロック (Block)・ログ (Log)・リダイレクト (Redirect) の各アクションに加え、レート制限ルールでも使用できます。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure サービス (監視・ヘルスチェックなど) からのトラフィックを WAF で制御するには、対象サービスの IP アドレスプレフィックスのリストを自分で作成・保守する必要があった</li>
+                    <li>Azure サービスの IP アドレス範囲は追加・廃止により変化するため、ルールの継続的なメンテナンスが必要だった</li>
+                    <li>Front Door はクライアント接続を終端してオリジンへ転送するため、オリジン側の NSG で評価されるのは Front Door のアドレスであり、元のクライアントに対してサービスタグベースの制御ができなかった。また Azure 外部にホストされたオリジンには NSG 自体が存在しない</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>カスタムルールの一致条件にサービスタグ名を指定するだけで、Azure サービスからのトラフィックを許可・ブロック・レート制限できる</li>
+                    <li>サービスタグ配下のプレフィックスは Microsoft が自動更新するため、アドレス変更時にルールを更新する必要がない</li>
+                    <li>元のクライアント接続が到達する WAF (エッジ) でサービスタグを評価できるため、NSG では実現できなかったクライアント寄りの制御が可能になった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    SVC([🔵 Azure サービス&lt;br&gt;監視・ヘルスチェックなど]) -->|HTTP リクエスト| AFD
+    CLIENT([👤 一般クライアント]) -->|HTTP リクエスト| AFD
+
+    subgraph Azure["☁️ Azure Front Door Premium"]
+        AFD[🚪 Front Door エッジ]
+        AFD --> WAF[🛡️ WAF ポリシー&lt;br&gt;カスタムルール評価]
+        WAF --> RESOLVE[🔍 送信元 IP を&lt;br&gt;サービスタグに解決&lt;br&gt;SocketAddr / RemoteAddr]
+        RESOLVE --> MATCH{ServiceTagMatch&lt;br&gt;タグに一致?}
+        MATCH -->|一致: Allow| ORIGIN
+        MATCH -->|一致: Block| BLOCK[⛔ ブロック応答]
+        MATCH -->|不一致| NEXT[📋 次のルール /&lt;br&gt;マネージドルール評価]
+        NEXT --> ORIGIN
+    end
+
+    ORIGIN[🖥️ オリジン&lt;br&gt;Web アプリケーション]
+            </pre>
+        </div>
+        <p>リクエストが Front Door に到達すると、WAF が送信元 IP アドレスを包含するサービスタグに解決し、カスタムルールで指定したタグと照合します。一致した場合はルールのアクション (Allow / Block / Log / Redirect / レート制限) が適用されます。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細: 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>1. サービスタグによる送信元 IP 照合</h4>
+                <ul>
+                    <li>一致変数 <code class="inline">SocketAddr</code> または <code class="inline">RemoteAddr</code> と演算子 <code class="inline">ServiceTagMatch</code> を組み合わせて、リクエストの送信元 IP アドレスがサービスタグの IP プレフィックス群に含まれるかを評価する</li>
+                    <li>1 つの条件に複数のサービスタグを指定でき、いずれかに該当すれば一致となる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>2. プレフィックスの自動追従</h4>
+                <ul>
+                    <li>サービスタグ配下の IP プレフィックスは Microsoft が公開・管理し、サービスのアドレス追加・廃止に応じて自動更新される</li>
+                    <li>サービスタグに対して書いたルールは、背後のアドレスが変わっても機能し続け、ルールの更新は不要</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚫</div>
+            <div class="feature-content">
+                <h4>3. 否定条件 (Negate) のサポート</h4>
+                <ul>
+                    <li><code class="inline">negateCondition</code> を <code class="inline">true</code> に設定することで、「指定したタグに含まれないすべてのアドレス」に一致させることが可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>4. 他の一致条件・レート制限との組み合わせ</h4>
+                <ul>
+                    <li>URI、ホスト、リクエストメソッドなどの条件と組み合わせて、管理用パス (<code class="inline">/admin</code> など) へのアクセスを特定サービスのみに制限できる</li>
+                    <li>レート制限ルール (<code class="inline">RateLimitRule</code>) の一致条件としても使用でき、Azure サービスからのトラフィックをブロックせずに流量制御できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象 SKU</td><td>Azure Front Door Premium (サービスタグ一致条件は Premium のみ)</td></tr>
+            <tr><td>一致変数</td><td><code class="inline">SocketAddr</code> (Front Door に到達した TCP 接続の IP) / <code class="inline">RemoteAddr</code> (<code class="inline">X-Forwarded-For</code> ヘッダーがある場合は元のクライアント IP)。他の一致変数は <code class="inline">ServiceTagMatch</code> と併用不可</td></tr>
+            <tr><td>演算子</td><td><code class="inline">ServiceTagMatch</code></td></tr>
+            <tr><td>一致値</td><td>1 つ以上のサービスタグ名 (完全一致。ワイルドカード・部分一致・正規表現は非サポート)</td></tr>
+            <tr><td>否定条件</td><td><code class="inline">negateCondition: true</code> で反転可能 (省略可)</td></tr>
+            <tr><td>ルールタイプ</td><td><code class="inline">MatchRule</code> および <code class="inline">RateLimitRule</code> の両方で使用可能</td></tr>
+            <tr><td>アクション</td><td>Allow / Block / Log / Redirect</td></tr>
+            <tr><td>Azure Portal での指定</td><td>一致値は自由入力ではなく、利用可能なサービスタグの検索可能リストから選択</td></tr>
+        </table>
+
+        <h3 class="sub-title">一致変数の選択指針 (Microsoft Learn より)</h3>
+        <div class="highlight-box">
+            <ul style="padding-left: 20px;">
+                <li><strong><code class="inline">SocketAddr</code></strong>: 実際に Front Door へ接続したサービスを評価する場合に使用。サービスタグルールの一般的なケース</li>
+                <li><strong><code class="inline">RemoteAddr</code></strong>: 中継を経由するトラフィックで、転送元のクライアントを評価する場合に使用。ただし <code class="inline">X-Forwarded-For</code> は呼び出し側が設定できるため、<code class="inline">SocketAddr</code> ベースのルールよりスプーフィングされやすい点に注意</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 class="sub-title">前提条件</h3>
+        <ol style="padding-left: 22px; font-size: 14px;">
+            <li>Azure Front Door Premium プロファイル</li>
+            <li>Front Door に関連付けられた WAF ポリシー (カスタムルールを構成可能なもの)</li>
+        </ol>
+
+        <h3 class="sub-title">構成例 (ルール定義 JSON)</h3>
+
+        <p><strong>例 1: 信頼する Azure サービスからのトラフィックを許可</strong></p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">JSON</span><span class="code-title">AllowAzureMonitor</span></div>
+            <pre><code class="language-json">{
+  "name": "AllowAzureMonitor",
+  "priority": 10,
+  "ruleType": "MatchRule",
+  "matchConditions": [
+    {
+      "matchVariable": "SocketAddr",
+      "operator": "ServiceTagMatch",
+      "negateCondition": false,
+      "matchValue": ["AzureMonitor"]
+    }
+  ],
+  "action": "Allow"
+}</code></pre>
+        </div>
+
+        <p><strong>例 2: 管理用パスを特定のアドレス範囲のみに制限 (サービスタグ条件を否定して併用)</strong></p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">JSON</span><span class="code-title">RestrictAdminPath</span></div>
+            <pre><code class="language-json">{
+  "name": "RestrictAdminPath",
+  "priority": 20,
+  "ruleType": "MatchRule",
+  "matchConditions": [
+    {
+      "matchVariable": "RequestUri",
+      "operator": "Contains",
+      "negateCondition": false,
+      "matchValue": ["/admin"]
+    },
+    {
+      "matchVariable": "SocketAddr",
+      "operator": "ServiceTagMatch",
+      "negateCondition": true,
+      "matchValue": ["AzureCloud.eastus"]
+    }
+  ],
+  "action": "Block"
+}</code></pre>
+        </div>
+
+        <p><strong>例 3: サービスタグに一致するトラフィックをレート制限</strong></p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">JSON</span><span class="code-title">RateLimitServiceTraffic</span></div>
+            <pre><code class="language-json">{
+  "name": "RateLimitServiceTraffic",
+  "priority": 50,
+  "ruleType": "RateLimitRule",
+  "rateLimitDurationInMinutes": 5,
+  "rateLimitThreshold": 1000,
+  "matchConditions": [
+    {
+      "matchVariable": "SocketAddr",
+      "operator": "ServiceTagMatch",
+      "negateCondition": false,
+      "matchValue": ["AzureCloud"]
+    }
+  ],
+  "action": "Block"
+}</code></pre>
+        </div>
+
+        <h3 class="sub-title">Azure Portal</h3>
+        <p>Azure Portal では、WAF ポリシーのカスタムルール作成時に一致条件の演算子としてサービスタグ一致を選択し、検索可能なサービスタグ一覧から対象タグを選択します。1 つの条件で複数タグを選択できます。</p>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>IP アドレスリストの作成・保守という運用負荷が不要になり、セキュリティルールの運用コストを削減できる</li>
+                    <li>Azure サービスのアドレス変更に起因する「ルールの陳腐化によるトラフィック断・保護漏れ」のリスクを低減できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>Microsoft 管理のサービスタグに追従するため、アドレス変更時のルール更新が不要で耐久性の高いルールを記述できる</li>
+                    <li>クライアント接続が到達するエッジ (WAF) で評価するため、Front Door 配下のオリジンや Azure 外部のオリジンでも、NSG 相当のサービスタグベース制御を実現できる</li>
+                    <li>URI・ホスト・メソッド条件やレート制限との組み合わせで、きめ細かいアクセス制御を表現できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li><strong>Front Door Premium 限定</strong>: サービスタグ一致条件は Front Door Premium の WAF でのみ利用可能</li>
+            <li><strong>サービスタグはテナントではなくサービスを識別する</strong>: タグは当該 Azure サービスの全顧客が使用する IP アドレスを包含するため、タグの許可は「そのサービス経由でトラフィックを送れるすべての主体」の許可を意味する。ID 検証ではなく粗いフィルターとして扱う必要がある</li>
+            <li><strong>広いタグの影響範囲</strong>: <code class="inline">AzureCloud</code> のような広範なタグは他の顧客が使用するアドレスも含むため、意図したサービスよりはるかに広いトラフィックに影響する。意図を表現できる最も狭いタグを使用することが推奨される</li>
+            <li><strong>1 つの IP が複数タグに属する</strong>: 広いタグ (例: <code class="inline">AzureCloud</code>) は狭いタグの範囲を包含するため、リクエストは特定サービスのタグと包含する広いタグの両方に一致し得る</li>
+            <li><strong>タグ名は完全一致のみ</strong>: ワイルドカード・部分一致・正規表現は <code class="inline">ServiceTagMatch</code> 演算子でサポートされない</li>
+            <li><strong>Allow アクションの副作用</strong>: Allow に一致するとそのリクエストに対する Default Rule Set および Bot Protection ルールセットの評価が停止するため、許可ルールはできるだけ狭くスコープする必要がある</li>
+            <li><strong>検出モードからの開始を推奨</strong>: 新しいサービスタグルールはまず Log アクションまたは Detection モードで展開し、ログを確認してから Block に切り替えることが推奨される (特に許可ルールは誤りが保護の弱体化として現れるため)</li>
+        </ul>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📌</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🩺 ユースケース 1: 監視・ヘルスチェックサービスの許可</h4>
+            <p><span class="label">シナリオ</span>監視やヘルスチェックを行う Azure サービスが、WAF で本来ブロックされてしまうエンドポイントへ到達する必要がある。</p>
+            <p><span class="label">実装例</span><code class="inline">SocketAddr</code> + <code class="inline">ServiceTagMatch</code> + 対象サービスのタグ (例: <code class="inline">AzureMonitor</code>) を指定した Allow ルールを、低い priority 値 (高優先) で配置する。</p>
+            <p><span class="label effect">効果</span>IP リストの保守なしで監視トラフィックを確実に通し、ブロック・レート制限ルールより先に評価させることができる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🚷 ユースケース 2: 想定外の Azure サービスからのトラフィック遮断</h4>
+            <p><span class="label">シナリオ</span>アプリケーションが特定の Azure サービスからリクエストを受け取ることが正当にあり得ない場合、そのサービスからのトラフィックを遮断したい。</p>
+            <p><span class="label">実装例</span>対象サービスタグに対する Block ルールを作成する。</p>
+            <p><span class="label effect">効果</span>攻撃面を縮小しつつ、アドレス変更への追従は Microsoft 側で自動的に行われる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🔐 ユースケース 3: 管理エンドポイントの保護</h4>
+            <p><span class="label">シナリオ</span><code class="inline">/admin</code> などの機密パスへのアクセスを、想定したアドレス範囲からのみに制限したい。</p>
+            <p><span class="label">実装例</span><code class="inline">RequestUri Contains /admin</code> 条件と、否定したサービスタグ条件 (<code class="inline">negateCondition: true</code>) を AND で組み合わせた Block ルールを作成する (上記 JSON 例 2 参照)。</p>
+            <p><span class="label effect">効果</span>想定範囲外からの管理パスアクセスのみをブロックし、ルールの影響範囲 (blast radius) を限定できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>⏱️ ユースケース 4: Azure サービスからのトラフィックのレート制限</h4>
+            <p><span class="label">シナリオ</span>Azure サービスからのトラフィックを完全に遮断するのではなく、流量を制御したい。</p>
+            <p><span class="label">実装例</span><code class="inline">RateLimitRule</code> でサービスタグ条件を使用し、期間としきい値を設定する (上記 JSON 例 3 参照)。</p>
+            <p><span class="label effect">効果</span>正当なトラフィックを通しつつ、過剰なリクエストから保護できる。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>本アップデート固有の料金情報はアナウンスに記載されていません。Azure Front Door (Premium) および WAF の料金体系は公式料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">Azure Front Door 料金</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🚪 Azure Front Door Premium</h4>
+                <p>本機能が動作する前提となるグローバルエッジ/CDN サービス。WAF ポリシーを関連付けて利用する</p>
+            </div>
+            <div class="related-card">
+                <h4>🛡️ Azure Web Application Firewall (WAF)</h4>
+                <p>カスタムルール (一致ルール/レート制限ルール) の枠組みを提供。今回サービスタグが一致条件に追加された</p>
+            </div>
+            <div class="related-card">
+                <h4>🏷️ サービスタグ (Virtual Network)</h4>
+                <p>Azure サービスの IP プレフィックスグループ。NSG や Azure Firewall でも使用される概念で、タグの一覧と内容は Azure service tags overview を参照</p>
+            </div>
+            <div class="related-card">
+                <h4>🧱 ネットワークセキュリティグループ (NSG)</h4>
+                <p>オリジン側でのサービスタグ制御手段。ただし Front Door 配下では元クライアントのアドレスを評価できないため、WAF でのサービスタグ評価が補完する</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=577156" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/web-application-firewall/afds/service-tag-match-condition" target="_blank" rel="noopener">Service Tag Match Condition for Azure Front Door (Microsoft Learn)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/web-application-firewall/afds/waf-front-door-custom-rules" target="_blank" rel="noopener">WAF Custom Rule for Azure Front Door (Microsoft Learn)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/virtual-network/service-tags-overview" target="_blank" rel="noopener">Azure service tags overview (Microsoft Learn)</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">Azure Front Door 料金</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Front Door Premium の WAF カスタムルールにサービスタグ一致条件が GA しました。Azure サービス由来のトラフィック制御を、IP リストの保守なしに Microsoft 管理のサービスタグで宣言的に記述できるようになり、エッジでのアクセス制御の運用性と耐久性が大きく向上します。</p>
+            <p>Front Door Premium + WAF を利用中で、監視サービスの許可・想定外サービスの遮断・管理パスの保護などを IP リストで運用しているチームは、サービスタグ条件への置き換えを検討する価値があります。導入時は最も狭いタグを選び、まず Log アクション (または Detection モード) でログを確認してから Block/Allow へ切り替えることが推奨されます。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Front Door</span>
+            <span class="tag">Web Application Firewall</span>
+            <span class="tag">WAF</span>
+            <span class="tag">サービスタグ</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- フッター -->
+    <footer>
+        <div><strong>出典</strong></div>
+        <div class="sources">
+            Azure Updates: <a href="https://azure.microsoft.com/updates?id=577156" target="_blank" rel="noopener">Service tag match condition in Azure Front Door WAF custom rules (ID: 577156)</a><br>
+            Microsoft Learn: <a href="https://learn.microsoft.com/en-us/azure/web-application-firewall/afds/service-tag-match-condition" target="_blank" rel="noopener">Service Tag Match Condition for Azure Front Door</a> /
+            <a href="https://learn.microsoft.com/en-us/azure/web-application-firewall/afds/waf-front-door-custom-rules" target="_blank" rel="noopener">WAF Custom Rule for Azure Front Door</a> /
+            <a href="https://learn.microsoft.com/en-us/azure/virtual-network/service-tags-overview" target="_blank" rel="noopener">Azure service tags overview</a><br>
+            ソースレポート: reports/2026/2026-10-20-front-door-waf-service-tag-match.md (Azure News Summary)
+        </div>
+        <div style="margin-top: 12px;">生成日: 2026-10-20 | Azure News Summary インフォグラフィック</div>
+    </footer>
+
+</div>
+
+<!-- Mermaid.js -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+
+<!-- highlight.js -->
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

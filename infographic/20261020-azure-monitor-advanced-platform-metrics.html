@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Monitor: Advanced Platform Metrics の一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta {
+    font-size: 14px;
+    opacity: 0.9;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 24px; }
+
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+    padding-left: 10px;
+    border-left: 4px solid var(--azure-blue);
+}
+
+.section p { margin-bottom: 12px; font-size: 15px; }
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 4px; }
+.feature-content ul { font-size: 14px; color: var(--ms-text-secondary); padding-left: 20px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* Tables */
+.table-wrapper { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Steps */
+.steps { counter-reset: step; list-style: none; margin: 16px 0; }
+
+.steps li {
+    position: relative;
+    padding: 10px 0 10px 48px;
+    counter-increment: step;
+    font-size: 14px;
+}
+
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.merit-business { background: var(--ms-blue-100); border: 2px solid var(--azure-blue); }
+.merit-tech { background: #F3EEFB; border: 2px solid var(--ms-purple); }
+
+.merit-card h4 { font-size: 16px; margin-bottom: 10px; }
+.merit-business h4 { color: var(--ms-blue-800); }
+.merit-tech h4 { color: var(--ms-purple); }
+
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin-bottom: 8px; }
+
+/* Warning list */
+.warning-card {
+    background: #FFF8E6;
+    border: 2px solid var(--ms-yellow);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 14px;
+}
+
+.warning-card .icon { font-size: 20px; min-width: 24px; }
+.warning-card strong { color: var(--ms-orange); }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card .usecase-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin-bottom: 12px;
+}
+
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--azure-blue);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-right: 6px;
+}
+
+.usecase-card p { font-size: 14px; margin-bottom: 10px; }
+
+/* Links */
+.link-list { list-style: none; margin: 8px 0; }
+
+.link-list li {
+    padding: 10px 14px;
+    margin: 8px 0;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.link-list a { color: var(--ms-blue-700); font-weight: 500; text-decoration: none; word-break: break-all; }
+.link-list a:hover { text-decoration: underline; }
+
+/* Related services */
+.related-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card h4 { font-size: 15px; color: var(--ms-purple); margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Region */
+.region-banner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin: 12px 0;
+}
+
+.region-chip {
+    background: var(--ms-blue-200);
+    border: 1px solid var(--ms-blue-400);
+    color: var(--ms-blue-900);
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.region-chip.new { background: #E8F5E9; border-color: var(--ms-green); color: var(--ms-green); font-weight: 700; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    font-size: 13px;
+}
+
+.footer h3 { font-size: 15px; margin-bottom: 10px; }
+.footer ul { list-style: none; }
+.footer li { margin-bottom: 6px; }
+.footer a { color: var(--azure-light-blue); text-decoration: none; word-break: break-all; }
+.footer a:hover { text-decoration: underline; }
+.footer .footer-note { margin-top: 14px; opacity: 0.8; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 12px; }
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Title -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Monitor</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Advanced Platform Metrics (高度なプラットフォームメトリック) が一般提供開始</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-20</span>
+            <span>🔧 機能: Advanced Platform Metrics</span>
+            <span>🏷️ Management and governance / Observability</span>
+        </div>
+    </header>
+
+    <!-- Overview -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Monitor の <strong>Advanced Platform Metrics (高度なプラットフォームメトリック)</strong> が一般提供 (GA) となりました。標準のプラットフォームメトリックを拡張する<strong>有料のプレミアム ティア</strong>で、よりきめ細かい (finer-grained) シグナルを提供し、リソース内の変化やトレンドをより迅速かつ正確に特定できます。2026 年 7 月のパブリック プレビューを経て、2026 年 10 月に GA となりました。</p>
+        <p>今回のリリースでは、<strong>Azure Portal から直接有効化</strong>できるようになり、未有効のサブスクリプションには有効化を促す製品内バナーが表示されます。また、提供範囲がパブリック クラウドを超えて拡大され、<strong>Fairfax (Azure Government)</strong> および <strong>Mooncake (Azure China)</strong> でも利用可能になりました。</p>
+        <div class="highlight-box">
+            <strong>具体例 (Azure Storage):</strong> 従来のアカウント レベルのメトリックに加えて、コンテナー レベルの Blob 容量 (<strong>Container Blob Capacity</strong>) とコンテナー レベルの Blob 数 (<strong>Container Blob Count</strong>) が取得可能に。標準のプラットフォームメトリックでは得られない詳細度でリソースの挙動を可視化できます。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">GA</div>
+                <div class="stat-label">2026 年 10 月に一般提供開始 (2026 年 7 月プレビュー)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">+2 クラウド</div>
+                <div class="stat-label">Azure Government / Azure China に提供拡大</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">コンテナー単位</div>
+                <div class="stat-label">Blob 容量・Blob 数をコンテナー レベルで可視化</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>標準のプラットフォームメトリックはベースラインの正常性・パフォーマンス監視が対象。例えば Azure Storage ではアカウント レベルの容量メトリックしか取得できず、コンテナー単位の容量・オブジェクト数を把握できなかった</li>
+                    <li>プレビュー期間中は有効化の導線が限定的で、提供もパブリック クラウドのみだった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>リソース単位でオプトインするだけで、より深く詳細なメトリック (例: コンテナー レベルの容量・Blob 数) を標準メトリックと同じツール (Metrics Explorer、API、アラート) で利用可能</li>
+                    <li>Azure Portal から直接有効化が可能になり、未有効のサブスクリプションには製品内バナーで有効化が案内される</li>
+                    <li>Fairfax (Azure Government) と Mooncake (Azure China) にも提供範囲が拡大</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🔙 Before: 標準プラットフォームメトリックのみ"]
+        R1["📦 Azure リソース<br/>(例: ストレージ アカウント)"] -->|"自動収集 (無料)"| M1["📊 アカウント レベルの<br/>ベースライン メトリック"]
+    end
+
+    subgraph After["✨ After: Advanced Platform Metrics (GA)"]
+        R2["📦 Azure リソース<br/>(例: ストレージ アカウント)"] -->|"自動収集 (無料)"| M2["📊 標準メトリック<br/>(アカウント レベル)"]
+        R2 -->|"リソース単位で<br/>オプトイン (有料)"| M3["🔍 高度なメトリック<br/>(例: コンテナー レベルの<br/>容量・Blob 数)"]
+        M2 --> T["🖥️ Metrics Explorer /<br/>アラート / API / Grafana"]
+        M3 --> T
+    end
+
+    Before -.->|GA で進化| After
+            </pre>
+        </div>
+        <p>標準メトリックが無料で提供するアカウント レベルのベースライン監視に対し、Advanced Platform Metrics はオプトインにより、コンテナー レベルなどのきめ細かいシグナルを同じ分析ツール群で利用可能にします。</p>
+    </section>
+
+    <!-- Key features -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⭐</span>サービスアップデートの詳細: 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-content">
+                <h4>1. よりきめ細かいメトリック シグナル</h4>
+                <p>リソースが生成する、より深く詳細なメトリックを提供し、変化やトレンドの迅速・正確な特定を支援。</p>
+                <ul>
+                    <li>例 (Azure Storage): <strong>Container Blob Capacity</strong> (コンテナーごとの使用容量、単位: Bytes)、<strong>Container Blob Count</strong> (コンテナーごとの Blob オブジェクト数、単位: Count)</li>
+                    <li>いずれも <strong>ContainerName</strong> ディメンションで分割・フィルタリング可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>2. リソース レベルのオプトイン</h4>
+                <p>必要なリソースに対してのみ有効化でき、全アカウント・全リソースへの一括有効化は不要。</p>
+                <ul>
+                    <li>Azure Storage の場合はルール ベースで対象コンテナーを指定 (全コンテナー / コンテナー リスト / プレフィックス)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🖱️</div>
+            <div class="feature-content">
+                <h4>3. Azure Portal からの直接有効化 (GA での新要素)</h4>
+                <p>Portal 上で有効化操作が可能になり、未有効のサブスクリプションには製品内バナーで有効化を案内。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>4. ソブリン クラウドへの拡大 (GA での新要素)</h4>
+                <p>Fairfax (Azure Government) と Mooncake (Azure China) で利用可能に。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>5. 既存の監視ツールとの完全な互換性</h4>
+                <p>標準プラットフォームメトリックと同じ Microsoft 管理のテレメトリ ストアに保存され、Metrics Explorer、メトリック アラート ルール、Workbooks、Azure ダッシュボード、Grafana、Azure Monitor REST API / CLI / PowerShell / 各言語 SDK でそのまま利用可能。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technical specs -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>技術仕様</h2>
+
+        <h3 class="subsection-title">標準プラットフォームメトリックとの比較</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>プラットフォームメトリック</th><th>Advanced Platform Metrics</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>構成</strong></td><td>不要 (自動収集)</td><td>リソース レベルでオプトイン</td></tr>
+                    <tr><td><strong>コスト</strong></td><td>無料 (取り込み・保存とも)</td><td>有料 (データポイント課金)</td></tr>
+                    <tr><td><strong>粒度</strong></td><td>ベースラインの正常性・パフォーマンス</td><td>より深く詳細なリソースの可観測性</td></tr>
+                    <tr><td><strong>対象</strong></td><td>すべての Azure リソース</td><td>対応リソース プロバイダーのみ</td></tr>
+                    <tr><td><strong>クエリ・可視化</strong></td><td>Metrics Explorer、Azure Monitor API、REST API</td><td>同左 (共通)</td></tr>
+                    <tr><td><strong>保存先</strong></td><td>Microsoft 管理のテレメトリ ストア</td><td>同左 (共通)</td></tr>
+                    <tr><td><strong>アラート</strong></td><td>メトリック アラート ルール</td><td>同左 (共通)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">対応リソース プロバイダー</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>リソース プロバイダー</th><th>提供される高度なメトリック</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Azure Storage</strong></td><td>Container Blob Capacity、Container Blob Count (ContainerName ディメンション対応。現行バージョン、以前のバージョン、論理削除された Blob を含む)</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="highlight-box">Microsoft Learn によると、対応リソース プロバイダーは<strong>今後のリリースで拡大予定</strong>です。</div>
+    </section>
+
+    <!-- Setup -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 class="subsection-title">前提条件 (Azure Storage の場合)</h3>
+        <ol class="steps">
+            <li>Blob Storage をサポートするストレージ アカウント (Premium Azure Files アカウント、Premium Page Blob アカウントは非対応)</li>
+            <li>サブスクリプションで <strong>Microsoft.Insights</strong> リソース プロバイダーが登録済みであること (<code style="background:var(--ms-surface-tertiary);padding:2px 6px;border-radius:4px;font-size:13px;">az provider register -n Microsoft.Insights</code>)</li>
+            <li>CLI / PowerShell で操作する場合: Azure CLI、または Az.Storage プレビュー モジュール (9.6.3-preview)</li>
+        </ol>
+
+        <h3 class="subsection-title">Azure CLI (Azure Storage の例)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">Advanced Platform Metrics の有効化とクエリ</span></div>
+            <pre><code class="language-bash"># 全コンテナーを対象にコンテナー レベル容量メトリックを有効化
+az storage advanced-platform-metric create \
+  -g &lt;resource_group_name&gt; \
+  --account-name &lt;storage_account_name&gt; \
+  --enabled \
+  --rule-config-filter-type AllContainersFilter
+
+# 特定のコンテナーのみを対象にする場合
+az storage advanced-platform-metric create \
+  -g &lt;resource_group_name&gt; \
+  --account-name &lt;storage_account_name&gt; \
+  --enabled \
+  --rule-config-filter-type ContainerListFilter \
+  --rule-config-filter-values container1 container2
+
+# プレフィックスで対象コンテナーを指定する場合
+az storage advanced-platform-metric create \
+  -g &lt;resource_group_name&gt; \
+  --account-name &lt;storage_account_name&gt; \
+  --enabled \
+  --rule-config-filter-type ContainerPrefixFilter \
+  --rule-config-filter-values "logs-" "data-"
+
+# 有効化済みルールの確認
+az storage advanced-platform-metric list \
+  -g &lt;resource_group_name&gt; \
+  --account-name &lt;storage_account_name&gt;
+
+# メトリックのクエリ (コンテナー別の Blob 数)
+az monitor metrics list \
+  --resource &lt;storage-account-resource-id&gt; \
+  --metric ContainerBlobCount \
+  --dimension ContainerName \
+  --interval PT1H \
+  -o table</code></pre>
+        </div>
+
+        <h3 class="subsection-title">Azure Portal</h3>
+        <ol class="steps">
+            <li>Azure Portal で対象の <strong>ストレージ アカウント</strong> に移動</li>
+            <li><strong>[監視]</strong> &gt; <strong>[Advanced platform metrics]</strong> を選択</li>
+            <li><strong>[Add rule]</strong> でルールを作成し、フィルター タイプとフィルター値を構成して保存</li>
+            <li>メトリックの参照は <strong>[監視]</strong> &gt; <strong>[メトリック]</strong> から <strong>Container Blob Capacity</strong> / <strong>Container Blob Count</strong> を選択し、<strong>ContainerName</strong> で分割表示</li>
+        </ol>
+    </section>
+
+    <!-- Merits -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li><strong>コスト管理の精緻化</strong>: 容量を最も消費しているコンテナーを特定でき、コスト配賦や削減施策の判断材料になる</li>
+                    <li><strong>運用計画の高度化</strong>: コンテナー レベルの詳細な容量データに基づくキャパシティ プランニングが可能</li>
+                    <li><strong>政府・規制業界での利用</strong>: Azure Government / Azure China でも利用可能になり、規制要件のある環境でも採用できる</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li><strong>迅速な異常検知</strong>: きめ細かいシグナルにより、リソース内の変化やトレンドをより早く正確に特定できる</li>
+                    <li><strong>学習コスト不要</strong>: 標準メトリックと同じ Metrics Explorer・アラート・API・ダッシュボードがそのまま使える (新しいストレージやクエリ言語の管理は不要)</li>
+                    <li><strong>柔軟なスコープ制御</strong>: リソース単位・ルール単位 (コンテナー リスト / プレフィックス) で必要な範囲だけ有効化でき、不要な課金を回避できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Constraints -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-card"><span class="icon">💰</span><div><strong>有料機能</strong>: 標準のプラットフォームメトリックと異なり、データポイント数に基づく課金が発生する (ディメンションの組み合わせ数 × メトリック数 × コンテナー数に比例して増加するため、有効化スコープの設計が重要)</div></div>
+        <div class="warning-card"><span class="icon">📦</span><div><strong>対応リソース プロバイダーが限定的</strong>: Microsoft Learn のドキュメント上、現時点で明記されている対応プロバイダーは Azure Storage のみ (今後拡大予定)</div></div>
+        <div class="warning-card"><span class="icon">⏱️</span><div><strong>設定反映の遅延</strong>: 有効化・更新・無効化の反映に最大 6 時間かかる</div></div>
+        <div class="warning-card"><span class="icon">🚫</span><div><strong>Azure Storage での制限</strong>: ストレージ アカウントあたり最大 10,000 コンテナーまで。Premium Azure Files アカウント、Premium Page Blob アカウントは非対応</div></div>
+        <div class="warning-card"><span class="icon">📄</span><div><strong>ドキュメントの更新状況</strong>: GA 発表時点で、Microsoft Learn の一部ドキュメント (Azure Monitor メトリック概要、Blob Storage の有効化手順) にはプレビュー表記が残っている</div></div>
+    </section>
+
+    <!-- Use cases -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🏢 ユースケース 1: マルチテナント SaaS でのテナント別ストレージ消費の可視化</div>
+            <p><span class="usecase-label">シナリオ</span>テナントごとにコンテナーを分けている SaaS で、テナント別のストレージ消費量と増加トレンドを把握し、課金やクォータ管理に活用したい。</p>
+            <p><span class="usecase-label">実装例</span></p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">テナント用コンテナーのみ有効化</span></div>
+                <pre><code class="language-bash"># テナント用コンテナー (prefix: tenant-) のみ有効化
+az storage advanced-platform-metric create \
+  -g rg-saas-prod \
+  --account-name stsaasprod \
+  --enabled \
+  --rule-config-filter-type ContainerPrefixFilter \
+  --rule-config-filter-values "tenant-"</code></pre>
+            </div>
+            <p><span class="usecase-label">効果</span>Metrics Explorer で ContainerName ディメンションにより分割表示することで、テナント別の容量・オブジェクト数の推移を一目で把握でき、急増したテナントへのアラート設定も可能。</p>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">📈 ユースケース 2: ログ・データ保管コンテナーの容量アラート</div>
+            <p><span class="usecase-label">シナリオ</span>ログやバックアップを保管するコンテナーの肥大化を早期に検知し、ライフサイクル管理ポリシーの見直しにつなげたい。</p>
+            <p><span class="usecase-label">実装例</span>Container Blob Capacity に対して標準のメトリック アラート ルールを作成し、しきい値超過時に通知する (アラートの仕組みは標準メトリックと共通)。</p>
+            <p><span class="usecase-label">効果</span>アカウント合計ではなくコンテナー単位での監視により、問題のあるデータ領域をピンポイントで特定できる。</p>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Advanced Platform Metrics は<strong>有料機能</strong>で、<strong>データポイント数に基づいて課金</strong>されます。具体的な単価は <a href="https://azure.microsoft.com/pricing/details/monitor/" style="color:var(--ms-blue-700);">Azure Monitor 料金ページ</a> のメトリック セクションを参照してください。</p>
+
+        <h3 class="subsection-title">課金データポイントの計算例 (Azure Storage、公式ドキュメントより)</h3>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>値</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Blob アクセス層</td><td>5 (Hot / Cool / Cold / Smart / Archive)</td></tr>
+                    <tr><td>Blob の種類</td><td>2 (Block blob / Append blob)</td></tr>
+                    <tr><td>コンテナーあたりのデータポイント/時</td><td>5 層 × 2 種類 × 2 メトリック = <strong>20</strong></td></tr>
+                    <tr><td>50 コンテナーでの月間 (30 日) 課金データポイント</td><td>50 × 20 × 24 時間 × 30 日 = <strong>720,000</strong></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="highlight-box">実際のデータポイント数は、コンテナー数、有効化したメトリック、使用している Blob の種類・アクセス層に依存します。なお、<strong>標準のプラットフォームメトリックは引き続き無料</strong>です。</div>
+    </section>
+
+    <!-- Regions -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <div class="region-banner">
+            <span class="region-chip">Azure パブリック クラウド</span>
+            <span class="region-chip new">✨ Fairfax (Azure Government)</span>
+            <span class="region-chip new">✨ Mooncake (Azure China)</span>
+        </div>
+        <p>GA に伴い、Azure パブリック クラウドに加えて <strong>Fairfax (Azure Government)</strong> および <strong>Mooncake (Azure China)</strong> で利用可能になりました (GA での拡大ポイント)。</p>
+    </section>
+
+    <!-- Related -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>Azure Monitor Metrics (プラットフォームメトリック)</h4>
+                <p>本機能の基盤。Advanced Platform Metrics は同じテレメトリ ストア・ツール群を共有するプレミアム ティア。</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Monitor メトリック アラート</h4>
+                <p>高度なメトリックに対しても標準メトリックと同じアラート ルールを適用可能。</p>
+            </div>
+            <div class="related-card">
+                <h4>Metrics Explorer / Workbooks / Azure ダッシュボード / Grafana</h4>
+                <p>高度なメトリックの分析・可視化に利用可能。</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Blob Storage</h4>
+                <p>現時点で対応が明記されているリソース プロバイダー。コンテナー レベルの容量・Blob 数メトリックを提供。</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Monitor Metrics Batch REST API</h4>
+                <p>大量のメトリック クエリ向け API。高度なメトリックも標準のデータプレーン API で取得可能。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Summary -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Monitor の Advanced Platform Metrics が GA となり、標準メトリックでは得られないきめ細かいシグナル (例: Azure Storage のコンテナー レベル容量・Blob 数) を、使い慣れた Metrics Explorer・アラート・API でそのまま利用できるようになりました。GA に伴い Azure Portal からの直接有効化と製品内バナーによる案内が追加され、Azure Government / Azure China にも提供が拡大されています。</p>
+            <p style="margin-bottom:0;">有料機能でありデータポイント数に比例して課金されるため、Solutions Architect としては、<strong>ContainerPrefixFilter などで有効化スコープを必要最小限に絞る設計</strong>と、<strong>料金ページでの単価確認</strong>を推奨します。まずはコスト配賦やキャパシティ管理の課題があるストレージ アカウントから試験導入するとよいでしょう。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Monitor</span>
+            <span class="tag">Advanced Platform Metrics</span>
+            <span class="tag">Metrics</span>
+            <span class="tag">Observability</span>
+            <span class="tag">Management and governance</span>
+            <span class="tag">DevOps</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <h3>📚 出典・参考リンク</h3>
+        <ul>
+            <li>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=575329">https://azure.microsoft.com/updates?id=575329</a></li>
+            <li>Microsoft Learn: Advanced platform metrics - Azure Monitor: <a href="https://learn.microsoft.com/azure/azure-monitor/metrics/metrics-advanced-platform">https://learn.microsoft.com/azure/azure-monitor/metrics/metrics-advanced-platform</a></li>
+            <li>Microsoft Learn: Metrics in Azure Monitor: <a href="https://learn.microsoft.com/azure/azure-monitor/metrics/data-platform-metrics">https://learn.microsoft.com/azure/azure-monitor/metrics/data-platform-metrics</a></li>
+            <li>Microsoft Learn: Advanced platform metrics for Azure Blob Storage: <a href="https://learn.microsoft.com/azure/storage/blobs/blob-storage-advanced-platform-metrics">https://learn.microsoft.com/azure/storage/blobs/blob-storage-advanced-platform-metrics</a></li>
+            <li>料金ページ: Azure Monitor: <a href="https://azure.microsoft.com/pricing/details/monitor/">https://azure.microsoft.com/pricing/details/monitor/</a></li>
+        </ul>
+        <div class="footer-note">
+            ソースレポート: reports/2026/2026-10-20-azure-monitor-advanced-platform-metrics.md | 生成日: 2026-10-20 | Azure News Summary プロジェクト
+        </div>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Application Gateway: Managed HSM によるキーレス TLS が GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(0, 61, 105, 0.3);
+}
+
+.header .meta-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.date-badge {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.key-term {
+    background: var(--ms-blue-200);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    color: var(--ms-blue-900);
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* Feature Cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-900);
+    margin-bottom: 6px;
+}
+
+.feature-content ul { padding-left: 20px; }
+.feature-content li { font-size: 14px; margin-bottom: 4px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Table */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+
+.spec-table td:first-child {
+    font-weight: 700;
+    color: var(--ms-blue-900);
+    white-space: nowrap;
+}
+
+.spec-table code {
+    background: var(--ms-surface-tertiary);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+.code-title { color: #A19F9D; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Prerequisites / numbered list */
+.numbered-list {
+    counter-reset: step;
+    list-style: none;
+    margin: 12px 0;
+}
+
+.numbered-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 12px 10px 48px;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.numbered-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px;
+    height: 26px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.merit-business {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+}
+
+.merit-tech {
+    background: #F3EEF9;
+    border: 2px solid var(--ms-purple);
+}
+
+.merit-card h4 { margin-bottom: 10px; font-size: 16px; }
+.merit-business h4 { color: var(--ms-blue-800); }
+.merit-tech h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 14px; margin-bottom: 8px; }
+
+.warning-box {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 18px;
+    margin: 16px 0;
+}
+
+.warning-box ul { padding-left: 20px; }
+.warning-box li { font-size: 14px; margin-bottom: 8px; }
+
+/* Use case cards */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h3 {
+    color: var(--azure-dark-blue);
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-label {
+    display: inline-block;
+    font-weight: 700;
+    color: white;
+    background: var(--azure-blue);
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card strong {
+    display: block;
+    color: var(--ms-blue-900);
+    margin-bottom: 6px;
+}
+
+/* Links */
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 12px;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+}
+.link-list li::before { content: "🔗 "; }
+a { color: var(--azure-blue); word-break: break-all; }
+a:hover { color: var(--ms-blue-800); }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.summary-box p { font-size: 15px; }
+
+.check-list { list-style: none; margin: 12px 0; }
+.check-list li {
+    padding: 8px 12px 8px 36px;
+    position: relative;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+.check-list li::before {
+    content: "✔";
+    position: absolute;
+    left: 12px;
+    color: var(--ms-green);
+    font-weight: bold;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer ul { list-style: none; margin: 8px 0; }
+.footer li { margin-bottom: 4px; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .container { padding: 12px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="meta-badges">
+            <span class="service-badge">🌐 Azure Application Gateway</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="date-badge">📅 リリース日: 2026-10-20</span>
+        </div>
+        <h1>Azure Key Vault Managed HSM によるキーレス TLS が一般提供開始</h1>
+        <p class="subtitle">秘密鍵を HSM の外に一切出さずに TLS 終端 — Keyless TLS Termination</p>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Application Gateway において、秘密鍵を <span class="key-term">Azure Key Vault Managed HSM</span> 内に保持したまま TLS 終端を行う「<span class="key-term">キーレス TLS</span>」が一般提供 (GA) となった。証明書の公開部分のみを Application Gateway に提供し、TLS ハンドシェイク時の署名処理は毎回 Managed HSM 内部で実行される。<strong>秘密鍵がゲートウェイにエクスポートされることは一切ない</strong>。</p>
+        <div class="highlight-box">
+            従来の Application Gateway と Key Vault の統合では、証明書 (PFX) の秘密鍵がエクスポート可能であることが必須であり、ゲートウェイのインスタンスが証明書を取得してローカルにインストールする方式だった。本アップデートにより、<strong>FIPS 140-3 Level 3 検証済みの HSM 境界内に秘密鍵のカスタディ (管理権) を維持</strong>しながら、Application Gateway で TLS オフロードとバックエンドへの再暗号化を実現できる。金融や公共など、秘密鍵の管理境界に厳格な要件を持つ組織にとって重要なアップデートである。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">FIPS 140-3<br>Level 3</div>
+                <div class="stat-label">検証済み HSM 内で鍵を生成・保管</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0 回</div>
+                <div class="stat-label">秘密鍵のエクスポート (完全キーレス)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">毎回</div>
+                <div class="stat-label">TLS ハンドシェイク署名を HSM 内で実行</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Application Gateway の Key Vault 統合では、証明書の秘密鍵がエクスポート可能である必要があり、ゲートウェイインスタンスに秘密鍵がローカルインストールされていた</li>
+                    <li>HSM 検証済み証明書はサポートされておらず、秘密鍵を HSM 境界内に留めたまま TLS 終端を行う手段がなかった</li>
+                    <li>ネットワークアプライアンス上に機微な鍵マテリアルが展開されるため、鍵の露出リスクと監査要件への対応が課題だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>秘密鍵が Managed HSM から一切エクスポートされず、TLS ハンドシェイクごとの署名が HSM 内部で実行されるようになった</li>
+                    <li>マネージド ID と Azure RBAC (Managed HSM Crypto User ロール) による最小権限での鍵アクセス制御が可能になった</li>
+                    <li>Managed HSM の診断ログ (AuditEvent / KeySign 操作) で署名オペレーションを監視・監査できるようになった</li>
+                    <li>TLS 鍵が FIPS 140-3 Level 3 検証済み HSM 内で生成・保管されていることの暗号学的証拠を取得できるようになった</li>
+                    <li>職務分掌 (Separation of Duties) と鍵の一元管理を実現できるようになった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+sequenceDiagram
+    participant Client as 🧑‍💻 クライアント
+    participant AppGW as 🌐 Application Gateway v2
+    participant HSM as 🔐 Key Vault Managed HSM
+    participant Backend as 🖥️ バックエンド
+
+    Client->>AppGW: ① HTTPS 接続 (ClientHello)
+    AppGW->>HSM: ② 署名要求 (マネージド ID で認証)
+    Note over HSM: 秘密鍵は HSM 内に留まり&lt;br/&gt;署名を HSM 内部で実行
+    HSM-->>AppGW: ③ 署名を返却
+    AppGW-->>Client: ④ TLS ハンドシェイク完了
+    Client->>AppGW: HTTPS リクエスト
+    AppGW->>Backend: ⑤ WAF 検査後にリクエスト転送
+    Backend-->>AppGW: ⑥ レスポンス
+    AppGW-->>Client: TLS 経由でレスポンス返却
+            </pre>
+        </div>
+        <div class="highlight-box">
+            TLS ハンドシェイクで必要となる署名処理は、Application Gateway が Managed HSM を呼び出して HSM 内部で実行する。<strong>秘密鍵は Managed HSM の外に出ることなく</strong>、ゲートウェイは証明書の公開部分のみを保持する。
+        </div>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⚙️ サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔑</div>
+            <div class="feature-content">
+                <h4>1. キーレス TLS 終端</h4>
+                <ul>
+                    <li>エクスポート不可 (non-exportable) の HSM キーを使用した TLS 終端</li>
+                    <li>TLS ハンドシェイクごとの署名を Managed HSM 内部で実行し、秘密鍵はゲートウェイに渡らない</li>
+                    <li>TLS オフロード後のバックエンドへの再暗号化 (End-to-End TLS) にも対応</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🪪</div>
+            <div class="feature-content">
+                <h4>2. マネージド ID と RBAC による鍵アクセス制御</h4>
+                <ul>
+                    <li>Application Gateway のユーザー割り当てマネージド ID で Managed HSM に認証</li>
+                    <li>「Managed HSM Crypto User」ロールを割り当て、必要に応じて <code>/keys/&lt;key-name&gt;</code> スコープで特定キーのみに権限を限定可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>3. 署名オペレーションの監査</h4>
+                <ul>
+                    <li>Managed HSM の診断設定 (AuditEvent カテゴリ) を Log Analytics に送信し、<code>KeySign</code> 操作を KQL で追跡可能</li>
+                    <li>TLS ハンドシェイク時に Application Gateway が HSM を呼び出していることをログで確認できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>4. FIPS 140-3 Level 3 準拠の鍵管理</h4>
+                <ul>
+                    <li>TLS 鍵が FIPS 140-3 Level 3 検証済み HSM 内で生成・保管されていることの暗号学的証拠を取得可能</li>
+                    <li>鍵のカスタディを専用 HSM 境界内に維持し、職務分掌と鍵の一元管理を支援</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対応 SKU</td><td>Application Gateway v2</td></tr>
+            <tr><td>鍵の種類</td><td>RSA-HSM (例: 2048 ビット、鍵操作: wrapKey / unwrapKey / sign)。EC キーは非サポート</td></tr>
+            <tr><td>TLS バージョン</td><td>リスナーは TLS 1.2 以降が必須</td></tr>
+            <tr><td>対応 SSL ポリシー</td><td><code>AppGwSslPolicy20220101</code>、<code>AppGwSslPolicy20220101S</code>、<code>CustomV2</code> のみ</td></tr>
+            <tr><td>認証方式</td><td>ユーザー割り当てマネージド ID + Azure RBAC (Managed HSM Crypto User)</td></tr>
+            <tr><td>証明書生成環境</td><td>OpenSSL 3.0.13 (Ubuntu 24.04 LTS 推奨) + Azure Key Vault Managed HSM TLS オフロードライブラリ (appgw_ekv.so)</td></tr>
+            <tr><td>証明書の設定方法</td><td><code>az network application-gateway ssl-cert create</code> で <code>--hsm keyId=... publicCertData=...</code> を指定</td></tr>
+            <tr><td>監査ログ</td><td>Managed HSM 診断ログ (AuditEvent) の <code>KeySign</code> 操作</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="numbered-list">
+            <li>Application Gateway v2 のデプロイ</li>
+            <li>Azure Key Vault Managed HSM インスタンス (セキュリティドメイン初期化済み)</li>
+            <li>Application Gateway 用のユーザー割り当てマネージド ID</li>
+            <li>マネージド ID に対する Managed HSM キーへの RBAC 権限 (Managed HSM Crypto User)</li>
+            <li>証明書生成用の Linux マシン (OpenSSL 3.0.13 + Managed HSM TLS オフロードライブラリ <code>appgw_ekv.so</code>)</li>
+            <li>セットアップ時のロール: Managed HSM Crypto Officer (HSM 初期設定)、Managed HSM Crypto User (証明書操作)、Owner または User Access Administrator (ロール割り当て)</li>
+        </ol>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">bash</span>
+                <span class="code-title">キーレス TLS のセットアップ</span>
+            </div>
+            <pre><code class="language-bash"># HSM キーの作成 (エクスポート不可の RSA-HSM キー)
+az keyvault key create --hsm-name $MHSM_NAME --name $PRIVATE_KEY \
+  --ops wrapKey unwrapKey sign --kty RSA-HSM --size 2048
+
+# HSM 秘密鍵を使った証明書の生成 (OpenSSL + TLS オフロードエンジン)
+openssl req -new -x509 -engine e_akv -keyform engine \
+  -key managedHsm:$MHSM_NAME:$PRIVATE_KEY \
+  -out cert_rsa.pem -subj /CN=contoso.com -days 365
+base64 -w0 cert_rsa.pem > base64.txt
+
+# マネージド ID の作成と Managed HSM Crypto User ロールの割り当て
+az identity create --name $MI_NAME --resource-group $RESOURCE_GROUP --location $LOCATION
+export mioid=$(az identity show --name $MI_NAME --resource-group $RESOURCE_GROUP --query principalId -o tsv)
+az keyvault role assignment create --hsm-name $MHSM_NAME \
+  --role "Managed HSM Crypto User" --assignee-object-id $mioid \
+  --assignee-principal-type MSI --scope /keys
+
+# マネージド ID を Application Gateway に関連付け
+export identityId=$(az identity show --name $MI_NAME --resource-group $RESOURCE_GROUP --query id -o tsv)
+az network application-gateway update --name $APPGW_NAME --resource-group $RESOURCE_GROUP \
+  --set identity='{"type":"UserAssigned","userAssignedIdentities":{"'"$identityId"'":{}}}'
+
+# Managed HSM キーと公開証明書を参照する SSL 証明書を作成
+az network application-gateway ssl-cert create \
+  --resource-group $RESOURCE_GROUP \
+  --gateway-name $APPGW_NAME \
+  --name mHSM-Key001 \
+  --hsm keyId="https://&lt;HSM NAME&gt;.managedhsm.azure.net/keys/&lt;key-name&gt;" publicCertData="&lt;base64 証明書&gt;"
+
+# HSM 参照証明書を使用する HTTPS リスナーを作成
+az network application-gateway http-listener create \
+  --resource-group $RESOURCE_GROUP \
+  --gateway-name $APPGW_NAME \
+  --name mhsm-listener \
+  --frontend-ip appGwPublicFrontendIpIPv4 \
+  --frontend-port port_443 \
+  --ssl-cert mHSM-Key001 \
+  --host-name contoso.com</code></pre>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>✨ メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>秘密鍵のカスタディを FIPS 140-3 Level 3 検証済みの専用 HSM 境界内に維持でき、金融・公共などの厳格なコンプライアンス要件に対応できる</li>
+                    <li>鍵の生成・保管場所に関する暗号学的証拠を取得できるため、監査対応が容易になる</li>
+                    <li>職務分掌 (セキュリティチームによる鍵管理とアプリケーションチームによるゲートウェイ運用の分離) と鍵の一元管理を実現できる</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>🧪 技術面</h4>
+                <ul>
+                    <li>秘密鍵がネットワークアプライアンス (ゲートウェイインスタンス) 上に展開されないため、鍵マテリアルの露出リスクが低減する</li>
+                    <li>マネージド ID + Azure RBAC により、特定キーへのスコープ限定を含む最小権限アクセスを構成できる</li>
+                    <li>Managed HSM 診断ログの <code>KeySign</code> 操作により、TLS 署名オペレーションを可視化・監査できる</li>
+                    <li>従来の Key Vault 統合 (エクスポート可能な秘密鍵が必須) では実現できなかった HSM 内での署名が可能になる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>Application Gateway <strong>v2 SKU が前提</strong>となる</li>
+                <li>リスナーは <strong>TLS 1.2 以降が必須</strong>で、サポートされる SSL ポリシーは <code>AppGwSslPolicy20220101</code>、<code>AppGwSslPolicy20220101S</code>、<code>CustomV2</code> に限定される</li>
+                <li><strong>EC キーはサポートされない</strong> (RSA-HSM キーを使用)</li>
+                <li>以下のシナリオはサポート対象外: <strong>Application Gateway Ingress Controller (AGIC)、WebSocket、L4 TCP/TLS プロキシ、FIPS モード</strong></li>
+                <li>証明書生成には OpenSSL 3.0.13 と専用の TLS オフロードライブラリ (appgw_ekv.so) を備えた Linux 環境が必要 (バージョンが異なるとエンジンが正しくロードされない可能性がある)</li>
+                <li>Managed HSM 上の証明書を差し替えた場合、初回の更新では反映されないことがある (タグ更新などの小さな変更を加えるか、HSM 参照を削除・再追加する回避策が案内されている)</li>
+                <li>RBAC 権限の誤設定や参照先キーの削除により、ゲートウェイが HSM に認証できない場合は<strong>リスナーが無効化 (disabled) 状態</strong>になる</li>
+                <li>スループットとキャパシティ計画には Managed HSM のスケーリングガイダンスとサービス制限の確認が必要</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h3>🏦 ユースケース 1: 金融機関における規制準拠の TLS 終端</h3>
+            <p><span class="usecase-label">シナリオ</span><br>金融機関が公開 Web アプリケーションの TLS 終端を Application Gateway (WAF 付き) で行いつつ、規制要件により TLS 秘密鍵を FIPS 140-3 Level 3 検証済み HSM の外に出せない。</p>
+            <p><span class="usecase-label">実装例</span></p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">bash</span>
+                    <span class="code-title">特定キーへのスコープ限定</span>
+                </div>
+                <pre><code class="language-bash"># 鍵アクセスを特定キーのみにスコープ限定し、最小権限を徹底
+az keyvault role assignment create --hsm-name $MHSM_NAME \
+  --role "Managed HSM Crypto User" --assignee-object-id $mioid \
+  --assignee-principal-type MSI --scope /keys/&lt;key-name&gt;</code></pre>
+            </div>
+            <div class="effect-box">
+                <strong>効果</strong>: 秘密鍵を HSM 境界内に維持したまま WAF による検査と TLS オフロードを実現し、規制監査に必要な鍵保管の暗号学的証拠と署名操作の監査ログを提供できる。
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <h3>🔎 ユースケース 2: 署名オペレーションの監査・監視</h3>
+            <p><span class="usecase-label">シナリオ</span><br>セキュリティ運用チームが、TLS 鍵の使用状況 (誰が・いつ・どこから署名操作を行ったか) を継続的に監視したい。</p>
+            <p><span class="usecase-label">実装例</span></p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">kql</span>
+                    <span class="code-title">KeySign 操作の追跡クエリ</span>
+                </div>
+                <pre><code class="language-sql">AzureDiagnostics
+| where ResourceProvider == "MICROSOFT.KEYVAULT"
+| where Category == "AuditEvent"
+| where OperationName == "KeySign"
+| project TimeGenerated, OperationName, CallerIPAddress, identity_claim_appid_g, properties_s
+| order by TimeGenerated desc</code></pre>
+            </div>
+            <div class="effect-box">
+                <strong>効果</strong>: Application Gateway による TLS ハンドシェイクごとの HSM 署名呼び出しを Log Analytics で追跡でき、鍵の不正使用の検知や監査証跡の整備に活用できる。
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>本アップデートに固有の追加料金は公式情報で確認できなかった。<strong>Application Gateway v2 と Azure Key Vault Managed HSM それぞれの料金が適用される</strong>。詳細は以下の料金ページを参照。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/application-gateway/" target="_blank" rel="noopener">Application Gateway の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/key-vault/" target="_blank" rel="noopener">Azure Key Vault (Managed HSM) の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🧩 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>🔐 Azure Key Vault Managed HSM</strong>
+                秘密鍵を保管し TLS 署名を実行する、シングルテナントで FIPS 140-3 Level 3 検証済みの HSM サービス。本機能の中核となる
+            </div>
+            <div class="related-card">
+                <strong>🗝️ Azure Key Vault (標準の証明書統合)</strong>
+                従来からの Application Gateway との統合方式。エクスポート可能な秘密鍵を持つ証明書をゲートウェイが取得してローカルで TLS 終端する (キーレス TLS とは鍵の保管場所が異なる)
+            </div>
+            <div class="related-card">
+                <strong>🪪 Microsoft Entra マネージド ID</strong>
+                Application Gateway が Managed HSM に認証するためのユーザー割り当てマネージド ID を提供
+            </div>
+            <div class="related-card">
+                <strong>🛂 Azure RBAC (Managed HSM ローカル RBAC)</strong>
+                Managed HSM Crypto User ロールによるキー単位の最小権限アクセス制御
+            </div>
+            <div class="related-card">
+                <strong>📈 Azure Monitor / Log Analytics</strong>
+                Managed HSM の AuditEvent 診断ログを収集し、KeySign 操作を KQL で分析
+            </div>
+            <div class="related-card">
+                <strong>🛡️ Azure Web Application Firewall (WAF)</strong>
+                TLS 終端後のリクエスト検査。キーレス TLS と組み合わせてセキュアな公開エンドポイントを構成
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Application Gateway のキーレス TLS の GA により、TLS 秘密鍵を Azure Key Vault Managed HSM の外に一切出すことなく、ゲートウェイでの TLS 終端・WAF 検査・バックエンドへの再暗号化が可能になった。従来の Key Vault 統合ではエクスポート可能な秘密鍵が必須だったため、FIPS 140-3 Level 3 の HSM 境界内での鍵カスタディを求める規制業種では採用の障壁となっていたが、本機能でこのギャップが解消される。</p>
+            <p style="margin-top: 12px;"><strong>導入検討時の評価ポイント (4 点):</strong></p>
+            <ul class="check-list">
+                <li>Application Gateway v2 と対応 SSL ポリシー (TLS 1.2 以降) の確認</li>
+                <li>RSA-HSM キーのみ対応 (EC キー不可) である点</li>
+                <li>AGIC・WebSocket・L4 プロキシが非サポートである点</li>
+                <li>Managed HSM のコストとスループット制限</li>
+            </ul>
+            <p>上記を評価したうえで、<strong>マネージド ID の鍵スコープ限定と診断ログの有効化をセットで構成する</strong>ことを推奨する。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Application Gateway</span>
+            <span class="tag">Key Vault Managed HSM</span>
+            <span class="tag">Keyless TLS</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">TLS 終端</span>
+            <span class="tag">FIPS 140-3</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2>🔗 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=577130" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/application-gateway/keyless-tls-overview" target="_blank" rel="noopener">What is keyless TLS for Azure Application Gateway and Azure Key Vault Managed HSM? (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/application-gateway/keyless-tls" target="_blank" rel="noopener">Tutorial: Configure keyless TLS termination with Azure Key Vault Managed HSM (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/key-vault/managed-hsm/overview" target="_blank" rel="noopener">What is Azure Key Vault Managed HSM? (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/application-gateway/key-vault-certs" target="_blank" rel="noopener">TLS termination with Azure Key Vault certificates (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/application-gateway/" target="_blank" rel="noopener">Application Gateway の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/key-vault/" target="_blank" rel="noopener">Azure Key Vault の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong></p>
+        <ul>
+            <li>ソースレポート: reports/2026/2026-10-20-application-gateway-keyless-tls-managed-hsm.md (Azure News Summary)</li>
+            <li>Azure Updates: <a href="https://azure.microsoft.com/updates?id=577130" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=577130</a></li>
+            <li>Microsoft Learn: <a href="https://learn.microsoft.com/azure/application-gateway/keyless-tls-overview" target="_blank" rel="noopener">keyless-tls-overview</a> / <a href="https://learn.microsoft.com/azure/application-gateway/keyless-tls" target="_blank" rel="noopener">keyless-tls (Tutorial)</a></li>
+        </ul>
+        <p>リリース日: 2026-10-20 | インフォグラフィック生成日: 2026-10-20 | Azure News Summary Project</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
