@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Data Lake Storage: ABFS Vectored Read の一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Category Color: Storage */
+    --storage-cyan: #00BCF2;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--ms-blue-900), var(--azure-blue) 70%, var(--storage-cyan));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.92;
+}
+
+.header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 18px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 24px; }
+
+.section p { margin: 10px 0; }
+
+/* ===== Highlight ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Key points ===== */
+.key-points {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.key-point {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.key-point .kp-icon { font-size: 30px; margin-bottom: 8px; }
+.key-point .kp-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+.key-point .kp-desc { font-size: 13px; opacity: 0.92; }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 17px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 17px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.feature-content p {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin: 0;
+}
+
+/* ===== Spec table ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th, .spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+}
+
+.spec-table th {
+    background: var(--ms-blue-100);
+    color: var(--azure-dark-blue);
+    white-space: nowrap;
+    width: 230px;
+    font-weight: 700;
+}
+
+.spec-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+.spec-table code, .inline-code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Steps ===== */
+.step-list { counter-reset: step; list-style: none; margin: 16px 0; }
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 0 10px 48px;
+    font-size: 14px;
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* ===== Benefits ===== */
+.benefit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.benefit-col {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--storage-cyan);
+    border-radius: 8px;
+    padding: 18px 20px;
+}
+
+.benefit-col h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.benefit-col ul { padding-left: 20px; }
+.benefit-col li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Warnings ===== */
+.warning-box {
+    background: #FFF8E6;
+    border: 2px solid var(--ms-yellow);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+}
+
+.warning-box h4 {
+    color: var(--ms-orange);
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.warning-box p, .warning-box li { font-size: 14px; }
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin: 6px 0; }
+
+.danger-box {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+}
+
+.danger-box h4 {
+    color: var(--ms-red);
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.danger-box p { font-size: 14px; }
+
+/* ===== Use case ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 17px;
+    margin-bottom: 10px;
+}
+
+.usecase-label {
+    display: inline-block;
+    background: var(--storage-cyan);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+.usecase-card p { font-size: 14px; }
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+
+.related-card h4 {
+    color: var(--azure-blue);
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+}
+
+.summary-box p { font-size: 15px; margin: 10px 0; }
+
+/* ===== Links ===== */
+.link-list { list-style: none; margin: 12px 0; }
+
+.link-list li {
+    margin: 8px 0;
+    padding-left: 26px;
+    position: relative;
+    font-size: 14px;
+}
+
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== Tags ===== */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 12px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+
+.footer p { margin: 4px 0; }
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .benefit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">🗄️ Azure Data Lake Storage</span>
+            <span class="service-badge">Azure Blob Storage</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>ABFS Vectored Read の一般提供開始</h1>
+        <p class="subtitle">選択的な Parquet 読み取りを、レンジ結合 + 非同期 I/O で高速化するクライアントサイド最適化 — 設定ひとつで有効化、データ移行は不要</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-22</span>
+            <span>⚙️ 機能: ABFS Vectored Read</span>
+            <span>🏷️ カテゴリ: Storage / Analytics</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Data Lake Storage の Hadoop 向けドライバーである <strong>ABFS (Azure Blob File System) ドライバー</strong>において、<strong>Vectored Read</strong> が一般提供 (GA) となった。Parquet などの列指向ファイルから必要な部分だけを選択的に読み取るワークロードで、ストレージへのリクエストオーバーヘッドを削減するクライアントサイドの最適化機能である。</p>
+        <div class="highlight-box">
+            <strong>ポイント</strong>: 互換性のあるリーダーが必要なファイルレンジをまとめて ABFS ドライバーに渡すと、ドライバーがレンジを<strong>検証・ソートし、近接するレンジを結合</strong>して少数のストレージリクエストにまとめ、<strong>非同期に実行</strong>する。ネットワークラウンドトリップを削減でき、ファイルフォーマットの変更や保存データの書き換えは一切不要。
+        </div>
+
+        <div class="key-points">
+            <div class="key-point">
+                <div class="kp-icon">🔗</div>
+                <div class="kp-title">レンジ結合</div>
+                <div class="kp-desc">近接レンジを結合し、ストレージリクエスト数とラウンドトリップを削減</div>
+            </div>
+            <div class="key-point">
+                <div class="kp-icon">⚡</div>
+                <div class="kp-title">非同期 I/O</div>
+                <div class="kp-desc">複数レンジを調整された I/O として並行処理</div>
+            </div>
+            <div class="key-point">
+                <div class="kp-icon">🎛️</div>
+                <div class="kp-title">設定のみで有効化</div>
+                <div class="kp-desc">クエリ書き換え・データ移行なし。Spark 設定 1 行で導入</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before</h4>
+                <ul>
+                    <li>選択的な Parquet クエリでは、必要なデータがファイル内に分散しているため、レンジごとに<strong>独立した多数の小さなストレージリクエスト</strong>が発生していた</li>
+                    <li>各リクエストにネットワークと処理のオーバーヘッドが伴うため、読み取るデータ量を減らしても、<strong>読み取りを調整するコストは解消されなかった</strong></li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After</h4>
+                <ul>
+                    <li>リーダーが必要なレンジを一括で渡し、ABFS ドライバーが <strong>I/O をグループとして計画</strong></li>
+                    <li>近接レンジが結合され、<strong>ストレージリクエスト数とラウンドトリップが削減</strong></li>
+                    <li>読み取りが<strong>非同期に実行</strong>され、複数レンジを並行処理</li>
+                    <li>Spark 設定 (<span class="inline-code">parquet.hadoop.vectored.io.enabled=true</span>) のみで有効化可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph Before["😓 Before: 独立した小さなリクエスト"]
+        R1["📖 Parquet リーダー"] -->|"レンジごとに<br/>多数のリクエスト"| S1[("🗄️ ADLS")]
+    end
+    subgraph After["🚀 After: Vectored Read"]
+        R2["📖 Parquet リーダー"] -->|"レンジを一括提出"| D2["⚙️ ABFS ドライバー<br/>検証・ソート・近接レンジ結合"]
+        D2 -->|"少数のリクエストを<br/>非同期実行"| S2[("🗄️ ADLS")]
+    end
+    Before -.->|"設定で有効化"| After
+            </pre>
+        </div>
+        <p class="diagram-caption">従来はリーダーが必要なレンジごとに個別のストレージリクエストを発行していたが、Vectored Read では ABFS ドライバーがレンジ群を受け取り、近接レンジを結合した少数のリクエストを非同期に実行することでラウンドトリップを削減する。</p>
+    </section>
+
+    <!-- ===== Key features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⭐</span>主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>近接レンジの結合 (coalescing)</h4>
+                <p>互換性のあるリーダーが必要なファイルレンジをまとめて提出すると、ABFS ドライバーがレンジを検証・ソートし、近接するレンジを適宜結合して、読み取りバッファーに収まるよう作業を分割する。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>非同期読み取り</h4>
+                <p>結合後のストレージリクエストを非同期にキューイングして実行し、要求された各レンジのバッファーにデータを返す。各レンジを独立した操作として扱わないため、調整された I/O が可能になる。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎛️</div>
+            <div class="feature-content">
+                <h4>設定ベースの導入</h4>
+                <p>Hadoop の Parquet + ABFS パスを使用する互換性のある Spark ワークロードは、クエリの書き換え、アプリケーションロジックの変更、データ移行なしに、設定のみで機能を利用できる。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💻</div>
+            <div class="feature-content">
+                <h4>クライアントサイド最適化</h4>
+                <p>ファイルフォーマットの変更や保存データの書き換えは行わない。エンジンは要求したレンジのデータをそのまま受け取る。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>対象サービス</th><td>Azure Data Lake Storage / Azure Blob Storage (ABFS ドライバー経由のアクセス)</td></tr>
+            <tr><th>必要な Hadoop バージョン</th><td>Apache Hadoop <strong>3.3.5 以降</strong> (hadoop-azure モジュールを含む)</td></tr>
+            <tr><th>必要な Parquet ライブラリ</th><td>parquet-hadoop <strong>1.12.3 以降</strong></td></tr>
+            <tr><th>対象 URI スキーム</th><td><code>abfs://</code> / <code>abfss://</code></td></tr>
+            <tr><th>有効化設定 (Spark)</th><td><code>spark.hadoop.parquet.hadoop.vectored.io.enabled=true</code></td></tr>
+            <tr><th>最適化の種類</th><td>クライアントサイド (ファイルフォーマット・保存データの変更なし)</td></tr>
+            <tr><th>効果が高いワークロード</th><td>選択的な Parquet 読み取り (列選択・行グループフィルタリング)</td></tr>
+            <tr><th>効果が低いワークロード</th><td>フルシーケンシャルスキャン、Hadoop/ABFS パスを経由しないエンジン</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🚀</span>設定方法</h2>
+        <h3 style="color: var(--azure-dark-blue); font-size: 17px; margin-bottom: 8px;">前提条件</h3>
+        <ol class="step-list">
+            <li>ランタイムに <strong>Apache Hadoop 3.3.5 以降</strong> (hadoop-azure モジュールを含む) が含まれていること</li>
+            <li><strong>parquet-hadoop 1.12.3 以降</strong>が含まれていること</li>
+            <li>サポートは Spark のバージョンだけでなく、ランタイムに含まれる Hadoop / hadoop-azure / parquet-hadoop ライブラリのバージョンに依存する。<strong>ABFS URI が使えることだけでは、最適化された実装がインストールされていることの確認にはならない</strong></li>
+        </ol>
+
+        <h3 style="color: var(--azure-dark-blue); font-size: 17px; margin: 16px 0 8px;">Spark での有効化</h3>
+        <p>アプリケーション起動前に、<span class="inline-code">spark.hadoop.</span> プレフィックスを付けて Parquet 設定を有効化する。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>spark-submit での有効化</span></div>
+            <pre><code class="language-bash">spark-submit \
+  --conf spark.hadoop.parquet.hadoop.vectored.io.enabled=true \
+  &lt;other-options&gt; \
+  &lt;application&gt;</code></pre>
+        </div>
+        <div class="highlight-box">
+            <ul style="padding-left: 20px; font-size: 14px;">
+                <li>パッケージされている Parquet バージョンによってデフォルト値が異なる場合があるため、<strong>デフォルトに依存せず明示的にプロパティを設定する</strong>ことが推奨されている</li>
+                <li>マネージドサービスの場合は、各サービスがサポートするクラスターまたはセッション構成の仕組みを使用する</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Benefits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="benefit-grid">
+            <div class="benefit-col">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>既存のクエリやデータを変更せずに、<strong>設定のみで</strong>選択的読み取りワークロードの効率化を図れる</li>
+                    <li>ストレージリクエスト数の削減により、<strong>トランザクション数の削減</strong>につながる可能性がある (ワークロード依存のため、ベースラインとの比較検証が推奨されている)</li>
+                </ul>
+            </div>
+            <div class="benefit-col">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>近接レンジの結合により、独立したストレージリクエスト数と<strong>ネットワークラウンドトリップを削減</strong></li>
+                    <li>非同期読み取りにより、複数のレンジ要求を調整された I/O として<strong>並行処理</strong>できる</li>
+                    <li>クライアントサイドの最適化のため、<strong>ファイルフォーマットの変更や保存データの書き換えが不要</strong></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Limitations ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="danger-box">
+            <h4>🚫 Azure Databricks は現時点で非対応</h4>
+            <p>Databricks ランタイムに含まれる ABFS バージョンがこの機能を含んでいない。また、Photon は <span class="inline-code">abfs://</span> / <span class="inline-code">abfss://</span> URI を使用していても ABFS ドライバーをデータアクセスに使用しないため、ABFS URI の存在だけでは Vectored Read が利用可能とは判断できない。</p>
+        </div>
+        <div class="warning-box">
+            <h4>📌 その他の制約・注意点</h4>
+            <ul>
+                <li>フルシーケンシャルスキャンでは効果が小さい場合がある</li>
+                <li>Hadoop/ABFS パスを経由しないエンジンではこの機能は使用されない</li>
+                <li>レンジ結合により、非連続な要求レンジの間にある<strong>余分なバイトを読み取る場合がある</strong></li>
+                <li>効果は、要求レンジの数・サイズ・間隔、結合 (coalescing) の構成、ストレージとネットワークのレイテンシ、同時実行性、キャッシュに依存する。代表的なデータと同時実行性を用いて、<strong>クエリ実行時間・ストレージトランザクション数・読み取りバイト数・リソース使用率をベースラインと比較</strong>することが推奨されている</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 1</span>選択的な Parquet クエリの効率化</h4>
+            <p><strong>シナリオ</strong>: ADLS 上の Parquet データセットに対し、少数の列を選択し大半の行グループをフィルタリングするクエリを Spark で実行している。リーダーは不要なデータをスキップできるが、必要なデータがファイル内の複数箇所に分散しており、多数の小さなレンジリクエストが発生している。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+                <pre><code class="language-bash"># Hadoop 3.3.5+ / parquet-hadoop 1.12.3+ を含むランタイムで実行
+spark-submit \
+  --conf spark.hadoop.parquet.hadoop.vectored.io.enabled=true \
+  my_selective_query_app.py</code></pre>
+            </div>
+            <p><strong>効果</strong>: 近接レンジの結合と非同期実行により、ストレージリクエスト数とネットワークラウンドトリップが削減される。まず代表的な選択的読み取りワークロード 1 つから開始し、ベースラインと比較することが推奨されている。</p>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>本機能自体の追加料金に関する公式情報は確認できなかった。ストレージリクエスト数の削減は<strong>トランザクション課金に影響し得る</strong>一方、レンジ結合により<strong>読み取りバイト数が増える場合もある</strong>ため、ストレージトランザクション数と読み取りバイト数をベースラインと比較して評価することが公式ブログで推奨されている。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/storage/data-lake/" target="_blank" rel="noopener">Azure Data Lake Storage の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Related services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>ABFS (Azure Blob File System) ドライバー</h4>
+                <p>Apache Hadoop に含まれる ADLS 向けドライバー。本機能はこのドライバーのクライアントサイド最適化として提供される。</p>
+            </div>
+            <div class="related-card">
+                <h4>Apache Spark / Apache Hadoop</h4>
+                <p>Hadoop の Parquet リーダー (parquet-hadoop) と ABFS パスを使用するワークロードが本機能の対象。</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Blob Storage (階層型名前空間)</h4>
+                <p>ADLS は階層型名前空間を有効化した Blob Storage 上に構築されており、ABFS ドライバーは ADLS REST API のクライアントシムとして動作する。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>ABFS Vectored Read の GA により、ADLS 上の選択的な Parquet 読み取りワークロードにおいて、<strong>近接レンジの結合と非同期読み取りによるリクエストオーバーヘッド削減が、設定のみで利用可能</strong>になった。クエリ書き換えやデータ移行が不要な点が導入のハードルを大きく下げている。</p>
+            <p>導入にあたっては、ランタイムが <strong>Apache Hadoop 3.3.5 以降</strong> (hadoop-azure 含む) と <strong>parquet-hadoop 1.12.3 以降</strong>を含むことを確認し、<span class="inline-code">parquet.hadoop.vectored.io.enabled=true</span> を明示的に設定する。<strong>Azure Databricks は現時点で非対応</strong>である点、効果はワークロード特性に依存する点に注意し、まず代表的な選択的読み取りワークロード 1 つでクエリ実行時間・トランザクション数・読み取りバイト数をベースラインと比較検証することを推奨する。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Data Lake Storage</span>
+            <span class="tag">Azure Blob Storage</span>
+            <span class="tag">ABFS</span>
+            <span class="tag">Vectored Read</span>
+            <span class="tag">Parquet</span>
+            <span class="tag">Apache Spark</span>
+            <span class="tag">Apache Hadoop</span>
+            <span class="tag">Storage</span>
+            <span class="tag">Analytics</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=577618" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://techcommunity.microsoft.com/blog/analyticsonazure/optimize-selective-analytics-reads-in-azure-data-lake-storage-with-abfs-vectored/4564592" target="_blank" rel="noopener">Tech Community ブログ: Optimize selective analytics reads in Azure Data Lake Storage with ABFS Vectored Read</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage/blobs/data-lake-storage-abfs-driver" target="_blank" rel="noopener">Microsoft Learn: ABFS ドライバーの概要</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/storage/data-lake/" target="_blank" rel="noopener">料金ページ (Azure Data Lake Storage)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=577618" target="_blank" rel="noopener">Azure Updates (ID: 577618)</a> / <a href="https://techcommunity.microsoft.com/blog/analyticsonazure/optimize-selective-analytics-reads-in-azure-data-lake-storage-with-abfs-vectored/4564592" target="_blank" rel="noopener">Microsoft Tech Community Blog</a></p>
+        <p>本インフォグラフィックは Azure News Summary レポート (2026-10-22) を基に生成されています。</p>
+    </footer>
+
+</div>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

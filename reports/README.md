@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-10-22 - Azure Data Lake Storage: ABFS Vectored Read の一般提供開始 (GA)](2026/2026-10-22-adls-abfs-vectored-read.md)
 - [2026-10-21 - Azure Cosmos DB: Safe Key Rotation (安全なキーローテーション)](2026/2026-10-21-cosmosdb-safe-key-rotation.md)
 - [2026-10-21 - Microsoft Entra ID: Choose Your Own Telephony (CYOT) の発表](2026/2026-10-21-entra-choose-your-own-telephony.md)
 - [2026-10-20 - Azure Front Door Premium WAF: サービスタグ一致条件の一般提供開始 (GA)](2026/2026-10-20-front-door-waf-service-tag-match.md)
