@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-10-23 - Azure Backup: Premium SSD v2 / Ultra ディスク搭載 Azure VM のアイテムレベル回復 (ILR) が一般提供開始](2026/2026-10-23-azure-backup-ilr-premium-ssdv2-ultra-disks.md)
 - [2026-10-22 - Azure Data Lake Storage: ABFS Vectored Read の一般提供開始 (GA)](2026/2026-10-22-adls-abfs-vectored-read.md)
 - [2026-10-21 - Azure Cosmos DB: Safe Key Rotation (安全なキーローテーション)](2026/2026-10-21-cosmosdb-safe-key-rotation.md)
 - [2026-10-21 - Microsoft Entra ID: Choose Your Own Telephony (CYOT) の発表](2026/2026-10-21-entra-choose-your-own-telephony.md)

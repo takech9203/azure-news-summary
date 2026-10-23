@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Backup: Premium SSD v2 / Ultra ディスク VM のアイテムレベル回復 (ILR) が GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Storage category color */
+    --storage-blue: #00BCF2;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+.header::after {
+    content: "📂";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+
+.header .date {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-top: 8px;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+.section h3 {
+    color: var(--ms-blue-800);
+    font-size: 17px;
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.keyword {
+    background: var(--ms-blue-200);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    color: var(--ms-blue-900);
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 30px;
+    font-weight: bold;
+    line-height: 1.3;
+}
+
+.stat-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-900);
+    margin-bottom: 6px;
+}
+
+.feature-content ul {
+    padding-left: 18px;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content li { margin: 4px 0; }
+
+/* ===== Security grid ===== */
+.security-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.security-item {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.security-item .sec-title {
+    font-weight: 700;
+    color: var(--ms-text-primary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.security-item p { color: var(--ms-text-secondary); margin: 0; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+td code, li code, p code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 13px;
+    color: var(--ms-blue-900);
+}
+
+/* ===== Steps ===== */
+.steps {
+    counter-reset: step;
+    list-style: none;
+    margin: 16px 0;
+}
+
+.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 16px 12px 58px;
+    margin: 10px 0;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+/* ===== Benefit columns ===== */
+.benefit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.benefit-col {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 18px 20px;
+}
+
+.benefit-col h4 {
+    color: var(--ms-blue-900);
+    margin-bottom: 10px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.benefit-col ul { padding-left: 20px; font-size: 14px; }
+.benefit-col li { margin: 8px 0; }
+
+/* ===== Caution list ===== */
+.caution-list {
+    list-style: none;
+}
+
+.caution-list li {
+    position: relative;
+    padding: 8px 12px 8px 36px;
+    margin: 8px 0;
+    background: #FFF8E7;
+    border: 1px solid #F5DFA6;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.caution-list li::before {
+    content: "⚠️";
+    position: absolute;
+    left: 10px;
+    top: 8px;
+}
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    background: var(--ms-blue-700);
+    border-radius: 12px;
+    padding: 2px 10px;
+}
+
+.usecase-card p { font-size: 14px; }
+
+.usecase-card ol {
+    padding-left: 22px;
+    font-size: 14px;
+    margin: 8px 0;
+}
+
+.usecase-card ol li { margin: 4px 0; }
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 16px;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+.effect-box strong { color: var(--ms-green); }
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 14px;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--storage-blue);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card .rel-title {
+    font-weight: 700;
+    color: var(--ms-blue-900);
+    margin-bottom: 4px;
+}
+
+.related-card p { color: var(--ms-text-secondary); margin: 0; }
+
+/* ===== Links / Footer ===== */
+a { color: var(--azure-blue); word-break: break-all; }
+
+.link-list { padding-left: 20px; font-size: 14px; }
+.link-list li { margin: 6px 0; }
+
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 12px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+
+.footer a { font-size: 12px; }
+
+.tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 14px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .benefit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .container { padding: 14px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">☁️ Azure Backup</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Premium SSD v2 / Ultra ディスク搭載 Azure VM の<br>アイテムレベル回復 (ILR) が一般提供開始</h1>
+        <div class="subtitle">Item-Level Recovery (ILR) for Azure VMs with Premium SSD v2 and Ultra Disks</div>
+        <div class="date">📅 リリース日: 2026-10-23</div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>
+            Azure Backup が、<span class="keyword">Premium SSD v2</span> および <span class="keyword">Ultra ディスク</span>を使用する Azure 仮想マシンに対する
+            <span class="keyword">アイテムレベル回復 (ILR)</span> の一般提供 (GA) を開始しました。
+            論理セクターサイズは <strong>512 バイトと 4KB の両方</strong>をサポートし、高性能ディスクを使用する VM からも、個々のファイルやフォルダーを選択して復元できます。
+        </p>
+        <p>
+            ILR では、Azure Portal / Azure CLI / PowerShell からファイル回復用の実行ファイル (Windows) もしくは Python スクリプト (Linux) を生成し、
+            互換性のあるマシン上で実行することで、復旧ポイントに <span class="keyword">iSCSI</span> 経由で接続します。
+            ボリュームがローカルにマウントされるため、ディスク全体や VM 全体を復元することなく、必要なファイル・フォルダーだけを参照してコピーできます。
+            これは Standard HDD / Standard SSD / Premium SSD v1 で提供されてきた既存の ILR と同等 (parity) の動作です。
+        </p>
+        <div class="highlight-box">
+            🎉 今回の GA により、<strong>すべての Azure Managed Disk SKU で ILR が利用可能</strong>になりました。
+            複数のディスク種別が混在する VM (mixed disk types) の復旧ポイントもサポートされ、対象となるすべてのディスクが公開されるため、ディスク構成を意識せずにファイル単位の回復が行えます。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">全 SKU</div>
+                <div class="stat-label">Managed Disk で ILR 統一</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">512B / 4KB</div>
+                <div class="stat-label">両論理セクターサイズ対応</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">12 時間</div>
+                <div class="stat-label">読み取り専用・自動切断</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">RTO 短縮</div>
+                <div class="stat-label">VM 全体の復元が不要に</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before</h4>
+                <ul>
+                    <li>ILR は Standard HDD / Standard SSD / Premium SSD v1 のみ対応。Premium SSD v2 / Ultra ディスクの VM では個別ファイルの回復ができなかった</li>
+                    <li>特定のファイルだけが必要な場合でも、<strong>ディスク全体または VM 全体の復元</strong>が必要だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After</h4>
+                <ul>
+                    <li>Premium SSD v2 / Ultra ディスク (512B / 4KB セクター) の VM から<strong>ファイル・フォルダー単位で直接回復</strong></li>
+                    <li>ディスク全体・VM 全体の復元が不要になり、<strong>復旧時間 (RTO) が改善</strong></li>
+                    <li>すべての Azure Managed Disk SKU で ILR の動作が統一</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["⏮️ Before: Premium SSD v2 / Ultra ディスク VM"]
+        B1["📦 復旧ポイント"] --> B2["💽 ディスク全体 / VM 全体を復元"]
+        B2 --> B3["📄 復元後にファイルを取り出し"]
+    end
+    subgraph After["⏭️ After (GA): ILR サポート"]
+        A1["📦 復旧ポイント"] --> A2["📜 回復スクリプト生成<br/>(Portal / CLI / PowerShell)"]
+        A2 --> A3["🖥️ 互換マシンで実行<br/>iSCSI + TLS で接続"]
+        A3 --> A4["📂 ボリュームをマウントし<br/>ファイル / フォルダーのみコピー"]
+    end
+            </pre>
+        </div>
+        <p>
+            従来は Premium SSD v2 / Ultra ディスクの VM からファイルを取り出すにはディスクや VM 全体の復元が必要でしたが、
+            GA 後は回復スクリプトで復旧ポイントに直接接続し、必要なファイルだけを選択してコピーできます。
+        </p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">💾</div>
+            <div class="feature-content">
+                <h4>Premium SSD v2 / Ultra ディスクの ILR サポート (GA)</h4>
+                <ul>
+                    <li>512 バイトおよび 4KB の両方の論理セクターサイズに対応</li>
+                    <li>ディスク種別が混在する VM の復旧ポイントもサポートし、対象ディスクをすべて公開</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>既存 ILR ワークフローとの完全な互換性 (parity)</h4>
+                <ul>
+                    <li>Azure Portal / CLI / PowerShell から実行ファイル (Windows) / Python スクリプト (Linux) を生成</li>
+                    <li>復旧ポイントを iSCSI ターゲットとしてマウントし、ボリュームを参照して必要なファイルのみコピー</li>
+                    <li>フルディスク復元や VM 復元は不要</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>セキュリティ設計</h4>
+                <ul>
+                    <li>RBAC・署名付きスクリプト・パスワード・相互 CHAP・TLS 1.2 による多層防御 (詳細は下記)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>🛡️ セキュリティ設計の詳細</h3>
+        <div class="security-grid">
+            <div class="security-item">
+                <div class="sec-title">🔑 Azure RBAC</div>
+                <p>スクリプトの生成には VM 復元と同等の Azure RBAC 権限が必要</p>
+            </div>
+            <div class="security-item">
+                <div class="sec-title">✍️ 署名付きスクリプト</div>
+                <p>Microsoft の公式証明書で署名。改ざんすると署名が無効化される</p>
+            </div>
+            <div class="security-item">
+                <div class="sec-title">🔒 パスワード + 昇格実行</div>
+                <p>生成時に表示されるパスワードが必要。管理者による昇格モードでの実行のみ許可</p>
+            </div>
+            <div class="security-item">
+                <div class="sec-title">🤝 相互 CHAP + TLS 1.2</div>
+                <p>iSCSI 接続は相互 CHAP 認証、データフローは TLS 1.2 のセキュアトンネルで保護</p>
+            </div>
+            <div class="security-item">
+                <div class="sec-title">⏱️ 読み取り専用・自動失効</div>
+                <p>復旧ポイントへのアクセスは読み取り専用。既定で 12 時間後に自動切断 (スクリプトも失効)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <tr><th style="width: 36%;">項目</th><th>詳細</th></tr>
+            <tr><td>対象ディスク</td><td>Standard HDD / Standard SSD / Premium SSD v1 / Premium SSD v2 / Ultra ディスク</td></tr>
+            <tr><td>論理セクターサイズ</td><td>512 バイトおよび 4KB (Premium SSD v2 / Ultra)</td></tr>
+            <tr><td>対象 VM</td><td>Resource Manager モデルでデプロイされ、Recovery Services コンテナーで保護された Azure VM</td></tr>
+            <tr><td>対応 OS (Premium SSD v2 / Ultra の ILR)</td><td>Windows、Linux (Ubuntu、RHEL、Debian、Oracle Linux、SLES、openSUSE)</td></tr>
+            <tr><td>スクリプト実行マシンの要件 (Windows)</td><td>.NET 4.6.2 以上、TLS 1.2 サポート、バックアップ元と互換性のある OS バージョン</td></tr>
+            <tr><td>スクリプト実行マシンの要件 (Linux)</td><td>bash 4 以上、Python 2.6.6 以上、open-iscsi / lshw、TLS 1.2 サポート</td></tr>
+            <tr><td>ネットワーク要件</td><td><code>download.microsoft.com</code> (443/outbound)、Recovery Service URL (3260/outbound、<code>AzureBackup</code> サービスタグ)、DNS (53/outbound)</td></tr>
+            <tr><td>接続方式</td><td>iSCSI (相互 CHAP 認証) + TLS 1.2 セキュアトンネル</td></tr>
+            <tr><td>アクセス権</td><td>読み取り専用、既定 12 時間で自動切断・スクリプト失効</td></tr>
+            <tr><td>推奨回復サイズ</td><td>合計 10 GB 以下 (転送速度は約 1 GB/時)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3>✅ 前提条件</h3>
+        <ol class="steps">
+            <li>Azure VM が Resource Manager モデルでデプロイされ、Recovery Services コンテナーにバックアップされていること</li>
+            <li>スクリプト生成には VM 復元と同等の Azure RBAC 権限を持つユーザーであること</li>
+            <li>スクリプト実行マシンが OS 要件 (上表)、コンポーネント要件、ネットワークアクセス要件を満たすこと</li>
+            <li>プロキシ経由ではなく、ポート 3260 (iSCSI) への直接アクセスが可能なマシンで実行すること</li>
+        </ol>
+
+        <h3>🖥️ Azure Portal での手順</h3>
+        <ol class="steps">
+            <li>Azure Portal で対象の仮想マシンを開き、メニューから <strong>[バックアップ]</strong> を選択</li>
+            <li>バックアップダッシュボードで <strong>[ファイルの回復]</strong> (File Recovery) を選択</li>
+            <li><strong>[復元ポイントの選択]</strong> で、回復したいファイルを含む復元ポイントを選択</li>
+            <li><strong>[実行可能ファイルのダウンロード]</strong> (Windows VM) または <strong>[スクリプトのダウンロード]</strong> (Linux VM、Python スクリプト) を実行</li>
+            <li>ポータルに表示されるパスワードをコピーし、互換マシン上で管理者権限でスクリプトを実行してパスワードを入力</li>
+            <li>マウントされたボリューム (Windows はドライブレター、Linux はスクリプト実行フォルダー配下) から必要なファイルをコピー</li>
+            <li>完了後、ポータルの <strong>[ディスクのマウント解除]</strong> (Unmount Disks) で接続を閉じる</li>
+        </ol>
+    </section>
+
+    <!-- ===== Benefits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌟</span>メリット</h2>
+        <div class="benefit-grid">
+            <div class="benefit-col">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>特定ファイルのみの復旧シナリオで<strong>復旧時間 (RTO) が短縮</strong>され、業務影響を最小化できる</li>
+                    <li>ディスク全体の復元用リソース (一時的なディスク・VM) が不要になり、復旧作業の<strong>コストと手間を削減</strong>できる</li>
+                    <li>高性能ディスク採用の障壁が 1 つ減り、ミッションクリティカルなワークロードの<strong>モダナイズを後押し</strong>する</li>
+                </ul>
+            </div>
+            <div class="benefit-col">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>すべての Managed Disk SKU で ILR の運用手順が統一され、<strong>SKU ごとの復旧手順の作り分けが不要</strong>になる</li>
+                    <li>ディスク種別が混在する VM でも、すべての対象ディスクからファイル回復が可能</li>
+                    <li>RBAC、署名付きスクリプト、相互 CHAP、TLS 1.2、12 時間自動切断など、<strong>既存 ILR と同じセキュリティ統制</strong>が適用される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li>暗号化された VM バックアップからのファイル回復はサポートされない</li>
+            <li>回復合計サイズは 10 GB 以下での利用が推奨され、データ転送速度は約 1 GB/時と性能上の制限がある</li>
+            <li>スパン/ストライプボリューム、ミラー/RAID-5 のダイナミックディスク、Windows 記憶域スペースを持つマシン上ではスクリプトを実行できない (別マシンが必要)</li>
+            <li>バックアップ元 VM のディスク数が多い (16 超) または大きい (4 TB 超) 場合、同一マシンでの実行は非推奨 (ファイル回復専用の別 VM を推奨)</li>
+            <li>Linux の LVM / ソフトウェア RAID 構成では、保護対象 VM と同じマシン上でスクリプトを実行できず、ボリュームのオンライン化に追加手順が必要</li>
+            <li>Windows は OS バージョンの互換性制約があり、過去・将来の OS バージョンへのファイル復元はできない</li>
+            <li>スクリプトは英語のみで生成され、ローカライズされていない (実行にはシステムロケールが英語である必要がある場合がある)</li>
+            <li>プロキシが iSCSI (ポート 3260) をサポートしない場合があるため、直接アクセス可能なマシンでの実行が強く推奨される</li>
+        </ul>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">Case 1</span>🗄️ 高性能 DB サーバーからの誤削除ファイルの復旧</h4>
+            <p><strong>シナリオ</strong>: Premium SSD v2 を使用する Linux (RHEL) 上のアプリケーションサーバーで、設定ファイルやログファイルを誤って削除してしまった。VM 全体を復元するとダウンタイムと作業コストが大きい。</p>
+            <p style="margin-top: 10px;"><strong>実装例</strong> (Azure Portal):</p>
+            <ol>
+                <li>対象 VM の [バックアップ] → [ファイルの回復] から復元ポイントを選択し、Python スクリプトをダウンロード</li>
+                <li>互換性のある別の Linux マシンに転送し、<code>chmod +x</code> 後に実行、パスワードを入力</li>
+                <li>マウントされたボリュームから対象ファイルのみをコピー</li>
+                <li>完了後にポータルから [ディスクのマウント解除] を実行</li>
+            </ol>
+            <div class="effect-box"><strong>効果</strong>: VM・ディスク全体の復元を行わずに数ファイルのみを回復でき、本番 VM への影響なしに短時間で復旧が完了する。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">Case 2</span>🔍 監査・調査目的での過去時点のファイル参照</h4>
+            <p><strong>シナリオ</strong>: Ultra ディスクを使用するミッションクリティカル VM について、過去の復旧ポイント時点の特定ファイルの内容を監査・調査のために確認したい。</p>
+            <div class="effect-box"><strong>効果</strong>: 復旧ポイントを読み取り専用でマウントして必要なファイルだけを参照・取得でき、12 時間で自動的にアクセスが失効するため、安全に調査を実施できる。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="highlight-box">
+            Azure Updates および料金ページ上で、<strong>ILR 自体に対する追加料金の記載はありません</strong>。
+            Azure Backup の料金ページでは、Backup Storage の Standard 層からの復元は無料 (トランザクション料・エグレス料なし) と記載されています。
+        </div>
+        <p>Azure VM バックアップの基本的な料金体系は以下のとおりです (金額はリージョンにより異なるため料金ページを参照)。</p>
+        <table>
+            <tr><th style="width: 36%;">項目</th><th>内容</th></tr>
+            <tr><td>保護インスタンス料金</td><td>保護対象データサイズに応じた階層制の月額固定料金 (50 GB 以下 / 50〜500 GB / 500 GB 超は 500 GB 増分ごと)</td></tr>
+            <tr><td>バックアップストレージ料金</td><td>消費量に応じた GB 単価 (LRS / ZRS / GRS / RA-GRS を選択可能)</td></tr>
+            <tr><td>Standard 層からの復元</td><td>無料 (トランザクション料・エグレス料なし)</td></tr>
+            <tr><td>Archive 層からの復元</td><td>リハイドレート (データ取得) 料金が別途発生</td></tr>
+        </table>
+        <p>詳細は <a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank" rel="noopener">Azure Backup 料金ページ</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p>
+            リージョンごとの提供状況は公式ドキュメントで確認してください:
+            <a href="https://learn.microsoft.com/azure/backup/backup-support-matrix-iaas" target="_blank" rel="noopener">Azure VM バックアップのサポートマトリックス</a>
+        </p>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <div class="rel-title">💾 Azure Managed Disks (Premium SSD v2 / Ultra)</div>
+                <p>今回の ILR 対象となる高性能ブロックストレージ。サブミリ秒レイテンシと高 IOPS / スループットを提供</p>
+            </div>
+            <div class="related-card">
+                <div class="rel-title">🏦 Recovery Services コンテナー</div>
+                <p>Azure VM バックアップの保存先。ILR の前提条件として VM がこのコンテナーで保護されている必要がある</p>
+            </div>
+            <div class="related-card">
+                <div class="rel-title">🌐 GRS / クロスリージョンリストア (CRR)</div>
+                <p>Premium SSD v2 / Ultra ディスク VM では 2024 年 10 月に GA 済み。今回の ILR GA と合わせて、同ディスク SKU のバックアップ機能の parity が進展</p>
+            </div>
+            <div class="related-card">
+                <div class="rel-title">📑 Enhanced バックアップポリシー</div>
+                <p>Premium SSD v2 / Ultra ディスクを使用する VM のバックアップに利用されるポリシー。Standard ポリシーからの移行もサポート</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>
+                Premium SSD v2 / Ultra ディスクを使用する Azure VM でも、ファイル・フォルダー単位の回復 (ILR) が GA となり、
+                <strong>すべての Managed Disk SKU で ILR が利用可能</strong>になりました。
+                これまでこれらの高性能ディスクでは特定ファイルの回復にもディスク全体・VM 全体の復元が必要でしたが、
+                今後は既存の ILR と同じワークフロー (Portal / CLI / PowerShell でのスクリプト生成 → 互換マシンでの実行 → 必要ファイルのみコピー) で迅速に復旧できます。
+            </p>
+            <p style="margin-top: 12px;">
+                Premium SSD v2 / Ultra ディスクを採用済み、または採用を検討している環境では、
+                <strong>復旧手順書 (Runbook) に ILR の手順を追加</strong>し、回復サイズ 10 GB 以下の推奨値や実行マシンの要件
+                (OS / ネットワーク / iSCSI 直接アクセス) を踏まえた<strong>復旧演習の実施</strong>を推奨します。
+            </p>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=577963" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/backup/whats-new#item-level-recovery-support-for-premium-ssd-v2-and-ultra-disks" target="_blank" rel="noopener">What's new in Azure Backup - Item-level recovery support for Premium SSD v2 and Ultra disks</a></li>
+            <li><a href="https://learn.microsoft.com/azure/backup/backup-azure-restore-files-from-vm" target="_blank" rel="noopener">Azure VM バックアップからのファイルとフォルダーの回復 (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank" rel="noopener">Azure Backup 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <div class="tag-row">
+            <span class="tag">Azure Backup</span>
+            <span class="tag">Item-Level Recovery</span>
+            <span class="tag">Premium SSD v2</span>
+            <span class="tag">Ultra Disk</span>
+            <span class="tag">Managed Disks</span>
+            <span class="tag">GA</span>
+            <span class="tag">Storage</span>
+            <span class="tag">Management and governance</span>
+        </div>
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=577963" target="_blank" rel="noopener">Azure Updates (ID: 577963)</a> / <a href="https://learn.microsoft.com/azure/backup/backup-azure-restore-files-from-vm" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>生成日: 2026-10-23 | Azure News Summary Project</p>
+    </footer>
+
+</div>
+</body>
+</html>
