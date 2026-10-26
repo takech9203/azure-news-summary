@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Network Watcher: VNet フローログのフィルタリング機能が GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    /* Category: Networking */
+    --networking-green: #00A651;
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "🔍";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 120px;
+    opacity: 0.12;
+}
+.header-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-category { background: var(--networking-green); }
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.92;
+    max-width: 760px;
+}
+.header .release-date {
+    margin-top: 16px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* ===== Section ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+.section-title .icon {
+    font-size: 26px;
+}
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ===== Highlight ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--ms-blue-800); }
+
+/* ===== Filter fields tags ===== */
+.filter-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 16px 0;
+}
+.filter-tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border: 1px solid var(--ms-blue-400);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 4px;
+}
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+}
+
+/* ===== Tables ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+.spec-table code {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    color: var(--ms-blue-900);
+}
+.table-wrap { overflow-x: auto; }
+
+/* ===== Record Types ===== */
+.record-types {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+.record-type {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+}
+.record-type .code {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    line-height: 36px;
+    border-radius: 50%;
+    background: var(--azure-blue);
+    color: white;
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 8px;
+}
+.record-type.denied .code { background: var(--ms-red); }
+.record-type .label { font-size: 13px; color: var(--ms-text-secondary); }
+.record-type .name { font-size: 15px; font-weight: 700; color: var(--ms-text-primary); }
+
+/* ===== Code Block ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Merit Grid ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 18px 20px;
+    border: 1px solid var(--ms-border);
+    background: var(--ms-surface-secondary);
+}
+.merit-card.business { border-top: 4px solid var(--ms-yellow); }
+.merit-card.technical { border-top: 4px solid var(--azure-blue); }
+.merit-card h4 { font-size: 16px; margin-bottom: 10px; }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin: 8px 0; }
+
+/* ===== Warning / Constraints ===== */
+.warning-box {
+    background: #FFF8E6;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 12px 0;
+    font-size: 14px;
+}
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin: 8px 0; }
+.warning-box code {
+    background: rgba(255, 140, 0, 0.12);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+}
+
+/* ===== Use Case ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.usecase-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.usecase-number {
+    background: var(--azure-blue);
+    color: white;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+.usecase-header h4 { font-size: 16px; color: var(--ms-blue-800); }
+.usecase-card .label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    background: var(--ms-blue-700);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin: 10px 0 6px;
+}
+.usecase-card .label.effect { background: var(--ms-green); }
+.usecase-card p { font-size: 14px; }
+
+/* ===== Pricing ===== */
+.free-tier {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 14px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.free-tier .icon { font-size: 24px; }
+
+/* ===== Related Services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card h4 {
+    color: var(--ms-blue-800);
+    font-size: 14px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.related-card p { color: var(--ms-text-secondary); font-size: 13px; }
+.related-card code {
+    background: var(--ms-blue-100);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+}
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px 28px;
+}
+.summary-box p { margin: 10px 0; font-size: 15px; }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); }
+.links-list { list-style: none; }
+.links-list li {
+    margin: 10px 0;
+    padding-left: 28px;
+    position: relative;
+    font-size: 14px;
+    word-break: break-all;
+}
+.links-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+.footer .tags {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+}
+.footer .tag {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    border-radius: 12px;
+    padding: 2px 12px;
+    font-size: 12px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .merit-grid, .related-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .container { padding: 14px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="header-badges">
+            <span class="service-badge">Azure Network Watcher</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="badge badge-category">Networking</span>
+        </div>
+        <h1>VNet フローログの<br>フィルタリング機能が一般提供 (GA)</h1>
+        <p class="subtitle">IP アドレス・ポート・プロトコル・暗号化状態・フロー状態・トラフィック方向の条件で、記録するネットワークフローを絞り込み。ログ量とストレージコストを削減し、分析ノイズを低減。</p>
+        <p class="release-date">📅 リリース日: 2026-10-26 ｜ 機能: VNet flow logs filtering</p>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📰</span>概要</h2>
+        <p>Azure Network Watcher の仮想ネットワーク (VNet) フローログにおける<strong>フィルタリング機能が一般提供 (GA)</strong> になりました。VNet フローログは、仮想ネットワークを流れる IP トラフィックの情報を記録し Azure Storage に送信する機能です。従来は記録対象を絞る手段がなく、VNet 内のすべてのフローが記録されていました。</p>
+        <div class="filter-tags">
+            <span class="filter-tag">🌐 IP アドレス</span>
+            <span class="filter-tag">🔌 ポート</span>
+            <span class="filter-tag">📡 プロトコル</span>
+            <span class="filter-tag">🔐 暗号化状態</span>
+            <span class="filter-tag">🔄 フロー状態</span>
+            <span class="filter-tag">↔️ トラフィック方向</span>
+        </div>
+        <div class="highlight-box">
+            <strong>ポイント</strong>: 監視・トラブルシューティング・セキュリティ・コンプライアンス・ネットワーク最適化において重要なトラフィックのみにログを絞り込めるようになり、ログ量の削減によるストレージコストの抑制と、分析時のノイズ低減が期待できます。従来の PowerShell に加えて <strong>Azure ポータルからも設定・管理が可能</strong>になりました。
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>VNet を通過する<strong>すべての IP フローが記録</strong>され、ログ量が大きくなりがちだった (ゲートウェイを通過するトラフィックなども既定で記録対象)</li>
+                    <li>不要なフローも含めてすべて記録されるため、<strong>ストレージコストが増加</strong>し、分析時に目的のフローを見つけにくかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>IP / ポート / プロトコル / 暗号化状態 / フロー状態 / 方向の条件で<strong>記録するフローを絞り込み</strong>可能 ("Filtering helps reduce log volume by capturing only relevant flows")</li>
+                    <li>関連フローのみ記録で<strong>ストレージコスト削減・ノイズ低減</strong></li>
+                    <li><strong>Azure ポータル</strong>からもフィルタリングの設定・管理が可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph VNet["☁️ Azure Virtual Network"]
+        VM1["🖥️ VM / ワークロード"]
+        VM2["🖥️ VM / ワークロード"]
+    end
+    VM1 -->|"全 IP フロー"| FL["📋 VNet Flow Logs<br>(Network Watcher)"]
+    VM2 -->|"全 IP フロー"| FL
+    FL --> FILTER{"🔍 フィルタ条件<br>IP / ポート / プロトコル /<br>暗号化 / フロー状態 / 方向"}
+    FILTER -->|"条件に一致"| ST[("🗄️ Azure Storage")]
+    FILTER -.->|"条件に不一致<br>(記録しない)"| DROP["🚫 ログ対象外"]
+    ST --> TA["📊 Traffic Analytics / SIEM"]
+            </pre>
+        </div>
+        <p class="diagram-caption">VNet を流れるトラフィックフローのうち、フィルタ条件に一致したフローのみがログとして Azure Storage に保存され、Traffic Analytics や SIEM での分析に利用できます。条件に一致しないフローは記録されないため、ログ量を削減できます。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>1. 条件ベースのフロー記録制御 (<code>EnabledFilteringCriteria</code>)</h4>
+                <p>IP アドレス、ポート、プロトコル、暗号化状態、トラフィック方向などの条件式で、記録対象のフローを指定。VNet 内 (intra-VNet)・VNet 間 (inter-VNet)・CIDR 範囲ベース・インバウンド / アウトバウンド・インターネットトラフィック・許可 / 拒否トラフィックの識別に活用できます。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>2. フロー状態 (<code>RecordTypes</code>) によるフィルタリング</h4>
+                <p>フローのライフサイクル状態 (開始 B / 継続 C / 終了 E / 拒否 D) を指定して、必要なレコードタイプのみを収集。例: 拒否されたトラフィックのみ記録 (<code>"D"</code>)、フローの作成・終了イベントのみ記録 (<code>"B,E"</code>)。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">♻️</div>
+            <div class="feature-content">
+                <h4>3. 既存フローログのフィルタ条件更新</h4>
+                <p>フローログを再作成することなく、<code>Set-AzNetworkWatcherFlowLog</code> でフィルタ条件を変更・削除できます。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖱️</div>
+            <div class="feature-content">
+                <h4>4. Azure ポータルでの設定・管理に対応</h4>
+                <p>従来の PowerShell に加えて、Azure ポータルからフィルタリングを直接設定・管理できるようになりました。</p>
+            </div>
+        </div>
+        <h3 class="subsection-title">🔄 RecordTypes: フローのライフサイクル状態</h3>
+        <div class="record-types">
+            <div class="record-type">
+                <div class="code">B</div>
+                <div class="name">開始</div>
+                <div class="label">フロー作成イベント</div>
+            </div>
+            <div class="record-type">
+                <div class="code">C</div>
+                <div class="name">継続</div>
+                <div class="label">5 分間隔で統計</div>
+            </div>
+            <div class="record-type">
+                <div class="code">E</div>
+                <div class="name">終了</div>
+                <div class="label">統計あり</div>
+            </div>
+            <div class="record-type denied">
+                <div class="code">D</div>
+                <div class="name">拒否</div>
+                <div class="label">拒否されたトラフィック</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <h3 class="subsection-title">📋 フィルタ対象フィールド</h3>
+        <div class="table-wrap">
+        <table class="spec-table">
+            <thead>
+                <tr><th>フィールド</th><th>フィルタ対象</th><th>例</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><code>Direction</code></td><td>トラフィックの方向</td><td>Inbound, Outbound</td></tr>
+                <tr><td><code>SrcIP</code></td><td>送信元 IP アドレス / CIDR 範囲</td><td>192.168.1.1, 2001:db8::1/64</td></tr>
+                <tr><td><code>SrcPort</code></td><td>送信元ポートの範囲・値</td><td>1024-65535, 80, 443</td></tr>
+                <tr><td><code>DstIP</code></td><td>宛先 IP アドレス / CIDR 範囲</td><td>192.168.2.1, 2001:db8::2/64</td></tr>
+                <tr><td><code>DstPort</code></td><td>宛先ポートの範囲・値</td><td>22, 8080-8090</td></tr>
+                <tr><td><code>Protocol</code></td><td>プロトコル種別</td><td>TCP, UDP</td></tr>
+                <tr><td><code>Encryption</code></td><td>暗号化状態</td><td>サポートされる全暗号化状態の値、および <code>NX_ALL</code> (理由を問わず非暗号化)</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <h3 class="subsection-title">✍️ フィルタ式の構文</h3>
+        <div class="table-wrap">
+        <table class="spec-table">
+            <thead>
+                <tr><th>項目</th><th>詳細</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>比較演算子</td><td>すべてのフィールドで <code>=</code> と <code>!=</code> をサポート</td></tr>
+                <tr><td>論理演算子</td><td>任意の 2 フィールド間で <code>&amp;&amp;</code> (AND) と <code>||</code> (OR) をサポート</td></tr>
+                <tr><td>評価順序</td><td>論理演算子の優先順位 (AND が OR より優先) に従い左から右に評価。括弧は現時点で未サポート</td></tr>
+                <tr><td>複数値の指定</td><td>すべてのフィールドでカンマ区切りの値を指定可能。大文字小文字は区別しない</td></tr>
+                <tr><td>フィルタ文字列の最大長</td><td>1,000 文字</td></tr>
+                <tr><td><code>RecordTypes</code></td><td><code>B</code> (開始) / <code>C</code> (継続、5 分間隔で統計) / <code>E</code> (終了、統計あり) / <code>D</code> (拒否) をカンマ区切りで指定</td></tr>
+            </tbody>
+        </table>
+        </div>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+        <h3 class="subsection-title">✅ 前提条件</h3>
+        <ul style="padding-left: 24px; font-size: 14px;">
+            <li style="margin: 6px 0;">Network Watcher が有効なサブスクリプションと、対象の仮想ネットワーク</li>
+            <li style="margin: 6px 0;">ログ保存先のストレージアカウント (仮想ネットワークと同一リージョン、Standard パフォーマンスレベル。Premium は未サポート)</li>
+        </ul>
+
+        <h3 class="subsection-title">💻 Azure PowerShell</h3>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">PowerShell</span>
+                <span class="code-desc">フィルタ条件付きで VNet フローログを作成</span>
+            </div>
+            <pre><code class="language-powershell"># 仮想ネットワークとストレージアカウントの構成を変数に格納
+$vnet = Get-AzVirtualNetwork -Name 'myVNet' -ResourceGroupName 'myResourceGroup'
+$storageAccount = Get-AzStorageAccount -Name 'myStorageAccount' -ResourceGroupName 'myResourceGroup'
+
+# フィルタ条件付き (dstip=20.252.145.59 || DstPort=54300-54400) で VNet フローログを作成
+New-AzNetworkWatcherFlowLog -Enabled $true -Name 'myVNetFlowLog' `
+    -NetworkWatcherName 'NetworkWatcher_eastus' -ResourceGroupName 'NetworkWatcherRG' `
+    -StorageId $storageAccount.Id -TargetResourceId $vnet.Id `
+    -FormatVersion 2 -EnabledFilteringCriteria 'dstip=20.252.145.59 || DstPort=54300-54400' `
+    -EnableRetention $true -RetentionPolicyDays 15</code></pre>
+        </div>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">PowerShell</span>
+                <span class="code-desc">既存フローログのフィルタ条件を更新 (再作成は不要)</span>
+            </div>
+            <pre><code class="language-powershell"># 既存のフローログのフィルタ条件を更新 (再作成は不要)
+Set-AzNetworkWatcherFlowLog -Enabled $true -Name 'myVNetFlowLog' `
+    -NetworkWatcherName 'NetworkWatcher_eastus' -ResourceGroupName 'NetworkWatcherRG' `
+    -StorageId $storageAccount.Id -TargetResourceId $vnet.Id `
+    -FormatVersion 2 -EnabledFilteringCriteria 'dstip=20.252.145.59 || DstPort=443'</code></pre>
+        </div>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">PowerShell</span>
+                <span class="code-desc">フロー状態 (RecordTypes) によるフィルタリング</span>
+            </div>
+            <pre><code class="language-powershell"># フロー状態 (RecordTypes) によるフィルタリング: 拒否されたトラフィックのみ記録
+New-AzNetworkWatcherFlowLog -Enabled $true -Name 'myVNetFlowLog' `
+    -NetworkWatcherName 'NetworkWatcher_eastus' -ResourceGroupName 'NetworkWatcherRG' `
+    -StorageId $storageAccount.Id -TargetResourceId $vnet.Id `
+    -RecordTypes "D"</code></pre>
+        </div>
+
+        <h3 class="subsection-title">🖱️ Azure Portal</h3>
+        <div class="highlight-box">
+            本 GA により、<strong>Azure ポータルからもフィルタリングを直接設定・管理</strong>できるようになりました (公式アップデートに記載)。
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>必要なフローのみを記録することで、フローログの収集量 (GB 単位課金) と<strong>ストレージコストを削減</strong></li>
+                    <li>監査・コンプライアンス対応で必要なトラフィック (例: 拒否されたトラフィック、非暗号化トラフィック) に絞った<strong>証跡を効率的に収集</strong></li>
+                </ul>
+            </div>
+            <div class="merit-card technical">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>分析対象のログから<strong>ノイズが減り</strong>、トラブルシューティングやセキュリティ分析の効率が向上</li>
+                    <li>CIDR 範囲・ポート・方向などの条件で、調査対象のトラフィック (インターネットトラフィック、特定アプリケーションの通信など) を<strong>事前に絞り込み</strong></li>
+                    <li>フローログの<strong>再作成なし</strong>にフィルタ条件を変更できるため、運用中の調整が容易</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>フィルタ式で<strong>括弧 (ブラケット) は現時点で未サポート</strong>。評価は AND 優先・左から右の固定ルールに従う</li>
+                <li>フィルタ文字列の最大長は <strong>1,000 文字</strong></li>
+                <li>フィルタで除外したフローは記録されないため、<strong>条件設定を誤ると必要な証跡が欠落するリスク</strong>がある (フィルタ条件の設計には注意が必要)</li>
+                <li>VNet フローログ自体の制約が引き続き適用: ストレージアカウントは VNet と<strong>同一リージョン・Standard レベル</strong>が必要、Azure Container Instances / Azure Functions / App Service など一部サービスは未サポート</li>
+                <li>Microsoft Learn のフィルタリングドキュメント (2026-10-13 更新時点) にはプレビューの注記が残っているが、公式アップデート (2026-10-26) で GA が発表されている</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">
+                <div class="usecase-number">1</div>
+                <h4>🛡️ 拒否されたトラフィックのみを記録してセキュリティ監視を効率化</h4>
+            </div>
+            <span class="label">シナリオ</span>
+            <p>NSG や Azure Virtual Network Manager のセキュリティ管理ルールで拒否されたトラフィックのみを記録し、不正アクセスの試行を効率的に監視する。</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">PowerShell</span>
+                    <span class="code-desc">実装例</span>
+                </div>
+                <pre><code class="language-powershell">New-AzNetworkWatcherFlowLog -Enabled $true -Name 'myDeniedFlowLog' `
+    -NetworkWatcherName 'NetworkWatcher_eastus' -ResourceGroupName 'NetworkWatcherRG' `
+    -StorageId $storageAccount.Id -TargetResourceId $vnet.Id `
+    -RecordTypes "D"</code></pre>
+            </div>
+            <span class="label effect">効果</span>
+            <p>許可された正常トラフィックを記録対象から除外することで、ログ量を抑えつつ、セキュリティ分析に必要な拒否イベントに集中できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">
+                <div class="usecase-number">2</div>
+                <h4>💰 特定の宛先・ポートへの通信のみを記録してログコストを削減</h4>
+            </div>
+            <span class="label">シナリオ</span>
+            <p>重要なワークロードへの通信 (特定の宛先 IP や HTTPS ポート) のみを記録し、フローログの収集量とストレージコストを削減する。</p>
+            <div class="code-block">
+                <div class="code-header">
+                    <span class="code-lang">PowerShell</span>
+                    <span class="code-desc">実装例</span>
+                </div>
+                <pre><code class="language-powershell">New-AzNetworkWatcherFlowLog -Enabled $true -Name 'myFilteredFlowLog' `
+    -NetworkWatcherName 'NetworkWatcher_eastus' -ResourceGroupName 'NetworkWatcherRG' `
+    -StorageId $storageAccount.Id -TargetResourceId $vnet.Id `
+    -FormatVersion 2 -EnabledFilteringCriteria 'dstip=20.252.145.59 || DstPort=443'</code></pre>
+            </div>
+            <span class="label effect">効果</span>
+            <p>監視対象外のフローを記録しないことで、GB 単位で課金されるフローログ収集量を削減できる。</p>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>フィルタリング機能自体の追加料金に関する記載はなく、VNet フローログの既存の料金体系が適用されます。</p>
+        <div class="table-wrap">
+        <table class="spec-table">
+            <thead>
+                <tr><th>項目</th><th>料金</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>VNet フローログ収集</td><td>収集されたログ 1 GB あたりの従量課金 (具体的な単価は料金ページでリージョン・通貨を指定して確認)</td></tr>
+                <tr><td>Traffic Analytics (有効化した場合)</td><td>処理されたログ 1 GB あたりの従量課金 (高速処理: 10 分間隔 / 標準処理: 60 分間隔の 2 レベル。無料枠なし)</td></tr>
+                <tr><td>ログの保存</td><td>Azure Blob Storage の料金が別途適用</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <div class="free-tier">
+            <span class="icon">🎁</span>
+            <span><strong>無料枠</strong>: VNet フローログ収集はサブスクリプションあたり<strong>月 5 GB の無料枠</strong>あり。</span>
+        </div>
+        <p style="font-size: 14px;">フィルタリングにより収集されるログ量が減るため、フローログ収集・Traffic Analytics 処理・ストレージの各コスト削減につながります。詳細は <a href="https://azure.microsoft.com/pricing/details/network-watcher/" target="_blank" rel="noopener">Network Watcher 料金ページ</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p style="font-size: 14px;">フィルタリング機能固有のリージョン情報は公式アップデートに記載されていません。VNet フローログ自体は主要なリージョン (<strong>Japan East / Japan West を含む</strong>) で利用可能です。最新のリージョン対応状況は <a href="https://learn.microsoft.com/azure/network-watcher/vnet-flow-logs-overview#availability" target="_blank" rel="noopener">VNet フローログ概要ドキュメントの Availability セクション</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🗄️ Azure Storage</h4>
+                <p>フローログの保存先。ログは 1 分間隔でブロック BLOB に取り込まれる。</p>
+            </div>
+            <div class="related-card">
+                <h4>📊 Traffic Analytics / Log Analytics</h4>
+                <p>フローログを処理・可視化し、トラフィックの分析インサイトを提供する。</p>
+            </div>
+            <div class="related-card">
+                <h4>🕸️ Azure Virtual Network Manager</h4>
+                <p>VNet フローログはセキュリティ管理ルールによる許可 / 拒否トラフィックの識別に対応。</p>
+            </div>
+            <div class="related-card">
+                <h4>🔐 仮想ネットワーク暗号化</h4>
+                <p>フローの暗号化状態 (<code>X</code> / <code>NX</code> など) が記録され、フィルタ条件 (Encryption フィールド、<code>NX_ALL</code> など) としても利用可能。</p>
+            </div>
+            <div class="related-card">
+                <h4>📋 NSG フローログ</h4>
+                <p>VNet フローログの前身にあたる機能。同一ワークロードで両方を有効化すると重複記録・追加コストが発生するため、NSG フローログの無効化が推奨される。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>✅ VNet フローログのフィルタリング機能が <strong>GA</strong> になり、<strong>IP アドレス・ポート・プロトコル・暗号化状態・フロー状態・トラフィック方向</strong>の条件で記録対象フローを絞り込めるようになりました。</p>
+            <p>💰 全フロー記録によるログ量・コスト増という従来の課題に対する直接的な解決策であり、PowerShell に加えて <strong>Azure ポータル</strong>からも設定できます。</p>
+            <p>🎯 VNet フローログを利用中、または NSG フローログからの移行を検討している環境では、拒否トラフィックのみの記録や重要ワークロードへの絞り込みなど、監視要件に応じた<strong>フィルタ設計によるコスト最適化</strong>の検討を推奨します。</p>
+            <p>⚠️ フィルタで除外したフローは記録されないため、<strong>監査要件を満たす条件設計には注意</strong>してください。</p>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>参考リンク</h2>
+        <ul class="links-list">
+            <li><a href="https://azure.microsoft.com/updates?id=577782" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/network-watcher/vnet-flow-logs-filtering" target="_blank" rel="noopener">Microsoft Learn: VNet フローログのフィルタリング</a></li>
+            <li><a href="https://learn.microsoft.com/azure/network-watcher/vnet-flow-logs-overview" target="_blank" rel="noopener">Microsoft Learn: VNet フローログの概要</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/network-watcher/" target="_blank" rel="noopener">Network Watcher 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=577782" target="_blank" rel="noopener">Azure Updates (ID: 577782)</a> ｜ <a href="https://learn.microsoft.com/azure/network-watcher/vnet-flow-logs-filtering" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>リリース日: 2026-10-26 ｜ ステータス: Launched (GA) ｜ 生成日: 2026-10-26</p>
+        <div class="tags">
+            <span class="tag">Network Watcher</span>
+            <span class="tag">VNet Flow Logs</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Management and governance</span>
+            <span class="tag">GA</span>
+            <span class="tag">フィルタリング</span>
+            <span class="tag">コスト最適化</span>
+        </div>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
