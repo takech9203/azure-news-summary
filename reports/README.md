@@ -5,6 +5,9 @@
 
 ## 2026 年
 
+- [2026-10-27 - Azure Blob Storage: リージョン・サブスクリプションあたりのストレージアカウント数上限引き上げが一般提供開始 (GA)](2026/2026-10-27-blob-storage-higher-account-limit.md)
+- [2026-10-27 - Microsoft Foundry: Claude モデルのコスト管理とタグ付けが一般提供開始 (GA)](2026/2026-10-27-foundry-claude-cost-management.md)
+- [2026-10-27 - Azure Front Door: プロファイルレベル / ルートレベル WAF ポリシーの一般提供開始 (GA)](2026/2026-10-27-front-door-waf-profile-route-policies.md)
 - [2026-10-26 - Azure Network Watcher: VNet フローログのフィルタリング機能が一般提供 (GA)](2026/2026-10-26-network-watcher-vnet-flow-logs-filtering.md)
 - [2026-10-23 - Azure Backup: Premium SSD v2 / Ultra ディスク搭載 Azure VM のアイテムレベル回復 (ILR) が一般提供開始](2026/2026-10-23-azure-backup-ilr-premium-ssdv2-ultra-disks.md)
 - [2026-10-22 - Azure Data Lake Storage: ABFS Vectored Read の一般提供開始 (GA)](2026/2026-10-22-adls-abfs-vectored-read.md)
