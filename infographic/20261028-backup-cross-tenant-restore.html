@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Backup: Cross Tenant Restore (クロステナント復元) パブリックプレビュー</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.header .subtitle { font-size: 16px; opacity: 0.92; }
+.header .meta { margin-top: 16px; font-size: 14px; opacity: 0.85; display: flex; flex-wrap: wrap; gap: 20px; }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-title .icon { font-size: 24px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong { color: var(--azure-dark-blue); }
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 16px; color: var(--azure-dark-blue); margin-bottom: 6px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 20px; margin-top: 4px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+.tag-rsv, .tag-bv {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+.tag-rsv { background: var(--ms-blue-200); color: var(--ms-blue-800); }
+.tag-bv { background: #EDE7F6; color: var(--ms-purple); }
+
+/* ===== Steps ===== */
+.step-group-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--azure-blue);
+    margin: 20px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.step {
+    display: flex;
+    gap: 14px;
+    margin: 10px 0;
+    align-items: flex-start;
+}
+
+.step-number {
+    background: var(--azure-blue);
+    color: white;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 2px;
+}
+
+.step-content {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 10px 16px;
+    flex: 1;
+    font-size: 14px;
+}
+
+.step-content strong { color: var(--azure-dark-blue); }
+
+/* ===== Pros / Cons ===== */
+.pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.pros-box, .cons-box {
+    border-radius: 8px;
+    padding: 18px 20px;
+}
+.pros-box { background: #E8F5E9; border-left: 4px solid var(--ms-green); }
+.cons-box { background: #FFF8E1; border-left: 4px solid var(--ms-orange); }
+.pros-box h4, .cons-box h4 { font-size: 16px; margin-bottom: 10px; }
+.pros-box h4 { color: var(--ms-green); }
+.cons-box h4 { color: var(--ms-orange); }
+.pros-box ul, .cons-box ul { padding-left: 20px; font-size: 14px; }
+.pros-box li, .cons-box li { margin-bottom: 8px; }
+
+.warn-list { padding-left: 20px; font-size: 14px; }
+.warn-list li { margin-bottom: 8px; }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.usecase-card h4 {
+    font-size: 17px;
+    color: var(--ms-purple);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-item { margin-bottom: 10px; font-size: 14px; }
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-purple);
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-right: 8px;
+}
+
+/* ===== Related Services ===== */
+.related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.related-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 14px;
+}
+.related-card h5 { color: var(--azure-dark-blue); font-size: 15px; margin-bottom: 6px; }
+.related-card p { color: var(--ms-text-secondary); }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+.summary-box p { margin-bottom: 10px; }
+.summary-box p:last-child { margin-bottom: 0; }
+
+/* ===== Links ===== */
+.link-list { list-style: none; }
+.link-list li {
+    margin-bottom: 10px;
+    padding-left: 26px;
+    position: relative;
+    font-size: 14px;
+    word-break: break-all;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); }
+
+/* ===== Tags / Footer ===== */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 12px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+.footer p { margin-bottom: 6px; }
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .pros-cons, .related-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Backup</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Cross Tenant Restore (クロステナント復元)<br>パブリックプレビュー開始</h1>
+        <p class="subtitle">別の Microsoft Entra テナントへバックアップを直接復元 — テナント侵害・ロックアウトに備える独立した復旧経路を確立</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-28</span>
+            <span>🧩 機能: Cross Tenant Restore (CTR)</span>
+            <span>🚦 ステータス: In preview</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Backup の <strong>Cross-Tenant Restore (CTR)</strong> がパブリックプレビューとして発表された。CTR は、ある Microsoft Entra テナント (ソーステナント) のボールト格納済みバックアップデータを、別のテナント (ターゲットテナント) に復元できる機能である。ソースボールトとターゲットボールトの間に「<strong>ボールトマッピング</strong>」を作成し、ターゲットテナント側から保護アイテムを参照・復元する仕組みで、<strong>Recovery Services ボールトと Backup ボールトの両方</strong>をサポートする。</p>
+        <div class="highlight-box">
+            この機能の主眼は<strong>サイバーレジリエンスの強化</strong>にある。テナントロックアウト (ソーステナントへのアクセス喪失)、ランサムウェア攻撃によるテナント侵害、テナント統合、クロステナントのディザスターリカバリーといったシナリオで、既存のバックアップコピーをそのまま利用して独立した復旧経路を確立できる。重複したバックアップインフラを構築・維持する必要はない。ターゲットボールトは <strong>Resource Guard</strong> による保護が必須であり、マッピング操作は<strong>多要素ユーザー承認 (MUA)</strong> で保護される。
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure Backup の復元先は同一テナント内に限られていた (Cross Subscription Restore も「同一テナント内の別サブスクリプション」が対象)</li>
+                    <li>テナント自体が侵害・ロックアウトされた場合に備えるには、別テナントに重複したバックアップ基盤やデータコピーを維持する必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>既存のボールト格納済みバックアップコピーを、ボールトマッピング経由で別テナントに直接復元できるようになった</li>
+                    <li>Resource Guard + MUA、専用 RBAC ロール (CTR Creator / CTR Contributor) により、クロステナント操作がセキュリティ境界で保護される</li>
+                    <li>ソーステナント側からはマッピングやターゲットボールトの詳細が見えない設計で、ソースボールトへの不正アクセス者によるターゲットの探索を防止する</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Source["🏢 ソーステナント (侵害リスクあり)"]
+        VM["🖥️ 保護対象リソース<br>(Azure VM など)"]
+        SV["🗄️ ソースボールト<br>(Recovery Services / Backup)"]
+        VM -->|バックアップ| SV
+    end
+
+    subgraph MS["☁️ Microsoft 管理テナント"]
+        BD[("💾 バックアップデータ<br>(ボールト層リカバリポイント)")]
+    end
+
+    subgraph Target["🏢 ターゲットテナント (クリーンな復旧環境)"]
+        TV["🗄️ ターゲットボールト"]
+        RG["🛡️ Resource Guard<br>(MUA で操作を保護)"]
+        RVM["🖥️ 復元されたリソース<br>(別の場所への復元のみ)"]
+        RG -->|保護| TV
+        TV -->|復元実行| RVM
+    end
+
+    SV -.->|"🔗 ボールトマッピング<br>(ソース側からは詳細不可視)"| TV
+    SV --> BD
+    BD -->|ボールト層データを復元| TV
+            </pre>
+        </div>
+        <p class="diagram-note">ソースボールトとターゲットボールト間にマッピングを作成し、ターゲットテナント側からボールト層リカバリポイントを別の場所 (Alternate Location) へ復元する。ターゲットボールトは Resource Guard による MUA 保護が必須で、マッピング詳細はソーステナントから参照できない。</p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>1. ボールトマッピングによるクロステナント復元</h4>
+                <ul>
+                    <li>ソースボールトとターゲットボールトのマッピングを作成すると、ターゲットテナント側にソースボールトの保護アイテムが表示され、リカバリポイントを選択して復元できる</li>
+                    <li>バックアップデータ自体は Microsoft 管理テナントのストレージに保存されており、既存のバックアップコピーをそのまま利用する</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>2. Resource Guard / 多要素ユーザー承認 (MUA) による保護</h4>
+                <ul>
+                    <li>ターゲットボールトは、ターゲットテナント内の Resource Guard に関連付けられている必要がある</li>
+                    <li>Resource Guard で「cross-tenant restore」クリティカル操作を有効化し、マッピング作成などの操作を MUA で保護する</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">👥</div>
+            <div class="feature-content">
+                <h4>3. 専用 RBAC ロールによる職務分離</h4>
+                <ul>
+                    <li><strong>マッピング作成者 (Mapping creator)</strong>: ソースボールトに Backup Contributor、ターゲットボールトに CTR Creator、Resource Guard に Backup MUA Operator 以上</li>
+                    <li><strong>マッピング/復元オペレーター (Mapping and restore operator)</strong>: ターゲットボールトに CTR Contributor + Backup Contributor、Resource Guard に Backup MUA Operator 以上</li>
+                    <li>ソーステナントのゲストユーザーを一時的なロール割り当てでマッピング作成者にすることも可能 (作成後はロールを削除する運用が推奨)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🕶️</div>
+            <div class="feature-content">
+                <h4>4. セキュリティを考慮した可視性設計</h4>
+                <ul>
+                    <li>クロステナントマッピングとマッピング済みアイテムの詳細は、ソーステナント / ソースボールト側からは意図的に参照できない</li>
+                    <li>ソースボールトへの不正アクセス者がターゲットボールトやマッピングの詳細を発見することを防ぐ</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <div class="feature-content">
+                <h4>5. 一括復元 (Bulk Restore、プレビュー)</h4>
+                <ul>
+                    <li>Azure VM を大規模に復元する場合、ターゲットボールトの保護アイテム一覧で複数アイテムを選択し「Bulk Restore (Preview)」で一括復元できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Supported Workloads ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗂️</span>サポート対象ワークロード</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>ボールト種別</th><th>ワークロード</th><th>制限事項</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><span class="tag-rsv">Recovery Services</span></td><td>Azure Virtual Machines</td><td>Confidential VM、ADE 暗号化 VM、アーカイブ層リカバリポイントは非サポート</td></tr>
+                    <tr><td><span class="tag-rsv">Recovery Services</span></td><td>Azure Files</td><td>なし</td></tr>
+                    <tr><td><span class="tag-rsv">Recovery Services</span></td><td>SQL Server in Azure VM</td><td>SQL インスタンス復元、アーカイブ層リカバリポイントは非サポート</td></tr>
+                    <tr><td><span class="tag-rsv">Recovery Services</span></td><td>SAP HANA in Azure VM</td><td>HANA インスタンス復元は非サポート</td></tr>
+                    <tr><td><span class="tag-rsv">Recovery Services</span></td><td>SAP ASE in Azure VM</td><td>なし</td></tr>
+                    <tr><td><span class="tag-bv">Backup ボールト</span></td><td>Azure Database for PostgreSQL - Flexible Server</td><td>なし</td></tr>
+                    <tr><td><span class="tag-bv">Backup ボールト</span></td><td>Azure Blobs</td><td>なし</td></tr>
+                    <tr><td><span class="tag-bv">Backup ボールト</span></td><td>Azure Cosmos DB</td><td>なし</td></tr>
+                    <tr><td><span class="tag-bv">Backup ボールト</span></td><td>Azure Data Lake Storage</td><td>なし</td></tr>
+                    <tr><td><span class="tag-bv">Backup ボールト</span></td><td>Azure Kubernetes Service (AKS)</td><td>なし</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Technical Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>詳細</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>復元方式</strong></td><td>別の場所への復元 (Alternate Location Restore) のみ。元の場所への復元 (OLR) は非サポート</td></tr>
+                    <tr><td><strong>対象リカバリポイント</strong></td><td>ボールト層 (vaulted) リカバリポイントのみ。スナップショット層のみのリカバリポイントは対象外</td></tr>
+                    <tr><td><strong>ボールトの配置</strong></td><td>ソースボールトとターゲットボールトは同一リージョンに存在する必要がある</td></tr>
+                    <tr><td><strong>ターゲットボールト要件</strong></td><td>ターゲットテナント内の Resource Guard との関連付けが必須 (MUA 保護)</td></tr>
+                    <tr><td><strong>マッピング中の削除制限</strong></td><td>マッピングが存在する間は、ソースボールト・ターゲットボールト・ソースボールト内の保護アイテムを削除できない (先にマッピングを削除する)</td></tr>
+                    <tr><td><strong>復元の前提</strong></td><td>復元時点でソースボールトと保護アイテムが存在している (削除されていない) こと</td></tr>
+                    <tr><td><strong>CTR Creator ロール</strong></td><td><code>backupCrossTenantVaultMappings/write</code> などマッピング作成に必要なアクションを含む組み込みロール</td></tr>
+                    <tr><td><strong>CTR Contributor ロール</strong></td><td>マッピングの参照・検証・削除、保護アイテム/リカバリポイントの参照、復元実行 (<code>recoveryPoints/restore/action</code>) などを含む組み込みロール</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 class="step-group-title">📌 前提条件</h3>
+        <div class="step"><div class="step-number">1</div><div class="step-content">ソースボールトに、サポート対象ワークロードの<strong>ボールト層リカバリポイント</strong>が存在すること (ソースとターゲットのボールトは同一リージョン)</div></div>
+        <div class="step"><div class="step-number">2</div><div class="step-content">ターゲットテナントに <strong>Resource Guard</strong> を作成し、ターゲットボールトに関連付けたうえで、Resource Guard 上で <strong>cross-tenant restore クリティカル操作を有効化</strong>しておくこと</div></div>
+        <div class="step"><div class="step-number">3</div><div class="step-content">両テナントで<strong>ロール割り当てを行う権限</strong>を持っていること</div></div>
+
+        <h3 class="step-group-title">🔗 ボールトマッピングの作成 (ソーステナント側)</h3>
+        <div class="step"><div class="step-number">1</div><div class="step-content">ソーステナントでソースボールトを開き、<strong>Properties</strong> を選択</div></div>
+        <div class="step"><div class="step-number">2</div><div class="step-content"><strong>Cyber recovery settings</strong> の <strong>Cross Tenant Restore (Preview)</strong> 行で <strong>View details</strong> を選択し、<strong>Configure</strong> を選択</div></div>
+        <div class="step"><div class="step-number">3</div><div class="step-content">マッピング名を入力し、ターゲットテナントとターゲットボールトを選択</div></div>
+        <div class="step"><div class="step-number">4</div><div class="step-content">構成を検証し、<strong>Review + configure</strong> → <strong>Configure Mapping</strong> を選択 (Resource Guard による承認を求められた場合は、Resource Guard に対する Backup MUA Operator 以上のロールが必要)</div></div>
+
+        <h3 class="step-group-title">♻️ マッピングの確認と復元 (ターゲットテナント側)</h3>
+        <div class="step"><div class="step-number">1</div><div class="step-content">ターゲットテナントでターゲットボールトを開き、<strong>Properties</strong> → <strong>Cross Tenant Restore</strong> → <strong>View details</strong> → <strong>View Mapped Items</strong> でマッピングのステータスが <strong>Configured</strong> であることを確認</div></div>
+        <div class="step"><div class="step-number">2</div><div class="step-content"><strong>Backup items</strong> → コマンドバーの <strong>Cross Tenant mapped vaults</strong> からマッピング済みボールトを選択</div></div>
+        <div class="step"><div class="step-number">3</div><div class="step-content">復元したいアイテムの <strong>Restore</strong> を選択し、リカバリポイントを選択してターゲットテナント向けの復元設定を構成</div></div>
+        <div class="step"><div class="step-number">4</div><div class="step-content">復元を開始し、ターゲットボールトの <strong>Backup jobs</strong> でジョブを監視</div></div>
+
+        <h3 class="step-group-title">🗑️ マッピングの削除</h3>
+        <div class="step"><div class="step-number">1</div><div class="step-content">ターゲットボールトで <strong>Cross Tenant Restore</strong> → <strong>View Mapped Items</strong> を開き、対象マッピングを選択して <strong>Delete</strong> (ターゲットボールトに CTR Contributor、Resource Guard に Backup MUA Operator 以上のロールが必要)</div></div>
+    </section>
+
+    <!-- ===== Merits / Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚖️</span>メリットとデメリット・制約事項</h2>
+        <div class="pros-cons">
+            <div class="pros-box">
+                <h4>💼 メリット (ビジネス面)</h4>
+                <ul>
+                    <li>テナント全体の侵害・ロックアウトという最悪ケースに対する独立した復旧経路を確保でき、サイバーレジリエンスが向上する</li>
+                    <li>別テナントに重複したバックアップデータ・インフラを維持する必要がなく、既存のバックアップコピーを活用できるためコストと運用負荷を抑えられる</li>
+                    <li>テナント統合 (M&amp;A など) やクロステナント DR といった組織再編シナリオにも対応できる</li>
+                </ul>
+            </div>
+            <div class="pros-box">
+                <h4>🔧 メリット (技術面)</h4>
+                <ul>
+                    <li>Resource Guard + MUA により、クロステナント復元という高リスク操作を多要素承認で保護できる</li>
+                    <li>CTR Creator / CTR Contributor という専用の組み込みロールにより、最小権限と職務分離を実現できる</li>
+                    <li>ソーステナント側からマッピング詳細を不可視にする設計により、攻撃者によるターゲット環境の偵察を防げる</li>
+                </ul>
+            </div>
+        </div>
+        <div class="cons-box" style="margin-top: 20px;">
+            <h4>⚠️ デメリット・制約事項</h4>
+            <ul class="warn-list">
+                <li>プレビュー機能であり、Azure プレビューの追加利用条件が適用される</li>
+                <li>別の場所への復元 (ALR) のみサポート。元の場所への復元 (OLR) は不可</li>
+                <li>ボールト層リカバリポイントのみ対象。スナップショット層のみのリカバリポイントは復元できない</li>
+                <li>Azure VM では Confidential VM、ADE 暗号化 VM、アーカイブ層リカバリポイントは非サポート。SQL Server in Azure VM では SQL インスタンス復元とアーカイブ層が非サポート、SAP HANA では HANA インスタンス復元が非サポート</li>
+                <li>ソースとターゲットのボールトは同一リージョンである必要がある</li>
+                <li>マッピングが存在する間はソース/ターゲットボールトおよびソースボールトの保護アイテムを削除できない</li>
+                <li>復元時にソースボールトと保護アイテムが存在している必要があるため、ソーステナントのリソースが削除されてしまった場合は利用できない</li>
+                <li>Backup ボールトは利用可能リージョンが限定されている (利用可能リージョンの表を参照)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🦠 ユースケース 1: ランサムウェア攻撃からの隔離復旧</h4>
+            <p class="usecase-item"><span class="usecase-label">シナリオ</span>ソーステナントがランサムウェアに侵害された。クリーンな隔離テナントに Azure VM のバックアップを復元し、業務を再開したい。</p>
+            <p class="usecase-item"><span class="usecase-label">実装例</span>事前にクリーンなターゲットテナントに Recovery Services ボールトと Resource Guard を用意し、ソースボールトとのマッピングを構成しておく。インシデント発生時はターゲットテナント側から「Cross Tenant mapped vaults」経由でボールト層リカバリポイントを選択し、別の場所への復元を実行する。VM が多数ある場合は Bulk Restore (Preview) で一括復元する。</p>
+            <p class="usecase-item"><span class="usecase-label">効果</span>侵害されたテナントに依存しない独立した復旧経路により、重複バックアップ基盤なしで迅速な復旧が可能になる。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>🤝 ユースケース 2: テナント統合に伴うデータ移行</h4>
+            <p class="usecase-item"><span class="usecase-label">シナリオ</span>企業合併により複数の Microsoft Entra テナントを統合し、旧テナントで保護していたワークロードのデータを統合先テナントへ移したい。</p>
+            <p class="usecase-item"><span class="usecase-label">実装例</span>旧テナントのソースボールトと統合先テナントのターゲットボールトをマッピングし、統合先テナント側から Azure VM、Azure Files、PostgreSQL Flexible Server、AKS などの保護アイテムを統合先のリソースグループへ復元する。</p>
+            <p class="usecase-item"><span class="usecase-label">効果</span>バックアップデータのエクスポート/インポートや再バックアップなしに、既存のリカバリポイントを使ってテナント間のデータ移行を実現できる。</p>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Cross Tenant Restore 固有の追加料金に関する公式情報は、現時点の Azure Updates および Microsoft Learn ドキュメントでは確認できなかった。Azure Backup の一般的な料金体系は以下のとおり。</p>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>内容</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>保護インスタンス料金</strong></td><td>バックアップ対象データのサイズ (50 GB 以下 / 50〜500 GB / 500 GB 超は 500 GB 増分ごと) に応じた月額固定料金</td></tr>
+                    <tr><td><strong>バックアップストレージ料金</strong></td><td>消費量ベースの GB 単価 (LRS / ZRS / GRS で単価が異なる)。既定は Standard 層で、長期保持データはアーカイブ層へ移動可能</td></tr>
+                    <tr><td><strong>Standard 層からの復元</strong></td><td>無料 (トランザクション料金・エグレス料金なし)</td></tr>
+                    <tr><td><strong>アーカイブ層からの復元</strong></td><td>リハイドレートに伴うデータ取得料金が発生 (Azure Blob Storage のデータ取得料金と同等)。180 日の早期削除期間あり</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <p style="font-size: 14px; color: var(--ms-text-secondary);">正確な金額はリージョン・通貨により異なるため、<a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank" rel="noopener">Azure Backup 料金ページ</a>を参照。</p>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>ボールト種別</th><th>利用可能リージョン</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><span class="tag-rsv">Recovery Services ボールト</span></td><td>すべての Azure パブリックリージョン</td></tr>
+                    <tr><td><span class="tag-bv">Backup ボールト</span></td><td>West Europe、North Europe、East US、UK South、Australia East、Australia Southeast、Brazil South</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>🛡️ Resource Guard / 多要素ユーザー承認 (MUA)</h5>
+                <p>CTR の前提となる保護機構。ターゲットボールトを Resource Guard に関連付け、クロステナント復元操作を多要素承認で保護する</p>
+            </div>
+            <div class="related-card">
+                <h5>🔁 Cross Subscription Restore (CSR)</h5>
+                <p>同一テナント内の別サブスクリプションへの復元機能。CTR はこれをテナント境界を越える形に拡張した位置づけ</p>
+            </div>
+            <div class="related-card">
+                <h5>🌐 Cross Region Restore (CRR)</h5>
+                <p>セカンダリリージョンへの復元機能。リージョン障害対策には CRR、テナント侵害対策には CTR と使い分ける</p>
+            </div>
+            <div class="related-card">
+                <h5>🆔 Microsoft Entra ID</h5>
+                <p>テナント境界の基盤。ゲストユーザーへの一時的なロール割り当てによるマッピング作成にも関係する</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Cross Tenant Restore は、Azure Backup の復元境界を<strong>テナントレベルまで拡張</strong>するパブリックプレビュー機能である。これまでテナント全体の侵害やロックアウトに備えるには別テナントへの重複バックアップが必要だったが、CTR により<strong>既存のボールト層バックアップをそのまま使った独立復旧経路</strong>を確立できる。</p>
+            <p>Resource Guard + MUA、専用 RBAC ロール、ソース側からの不可視設計など、<strong>セキュリティを前提とした設計</strong>になっている点も特徴である。</p>
+            <p>ランサムウェア対策・サイバーレジリエンス強化を検討している組織は、ターゲットテナント側の Resource Guard 構成とロール設計を含めた<strong>復旧手順の検証をプレビュー期間中に始めることを推奨</strong>する。別の場所への復元のみ・ボールト層リカバリポイントのみ・同一リージョン要件などの制約は事前に確認しておきたい。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Backup</span>
+            <span class="tag">Cross Tenant Restore</span>
+            <span class="tag">Management and governance</span>
+            <span class="tag">Storage</span>
+            <span class="tag">Security</span>
+            <span class="tag">Microsoft Ignite</span>
+            <span class="tag">In preview</span>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=577117" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/backup/cross-tenant-restore-overview" target="_blank" rel="noopener">Cross-tenant restore の概要 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/backup/tutorial-cross-tenant-restore" target="_blank" rel="noopener">チュートリアル: Cross-tenant restore の構成と復元 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/backup/backup-azure-arm-restore-vms" target="_blank" rel="noopener">Azure VM の復元 (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank" rel="noopener">Azure Backup 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=577117" target="_blank" rel="noopener">Azure Updates (ID: 577117)</a> / <a href="https://learn.microsoft.com/en-us/azure/backup/cross-tenant-restore-overview" target="_blank" rel="noopener">Microsoft Learn: Cross-tenant restore overview</a></p>
+        <p>レポート: 2026-10-28-backup-cross-tenant-restore.md (Azure News Summary)</p>
+        <p>生成日: 2026-10-28</p>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+</body>
+</html>

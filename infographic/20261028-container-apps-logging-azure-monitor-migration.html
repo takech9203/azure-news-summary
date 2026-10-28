@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Container Apps: ログ宛先を Log Analytics から Azure Monitor へ移行</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-announcement { background: var(--ms-orange); }
+
+.header h1 {
+    font-size: 26px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 20px;
+    color: var(--azure-blue);
+    border-bottom: 2px solid var(--ms-blue-200);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section h3 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; font-size: 15px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 6px 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 15px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); margin: 4px 0; }
+.feature-content ul { padding-left: 18px; }
+.feature-content li { margin: 4px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* Table */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 12px;
+    text-align: left;
+}
+
+.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 12px;
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+
+.spec-table code, .inline-code {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--ms-blue-900);
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Steps */
+.step-list { counter-reset: step; list-style: none; margin: 16px 0; }
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 0 10px 48px;
+    font-size: 14px;
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 14px;
+}
+
+.merit-business { background: var(--ms-blue-100); border: 2px solid var(--ms-blue-500); }
+.merit-tech { background: #F3EEF9; border: 2px solid var(--ms-purple); }
+
+.merit-card h4 { margin-bottom: 10px; }
+.merit-business h4 { color: var(--ms-blue-800); }
+.merit-tech h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 6px 0; }
+
+.caution-list { padding-left: 0; list-style: none; margin: 12px 0; }
+
+.caution-list li {
+    background: #FFF9F0;
+    border-left: 4px solid var(--ms-orange);
+    padding: 10px 14px;
+    margin: 10px 0;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+}
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-800);
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin-right: 6px;
+}
+
+/* Links */
+a { color: var(--azure-blue); word-break: break-all; }
+
+.link-list { padding-left: 20px; font-size: 14px; }
+.link-list li { margin: 8px 0; }
+
+/* Related services */
+.related-list { list-style: none; }
+
+.related-list li {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.related-list strong { color: var(--ms-blue-800); }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+.summary-box p { margin: 10px 0; }
+
+/* Tags */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-size: 13px;
+    border-radius: 14px;
+    padding: 4px 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">📦 Azure Container Apps</span>
+            <span class="badge badge-announcement">Announcement</span>
+        </div>
+        <h1>ログ宛先を Log Analytics から Azure Monitor へ移行<br>— Log Analytics 宛先のレガシー化アナウンス —</h1>
+        <div class="meta">📅 リリース日: 2026-10-28 | 🏷️ 機能: ログ宛先の Azure Monitor への移行</div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Container Apps の「Log Analytics」ログ宛先 (logging destination) が<strong>レガシーなログオプション</strong>になったことが発表されました。Log Analytics 宛先を構成済みの既存環境は引き続き正常に動作しますが、Microsoft は「Azure Monitor」ログ宛先への<strong>移行計画を立てることを推奨</strong>しています。</p>
+        <div class="highlight-box">
+            この推奨の背景には、Log Analytics ログ宛先が内部で使用している <strong>HTTP Data Collector API の非推奨化</strong>があります。レガシーな HTTP Data Collector API のサポートは <strong>2026 年 9 月 14 日に終了</strong>しており、以降は重大なセキュリティ更新のみが提供されます。TLS 準拠クライアントからの既存のインジェストは継続されますが、中断を避けるため環境のログ宛先を Azure Monitor へ変更することが求められています。
+        </div>
+        <div class="warning-box">
+            ⚠️ アプリケーションが HTTP Data Collector API を直接呼び出している場合は、別途 <a href="https://learn.microsoft.com/azure/azure-monitor/logs/custom-logs-migrate?tabs=cli">Logs Ingestion API への移行</a>が必要です。Container Apps の Log Analytics ログ宛先と HTTP Data Collector API 直接インジェストの両方を使用している場合は、<strong>両方の移行を計画</strong>する必要があります。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">2026/9/14</div>
+                <div class="stat-label">HTTP Data Collector API サポート終了</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最大 5 つ</div>
+                <div class="stat-label">環境あたりの診断設定数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最大 90 分</div>
+                <div class="stat-label">診断設定の有効化にかかる時間</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">4 種類</div>
+                <div class="stat-label">対応宛先 (Log Analytics / Storage / Event Hubs / パートナー)</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Log Analytics ログ宛先は、非推奨化が進む HTTP Data Collector API に依存しており、2026 年 9 月 14 日のサポート終了後は重大なセキュリティ修正のみの提供となる</li>
+                    <li>ログはカスタムテーブル (<span class="inline-code">ContainerAppConsoleLogs_CL</span>、<span class="inline-code">ContainerAppSystemLogs_CL</span>) に書き込まれ、宛先は Log Analytics ワークスペース 1 つに限定される</li>
+                    <li>Private Link 経由で Log Analytics ワークスペースへ直接ログを送信することはサポートされない</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Azure Monitor 宛先は診断設定 (Diagnostic settings) ベースとなり、Log Analytics ワークスペースに加えてストレージアカウント (アーカイブ)、Event Hubs、パートナーソリューション (Datadog、Elastic など) へのルーティングが可能</li>
+                    <li>ログはリソース固有テーブル (<span class="inline-code">ContainerAppConsoleLogs</span>、<span class="inline-code">ContainerAppSystemLogs</span>) に標準スキーマで格納される</li>
+                    <li>環境レベルとコンテナーアプリレベルの両方で診断設定を構成でき、カテゴリごとに異なる宛先を設定できる (環境あたり最大 5 つの診断設定)</li>
+                    <li>Azure Monitor 経由であれば、同じ Log Analytics ワークスペースへの送信を Private Link 環境でも利用できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🕰️ Before: Log Analytics 宛先 (レガシー)"]
+        ACA1["📦 Container Apps 環境<br>(stdout / stderr + システムログ)"]
+        API1["🔌 HTTP Data Collector API<br>(2026/9/14 サポート終了)"]
+        LAW1[("🗄️ Log Analytics ワークスペース<br>ContainerAppConsoleLogs_CL<br>ContainerAppSystemLogs_CL")]
+        ACA1 --> API1 --> LAW1
+    end
+
+    subgraph After["✅ After: Azure Monitor 宛先 (推奨)"]
+        ACA2["📦 Container Apps 環境<br>(logs-destination: azure-monitor)"]
+        DS["⚙️ 診断設定<br>(環境 / アプリレベル、最大 5 つ)"]
+        LAW2[("🗄️ Log Analytics ワークスペース<br>ContainerAppConsoleLogs<br>ContainerAppSystemLogs")]
+        SA[("📁 ストレージアカウント<br>(アーカイブ)")]
+        EH["📨 Event Hubs /<br>パートナーソリューション"]
+        ACA2 --> DS
+        DS --> LAW2
+        DS --> SA
+        DS --> EH
+    end
+
+    Before -.->|"移行を推奨"| After
+            </pre>
+        </div>
+        <p>従来は HTTP Data Collector API 経由でカスタムテーブルに直接送信していたログを、今後は Azure Monitor の診断設定経由でリソース固有テーブルや複数の宛先にルーティングする構成へ移行します。</p>
+    </section>
+
+    <!-- サービスアップデートの詳細 -->
+    <section class="section">
+        <h2>🔍 サービスアップデートの詳細</h2>
+        <h3>主要なポイント</h3>
+
+        <div class="feature-card">
+            <div class="feature-icon">🕰️</div>
+            <div class="feature-content">
+                <h4>1. Log Analytics ログ宛先のレガシー化</h4>
+                <ul>
+                    <li>既存環境は引き続き正常に動作するが、新規・既存環境ともに Azure Monitor 宛先への移行が推奨される</li>
+                    <li>基盤の HTTP Data Collector API は 2026 年 9 月 14 日にサポートが終了し、以降は重大なセキュリティ更新のみ</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔎</div>
+            <div class="feature-content">
+                <h4>2. 影響範囲の確認方法</h4>
+                <ul>
+                    <li>監視ソリューション (ログクエリ、ダッシュボード、アラート、ブック) が <span class="inline-code">ContainerAppConsoleLogs_CL</span> または <span class="inline-code">ContainerAppSystemLogs_CL</span> テーブルを参照している場合、その環境は Log Analytics ログ宛先を使用している</li>
+                    <li>テキスト検索だけでは不十分で、ワークスペース関数・エイリアス、生成クエリ、IaC テンプレート、デプロイパイプライン、SIEM ルール、外部監視統合も確認が必要</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>3. テーブルとスキーマの変更</h4>
+                <ul>
+                    <li>移行後、ログはカスタムテーブルではなくリソース固有テーブルに書き込まれる</li>
+                    <li>列名も型サフィックス付き (<span class="inline-code">_s</span>、<span class="inline-code">_g</span>、<span class="inline-code">_d</span>) から標準の Azure Monitor 列名に変わる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗃️</div>
+            <div class="feature-content">
+                <h4>4. 履歴データは移動されない</h4>
+                <ul>
+                    <li>既存の <span class="inline-code">_CL</span> テーブルのレコードはワークスペースの保持期間中は参照可能</li>
+                    <li>履歴と新規レコードを横断して検索する場合は、<span class="inline-code">union</span> を使ったワークスペース関数 (互換関数) の作成が案内されている</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>⚠️ 移行時の注意点 (Microsoft Learn より)</h3>
+        <ul class="caution-list">
+            <li>ログ宛先の切り替えは即座にルーティングを変更するが、<strong>診断設定を作成するまでリソースログは送信されない</strong>。診断設定の有効化には最大 90 分かかる場合がある</li>
+            <li>切り替え直後に診断設定を作成すれば、作成前に生成されたコンソールログはバッファリングされバックフィルされる (ただし保証範囲には制限あり。<strong>システムログのバックフィルは保証されない</strong>)</li>
+            <li><span class="inline-code">_CL</span> テーブルを参照するアラートは、宛先切り替えと同時に新規データを受信しなくなるため、<strong>メンテナンスウィンドウの設定、カナリアログによる検証、代替アラートの事前準備</strong>が推奨される</li>
+            <li>Azure Monitor 宛先は <span class="inline-code">dynamicJsonColumns</span> をサポートしておらず、移行時に無効化される。動的 JSON 列に依存するクエリは <span class="inline-code">parse_json()</span> で明示的にパースするよう更新が必要</li>
+            <li><strong>Express 環境モードの Container Apps 環境では Azure Monitor をログ宛先として利用できないため、この移行は適用されない</strong></li>
+            <li>ロールバック (Log Analytics 宛先への戻し) は可能だが、<strong>短期的な緊急措置</strong>と位置づけられており、リソース固有テーブルのデータはコピー・バックフィルされない</li>
+        </ul>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>⚙️ 技術仕様</h2>
+        <div style="overflow-x: auto;">
+        <table class="spec-table">
+            <thead>
+                <tr>
+                    <th>項目</th>
+                    <th>Before (Log Analytics 宛先)</th>
+                    <th>After (Azure Monitor 宛先)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>送信経路</strong></td>
+                    <td>HTTP Data Collector API (レガシー)</td>
+                    <td>Azure Monitor 診断設定</td>
+                </tr>
+                <tr>
+                    <td><strong>コンソールログのテーブル</strong></td>
+                    <td><code>ContainerAppConsoleLogs_CL</code></td>
+                    <td><code>ContainerAppConsoleLogs</code></td>
+                </tr>
+                <tr>
+                    <td><strong>システムログのテーブル</strong></td>
+                    <td><code>ContainerAppSystemLogs_CL</code></td>
+                    <td><code>ContainerAppSystemLogs</code></td>
+                </tr>
+                <tr>
+                    <td><strong>列名の例</strong></td>
+                    <td><code>ContainerAppName_s</code>, <code>Log_s</code>, <code>Stream_s</code></td>
+                    <td><code>ContainerAppName</code>, <code>Log</code>, <code>Stream</code></td>
+                </tr>
+                <tr>
+                    <td><strong>対応宛先</strong></td>
+                    <td>Log Analytics ワークスペースのみ</td>
+                    <td>Log Analytics / ストレージアカウント / Event Hubs / パートナーソリューション</td>
+                </tr>
+                <tr>
+                    <td><strong>診断設定数</strong></td>
+                    <td>-</td>
+                    <td>環境あたり最大 5 つ</td>
+                </tr>
+                <tr>
+                    <td><strong>ログカテゴリ</strong></td>
+                    <td>-</td>
+                    <td><code>ContainerAppConsoleLogs</code>, <code>ContainerAppSystemLogs</code> (カテゴリグループ: <code>allLogs</code>, <code>audit</code>)</td>
+                </tr>
+                <tr>
+                    <td><strong>メトリック</strong></td>
+                    <td>-</td>
+                    <td><code>AllMetrics</code> (環境・アプリレベル)</td>
+                </tr>
+                <tr>
+                    <td><strong>ワークスペースの関連付け</strong></td>
+                    <td>環境設定で指定</td>
+                    <td>診断設定で明示的に選択 (自動では引き継がれない)</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li>Log Analytics ログ宛先を使用している既存の Container Apps 環境</li>
+            <li><span class="inline-code">ContainerAppConsoleLogs_CL</span> / <span class="inline-code">ContainerAppSystemLogs_CL</span> を含む Log Analytics ワークスペース</li>
+            <li>環境の更新権限、および環境スコープでの診断設定の作成・更新権限</li>
+            <li>サブスクリプションに <span class="inline-code">Microsoft.Insights</span> リソースプロバイダーが登録済み (または登録権限があること)</li>
+            <li>Azure CLI を使用する場合は最新の Azure CLI と Container Apps 拡張機能 (<span class="inline-code">az extension add --name containerapp --upgrade</span>)</li>
+        </ol>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI による移行手順</span></div>
+            <pre><code class="language-bash"># Microsoft.Insights リソースプロバイダーを登録
+az provider register --namespace Microsoft.Insights --wait
+
+# 環境のログ宛先を Azure Monitor に切り替え
+az containerapp env update \
+  --name &lt;ENVIRONMENT_NAME&gt; \
+  --resource-group &lt;RESOURCE_GROUP_NAME&gt; \
+  --logs-destination azure-monitor
+
+# 切り替え直後に診断設定を作成 (既存の _CL テーブルと同じワークスペースを指定)
+az monitor diagnostic-settings create \
+  --name &lt;NEW_UNIQUE_DIAGNOSTIC_SETTING_NAME&gt; \
+  --resource &lt;ENVIRONMENT_RESOURCE_ID&gt; \
+  --logs '[{"category":"ContainerAppConsoleLogs","enabled":true},{"category":"ContainerAppSystemLogs","enabled":true}]' \
+  --workspace &lt;LOG_ANALYTICS_WORKSPACE_RESOURCE_ID&gt;</code></pre>
+        </div>
+
+        <p>移行後、以下のクエリで新テーブルへのログ到達を検証します (診断設定の有効化には最大 90 分かかる場合があります)。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">kusto</span><span>移行検証クエリ</span></div>
+            <pre><code class="language-sql">ContainerAppConsoleLogs
+| where TimeGenerated &gt; ago(2h)
+| where _ResourceId contains "&lt;ENVIRONMENT_NAME&gt;"
+| order by TimeGenerated desc
+| take 20</code></pre>
+        </div>
+
+        <h3>Azure Portal</h3>
+        <ol class="step-list">
+            <li>Container Apps 環境を開き、<strong>[監視] &gt; [ログオプション]</strong> を選択する</li>
+            <li><strong>[ログの宛先]</strong> で <strong>[Azure Monitor]</strong> を選択し、<strong>[保存]</strong> する</li>
+            <li>更新完了後にページを更新し、<strong>[監視] &gt; [診断設定]</strong> を選択する</li>
+            <li><strong>[診断設定の追加]</strong> で名前を入力し、少なくとも <strong>Container App console logs</strong> と <strong>Container App system logs</strong> のカテゴリ (または <span class="inline-code">allLogs</span> カテゴリグループ) を選択する</li>
+            <li><strong>[宛先の詳細]</strong> で <strong>[Log Analytics ワークスペースへの送信]</strong> を選び、既存の <span class="inline-code">_CL</span> テーブルがあるワークスペースを選択して保存する</li>
+        </ol>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>🎯 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>非推奨 API への依存を解消し、サポート終了 (2026 年 9 月 14 日) 後のリスクを低減できる</li>
+                    <li>ストレージアカウントへのアーカイブや Event Hubs 経由の SIEM 連携など、コンプライアンス・監査要件に対応しやすくなる</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>診断設定により複数宛先 (Log Analytics / Storage / Event Hubs / パートナーソリューション) へ柔軟にログをルーティングできる</li>
+                    <li>リソース固有テーブルの標準スキーマ (型サフィックスなしの列名) によりクエリが簡潔になる</li>
+                    <li>カテゴリ単位 (コンソールログ / システムログ) で異なる宛先を設定でき、環境・アプリの両レベルでメトリック送信も構成できる</li>
+                    <li>Private Link 構成でも Azure Monitor 経由で Log Analytics ワークスペースへログを送信できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li>ログ宛先の切り替えだけではログは送信されず、<strong>診断設定の作成が必須</strong> (ワークスペースの関連付けは自動で引き継がれない)</li>
+            <li>診断設定の有効化に最大 90 分かかる場合があり、移行中の監視ギャップ対策 (カナリアログ、代替アラートの事前準備など) が必要</li>
+            <li>履歴データは <span class="inline-code">_CL</span> テーブルから移動されないため、横断検索には <span class="inline-code">union</span> を使った互換関数の作成が必要</li>
+            <li>テーブル名・列名が変わるため、<span class="inline-code">_CL</span> テーブルを参照するクエリ、アラート、ブック、ダッシュボード、自動化をすべて更新する必要がある</li>
+            <li>Azure Monitor 宛先は <span class="inline-code">dynamicJsonColumns</span> をサポートせず、移行時に無効化される (ロールバックしても自動では再有効化されない)</li>
+            <li>Express 環境モードでは Azure Monitor 宛先が利用できない</li>
+            <li>ログインジェストと宛先ごとの課金が発生し得るため、必要なカテゴリと宛先のみを選択することが推奨される</li>
+        </ul>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>ユースケース 1: 既存ワークスペースを維持したままの移行</h4>
+            <p><span class="usecase-label">シナリオ</span>既存の Log Analytics ワークスペースに蓄積した <span class="inline-code">_CL</span> テーブルの履歴ログを保持しつつ、新規ログを同じワークスペースのリソース固有テーブルへ送信する。</p>
+            <p><span class="usecase-label">実装例</span>上記「設定方法」の CLI 手順で同じワークスペースを診断設定に指定した後、履歴と新規レコードを横断検索する互換関数をワークスペース関数として保存する。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">kusto</span><span>互換関数 (union による横断検索)</span></div>
+                <pre><code class="language-sql">union
+(
+    ContainerAppConsoleLogs_CL
+    | project TimeGenerated, ContainerAppName = ContainerAppName_s,
+        RevisionName = RevisionName_s, Stream = Stream_s, Log = Log_s,
+        _ResourceId, SourceTable = "ContainerAppConsoleLogs_CL"
+),
+(
+    ContainerAppConsoleLogs
+    | project TimeGenerated, ContainerAppName, RevisionName, Stream, Log,
+        _ResourceId, SourceTable = "ContainerAppConsoleLogs"
+)</code></pre>
+            </div>
+            <p><span class="usecase-label">効果</span>既存の保持期間内の履歴ログと新規ログを単一クエリで参照でき、移行に伴うクエリ・アラート更新を段階的に進められる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>ユースケース 2: ログの長期アーカイブと SIEM 連携</h4>
+            <p><span class="usecase-label">シナリオ</span>監査要件によりコンテナーログの長期保管と外部 SIEM への転送が必要。</p>
+            <p><span class="usecase-label">実装例</span>診断設定でコンソールログ・システムログを Log Analytics ワークスペースに送信しつつ、同じ診断設定 (または別の診断設定) でストレージアカウントへのアーカイブと Event Hubs へのストリーミングを追加する。</p>
+            <p><span class="usecase-label">効果</span>Log Analytics 宛先では不可能だった複数宛先への同時ルーティングが実現し、分析・アーカイブ・SIEM 連携を 1 つの構成で満たせる。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>このアナウンス自体に料金の変更は含まれていません。Azure Monitor 宛先ではログのインジェストと宛先ごとの課金が発生し得るため、<strong>必要なカテゴリと宛先のみを選択すること</strong>が公式ドキュメントで推奨されています。詳細は以下を参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/monitor/">Azure Monitor の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/container-apps/">Azure Container Apps の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <ul class="related-list">
+            <li><strong>Azure Monitor (診断設定)</strong>: 移行後のログルーティングの中核。環境・アプリレベルで最大 5 つの診断設定を構成し、ログカテゴリとメトリックを宛先に送信する</li>
+            <li><strong>Log Analytics ワークスペース</strong>: 移行後もログの保存・分析先として利用可能。テーブルがカスタムテーブル (<span class="inline-code">_CL</span>) からリソース固有テーブルに変わる</li>
+            <li><strong>Azure Event Hubs / Azure Storage</strong>: Azure Monitor 宛先で新たに利用できるストリーミング・アーカイブ先</li>
+            <li><strong>Azure Monitor パートナーソリューション</strong>: Datadog、Elastic、Logz.io などへのログ送信が可能</li>
+            <li><strong>Logs Ingestion API</strong>: HTTP Data Collector API を直接利用しているアプリケーションの移行先 (本件とは別の移行ガイダンスに従う)</li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Container Apps の Log Analytics ログ宛先がレガシー化され、<strong>Azure Monitor ログ宛先への移行が公式に推奨</strong>されるアナウンスです。既存環境は当面動作し続けるものの、基盤の HTTP Data Collector API は 2026 年 9 月 14 日にサポートが終了しており、以降は重大なセキュリティ更新のみの提供となるため、<strong>計画的な移行が必要</strong>です。</p>
+            <p>Solutions Architect としては、まず <span class="inline-code">ContainerAppConsoleLogs_CL</span> / <span class="inline-code">ContainerAppSystemLogs_CL</span> テーブルを参照するクエリ、アラート、ブック、ダッシュボード、IaC、SIEM ルールの棚卸しを行い、テーブル名・列名の変更に対応した代替クエリとアラートを準備した上で、メンテナンスウィンドウを設けて<strong>「宛先切り替え + 診断設定作成」を一連の作業として実施</strong>することを推奨します。履歴データは移動されないため、必要に応じて <span class="inline-code">union</span> ベースの互換関数で移行期間の横断検索を確保してください。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure Container Apps</span>
+            <span class="tag">Azure Monitor</span>
+            <span class="tag">Log Analytics</span>
+            <span class="tag">Containers</span>
+            <span class="tag">診断設定</span>
+            <span class="tag">ログ移行</span>
+            <span class="tag">Announcement</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク / フッター -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=577689">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/container-apps/migrate-logs-azure-monitor">移行手順: Change Container Apps logging from Log Analytics to Azure Monitor</a></li>
+            <li><a href="https://learn.microsoft.com/azure/container-apps/log-options">ログオプション: Log storage and monitoring options in Azure Container Apps</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-monitor/logs/custom-logs-migrate?tabs=cli">HTTP Data Collector API から Logs Ingestion API への移行</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-monitor/essentials/diagnostic-settings">Azure Monitor の診断設定</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/monitor/">Azure Monitor の料金</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=577689">Azure Updates (ID: 577689)</a> | <a href="https://learn.microsoft.com/azure/container-apps/migrate-logs-azure-monitor">Microsoft Learn: Migrate Container Apps logs to Azure Monitor</a></p>
+        <p>レポート日: 2026-10-28 | Azure News Summary プロジェクトにより自動生成</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
