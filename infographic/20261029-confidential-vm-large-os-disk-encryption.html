@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Confidential VM: Large OS Disk Encryption (LOSDE) GA | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "🛡️";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+.hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 10px;
+}
+.hero .subtitle {
+    font-size: 16px;
+    opacity: 0.92;
+}
+.hero .date {
+    margin-top: 14px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* ===== Section ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon { font-size: 26px; }
+
+/* ===== Highlight / Summary ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--ms-blue-800); }
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value {
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1.3;
+}
+.stat-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 6px;
+}
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 12px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+.feature-content p, .feature-content li {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+.feature-content ul { padding-left: 18px; margin-top: 4px; }
+
+/* ===== Table ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+}
+.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+.spec-table td:first-child {
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    white-space: nowrap;
+}
+
+/* ===== Steps ===== */
+.step-list { list-style: none; counter-reset: step; }
+.step-list li {
+    counter-increment: step;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+    font-size: 14px;
+}
+.step-list li::before {
+    content: counter(step);
+    min-width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.merit-box {
+    border-radius: 8px;
+    padding: 18px;
+    font-size: 14px;
+}
+.merit-box h4 {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+.merit-box ul { padding-left: 20px; }
+.merit-box li { margin-bottom: 8px; }
+.merit-business {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+}
+.merit-business h4 { color: var(--ms-blue-800); }
+.merit-tech {
+    background: #F3EEFB;
+    border: 2px solid var(--ms-purple);
+}
+.merit-tech h4 { color: var(--ms-purple); }
+
+.caution-box {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 18px;
+    font-size: 14px;
+}
+.caution-box h4 { color: var(--ms-orange); margin-bottom: 10px; font-size: 16px; }
+.caution-box ul { padding-left: 20px; }
+.caution-box li { margin-bottom: 8px; }
+
+/* ===== Use Case ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    font-size: 17px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 12px;
+}
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-800);
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+.usecase-card p, .usecase-card li { font-size: 14px; }
+.usecase-card ol { padding-left: 22px; margin: 8px 0; }
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+}
+
+/* ===== Related Services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13px;
+}
+.related-card h5 {
+    font-size: 14px;
+    color: var(--ms-blue-800);
+    margin-bottom: 6px;
+}
+
+/* ===== Links / Pricing ===== */
+.link-list { list-style: none; }
+.link-list li {
+    margin-bottom: 10px;
+    padding-left: 26px;
+    position: relative;
+    font-size: 14px;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.pricing-list { padding-left: 22px; font-size: 14px; }
+.pricing-list li { margin-bottom: 8px; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px;
+    font-size: 15px;
+}
+
+/* ===== Tags ===== */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 36px;
+    border-top: 1px solid var(--ms-border);
+}
+.footer a { word-break: break-all; }
+
+/* ===== Code blocks (if any) ===== */
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    border-radius: 8px;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+    .section { padding: 20px; }
+    .spec-table { display: block; overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="hero-meta">
+            <span class="service-badge">Azure Confidential VM (Azure Confidential Computing)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Large OS Disk Encryption (LOSDE)<br>Confidential VM 移行で 127 GB 超の OS ディスク暗号化が GA</h1>
+        <p class="subtitle">大容量 OS ディスクのワークロードを、縮小・再構築・コード変更なしでハードウェア強制 TEE へ移行</p>
+        <p class="date">📅 リリース日: 2026-10-29</p>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Confidential VM への<strong>移行シナリオ向けの Large OS Disk Encryption (LOSDE) が一般提供 (GA)</strong> になりました。これにより、<strong>127 GB を超える OS ディスク</strong>を持つ VM でも、Confidential ディスク暗号化を適用したまま Azure Confidential VM へ移行できるようになります。</p>
+        <div class="highlight-box">
+            従来、Confidential ディスク暗号化は <strong>128 GB 未満のディスクのみ</strong>をサポートしており、大きな OS ディスクを持つ本番規模のワークロードを機密コンピューティング環境に移行する際の大きな障壁となっていました。LOSDE では移行プロセスの一部として OS ディスクが Confidential ディスク暗号化で保護されるため、<strong>大きなシステムイメージの縮小・再構築・再暗号化が不要</strong>になり、<strong>コード変更なし</strong>でハードウェア強制のトラステッド実行環境 (TEE) にワークロードを移行できます。
+        </div>
+        <p>暗号化キーは VM の仮想 TPM (vTPM) にバインドされ、ディスク内容はその VM からのみアクセス可能で、ホストやハイパーバイザーからはアクセスできません。キーはプラットフォームが構成証明 (Attestation) に合格した後にのみ解放されます。キー管理はプラットフォーム マネージド キー (PMK) と、Azure Key Vault Premium または Managed HSM を利用した顧客管理キー (CMK) の両方に対応します。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">&gt; 127 GB</div>
+                <div class="stat-label">暗号化可能な OS ディスク (従来は 128 GB 未満のみ)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">コード変更 0</div>
+                <div class="stat-label">そのまま TEE へ移行可能</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">4 OS</div>
+                <div class="stat-label">Windows / Ubuntu / RHEL / Rocky Linux</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">PMK / CMK</div>
+                <div class="stat-label">柔軟なキー管理に対応</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Confidential ディスク暗号化は <strong>128 GB 未満のディスクのみ</strong>サポートしており、127 GB を超える OS ディスクを持つワークロードは機密性の保証を維持したまま Confidential VM へ移行できなかった</li>
+                    <li>大きな OS ディスクを持つ業務クリティカルなアプリケーションを移行するには、<strong>ディスクの縮小やイメージの再構築・再暗号化</strong>といった追加作業が必要で、規制の厳しい環境での Confidential Computing 採用の障壁となっていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>移行ワークフローにおいて <strong>127 GB を超える OS ディスクへの Confidential ディスク暗号化</strong>が可能になり、本番規模のワークロードをそのまま Confidential VM へ移行できるようになった</li>
+                    <li>暗号化は移行処理の一部として実行されるため、<strong>ディスクの縮小・再構築・再暗号化が不要</strong>で、コード変更なしで TEE 上に移行できる</li>
+                    <li><strong>Azure Migrate との自動化された統合</strong>により、Windows / Ubuntu / RHEL / Rocky Linux のワークロードを CMK 対応のまま移行できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["❌ Before: 127 GB 超の OS ディスク"]
+        B1[🖥️ 既存 VM&lt;br/&gt;OS ディスク &gt; 127 GB] -->|縮小・再構築が必要| B2[⚠️ Confidential ディスク暗号化&lt;br/&gt;128 GB 未満のみ対応]
+    end
+
+    subgraph After["✅ After: LOSDE (GA)"]
+        A1[🖥️ 既存 VM&lt;br/&gt;OS ディスク &gt; 127 GB] -->|Azure Migrate で移行| A2[🔄 移行中に OS ディスクを&lt;br/&gt;Confidential ディスク暗号化]
+        A2 --> A3[🛡️ Azure Confidential VM&lt;br/&gt;ハードウェア強制 TEE]
+        A4[🔑 Key Vault Premium /&lt;br/&gt;Managed HSM CMK or PMK] --> A2
+        A5[📜 Azure Attestation&lt;br/&gt;構成証明に合格後キー解放] --> A3
+        A3 --- A6[🔐 vTPM にキーをバインド&lt;br/&gt;ホスト/ハイパーバイザーからアクセス不可]
+    end
+
+    Before -.->|LOSDE GA| After
+            </pre>
+        </div>
+        <p class="diagram-note">従来は 128 GB 未満のディスクに限定されていた Confidential ディスク暗号化が、LOSDE により移行シナリオで 127 GB 超の OS ディスクにも適用可能になりました。暗号化キーは vTPM にバインドされ、構成証明の合格後にのみ解放されます。</p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細: 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">💾</div>
+            <div class="feature-content">
+                <h4>1. 127 GB 超の OS ディスクに対する Confidential ディスク暗号化</h4>
+                <p>移行ワークフローにおいて、従来の制限 (128 GB 未満) を超える大容量 OS ディスクを暗号化したまま Confidential VM へ移行可能。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>2. 移行プロセスに統合された暗号化</h4>
+                <ul>
+                    <li>暗号化は移行処理の一部として実行されるため、大きなシステムイメージの縮小・再構築・再暗号化が不要</li>
+                    <li>アプリケーションのコード変更なしでハードウェア強制の TEE に移行できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>3. vTPM へのキーバインドと構成証明ベースのキー解放</h4>
+                <ul>
+                    <li>ディスク暗号化キーは VM の vTPM にバインドされ、ディスク内容はその VM のみがアクセス可能 (ホスト・ハイパーバイザーからはアクセス不可)</li>
+                    <li>キーはプラットフォームが構成証明 (Attestation) に合格した後にのみ解放される</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔑</div>
+            <div class="feature-content">
+                <h4>4. 柔軟なキー管理 (PMK / CMK)</h4>
+                <p>プラットフォーム マネージド キー (PMK)、または Azure Key Vault Premium / Managed HSM を利用した顧客管理キー (CMK) を選択可能。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚚</div>
+            <div class="feature-content">
+                <h4>5. Azure Migrate による自動化</h4>
+                <ul>
+                    <li>Azure Migrate との統合により、既存 VM の Confidential VM へのアップグレードを移行プロセスを通じて実現</li>
+                    <li>Windows、Ubuntu、Red Hat Enterprise Linux、Rocky Linux の移行シナリオをサポート (サポート対象の詳細は Azure Migrate のドキュメントを参照)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Technical Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象シナリオ</td><td>Azure Confidential VM への移行 (migration)</td></tr>
+            <tr><td>対象ディスク</td><td>127 GB を超える OS ディスク (従来は 128 GB 未満のみ対応)</td></tr>
+            <tr><td>暗号化方式</td><td>Confidential ディスク暗号化 (全クリティカル パーティションを保護)</td></tr>
+            <tr><td>キーのバインド</td><td>VM の仮想 TPM (vTPM、TPM 2.0 準拠) にバインド</td></tr>
+            <tr><td>キー解放条件</td><td>プラットフォームの構成証明 (Azure Attestation) 合格後のみ</td></tr>
+            <tr><td>キー管理</td><td>PMK、または Azure Key Vault Premium / Managed HSM による CMK</td></tr>
+            <tr><td>対応 OS (移行)</td><td>Windows、Ubuntu、RHEL、Rocky Linux</td></tr>
+            <tr><td>移行ツール</td><td>Azure Migrate (自動化対応)</td></tr>
+            <tr><td>コード変更</td><td>不要 (ハードウェア強制 TEE へそのまま移行)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法: 前提条件</h2>
+        <ol class="step-list">
+            <li>移行先が Azure Confidential VM 対応の VM サイズであること (例: DCasv5/DCasv6/DCesv6、ECasv5/ECasv6/ECesv6 シリーズなど)</li>
+            <li>移行対象の OS が Confidential VM / Azure Migrate のサポート対象であること (Windows、Ubuntu、RHEL、Rocky Linux。詳細は Azure Migrate のドキュメントを参照)</li>
+            <li>CMK を使用する場合、Azure Key Vault Premium または Managed HSM が必要</li>
+        </ol>
+        <div class="highlight-box">
+            具体的な移行手順は <a href="https://learn.microsoft.com/azure/migrate/" target="_blank" rel="noopener">Azure Migrate のドキュメント</a> を参照してください。
+        </div>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-box merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>規制の厳しい業界 (金融・医療・公共など) の本番規模ワークロードを、ディスクサイズの制約に妨げられずに Confidential Computing へ移行できる</li>
+                    <li>ディスク縮小やイメージ再構築などの移行前作業が不要になり、移行プロジェクトの工数・リスクを削減できる</li>
+                    <li>CMK によるキー管理を維持したまま移行でき、コンプライアンス要件に対応しやすい</li>
+                </ul>
+            </div>
+            <div class="merit-box merit-tech">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>暗号化が移行処理に組み込まれているため、再暗号化の追加ステップが不要</li>
+                    <li>ディスク暗号化キーが vTPM にバインドされ、ホストやハイパーバイザーからディスク内容にアクセスできないハードウェアレベルの保護を得られる</li>
+                    <li>構成証明に合格した場合のみキーが解放されるため、プラットフォームの健全性が検証された環境でのみワークロードが起動する</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Limitations ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <h4>知っておくべき制約</h4>
+            <ul>
+                <li>本 GA の対象は<strong>移行 (migration) シナリオ</strong>。Confidential VM 一般の制限事項 (Azure Site Recovery 非対応、Accelerated Networking 非対応、ライブ マイグレーション非対応、キーの自動ローテーション非対応など) は引き続き適用される</li>
+                <li>Confidential OS ディスク暗号化の設定は<strong>デプロイ後に変更できない</strong></li>
+                <li>Confidential VM は<strong>特定リージョンの専用ハードウェア上でのみ</strong>実行可能</li>
+                <li>Confidential OS ディスク暗号化を有効にすると、VM の初期作成 (移行) 時間が長くなる場合がある</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>ユースケース 1: 大容量 OS ディスクを持つオンプレミス基幹システムの Confidential VM への移行</h4>
+            <span class="usecase-label">シナリオ</span>
+            <p>金融機関が、127 GB を超える OS ディスクを持つ既存の基幹系 Windows Server / RHEL ワークロードを、データ処理中の機密性 (data in use の保護) を確保するため Azure Confidential VM へ移行したい。</p>
+            <span class="usecase-label" style="margin-top:12px;">実装アプローチ</span>
+            <ol>
+                <li>Azure Migrate で移行対象 VM を評価し、移行先として Confidential VM 対応サイズを選択</li>
+                <li>移行プロセスの中で OS ディスクに Confidential ディスク暗号化を適用 (LOSDE)</li>
+                <li>キー管理要件に応じて PMK、または Key Vault Premium / Managed HSM の CMK を選択</li>
+            </ol>
+            <div class="usecase-effect">
+                <strong>✅ 効果</strong>: ディスクの縮小・再構築なしで、コード変更も不要なまま、ハードウェア強制の TEE 上で基幹ワークロードを稼働できる。キーは vTPM にバインドされ、構成証明合格後にのみ解放されるため、ホスト管理者からもデータが保護される。
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>LOSDE 自体の追加料金に関する公式情報は、本アップデートでは確認できませんでした。関連する料金として以下が公式ドキュメントに記載されています。</p>
+        <ul class="pricing-list">
+            <li>Confidential VM の料金は VM サイズに依存 (<a href="https://azure.microsoft.com/pricing/calculator/" target="_blank" rel="noopener">料金計算ツール</a> を参照)</li>
+            <li>Confidential VM は OS ディスクに加えて小容量の暗号化された VMGS (VM Guest State) ディスクを使用し、月額ストレージコストが発生する場合がある</li>
+            <li>2026 年 3 月 30 日以降、暗号化された OS ディスクはコストが高くなる (詳細は <a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank" rel="noopener">Managed Disks の料金ページ</a> を参照)</li>
+        </ul>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p>Confidential VM は特定リージョンの専用ハードウェア上で実行されます。利用可能なリージョンは <a href="https://azure.microsoft.com/global-infrastructure/services/?products=virtual-machines" target="_blank" rel="noopener">リージョン別提供状況ページ</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>🚚 Azure Migrate</h5>
+                <p>LOSDE の自動化に対応した移行ツール。既存 VM の Confidential VM へのアップグレードを移行プロセスで実現。</p>
+            </div>
+            <div class="related-card">
+                <h5>🔑 Azure Key Vault Premium / Managed HSM</h5>
+                <p>CMK を使用する場合のキー保管先。</p>
+            </div>
+            <div class="related-card">
+                <h5>📜 Azure Attestation</h5>
+                <p>プラットフォームの健全性を検証する構成証明サービス。合格後にのみディスク暗号化キーが解放される。</p>
+            </div>
+            <div class="related-card">
+                <h5>🔐 仮想 TPM (vTPM)</h5>
+                <p>TPM 2.0 準拠の仮想 TPM。ディスク暗号化キーのバインド先として機能。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Reference Links ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=578850" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li><a href="https://techcommunity.microsoft.com/blog/microsoft-security-blog/large-os-disk-encryption-is-now-generally-available-for-azure-confidential-vm-mi/4564613" target="_blank" rel="noopener">GA 発表ブログ (Microsoft Tech Community)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/confidential-computing/confidential-vm-overview" target="_blank" rel="noopener">Azure Confidential VM の概要 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/migrate/" target="_blank" rel="noopener">Azure Migrate ドキュメント (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank" rel="noopener">Managed Disks 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Large OS Disk Encryption (LOSDE) の GA により、これまで Confidential Computing 採用の障壁となっていた<strong>「OS ディスク 128 GB 未満」という制限が移行シナリオで解消</strong>されました。127 GB を超える OS ディスクを持つ本番規模のワークロードを、<strong>ディスク縮小や再構築なし・コード変更なし</strong>で Azure Confidential VM へ移行できます。暗号化キーは vTPM にバインドされ構成証明合格後にのみ解放されるため、ホストやハイパーバイザーからもデータが保護されます。大容量 OS ディスクを理由に Confidential VM への移行を見送っていた組織は、Azure Migrate のサポート対象 OS (Windows / Ubuntu / RHEL / Rocky Linux) を確認のうえ、移行計画の再評価をお勧めします。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure Confidential Computing</span>
+            <span class="tag">Confidential VM</span>
+            <span class="tag">Large OS Disk Encryption</span>
+            <span class="tag">LOSDE</span>
+            <span class="tag">Azure Migrate</span>
+            <span class="tag">ディスク暗号化</span>
+            <span class="tag">CMK</span>
+            <span class="tag">vTPM</span>
+            <span class="tag">Attestation</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong>:
+            <a href="https://azure.microsoft.com/updates?id=578850" target="_blank" rel="noopener">Azure Updates (ID: 578850)</a> /
+            <a href="https://techcommunity.microsoft.com/blog/microsoft-security-blog/large-os-disk-encryption-is-now-generally-available-for-azure-confidential-vm-mi/4564613" target="_blank" rel="noopener">Microsoft Tech Community Blog</a> /
+            <a href="https://learn.microsoft.com/azure/confidential-computing/confidential-vm-overview" target="_blank" rel="noopener">Microsoft Learn</a>
+        </p>
+        <p>ソースレポート: reports/2026/2026-10-29-confidential-vm-large-os-disk-encryption.md</p>
+        <p>生成日: 2026-10-29 | Azure News Summary</p>
+    </footer>
+
+</div>
+</body>
+</html>

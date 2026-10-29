@@ -5,6 +5,9 @@
 
 ## 2026 年
 
+- [2026-10-29 - Azure Front Door: Premium WAF 向け HTTP DDoS ルールセットの一般提供開始](2026/2026-10-29-front-door-waf-http-ddos-ruleset.md)
+- [2026-10-29 - Azure MCP Server: バージョン 3.0 が一般提供 (GA) 開始](2026/2026-10-29-azure-mcp-server-3-0.md)
+- [2026-10-29 - Azure Confidential VM: Large OS Disk Encryption (LOSDE) for Confidential VM Migrations](2026/2026-10-29-confidential-vm-large-os-disk-encryption.md)
 - [2026-10-28 - Azure Container Apps: ログ宛先を Log Analytics から Azure Monitor へ移行するアナウンス](2026/2026-10-28-container-apps-logging-azure-monitor-migration.md)
 - [2026-10-28 - Azure Backup: Cross Tenant Restore (クロステナント復元) パブリックプレビュー](2026/2026-10-28-backup-cross-tenant-restore.md)
 - [2026-10-28 - Microsoft Marketplace: Private Offer の購入エクスペリエンス強化 (単一ステップ購入)](2026/2026-10-28-marketplace-private-offer-enhancements.md)

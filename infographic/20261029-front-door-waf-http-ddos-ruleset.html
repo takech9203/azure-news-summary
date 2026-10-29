@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Front Door: Premium WAF 向け HTTP DDoS ルールセットの一般提供開始</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "🛡️";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+.hero .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+.hero .subtitle { font-size: 16px; opacity: 0.92; }
+.hero .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 18px;
+    font-size: 14px;
+}
+.hero .meta span {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 14px;
+    border-radius: 16px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.hero .service-badge { background: rgba(255, 255, 255, 0.25); }
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--azure-dark-blue); }
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { font-size: 16px; color: var(--azure-dark-blue); margin-bottom: 6px; }
+.feature-content p, .feature-content li { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; margin-top: 6px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Rule Cards ===== */
+.rule-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+.rule-card {
+    border: 2px solid var(--azure-blue);
+    border-radius: 10px;
+    padding: 16px;
+    background: var(--ms-blue-100);
+}
+.rule-card.preview {
+    border-color: var(--ms-yellow);
+    background: #FFF8E1;
+}
+.rule-card .rule-id {
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--azure-dark-blue);
+}
+.rule-card.preview .rule-id { color: var(--ms-orange); }
+.rule-card h4 { font-size: 15px; margin: 6px 0; }
+.rule-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 4px 0 0; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+td:first-child { font-weight: 500; white-space: normal; }
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin: 14px 0;
+}
+.step-number {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: white;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.step-number::before { content: counter(step); }
+.step-content { padding-top: 4px; font-size: 15px; }
+.step-content strong { color: var(--azure-dark-blue); }
+
+/* ===== Pros / Cons ===== */
+.pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.pros-box, .cons-box {
+    border-radius: 10px;
+    padding: 18px;
+}
+.pros-box { background: #E8F5E9; border: 2px solid var(--ms-green); }
+.cons-box { background: #FFF3E0; border: 2px solid var(--ms-orange); }
+.pros-box h4 { color: var(--ms-green); margin-bottom: 10px; }
+.cons-box h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.pros-box ul, .cons-box ul { padding-left: 20px; }
+.pros-box li, .cons-box li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 0 0 10px 10px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    color: var(--ms-purple);
+    font-size: 16px;
+    margin-bottom: 12px;
+}
+.usecase-item { margin: 10px 0; font-size: 14px; }
+.usecase-item .label {
+    display: inline-block;
+    background: var(--ms-purple);
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-right: 8px;
+}
+
+/* ===== Related Services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+.related-card h4 { font-size: 14px; color: var(--azure-dark-blue); margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); }
+.link-list { list-style: none; }
+.link-list li {
+    margin: 10px 0;
+    padding: 10px 14px;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.link-list li::before { content: "🔗 "; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 8px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+.footer a { color: var(--azure-blue); }
+.footer p { margin: 4px 0; }
+
+.tags { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 12px;
+}
+
+.note {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    margin-top: 10px;
+}
+
+@media (max-width: 700px) {
+    .before-after, .pros-cons, .rule-grid, .related-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+    .container { padding: 14px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure Front Door</span>
+            <span class="service-badge">Azure Web Application Firewall (WAF)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Premium WAF 向け HTTP DDoS ルールセットの一般提供開始</h1>
+        <p class="subtitle">自動適応型のレイヤー 7 DDoS 保護 — 学習・検知・防御を最小限の設定で</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-10-29</span>
+            <span>⚙️ 機能: HTTP DDoS ルールセット (Microsoft_HTTPDDoSRuleSet_1.0)</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Front Door Premium の Azure Web Application Firewall (WAF) における <strong>HTTP DDoS ルールセット</strong>の一般提供 (GA) が発表されました。HTTP レイヤー (レイヤー 7) の DDoS 攻撃はアプリケーションのダウンタイムを引き起こす主要な原因であり続けていますが、IP フィルタや固定レート制限といった静的なコントロールでは、分散型ボットネットによる攻撃に追従できないケースが多くありました。</p>
+        <div class="highlight-box">
+            <strong>HTTP DDoS ルールセット</strong>は、最小限の設定で「<strong>学習・検知・防御</strong>」を行う自動適応型のレイヤー 7 保護。WAF ポリシーに割り当てると、Front Door プロファイルごとに通常トラフィックのベースラインを継続的に学習し、攻撃を示すトラフィック急増を検知した際には、<strong>緊急のチューニング作業なし</strong>で問題のあるクライアントのみを選択的に緩和します。
+        </div>
+        <p>GA 時点では、クライアント単位の異常な高リクエストレートを検知するルールと、Microsoft Threat Intelligence が疑わしいボットと分類した送信元を対象とするルールの 2 つが一般提供され、さらに国/地域単位でしきい値を学習する 2 つの geo ルールがプレビューとして追加されています。すべてのルールは既定で Log アクションのため、適用前にマッチ状況をログで確認できます。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">4 ルール</div>
+                <div class="stat-label">GA 2 種 + プレビュー 2 種 (geo)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">24〜36 時間</div>
+                <div class="stat-label">ベースライン確立までの目安</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3 段階</div>
+                <div class="stat-label">感度レベル (既定は medium)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">追加費用なし</div>
+                <div class="stat-label">Premium に WAF が含まれる</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>IP フィルタや geo フィルタ、固定レート制限などの静的コントロールは、多数の IP アドレスに分散したボットネットからの攻撃に追従できなかった</li>
+                    <li>レート制限のしきい値は管理者が手動で設計・調整する必要があり、攻撃発生時には緊急のチューニング作業が求められた</li>
+                    <li>各 IP が個別のしきい値を下回るように薄く分散された攻撃は、IP 単位のレート制限では検知が困難だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>プロファイル単位・クライアント単位のトラフィックベースラインを自動学習し、しきい値の手動設計が不要に (各ルールに 3 段階の感度レベル)</li>
+                    <li>Microsoft Threat Intelligence と連携し、疑わしいボットにはより厳格な既定しきい値を適用可能に</li>
+                    <li>WAF 例外 (exceptions) に対応し、ヘルスプローブや負荷テストなどの信頼済みトラフィックをルールセットから除外可能に</li>
+                    <li>プレビューの geo ルールにより、IP 単位のしきい値をすり抜ける高分散型攻撃を国/地域単位のしきい値で緩和可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Users([👤 正規ユーザー])
+    Botnet([🤖 分散ボットネット])
+
+    subgraph Edge["🌐 Azure Front Door Premium (エッジ)"]
+        subgraph WAF["🛡️ WAF ポリシー (評価順)"]
+            DDoS["1️⃣ HTTP DDoS ルールセット<br/>(最優先で評価・Allow カスタムルールでもバイパス不可)"]
+            Custom["2️⃣ カスタムルール"]
+            Managed["3️⃣ マネージドルールセット (DRS / Bot Manager)"]
+        end
+        Baseline[("📊 トラフィックベースライン<br/>プロファイル/クライアント/geo 単位で自動学習")]
+        Penalty["⛔ ペナルティボックス<br/>しきい値超過 IP に設定アクションを適用"]
+    end
+
+    Origin["🖥️ オリジン (Web アプリ)"]
+
+    Users --> DDoS
+    Botnet --> DDoS
+    DDoS <--> Baseline
+    DDoS -- "しきい値超過" --> Penalty
+    DDoS -- "正常トラフィック" --> Custom --> Managed --> Origin
+            </pre>
+        </div>
+        <p class="note">HTTP DDoS ルールセットは WAF 内で最初に評価され、学習済みベースラインを超過した送信元をペナルティボックスに入れて選択的に緩和します。正常なトラフィックは従来どおりカスタムルール、マネージドルールセットの順で評価されオリジンへ転送されます。</p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>1. トラフィックベースラインの自動学習</h4>
+                <ul>
+                    <li>ローリングウィンドウでプロファイル単位・クライアント IP 単位のベースラインを自動計算</li>
+                    <li>過去 7 日間のうち 50% 以上の期間トラフィックを受信しているプロファイルでは、24〜36 時間以内にベースラインを確立し急増の検知を開始</li>
+                    <li>1 つの WAF ポリシーを複数の Front Door プロファイルに割り当てた場合、しきい値はプロファイルごとに個別に計算される</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>2. 2 段階の検知設計</h4>
+                <ul>
+                    <li>グローバルなプロファイル単位のしきい値と、より狭いクライアント IP 単位 (geo ルールでは国/地域単位) のしきい値を学習</li>
+                    <li>プロファイル全体のしきい値を超過するまで、個別クライアントのしきい値は適用されない。これにより、少数クライアントの一時的なスパイクへの過剰反応を防ぐ</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">✅</div>
+            <div class="feature-content">
+                <h4>3. GA ルール 2 種</h4>
+                <div class="rule-grid">
+                    <div class="rule-card">
+                        <div class="rule-id">ルール 500100 <span class="badge badge-ga">GA</span></div>
+                        <h4>クライアントの高レートリクエスト異常検知</h4>
+                        <p>クライアント IP ごとのリクエストをベースライン化し、しきい値超過時に設定アクションを適用</p>
+                    </div>
+                    <div class="rule-card">
+                        <div class="rule-id">ルール 500110 <span class="badge badge-ga">GA</span></div>
+                        <h4>疑わしいボットの高レートリクエスト</h4>
+                        <p>Microsoft Threat Intelligence がボットと分類した IP に対し、他の IP より厳格な既定しきい値を適用。高リスクに分類されたボットはプロファイルしきい値の超過時に即時ブロックされる</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌍</div>
+            <div class="feature-content">
+                <h4>4. geo ルール 2 種 (プレビュー)</h4>
+                <div class="rule-grid">
+                    <div class="rule-card preview">
+                        <div class="rule-id">ルール 500310 <span class="badge badge-preview">Preview</span></div>
+                        <h4>国/地域ごとのしきい値学習</h4>
+                        <p>トラフィック量の多い国/地域ごとに個別のしきい値を学習</p>
+                    </div>
+                    <div class="rule-card preview">
+                        <div class="rule-id">ルール 500320 <span class="badge badge-preview">Preview</span></div>
+                        <h4>その他の国/地域の合算しきい値</h4>
+                        <p>それ以外のすべての国/地域の合算トラフィックに対して 1 つのしきい値を学習し、高分散型攻撃を緩和</p>
+                    </div>
+                </div>
+                <p>約 7 日間のトラフィックからベースラインを学習し、ピークを基準に定期的に再計算する</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎚️</div>
+            <div class="feature-content">
+                <h4>5. 3 段階の感度レベルと既定の Log アクション</h4>
+                <ul>
+                    <li>各ルールに高・中・低の感度レベル (高いほど低いしきい値) を設定可能。既定かつ推奨は中 (medium)</li>
+                    <li>ルールセット割り当て時は全ルールが Log アクション・中感度で有効化されるため、ログを確認してから各ルールのアクションを変更できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⛔</div>
+            <div class="feature-content">
+                <h4>6. ペナルティボックス</h4>
+                <ul>
+                    <li>プロファイルしきい値の超過後、ルール 500100/500110 の個別しきい値を超えたクライアント IP はペナルティボックスに入り、期間中はルールに設定したアクションが適用される</li>
+                    <li>期間終了後は通常評価に戻り、再度超過すれば再びペナルティボックスに入る</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔓</div>
+            <div class="feature-content">
+                <h4>7. WAF 例外 (exceptions) によるバイパス</h4>
+                <ul>
+                    <li>Allow アクションのカスタムルールでは HTTP DDoS ルールセットをバイパスできない (他の WAF 検査はバイパスされる)</li>
+                    <li>ヘルスプローブ、合成監視、負荷テスト、パートナー連携などの信頼済みトラフィックは WAF 例外で除外する。例外はルール単位またはルールセット全体にスコープ可能で、リモート IP アドレス・リクエスト URI・リクエストヘッダーでマッチングできる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>ルールセット名</td><td>Microsoft_HTTPDDoSRuleSet_1.0 (WAF ポリシーのマネージドルールとして表示)</td></tr>
+            <tr><td>対象 SKU</td><td>Azure Front Door Premium のみ</td></tr>
+            <tr><td>ルール数</td><td>4 (GA: 500100, 500110 / プレビュー: 500310, 500320)</td></tr>
+            <tr><td>評価順序</td><td>WAF 内で最初に評価 (カスタムルールより前)</td></tr>
+            <tr><td>既定アクション</td><td>Log (全ルール)</td></tr>
+            <tr><td>感度レベル</td><td>3 段階 (既定・推奨は medium)</td></tr>
+            <tr><td>ベースライン確立</td><td>過去 7 日間の 50% 以上トラフィック受信で 24〜36 時間以内に検知開始</td></tr>
+            <tr><td>しきい値の学習単位</td><td>プロファイル全体 + クライアント IP 単位 (geo ルールは国/地域単位)</td></tr>
+            <tr><td>国/地域不明の IP</td><td>Unknown country or region (ZZ) としてグループ化しベースライン化</td></tr>
+            <tr><td>信頼済みトラフィックの除外</td><td>WAF 例外 (リモート IP / リクエスト URI / リクエストヘッダーでマッチ)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ul style="padding-left: 20px;">
+            <li>Azure Front Door Premium プロファイル</li>
+            <li>プロファイルに関連付けられた WAF ポリシー</li>
+            <li>ベースライン学習のための十分なトラフィック履歴 (過去 7 日間の 50% 以上の期間でトラフィックを受信していること。不足している場合、ベースライン確立まで検知・緩和は行われない)</li>
+        </ul>
+
+        <h3>設定の流れ</h3>
+        <div class="steps">
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">WAF ポリシーのマネージドルールに <strong>Microsoft_HTTPDDoSRuleSet_1.0</strong> を割り当てる</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">割り当て直後は全ルールが <strong>Log アクション・中感度</strong>で有効化される</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">WAF ログでマッチ状況を確認し、アプリケーションに合わせて各ルールのアクション (Block など) と感度を調整する</div>
+            </div>
+            <div class="step">
+                <div class="step-number"></div>
+                <div class="step-content">ヘルスプローブや負荷テストなどの信頼済みトラフィックには <strong>WAF 例外</strong>を設定する (スコープは可能な限り狭くする)</div>
+            </div>
+        </div>
+
+        <h3>監視</h3>
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <div class="feature-content">
+                <ul>
+                    <li>ルール 500100/500110 のしきい値を IP が最初に超過した際にログエントリが記録され、WAF managed rule Match メトリックが増加する</li>
+                    <li><strong>Web Application Firewall Request count</strong> メトリックをルール名でフィルタしてマッチを監視できる (geo ルールは 500310/500320 で記録)</li>
+                    <li><strong>Web Application Firewall HTTPDDoSRuleset Is Active</strong> メトリックが <code>1</code> になると、学習が完了し防御可能な状態であることを示す</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Merits / Demerits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚖️</span>メリットとデメリット・制約事項</h2>
+        <div class="pros-cons">
+            <div class="pros-box">
+                <h4>👍 メリット — ビジネス面</h4>
+                <ul>
+                    <li>HTTP レイヤー DDoS によるアプリケーションダウンタイムのリスクを低減し、可用性を維持できる</li>
+                    <li>攻撃発生時の緊急チューニング作業が不要になり、運用負荷とインシデント対応コストを削減できる</li>
+                    <li>Front Door Premium に WAF が追加費用なしで含まれるため、追加コストなしで利用を開始できる</li>
+                </ul>
+                <h4 style="margin-top: 16px;">👍 メリット — 技術面</h4>
+                <ul>
+                    <li>しきい値の手動設計が不要で、トラフィックパターンの変化にもベースラインの定期再計算で追従する</li>
+                    <li>2 段階設計により、正常なトラフィックスパイクへの誤検知を抑えつつ攻撃時のみ選択的に緩和する</li>
+                    <li>Microsoft Threat Intelligence のボット分類を活用し、疑わしい送信元により厳格なしきい値を適用できる</li>
+                    <li>既定が Log アクションのため、Block 適用前に影響範囲をログで検証できる</li>
+                </ul>
+            </div>
+            <div class="cons-box">
+                <h4>⚠️ デメリット・制約事項</h4>
+                <ul>
+                    <li>Azure Front Door <strong>Premium</strong> 専用であり、Standard や Front Door (classic) では利用できない</li>
+                    <li>トラフィック履歴が不足しているプロファイル (過去 7 日間の 50% 未満) では、ベースラインが確立されるまで検知・緩和が行われない</li>
+                    <li>geo ルール (500310/500320) はプレビューであり、プレビューの追加利用条件が適用される</li>
+                    <li>geo ルールは国/地域単位でアクションを適用するため、Block に設定するとその国/地域の正規ユーザーにも影響する。公式ドキュメントでは Log から開始し、Block より JavaScript チャレンジを優先することが推奨されている</li>
+                    <li>Allow アクションのカスタムルールではこのルールセットをバイパスできないため、信頼済みトラフィックの除外には WAF 例外の設定が別途必要</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🛒 ユースケース 1: 分散ボットネットによる HTTP フラッドからの EC サイト保護</h4>
+            <div class="usecase-item"><span class="label">シナリオ</span>セール期間中の EC サイトが、多数の IP に分散したボットネットから HTTP フラッド攻撃を受ける。固定レート制限では正規のトラフィック急増と攻撃の区別が難しい。</div>
+            <div class="usecase-item"><span class="label">実装</span>Front Door Premium の WAF ポリシーに HTTP DDoS ルールセットを割り当て、ログで検証後にルール 500100/500110 を Block に変更する。正規のピークはベースラインに反映されるため、攻撃による異常な急増のみが緩和される。</div>
+            <div class="usecase-item"><span class="label">効果</span>緊急チューニングなしで攻撃クライアントのみを選択的に遮断し、セール期間中の可用性を維持できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🌐 ユースケース 2: 高分散型攻撃への geo ルール活用 (プレビュー)</h4>
+            <div class="usecase-item"><span class="label">シナリオ</span>各 IP が個別しきい値を下回るよう広範囲の国/地域に薄く分散された攻撃を受けており、IP 単位のルールでは検知できない。</div>
+            <div class="usecase-item"><span class="label">実装</span>プレビューの geo ルール (500310/500320) を Log アクションで有効化してマッチ状況を確認し、必要に応じて JavaScript チャレンジを設定する。地域キャンペーンなどで正規のスパイクが見込まれる場合は、事前に該当ルールの感度を下げる。</div>
+            <div class="usecase-item"><span class="label">効果</span>国/地域単位のしきい値により、IP 単位では検知できない高分散型攻撃を緩和しつつ、正規ブラウザーのユーザーはチャレンジを通過できる。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>HTTP DDoS ルールセットは Azure Front Door Premium の WAF 機能として提供されます。料金ページには、Premium には WAF と Private Link が追加費用なしで含まれると記載されており、本ルールセットに対する個別課金の記載はありません。</p>
+        <table>
+            <tr><th>項目</th><th>料金 (確認できた範囲)</th></tr>
+            <tr><td>Azure Front Door Premium 基本料金</td><td>$330/月 (参考: Standard は $35/月)</td></tr>
+            <tr><td>リクエスト料金 (Premium、最初の 2.5 億リクエスト)</td><td>$0.015/1 万リクエスト (Zone 1 北米 / Zone 6 欧州) ほかゾーン別単価</td></tr>
+            <tr><td>WAF / Private Link</td><td>Premium に追加費用なしで含まれる</td></tr>
+            <tr><td>WAF アドオン (CAPTCHA)</td><td>$0.4/1,000 CAPTCHA セッション</td></tr>
+        </table>
+        <p class="note">このほかエッジからクライアントへのデータ転送料金などが発生します。最新の詳細は <a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">Azure Front Door 料金ページ</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗺️</span>利用可能リージョン</h2>
+        <div class="highlight-box">
+            Azure Front Door は<strong>グローバルサービス</strong>であり、WAF ポリシーは世界中の Microsoft エッジロケーションにレプリケートされます。GA の提供時期は <strong>2026 年 10 月</strong>です。
+        </div>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🛡️ Azure Web Application Firewall (Front Door)</h4>
+                <p>本ルールセットが追加された WAF 本体。カスタムルール、Default Rule Set (DRS)、Bot Manager ルールセットと組み合わせて多層防御を構成する</p>
+            </div>
+            <div class="related-card">
+                <h4>🔍 Microsoft Threat Intelligence</h4>
+                <p>ルール 500110 のボット分類に利用される脅威インテリジェンスフィード</p>
+            </div>
+            <div class="related-card">
+                <h4>🔓 WAF 例外 (exceptions)</h4>
+                <p>信頼済みトラフィックを本ルールセットから除外する仕組み。Allow カスタムルールでは代替できない</p>
+            </div>
+            <div class="related-card">
+                <h4>🧩 JavaScript チャレンジ</h4>
+                <p>geo ルールのアクションとして推奨される緩和手段。正規ブラウザーを通過させつつスクリプト化されたクライアントを遮断する</p>
+            </div>
+            <div class="related-card">
+                <h4>🌊 Azure DDoS Protection</h4>
+                <p>ネットワークレイヤー (L3/L4) の DDoS 保護。本ルールセット (L7) と組み合わせた多層的な DDoS 対策が推奨されている</p>
+            </div>
+            <div class="related-card">
+                <h4>📐 WAF ポリシーのプロファイル/ルートレベル割り当て</h4>
+                <p>2026-10-27 に GA が発表された機能。プロファイルレベルのベースラインポリシーに本ルールセットを含め、ルートレベルで個別制御を重ねる構成が可能</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Front Door Premium の WAF に、自動適応型のレイヤー 7 DDoS 保護である <strong>HTTP DDoS ルールセット</strong>が GA しました。トラフィックベースラインの自動学習と 2 段階の検知設計により、静的なレート制限では対応が難しかった分散ボットネット攻撃を、緊急チューニングなしで選択的に緩和できます。</p>
+            <p style="margin-top: 10px;">Front Door Premium を利用中であれば<strong>追加費用なし</strong>で有効化できるため、まずは既定の <strong>Log アクション</strong>でルールセットを割り当ててマッチ状況を検証し、信頼済みトラフィックへの WAF 例外設定を整えたうえで <strong>Block への切り替え</strong>を検討することを推奨します。高分散型攻撃が懸念される場合は、プレビューの <strong>geo ルール</strong>の評価も視野に入れると良いでしょう。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">#Azure Front Door</span>
+            <span class="tag">#Web Application Firewall</span>
+            <span class="tag">#Networking</span>
+            <span class="tag">#Security</span>
+            <span class="tag">#DDoS</span>
+            <span class="tag">#GA</span>
+        </div>
+    </section>
+
+    <!-- ===== References / Footer ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=578681" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/web-application-firewall/afds/http-ddos-ruleset" target="_blank" rel="noopener">HTTP DDoS ruleset - Microsoft Learn</a></li>
+            <li><a href="https://learn.microsoft.com/azure/web-application-firewall/afds/afds-overview" target="_blank" rel="noopener">Azure Web Application Firewall on Azure Front Door - Microsoft Learn</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">Azure Front Door 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=578681" target="_blank" rel="noopener">Azure Updates - Generally Available: HTTP DDoS ruleset for Azure Front Door Premium WAF</a></p>
+        <p>ソースレポート: reports/2026/2026-10-29-front-door-waf-http-ddos-ruleset.md (Azure News Summary)</p>
+        <p>作成日: 2026-10-29 | 本インフォグラフィックは Azure 公式情報をもとに自動生成されています</p>
+    </footer>
+
+</div>
+</body>
+</html>
