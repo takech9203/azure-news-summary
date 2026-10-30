@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SQL Database: データベースレベル マネージド ID (FIC 対応) の Database Scoped Credential サポート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+
+    /* Database category color */
+    --db-yellow: #FFB900;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--ms-blue-900) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "🗄️";
+    position: absolute;
+    right: 24px;
+    bottom: -16px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+.hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+.hero h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+.hero .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+    max-width: 760px;
+}
+.hero .date {
+    margin-top: 16px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 20px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--ms-blue-200);
+}
+.section-title .icon {
+    font-size: 26px;
+    background: var(--ms-blue-100);
+    border-radius: 10px;
+    width: 46px;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 22px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--ms-blue-800); }
+
+.keyword {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+code.inline {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.9em;
+    color: var(--ms-blue-900);
+    word-break: break-all;
+    white-space: normal;
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Tables ===== */
+.table-wrapper { overflow-x: auto; margin: 16px 0; }
+table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+table.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+    white-space: nowrap;
+}
+table.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+table.spec-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+table.spec-table td:first-child {
+    font-weight: 700;
+    color: var(--ms-blue-900);
+    white-space: nowrap;
+}
+table.compare-table td:first-child { white-space: normal; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+.diagram-caption {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Steps ===== */
+.step-list { counter-reset: step; list-style: none; margin: 12px 0; }
+.step-list li {
+    position: relative;
+    padding: 10px 0 10px 48px;
+    font-size: 14px;
+}
+.step-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* ===== Benefit / caution lists ===== */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.benefit-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 10px;
+    padding: 18px;
+}
+.benefit-card h4 {
+    color: var(--ms-blue-800);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.benefit-card ul { padding-left: 20px; font-size: 14px; }
+.benefit-card li { margin: 8px 0; }
+
+.caution-box {
+    background: #FFF8E6;
+    border: 2px solid var(--ms-yellow);
+    border-radius: 10px;
+    padding: 18px;
+    margin: 16px 0;
+}
+.caution-box h4 {
+    color: var(--ms-orange);
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+.caution-box ul { padding-left: 20px; font-size: 14px; }
+.caution-box li { margin: 7px 0; }
+
+.warning-box {
+    background: #FFEBEE;
+    border-left: 4px solid var(--ms-red);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.warning-box strong { color: var(--ms-red); }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    color: var(--ms-purple);
+    font-size: 17px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-card .scenario,
+.usecase-card .effect {
+    font-size: 14px;
+    margin: 10px 0;
+}
+.usecase-card .label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--ms-purple);
+    border-radius: 4px;
+    padding: 1px 8px;
+    margin-right: 6px;
+}
+.usecase-card .label.effect-label { background: var(--ms-green); }
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+}
+.related-card h5 {
+    color: var(--azure-blue);
+    font-size: 14.5px;
+    margin-bottom: 6px;
+}
+
+/* ===== Links ===== */
+.link-list { list-style: none; }
+.link-list li {
+    margin: 8px 0;
+    padding-left: 26px;
+    position: relative;
+    font-size: 14px;
+    word-break: break-all;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== Summary & footer ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+.tags { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-blue-300);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    padding: 3px 10px;
+    border-radius: 12px;
+}
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+footer a { word-break: break-all; }
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .hero h1 { font-size: 22px; }
+    .before-after, .two-col { grid-template-columns: 1fr; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="hero-meta">
+            <span class="service-badge">🗄️ Azure SQL Database</span>
+            <span class="badge badge-preview">In Preview (Public Preview)</span>
+        </div>
+        <h1>データベースレベル マネージド ID (FIC 対応) の<br>Database Scoped Credential サポート</h1>
+        <p class="subtitle">Public Preview: Support database-level managed identity (including FIC) in Create Database Scoped Credential T-SQL — データベース単位の UAMI で外部ストレージにシークレットレス認証</p>
+        <p class="date">📅 リリース日: 2026-10-30</p>
+    </header>
+
+    <!-- ===== Key stats ===== -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-value">1 DB = 1 UAMI</div>
+            <div class="stat-label">データベースごとに個別の ID</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">シークレット 0</div>
+            <div class="stat-label">SAS もマスターキーも不要</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">クロステナント</div>
+            <div class="stat-label">FIC で別テナントの<br>ストレージにアクセス</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">全リージョン</div>
+            <div class="stat-label">全サービスレベルで<br>プレビュー利用可能</div>
+        </div>
+    </div>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>
+            Azure SQL Database で、<span class="keyword">データベース単位のユーザー割り当てマネージド ID (UAMI)</span> を
+            <code class="inline">CREATE DATABASE SCOPED CREDENTIAL</code> T-SQL で利用できる機能が Public Preview になりました。
+            各データベースに個別の UAMI を割り当て、<span class="keyword">外部テーブル (external table)</span> や
+            <code class="inline">OPENROWSET</code> を通じて Azure Blob Storage / ADLS Gen2 上のファイル
+            (Parquet、CSV、Delta) をクエリする際の認証に使用できます。SAS トークンの保存や、サーバーレベルの共有 ID への依存が不要になります。
+        </p>
+        <div class="highlight-box">
+            さらに <strong>Federated Identity Credential (FIC)</strong> にも対応し、データベースとは異なる Microsoft Entra テナントにあるストレージアカウントへも、
+            <strong>マルチテナントアプリケーション登録を介したフェデレーション認証</strong>でアクセスできます。
+        </div>
+        <p>
+            データベースごとに個別の ID とストレージ権限を割り当てることで、「人事データベースには人事ファイルのみ、財務データベースには財務ファイルのみ」といった形で、
+            <span class="keyword">同一論理サーバー上のデータベース間でアクセスを分離</span>できます。
+            シークレット管理の負担を減らしつつ、使い慣れた T-SQL による外部データクエリをそのまま利用できます。
+        </p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>マネージド ID は論理サーバー単位 (<code class="inline">IDENTITY = 'MANAGED IDENTITY'</code>) でしか使えず、同一論理サーバー上の<strong>すべてのデータベースが同じ ID・同じストレージアクセス権を共有</strong></li>
+                    <li>データベースごとにストレージアクセスを分離するには <strong>SAS トークン</strong>が必要で、シークレットの保存・ローテーションなどの管理負担が発生</li>
+                    <li>サーバーレベルのマネージド ID では<strong>別テナントのストレージアクセスは非サポート</strong>で、SAS で代替する必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li><code class="inline">IDENTITY = 'DATABASE MANAGED IDENTITY'</code> により、データベース単位の UAMI でストレージに認証でき、<strong>各データベースを必要最小限のデータアクセスに限定</strong></li>
+                    <li><code class="inline">IDENTITY = 'DATABASE FEDERATED CLIENT IDENTITY'</code> により、<strong>FIC を介したクロステナントのストレージアクセス</strong>が可能に</li>
+                    <li>資格情報に<strong>シークレット不要・データベースマスターキーも不要</strong>。侵害時の影響範囲 (blast radius) が単一データベースに限定</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph Server["🖥️ Azure SQL Database 論理サーバー"]
+            HRDB[("💼 HR データベース<br/>+ UAMI (HR 用)")]
+            FINDB[("💰 財務データベース<br/>+ UAMI (財務用)")]
+        end
+        HRCRED["🔑 Database Scoped Credential<br/>DATABASE MANAGED IDENTITY"]
+        FINCRED["🔑 Database Scoped Credential<br/>DATABASE FEDERATED CLIENT IDENTITY"]
+        HRBLOB[("📦 Blob Storage<br/>HR ファイル (同一テナント)")]
+        FINADLS[("📦 ADLS Gen2<br/>財務ファイル (別テナント)")]
+    end
+    HRDB -->|"OPENROWSET / 外部テーブル"| HRCRED
+    FINDB -->|"OPENROWSET / 外部テーブル"| FINCRED
+    HRCRED -->|"Storage Blob Data Reader"| HRBLOB
+    FINCRED -->|"FIC + マルチテナントアプリ"| FINADLS
+            </pre>
+        </div>
+        <p class="diagram-caption">
+            各データベースが自身に割り当てられた UAMI を Database Scoped Credential 経由で使用し、外部テーブル / OPENROWSET でストレージ上のファイルにアクセスする構成。
+            HR データベースは HR ファイルのみ、財務データベースは財務ファイルのみと、同一論理サーバー上でもアクセスを分離できます。
+        </p>
+    </section>
+
+    <!-- ===== Key features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🆔</div>
+            <div class="feature-content">
+                <h4>1. データベースレベルのマネージド ID (<code class="inline">DATABASE MANAGED IDENTITY</code>)</h4>
+                <p>データベース (論理サーバーではなく) に UAMI を割り当て、そのデータベース自身の ID としてストレージに認証する。ストレージアカウントがデータベースと同一の Microsoft Entra テナントにある場合に使用。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>2. フェデレーションクライアント ID (<code class="inline">DATABASE FEDERATED CLIENT IDENTITY</code>)</h4>
+                <p>ストレージアカウントが別テナントにある場合に、Federated Identity Credential (FIC) を介してアクセス。マルチテナントアプリケーション登録に FIC を追加し、データベースの UAMI を信頼させ、ストレージ側テナントでアプリのサービスプリンシパルに権限を付与する。クロステナントの TDE カスタマーマネージドキー (CMK) と同じパターン。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>3. シークレットレス認証</h4>
+                <p>資格情報にシークレットは不要で、データベースマスターキーも不要。エンジンがクエリ実行時にデータベースに割り当てられた ID を解決する。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>4. データ仮想化との統合</h4>
+                <p><code class="inline">CREATE EXTERNAL TABLE</code> および <code class="inline">DATA_SOURCE</code> を指定した <code class="inline">OPENROWSET</code> で、Blob Storage (<code class="inline">abs://</code>) / ADLS Gen2 (<code class="inline">adls://</code>) 上の Parquet、CSV、Delta ファイルをクエリできる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrapper">
+            <table class="spec-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>対象サービス</td><td>Azure SQL Database のみ (SQL Managed Instance、SQL Server、Azure Synapse Analytics は非対応)</td></tr>
+                <tr><td>ID の種類</td><td>ユーザー割り当てマネージド ID (UAMI) のみ。システム割り当て ID は論理サーバーにスコープされるため不可</td></tr>
+                <tr><td>ID の数</td><td>1 データベースにつき 1 つの UAMI (論理サーバーは複数割り当て可能だが、データベースレベルは 1 つのみ)</td></tr>
+                <tr><td>資格情報の構文</td><td><code class="inline">IDENTITY = 'DATABASE MANAGED IDENTITY'</code> (同一テナント) / <code class="inline">IDENTITY = 'DATABASE FEDERATED CLIENT IDENTITY'</code> (クロステナント)</td></tr>
+                <tr><td>対象機能</td><td>データ仮想化のみ (<code class="inline">CREATE EXTERNAL TABLE</code>、<code class="inline">OPENROWSET</code> + <code class="inline">DATA_SOURCE</code>)。<code class="inline">sp_invoke_external_rest_endpoint</code> などは対象外</td></tr>
+                <tr><td>対象ストレージ</td><td>Azure Blob Storage、ADLS Gen2</td></tr>
+                <tr><td>マスターキー</td><td>不要 (シークレットを持たないため)</td></tr>
+                <tr><td>作成場所</td><td>ユーザーデータベースのみ (<code class="inline">master</code> データベースでは非サポート)</td></tr>
+                <tr><td>サーバーレベル資格情報との共存</td><td>同一論理サーバー・同一データベース内で共存可能</td></tr>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">⚖️ サーバーレベル ID との比較</h3>
+        <div class="table-wrapper">
+            <table class="spec-table compare-table">
+                <tr><th>特性</th><th>サーバーレベル マネージド ID</th><th>データベースレベル マネージド ID</th></tr>
+                <tr><td>ID のスコープ</td><td>論理サーバー</td><td>単一データベース</td></tr>
+                <tr><td>資格情報の構文</td><td><code class="inline">IDENTITY = 'MANAGED IDENTITY'</code></td><td><code class="inline">IDENTITY = 'DATABASE MANAGED IDENTITY'</code></td></tr>
+                <tr><td>クロステナントアクセス</td><td>❌ 非サポート (SAS で代替)</td><td>✅ FIC + <code class="inline">DATABASE FEDERATED CLIENT IDENTITY</code> でサポート</td></tr>
+                <tr><td>ストレージ RBAC の粒度</td><td>サーバー上の全データベースで 1 つの ID</td><td>データベースごとに 1 つの ID</td></tr>
+                <tr><td>公開範囲</td><td>サーバー上の全データベースがアクセスを共有</td><td>当該データベースのみに限定</td></tr>
+                <tr><td>ID の種類</td><td>システム割り当て / ユーザー割り当て</td><td>ユーザー割り当てのみ</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 class="subsection-title">📝 前提条件</h3>
+        <ol class="step-list">
+            <li>論理サーバー上の Azure SQL Database (すべてのサービスレベル・すべてのリージョンで利用可能)</li>
+            <li>同一サブスクリプション内のユーザー割り当てマネージド ID</li>
+            <li>対象ストレージアカウントでロールを割り当てる権限 (Owner または User Access Administrator など)</li>
+            <li>クエリ対象のファイルを保持する Azure Blob Storage または ADLS Gen2 アカウント</li>
+        </ol>
+        <div class="warning-box">
+            <strong>⚠️ 注意</strong>: データベースレベルのカスタマーマネージドキー (CMK) を使用している場合、そのデータベースには既にデータベースレベル ID (クロステナントキーの場合は Federated Client ID も) が設定されています。
+            本機能は同じ設定を使用するため、新しい ID を割り当てるのではなく、<strong>既存の ID にストレージアクセスを付与</strong>してください。
+            異なる ID を割り当てると、暗号化キーへのアクセスが失われる可能性があります。
+        </div>
+
+        <h3 class="subsection-title">🖥️ Azure CLI + T-SQL (同一テナント)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">UAMI の作成とデータベースへの割り当て</span></div>
+            <pre><code class="language-bash"># 1. ユーザー割り当てマネージド ID を作成
+az identity create \
+    --name &lt;identity-name&gt; \
+    --resource-group &lt;resource-group&gt; \
+    --location &lt;region&gt;
+
+# 2. ID をデータベースに割り当てる (論理サーバーではなくデータベースに対して)
+az sql db update \
+    --resource-group &lt;resource-group&gt; \
+    --server &lt;server-name&gt; \
+    --name &lt;database-name&gt; \
+    --assign-identity \
+    --user-assigned-identity-id &lt;identity-resource-id&gt;
+
+# 3. ストレージアカウントで ID に Storage Blob Data Reader ロールを付与 (Portal / CLI)</code></pre>
+        </div>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">sql</span><span class="code-desc">資格情報・外部データソースの作成とクエリ</span></div>
+            <pre><code class="language-sql">-- 4. ユーザーデータベースに接続して資格情報を作成 (シークレット・マスターキー不要)
+CREATE DATABASE SCOPED CREDENTIAL MyDBIdentityCred
+WITH IDENTITY = 'DATABASE MANAGED IDENTITY';
+
+-- 5. 外部データソースを作成 (Blob Storage は abs://、ADLS Gen2 は adls://)
+CREATE EXTERNAL DATA SOURCE MyExternalStorage
+WITH (
+    LOCATION = 'abs://&lt;container&gt;@&lt;storage-account&gt;.blob.core.windows.net',
+    CREDENTIAL = MyDBIdentityCred
+);
+
+-- 6. OPENROWSET でアドホックにクエリ
+SELECT TOP 100 *
+FROM OPENROWSET(
+    BULK 'sales/2026/*.parquet',
+    DATA_SOURCE = 'MyExternalStorage',
+    FORMAT = 'parquet'
+) AS externalData;</code></pre>
+        </div>
+
+        <h3 class="subsection-title">🌐 クロステナント (FIC) の場合</h3>
+        <ol class="step-list">
+            <li>データベース側テナントでマルチテナントアプリケーションを登録し、Application (client) ID を控える</li>
+            <li>アプリ登録に Federated Credential を追加し、データベースの UAMI を信頼させる (Subject は UAMI の Object (principal) ID、Audience は <code class="inline">api://AzureADTokenExchange</code>)</li>
+            <li>ストレージ側テナントで管理者がアプリに同意し、作成されたサービスプリンシパルに Storage Blob Data Reader を付与</li>
+            <li>データベースに UAMI を割り当て、Federated Client ID を設定</li>
+        </ol>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">Federated Client ID の設定</span></div>
+            <pre><code class="language-bash">az sql db update \
+    --resource-group &lt;resource-group&gt; \
+    --server &lt;server-name&gt; \
+    --name &lt;database-name&gt; \
+    --assign-identity \
+    --user-assigned-identity-id &lt;identity-resource-id&gt; \
+    --federated-client-id &lt;application-client-id&gt;</code></pre>
+        </div>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">sql</span><span class="code-desc">クロステナント用資格情報の作成</span></div>
+            <pre><code class="language-sql">CREATE DATABASE SCOPED CREDENTIAL MyCrossTenantCred
+WITH IDENTITY = 'DATABASE FEDERATED CLIENT IDENTITY';</code></pre>
+        </div>
+
+        <h3 class="subsection-title">🖱️ Azure Portal</h3>
+        <ol class="step-list">
+            <li>SQL データベースの <strong>Security</strong> &gt; <strong>Identity</strong> を開く</li>
+            <li><strong>User-Assigned Managed Identity</strong> で <strong>Add</strong> を選択し、作成した ID を追加して <strong>Save</strong></li>
+            <li>クロステナントの場合は <strong>Federated client identity</strong> でアプリケーションを選択して <strong>Save</strong></li>
+        </ol>
+    </section>
+
+    <!-- ===== Benefits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="two-col">
+            <div class="benefit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>同一論理サーバー上のデータベース間でデータアクセスを分離でき、部門別・テナント別のデータガバナンス要件 (<strong>最小権限の原則</strong>) を満たしやすくなる</li>
+                    <li>SAS トークンの発行・保存・ローテーションといった<strong>シークレット管理の運用負担とリスクを削減</strong></li>
+                    <li>ID が侵害された場合の<strong>影響範囲が単一データベースに限定</strong>される</li>
+                </ul>
+            </div>
+            <div class="benefit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>資格情報にシークレットもデータベースマスターキーも不要で、<strong>構成がシンプル</strong></li>
+                    <li>既存の T-SQL (external table / OPENROWSET) をそのまま使用でき、<strong>アプリケーション変更が最小限</strong></li>
+                    <li>サーバーレベルではできなかった<strong>クロステナントのストレージアクセスに FIC で対応</strong></li>
+                    <li>サーバーレベル資格情報と同一データベース内で共存できるため、<strong>段階的な移行が可能</strong></li>
+                    <li>データベースレベル CMK と同じ ID 割り当て機構を使うため、既に利用している場合は<strong>設定パターンが共通</strong></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Limitations ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <h4>知っておくべき制約</h4>
+            <ul>
+                <li>Public Preview であり、<a href="https://azure.microsoft.com/support/legal/preview-supplemental-terms/" target="_blank" rel="noopener">Microsoft Azure プレビューの追加利用条件</a>が適用される</li>
+                <li>Azure SQL Database のみ対応。<strong>SQL Managed Instance、SQL Server、Azure Synapse Analytics では使用不可</strong></li>
+                <li><strong>ユーザー割り当てマネージド ID のみ</strong>対応 (システム割り当て ID は不可)</li>
+                <li>1 データベースにつき <strong>1 つの UAMI</strong> しか割り当てられない</li>
+                <li><strong>アウトバウンド認証</strong> (データベースからストレージへの認証) 専用。ユーザーやアプリケーションからデータベースへの認証方法は変わらない</li>
+                <li>このプレビューの対象は<strong>データ仮想化のみ</strong> (<code class="inline">CREATE EXTERNAL TABLE</code>、<code class="inline">OPENROWSET</code> + <code class="inline">DATA_SOURCE</code>)。<code class="inline">sp_invoke_external_rest_endpoint</code> などの他のアウトバウンド機能は対象外</li>
+                <li><code class="inline">master</code> データベースでは資格情報を作成できない</li>
+                <li><strong>geo レプリケーション / フェールオーバーグループ</strong>利用時は、セカンダリ側のデータベースにも同じ UAMI の割り当てとストレージ権限の付与が事前に必要 (未設定の場合、フェールオーバー後にクエリが失敗する)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🏢 ユースケース 1: 同一論理サーバー上の部門別データベースのアクセス分離</h4>
+            <p class="scenario"><span class="label">シナリオ</span>
+                1 つの論理サーバー上に人事 (HR) データベースと財務データベースをホストしており、それぞれが Blob Storage 上の部門別ファイル (Parquet) を外部テーブルで参照する。
+                従来のサーバーレベル ID では両データベースが同じストレージアクセス権を共有してしまうため、部門間のデータ分離要件を満たせなかった。
+            </p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">HR データベース用の UAMI を作成して割り当て</span></div>
+                <pre><code class="language-bash"># HR データベース用の UAMI を作成して割り当て
+az identity create --name hr-db-identity --resource-group rg-data --location japaneast
+az sql db update --resource-group rg-data --server sql-corp --name hr-db \
+    --assign-identity --user-assigned-identity-id &lt;hr-identity-resource-id&gt;
+# HR 用ストレージコンテナーにのみ Storage Blob Data Reader を付与</code></pre>
+            </div>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">sql</span><span class="code-desc">hr-db 内で実行</span></div>
+                <pre><code class="language-sql">-- hr-db 内で実行
+CREATE DATABASE SCOPED CREDENTIAL HRStorageCred
+WITH IDENTITY = 'DATABASE MANAGED IDENTITY';</code></pre>
+            </div>
+            <p class="effect"><span class="label effect-label">効果</span>
+                HR データベースは HR ファイルのみ、財務データベースは財務ファイルのみにアクセス可能となり、SAS トークンなしで最小権限のデータ分離を実現できる。
+            </p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🤝 ユースケース 2: 別テナントのパートナーデータを FIC 経由でクエリ</h4>
+            <p class="scenario"><span class="label">シナリオ</span>
+                パートナー企業の Entra テナントにある ADLS Gen2 上のデータを、自社テナントの Azure SQL Database から外部テーブルで参照したい。
+                従来、クロステナントアクセスはマネージド ID では不可能で SAS トークンが必要だった。
+            </p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">sql</span><span class="code-desc">クロステナント資格情報と外部データソース</span></div>
+                <pre><code class="language-sql">CREATE DATABASE SCOPED CREDENTIAL MyCrossTenantCred
+WITH IDENTITY = 'DATABASE FEDERATED CLIENT IDENTITY';
+
+CREATE EXTERNAL DATA SOURCE PartnerStorage
+WITH (
+    LOCATION = 'adls://&lt;container&gt;@&lt;storage-account&gt;.dfs.core.windows.net',
+    CREDENTIAL = MyCrossTenantCred
+);</code></pre>
+            </div>
+            <p class="effect"><span class="label effect-label">効果</span>
+                マルチテナントアプリ + FIC によるフェデレーション認証で、シークレットレスにクロステナントのデータ共有を実現できる。
+            </p>
+        </div>
+    </section>
+
+    <!-- ===== Pricing / Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金・利用可能リージョン</h2>
+        <div class="two-col">
+            <div class="benefit-card">
+                <h4>💵 料金</h4>
+                <p style="font-size:14px;">
+                    本機能自体に追加料金に関する記載はありません。Azure SQL Database およびストレージの料金は以下を参照してください。
+                </p>
+                <ul>
+                    <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/" target="_blank" rel="noopener">Azure SQL Database の料金</a></li>
+                </ul>
+            </div>
+            <div class="benefit-card">
+                <h4>🌏 利用可能リージョン</h4>
+                <p style="font-size:14px;">
+                    <strong>すべての Azure リージョン・すべての Azure SQL Database サービスレベル</strong>でプレビューを利用できます。
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Related services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>📦 Azure Blob Storage / ADLS Gen2</h5>
+                <p>外部テーブル / OPENROWSET のクエリ対象となるストレージ。ID には Storage Blob Data Reader ロール (ADLS Gen2 ではディレクトリ単位の ACL も利用可) を付与する。</p>
+            </div>
+            <div class="related-card">
+                <h5>🪪 Microsoft Entra ID (マネージド ID / Workload Identity Federation)</h5>
+                <p>UAMI の作成と、クロステナント時のマルチテナントアプリ登録 + Federated Identity Credential の構成に使用する。</p>
+            </div>
+            <div class="related-card">
+                <h5>🔐 データベースレベル CMK (TDE)</h5>
+                <p>同じデータベースレベル ID / Federated Client ID の割り当て機構を使用する。既に利用中の場合は既存 ID にストレージ権限を付与する。</p>
+            </div>
+            <div class="related-card">
+                <h5>📊 データ仮想化 (Data Virtualization)</h5>
+                <p>本機能が対象とする、external table / OPENROWSET による Parquet・CSV・Delta ファイルのクエリ機能。</p>
+            </div>
+            <div class="related-card">
+                <h5>🔄 フェールオーバーグループ / アクティブ geo レプリケーション</h5>
+                <p>セカンダリ側にも同一の ID 割り当てとストレージ権限が必要。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📌</span>まとめ</h2>
+        <div class="summary-box">
+            <p>
+                Azure SQL Database の<strong>データベースレベル マネージド ID</strong> が Database Scoped Credential T-SQL でサポートされ (Public Preview)、
+                データベース単位の UAMI で Blob Storage / ADLS Gen2 上の外部データに<strong>シークレットレスで認証</strong>できるようになりました。
+                従来のサーバーレベル ID では同一論理サーバー上の全データベースがストレージアクセスを共有していましたが、本機能により<strong>データベースごとの最小権限のアクセス分離</strong>と、
+                <strong>FIC によるクロステナントアクセス</strong>が可能になります。
+                マルチテナント SaaS や部門別データベースで SAS トークンによる外部データアクセスを運用している場合は、プレビューでの検証を推奨します。
+                なお、現時点の対象は<strong>データ仮想化のみ</strong>で、geo レプリケーション構成では<strong>セカンダリ側への ID 設定が別途必要</strong>な点に注意してください。
+            </p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">Managed Identity</span>
+            <span class="tag">Database Scoped Credential</span>
+            <span class="tag">Federated Identity Credential</span>
+            <span class="tag">Data Virtualization</span>
+            <span class="tag">OPENROWSET</span>
+            <span class="tag">External Table</span>
+            <span class="tag">Blob Storage</span>
+            <span class="tag">ADLS Gen2</span>
+            <span class="tag">Security</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- ===== References / Footer ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=577491" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/database-level-managed-identity" target="_blank" rel="noopener">Use database-level managed identity with Azure SQL Database (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/sql/t-sql/statements/create-database-scoped-credential-transact-sql" target="_blank" rel="noopener">CREATE DATABASE SCOPED CREDENTIAL (T-SQL)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/data-virtualization-overview" target="_blank" rel="noopener">Data virtualization with Azure SQL Database</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/authentication-azure-ad-user-assigned-managed-identity" target="_blank" rel="noopener">Managed identities in Microsoft Entra for Azure SQL</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/" target="_blank" rel="noopener">Azure SQL Database の料金</a></li>
+        </ul>
+    </section>
+
+    <footer>
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=577491" target="_blank" rel="noopener">Azure Updates — Public Preview: Support database-level managed identity (including FIC) in Create Database Scoped Credential T-SQL</a></p>
+        <p>リリース日: 2026-10-30 | ステータス: In preview (Public Preview) | インフォグラフィック生成日: 2026-10-30</p>
+        <p>Generated by Azure News Summary</p>
+    </footer>
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

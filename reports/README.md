@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-10-30 - Azure SQL Database: データベースレベル マネージド ID (FIC 対応) の Database Scoped Credential サポート (Public Preview)](2026/2026-10-30-sql-database-database-level-managed-identity.md)
 - [2026-10-29 - Azure Front Door: Premium WAF 向け HTTP DDoS ルールセットの一般提供開始](2026/2026-10-29-front-door-waf-http-ddos-ruleset.md)
 - [2026-10-29 - Azure MCP Server: バージョン 3.0 が一般提供 (GA) 開始](2026/2026-10-29-azure-mcp-server-3-0.md)
 - [2026-10-29 - Azure Confidential VM: Large OS Disk Encryption (LOSDE) for Confidential VM Migrations](2026/2026-10-29-confidential-vm-large-os-disk-encryption.md)
