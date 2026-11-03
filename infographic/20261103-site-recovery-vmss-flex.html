@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Site Recovery: VMSS Flex サポート強化が GA | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 32px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::after {
+    content: "🔄";
+    position: absolute;
+    right: 24px;
+    bottom: -10px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+
+.hero .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.hero .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.hero .date-info {
+    margin-top: 16px;
+    font-size: 14px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    opacity: 0.95;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 26px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong { color: var(--azure-dark-blue); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 6px 0; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 8px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 6px;
+    font-size: 16px;
+}
+
+.feature-content p {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Tables ===== */
+.table-wrapper { overflow-x: auto; margin: 16px 0; }
+
+table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+table.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+table.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+}
+
+table.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+
+.ok { color: var(--ms-green); font-weight: 700; white-space: nowrap; }
+.ng { color: var(--ms-red); font-weight: 700; white-space: nowrap; }
+
+.table-subtitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin: 20px 0 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ===== Steps ===== */
+.step-list { list-style: none; counter-reset: step; margin: 16px 0; }
+
+.step-list li {
+    counter-increment: step;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.step-list li::before {
+    content: counter(step);
+    background: var(--azure-blue);
+    color: white;
+    min-width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.step-list li .step-body { padding-top: 2px; }
+
+/* ===== Code ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Merit grid ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.merit-card h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin: 8px 0; }
+
+/* ===== Constraints ===== */
+.constraint-card {
+    display: flex;
+    gap: 12px;
+    background: #FFF8F5;
+    border: 1px solid #F3C9B8;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.constraint-card .c-icon { font-size: 18px; flex-shrink: 0; }
+.constraint-card strong { color: var(--ms-red); }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.usecase-card h4 {
+    color: var(--ms-purple);
+    font-size: 17px;
+    margin-bottom: 10px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.usecase-card .uc-label {
+    display: inline-block;
+    background: var(--ms-purple);
+    color: white;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.usecase-card p, .usecase-card li { font-size: 14px; }
+.usecase-card ol { padding-left: 22px; margin: 8px 0; }
+.usecase-card li { margin: 4px 0; }
+
+.usecase-effect {
+    background: #E8F5E9;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+.usecase-effect strong { color: var(--ms-green); }
+
+/* ===== Pricing ===== */
+.pricing-notes { padding-left: 20px; font-size: 14px; margin: 12px 0; }
+.pricing-notes li { margin: 8px 0; }
+
+/* ===== Related ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--azure-dark-blue); display: block; margin-bottom: 4px; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* ===== Links / Footer ===== */
+a { color: var(--azure-blue); }
+
+.links-list { padding-left: 20px; font-size: 14px; }
+.links-list li { margin: 8px 0; }
+
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 16px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+
+.footer a { word-break: break-all; }
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="meta-row">
+            <span class="service-badge">Azure Site Recovery</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>VMSS Flex (柔軟なオーケストレーション) サポートの強化が一般提供開始</h1>
+        <div class="subtitle">Enhanced Azure Site Recovery support for VMSS Flex — ターゲット構成とエンドツーエンドの復旧ワークフローを改善</div>
+        <div class="date-info">
+            <span>📅 リリース日: 2026-11-03 (GA 時期: 2026 年 10 月)</span>
+            <span>🏷️ Management and governance / Migration</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Site Recovery (ASR) が、柔軟なオーケストレーション (Flexible orchestration) を使用する <strong>Virtual Machine Scale Sets (VMSS Flex)</strong> 内の仮想マシンに対して、強化されたディザスターリカバリー (DR) エクスペリエンスを提供するようになりました。今回のアップデートでは、ターゲット構成の設定と、フェールオーバー・リプロテクト (再保護)・フェールバックを含むエンドツーエンドの復旧ワークフローが改善されています。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">2 方式</div>
+                <div class="stat-label">リージョン間 DR + ゾーン間 DR に対応</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">E2E</div>
+                <div class="stat-label">フェールオーバー → リプロテクト → フェールバックを完全サポート</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">VM 単位</div>
+                <div class="stat-label">各 VM を個別のレプリケートアイテムとして保護</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            VMSS Flex 内の VM は、<strong>リージョン間 (region-to-region)</strong> または同一リージョン内の<strong>可用性ゾーン間 (zone-to-zone)</strong> でレプリケートでき、フェールオーバー時には復旧先にあらかじめ用意したターゲットの VMSS Flex 内に復旧 VM が配置されます。フェールオーバー後はリプロテクトを実行して元のロケーションへフェールバックすることも可能で、DR サイクル全体が VMSS Flex 構成を維持したまま完結します。複数の VM をまとめてフェールオーバーしたい場合は、復旧計画 (Recovery Plan) に追加します。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>VMSS Flex 内の VM に対する DR では、ターゲット (復旧先) の構成オプションが限定的</li>
+                    <li>フェールオーバー後の復旧ワークフロー全体の操作性に改善の余地があった (公式アナウンスで「ターゲット構成とエンドツーエンドの復旧ワークフローを改善」と明記)</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>ターゲットの VMSS Flex・可用性ゾーン・障害ドメインをレプリケーション有効化時に明示的に構成可能</li>
+                    <li>フェールオーバー時に復旧 VM が、構成したターゲットスケールセット内の指定ゾーン・障害ドメインへ配置される</li>
+                    <li>フェールオーバー → リプロテクト → フェールバック → 再リプロテクトという DR サイクル全体をサポート。フェールバック後も元のスケールセット構成が維持される</li>
+                    <li>保護有効化後もターゲットスケールセットの変更が可能 (同じタイプのスケールセットに限る)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Primary["☁️ プライマリリージョン"]
+        subgraph SrcVMSS["📦 VMSS Flex (ソース)"]
+            VM1["🖥️ VM 1"]
+            VM2["🖥️ VM 2"]
+        end
+    end
+
+    subgraph Secondary["☁️ セカンダリリージョン"]
+        Vault["🔐 Recovery Services コンテナー"]
+        subgraph TgtVMSS["📦 VMSS Flex (ターゲット・インスタンス数 0)"]
+            RVM1["🖥️ 復旧 VM 1<br/>(指定ゾーン / 障害ドメイン)"]
+            RVM2["🖥️ 復旧 VM 2<br/>(指定ゾーン / 障害ドメイン)"]
+        end
+    end
+
+    VM1 -- "🔄 ディスクの継続的レプリケーション" --> Vault
+    VM2 -- "🔄 ディスクの継続的レプリケーション" --> Vault
+    Vault -- "⚡ フェールオーバー時に<br/>ターゲットスケールセットへ配置" --> RVM1
+    Vault -- "⚡ フェールオーバー時に<br/>ターゲットスケールセットへ配置" --> RVM2
+    RVM1 -. "↩️ リプロテクト & フェールバック" .-> VM1
+            </pre>
+        </div>
+        <p class="diagram-caption">VMSS Flex 内の各 VM のディスクはセカンダリリージョンへ継続的にレプリケートされ、フェールオーバー時には事前に作成したターゲット VMSS Flex 内の指定ゾーン・障害ドメインに復旧 VM が配置されます。その後リプロテクトとフェールバックにより元のリージョンへ戻すことができます。</p>
+    </section>
+
+    <!-- ===== Key features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>1. VM 単位の保護 (個別レプリケートアイテム)</h4>
+                <p>VMSS Flex 内の各 VM を個別のレプリケートアイテムとして保護。スケールセット全体の一括保護はできず、保護したい VM を個別に選択する。複数 VM をまとめてフェールオーバーする場合は復旧計画 (Recovery Plan) を使用。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>2. ターゲットスケールセットの構成</h4>
+                <p>レプリケーション有効化前に、復旧先へ VMSS Flex (VM プロファイルなし・インスタンス数 0) を作成しておき、有効化時にターゲットスケールセットと (該当する場合) 可用性ゾーン・障害ドメインを選択する。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>3. フェールオーバー時のスケールセットへの配置</h4>
+                <p>フェールオーバー時、Site Recovery が復旧 VM を作成し、構成済みターゲットスケールセット内の指定ゾーン・障害ドメインへ配置。テストフェールオーバーでも同様に、ターゲットスケールセット内に検証用 VM が作成される。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">↩️</div>
+            <div class="feature-content">
+                <h4>4. リプロテクトとフェールバック</h4>
+                <p>フェールオーバー後、元のロケーションに向けてリプロテクト可能 (既定では元のソーススケールセット・ゾーン・障害ドメインを使用)。フェールバックは元のソース VM に戻すため、スケールセット構成が維持される。フェールバック後の再リプロテクトでは、当初構成したターゲットスケールセットとゾーンでレプリケーションが再開される。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔧</div>
+            <div class="feature-content">
+                <h4>5. 保護後のターゲット変更</h4>
+                <p>保護有効化後もターゲットスケールセットを変更可能 (同じタイプ: リージョナル → リージョナル、ゾーン → ゾーンのみ)。ターゲットの可用性ゾーンと障害ドメインは読み取り専用で、変更にはレプリケーションの無効化・再有効化が必要。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <div class="feature-content">
+                <h4>6. 容量予約 (Capacity Reservation) のサポート</h4>
+                <p>VMSS Flex ではスケールセットレベルの容量予約がサポートされないため、保護対象の各 VM の Site Recovery ターゲット設定で容量予約グループを関連付ける。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📐</span>技術仕様</h2>
+
+        <h3 class="table-subtitle">🖥️ サポートされるソース VM デプロイ</h3>
+        <div class="table-wrapper">
+            <table class="spec-table">
+                <tr><th>ソース VM のデプロイ</th><th>リージョン間 DR</th><th>ゾーン間 DR</th></tr>
+                <tr><td>ゾーン指定の VMSS Flex 内の VM</td><td class="ok">✔ サポート</td><td class="ok">✔ サポート</td></tr>
+                <tr><td>リージョナル VMSS Flex 内の VM (障害ドメイン数 1 以上)</td><td class="ok">✔ サポート</td><td class="ng">✖ 非サポート</td></tr>
+                <tr><td>単一インスタンスのゾーン指定 VM</td><td class="ok">✔ サポート</td><td class="ok">✔ サポート</td></tr>
+                <tr><td>単一インスタンスのリージョナル VM</td><td class="ok">✔ サポート</td><td class="ng">✖ 非サポート</td></tr>
+                <tr><td>可用性セット内の VM</td><td class="ok">✔ サポート</td><td class="ng">✖ 非サポート</td></tr>
+            </table>
+        </div>
+
+        <h3 class="table-subtitle">🎯 サポートされるターゲットスケールセットのタイプ</h3>
+        <div class="table-wrapper">
+            <table class="spec-table">
+                <tr><th>ターゲットスケールセット</th><th>リージョン間 DR</th><th>ゾーン間 DR</th></tr>
+                <tr><td>リージョナル (障害ドメイン数 = 1)</td><td class="ok">✔ サポート</td><td class="ng">✖ 非サポート</td></tr>
+                <tr><td>リージョナル (障害ドメイン数 &gt; 1)</td><td class="ok">✔ サポート</td><td class="ng">✖ 非サポート</td></tr>
+                <tr><td>ゾーン指定 (単一/複数ゾーン、障害ドメイン数 = 1)</td><td class="ok">✔ サポート</td><td class="ok">✔ サポート (ソース VM のゾーン以外のゾーンを少なくとも 1 つ含む場合)</td></tr>
+            </table>
+        </div>
+
+        <h3 class="table-subtitle">⚙️ ターゲットスケールセットに応じた設定項目</h3>
+        <div class="table-wrapper">
+            <table class="spec-table">
+                <tr><th>ターゲットのタイプ</th><th>スケールセット</th><th>可用性ゾーン</th><th>障害ドメイン</th></tr>
+                <tr><td>リージョナル (障害ドメイン数 = 1)</td><td>必須</td><td>対象外</td><td>不要 (単一の障害ドメインに配置)</td></tr>
+                <tr><td>リージョナル (障害ドメイン数 &gt; 1)</td><td>必須</td><td>対象外</td><td>任意 (未指定時はソース VM の障害ドメインを使用、存在しなければプラットフォームが割り当て)</td></tr>
+                <tr><td>単一ゾーン (障害ドメイン数 = 1)</td><td>必須</td><td>自動選択</td><td>不要</td></tr>
+                <tr><td>複数ゾーン (障害ドメイン数 = 1)</td><td>必須</td><td>必須 (スケールセットがまたがるゾーンのみ選択可)</td><td>不要</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 class="table-subtitle">✅ 前提条件</h3>
+        <ol class="step-list">
+            <li><span class="step-body">レプリケーションを有効化する権限を持つ Azure サブスクリプション</span></li>
+            <li><span class="step-body">Recovery Services コンテナー (リージョン間 DR の場合はターゲットリージョンに作成)</span></li>
+            <li><span class="step-body"><a href="https://learn.microsoft.com/en-us/azure/site-recovery/azure-to-azure-support-matrix" target="_blank" rel="noopener">Azure-to-Azure サポートマトリックス</a>の要件を満たし、Site Recovery へのアウトバウンド接続を持つソース VM</span></li>
+            <li><span class="step-body">復旧先に作成済みのターゲット VMSS Flex (VM プロファイルなし・インスタンス数 0)</span></li>
+        </ol>
+
+        <h3 class="table-subtitle">🌐 Azure Portal での手順</h3>
+        <ol class="step-list">
+            <li><span class="step-body">Recovery Services コンテナーで <strong>Site Recovery</strong> &gt; <strong>Azure virtual machines</strong> の <strong>Enable replication</strong> を選択</span></li>
+            <li><span class="step-body"><strong>Source</strong> タブでソースのリージョン・サブスクリプション・リソースグループを選択 (ゾーン間 DR の場合は「Disaster recovery between availability zones?」で <strong>Yes</strong> を選択)</span></li>
+            <li><span class="step-body"><strong>Virtual machines</strong> タブで保護するスケールセット内の VM を個別に選択</span></li>
+            <li><span class="step-body"><strong>Replication settings</strong> タブでターゲットリージョン・リソースグループ・仮想ネットワークを選択</span></li>
+            <li><span class="step-body"><strong>Availability options</strong> で <strong>view/edit availability options</strong> を開き、各 VM について <strong>Target availability</strong> で <strong>Virtual machine scale set (Flexible)</strong> を選択 → ターゲットの VMSS Flex を選択 (ゾーン間 DR ではゾーン指定スケールセットのみ表示)。複数ゾーンにまたがる場合は <strong>Availability zone</strong>、リージョナルで障害ドメイン数 &gt; 1 の場合は任意で <strong>Fault domain</strong> を選択</span></li>
+            <li><span class="step-body">必要に応じて <strong>Capacity reservation</strong> で容量予約グループを選択</span></li>
+            <li><span class="step-body"><strong>Review + Enable replication</strong> &gt; <strong>Enable replication</strong> を選択</span></li>
+        </ol>
+        <p style="font-size: 14px; color: var(--ms-text-secondary);">💡 VM 側の <strong>Disaster recovery</strong> ブレードからも同様に有効化できます。</p>
+
+        <h3 class="table-subtitle">💻 PowerShell (リプロテクト)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">PowerShell</span><span>リプロテクトでターゲットスケールセットと可用性ゾーンを指定</span></div>
+            <pre><code class="language-powershell"># フェールバック後のリプロテクトでターゲットスケールセットと可用性ゾーンを指定
+Update-AzRecoveryServicesAsrProtectionDirection -AzureToAzure `
+    -ReplicationProtectedItem $item `
+    -ProtectionContainerMapping $mapping `
+    -LogStorageAccountId $cache.Id `
+    -RecoveryResourceGroupId $targetRg.ResourceId `
+    -RecoveryVirtualMachineScaleSetId $targetVmss.Id `
+    -RecoveryAvailabilityZone "1"</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>VMSS Flex 上で稼働する本番ワークロードに対して、<strong>GA 品質のディザスターリカバリー</strong>を構成でき、事業継続性 (BCP) 要件に対応しやすくなる</li>
+                    <li>フェールオーバーからフェールバックまでの DR サイクル全体がサポートされ、<strong>DR 訓練 (テストフェールオーバー)</strong> も実施できるため、復旧手順の信頼性を検証可能</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>復旧 VM がターゲット VMSS Flex 内の指定した可用性ゾーン・障害ドメインに配置され、<strong>フェールオーバー後も可用性設計を維持</strong>できる</li>
+                    <li>リージョン間 DR とゾーン間 DR の両方に対応し、ゾーン冗長構成のワークロードにも適用できる</li>
+                    <li>フェールバック時にソース VM のスケールセット構成が維持されるため、<strong>復旧後の構成ドリフトを抑制</strong>できる</li>
+                    <li>容量予約グループを VM ごとに関連付けることで、フェールオーバー時のキャパシティを確保できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="constraint-card"><span class="c-icon">🚫</span><div><strong>Uniform オーケストレーションは非サポート</strong>: 対象は Flexible オーケストレーションのみ</div></div>
+        <div class="constraint-card"><span class="c-icon">📋</span><div><strong>スケールセット構成はレプリケートされない</strong>: ターゲットスケールセットの作成、構成、VM プロファイル、自動スケール設定、インスタンス数のコピーは行われず、ユーザー自身がターゲット VMSS Flex を事前に作成・構成する必要がある</div></div>
+        <div class="constraint-card"><span class="c-icon">🆕</span><div><strong>新規インスタンスは自動保護されない</strong>: レプリケーション有効化後にスケールセットへ追加された VM (自動スケールで作成された VM を含む) は自動的には保護されず、個別に有効化が必要</div></div>
+        <div class="constraint-card"><span class="c-icon">📦</span><div><strong>ターゲットリソースグループの制約</strong>: ターゲットスケールセットは復旧 VM が作成されるターゲットリソースグループ内にある必要がある。ゾーン間 DR ではソースと異なるリソースグループが必須</div></div>
+        <div class="constraint-card"><span class="c-icon">📍</span><div><strong>近接配置グループ</strong>: ターゲットがスケールセットの場合、近接配置グループの構成はターゲットスケールセットから継承され、Site Recovery 側で個別に選択・構成できない</div></div>
+        <div class="constraint-card"><span class="c-icon">🔒</span><div><strong>保護後のゾーン・障害ドメインは読み取り専用</strong>: 変更するにはレプリケーションの無効化と再有効化が必要。また、ターゲットスケールセットの変更は同じタイプ (リージョナル/ゾーン) 間のみ可能</div></div>
+        <div class="constraint-card"><span class="c-icon">🧩</span><div><strong>VM 拡張機能はレプリケートされない</strong>: フェールオーバー後に復旧 VM へ必要な拡張機能をインストールする必要がある</div></div>
+    </section>
+
+    <!-- ===== Use cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <span class="uc-label">ユースケース 1</span>
+            <h4>🌍 ゾーン指定 VMSS Flex 上のアプリケーション層のリージョン間 DR</h4>
+            <p><strong>シナリオ</strong>: プライマリリージョンのゾーン指定 VMSS Flex で稼働するアプリケーションサーバー群を、セカンダリリージョンへレプリケートし、リージョン障害時にもスケールセット構成と可用性ゾーン配置を維持したままフェールオーバーする。</p>
+            <p style="margin-top: 8px;"><strong>実装例</strong>:</p>
+            <ol>
+                <li>セカンダリリージョンにターゲットリソースグループと、ゾーンにまたがる VMSS Flex (VM プロファイルなし・インスタンス数 0) を作成</li>
+                <li>Recovery Services コンテナーからスケールセット内の各 VM のレプリケーションを有効化し、ターゲットとして作成した VMSS Flex と可用性ゾーンを指定</li>
+                <li>対象 VM 群を復旧計画 (Recovery Plan) に追加し、まとめてフェールオーバーできるようにする</li>
+                <li>テストフェールオーバーで復旧 VM がターゲットスケールセットの期待するゾーンに配置されることを検証</li>
+            </ol>
+            <div class="usecase-effect"><strong>効果</strong>: リージョン障害時にもアプリケーション層の可用性設計 (ゾーン配置) を維持した復旧が可能になり、フェールバックまで含めた DR 運用を確立できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <span class="uc-label">ユースケース 2</span>
+            <h4>🏢 同一リージョン内のゾーン間 DR</h4>
+            <p><strong>シナリオ</strong>: 可用性ゾーンをまたぐ移動が制約されるワークロードや、リージョン間レプリケーションの要件がないワークロードについて、同一リージョン内の別ゾーンへの DR を構成する。</p>
+            <p style="margin-top: 8px;"><strong>実装例</strong>: ソースとは異なるリソースグループに、ソース VM のゾーン以外のゾーンを少なくとも 1 つ含むゾーン指定 VMSS Flex を作成し、「Disaster recovery between availability zones?」を <strong>Yes</strong> にしてレプリケーションを有効化する。</p>
+            <div class="usecase-effect"><strong>効果</strong>: データセンター (ゾーン) 障害に対する復旧性を、リージョン間 DR より小さい構成変更で確保できる。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Azure Site Recovery は保護対象インスタンス数に基づく課金で、課金単位は<strong>「月間の 1 日平均保護インスタンス数」</strong>です。</p>
+        <ul class="pricing-notes">
+            <li>保護対象の各インスタンスは<strong>最初の 31 日間は無料</strong>で、32 日目以降に課金が開始される (新規に追加した各インスタンスごとに適用)</li>
+            <li>Azure リージョン間の DR は「Azure への復旧」と同じレートで課金される</li>
+            <li>ライセンス料金とは別に、Azure Storage、ストレージトランザクション、リージョン外へ出る圧縮済みレプリケーションデータの送信 (egress)、フェールオーバー時のコンピューティングの料金が発生し得る</li>
+        </ul>
+        <div class="highlight-box">
+            インスタンスあたりの具体的な月額料金は、<a href="https://azure.microsoft.com/pricing/details/site-recovery/" target="_blank" rel="noopener">Azure Site Recovery 料金ページ</a>を参照してください。
+        </div>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p>公式アナウンスにリージョン情報の記載はありません。詳細は <a href="https://learn.microsoft.com/en-us/azure/site-recovery/azure-to-azure-support-matrix" target="_blank" rel="noopener">Azure-to-Azure サポートマトリックス</a>を参照してください。</p>
+    </section>
+
+    <!-- ===== Related ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>📦 Virtual Machine Scale Sets (Flexible orchestration)</strong>本アップデートの保護対象。ソース/ターゲットの両方で使用し、ターゲット側はユーザーが事前に作成する</div>
+            <div class="related-card"><strong>🔐 Recovery Services コンテナー</strong>Site Recovery のレプリケーション管理の中核。リージョン間 DR ではターゲットリージョンに作成する</div>
+            <div class="related-card"><strong>📝 復旧計画 (Recovery Plan)</strong>スケールセット内の複数 VM をグループとしてまとめてフェールオーバーするために使用する</div>
+            <div class="related-card"><strong>🎟️ 容量予約 (Capacity Reservation)</strong>フェールオーバー時のコンピューティング容量確保のため、保護対象の各 VM のターゲット設定で容量予約グループを関連付ける</div>
+            <div class="related-card"><strong>📍 近接配置グループ (Proximity Placement Group)</strong>ターゲットスケールセットに設定したものがフェールオーバー時に使用される</div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            Azure Site Recovery の VMSS Flex サポート強化が一般提供 (GA) となり、VMSS Flex 内の VM について、ターゲットスケールセット・可用性ゾーン・障害ドメインの明示的な構成と、フェールオーバー・リプロテクト・フェールバックを含むエンドツーエンドの復旧ワークフローが本番利用可能になりました。VMSS Flex 上で本番ワークロードを運用している場合は、<strong>ターゲット VMSS Flex の事前作成が必要</strong>である点、<strong>スケールセットへ追加した新規 VM は自動保護されない</strong>点に留意しつつ、テストフェールオーバーによる DR 訓練を含めた保護構成の導入を検討することを推奨します。
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="links-list">
+            <li><a href="https://azure.microsoft.com/updates?id=578926" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/site-recovery/azure-to-azure-how-to-enable-replication-vmss-flex" target="_blank" rel="noopener">Microsoft Learn: Enable disaster recovery for VMs in Virtual Machine Scale Sets with Flexible orchestration</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/site-recovery/azure-to-azure-support-matrix" target="_blank" rel="noopener">Microsoft Learn: Azure-to-Azure サポートマトリックス</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/site-recovery/" target="_blank" rel="noopener">Azure Site Recovery 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <div class="tags">
+            <span class="tag">Azure Site Recovery</span>
+            <span class="tag">VMSS Flex</span>
+            <span class="tag">Virtual Machine Scale Sets</span>
+            <span class="tag">Disaster Recovery</span>
+            <span class="tag">Management and governance</span>
+            <span class="tag">Migration</span>
+            <span class="tag">GA</span>
+        </div>
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=578926" target="_blank" rel="noopener">Azure Updates — Enhanced Azure Site Recovery support for VMSS Flex</a></p>
+        <p>本インフォグラフィックは Azure News Summary プロジェクトのレポート (2026-11-03) を基に生成されています。</p>
+    </footer>
+
+</div>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

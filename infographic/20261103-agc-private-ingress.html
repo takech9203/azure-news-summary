@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Application Gateway for Containers: プライベートイングレス (Private Ingress) | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 { font-size: 28px; line-height: 1.4; margin-bottom: 10px; }
+.header .subtitle { font-size: 15px; opacity: 0.92; }
+.header .release-date { margin-top: 14px; font-size: 14px; opacity: 0.85; }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.section h2 {
+    font-size: 22px;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-200);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 22px 0 12px;
+}
+
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; background: #FFFFFF; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 15px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; margin-top: 4px; }
+.feature-content li { margin: 4px 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Table */
+.spec-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+.spec-table th, .spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+}
+.spec-table th {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    white-space: nowrap;
+}
+.spec-table td:first-child { background: var(--ms-surface-secondary); font-weight: 500; white-space: nowrap; }
+.spec-table code { background: var(--ms-blue-100); padding: 1px 6px; border-radius: 4px; font-size: 13px; color: var(--ms-blue-900); }
+
+/* Inline code (outside pre) */
+p code, li code, .flow-box code {
+    background: var(--ms-blue-100);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: var(--ms-blue-900);
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Merit / Caution lists */
+.merit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
+.merit-card {
+    border-radius: 8px;
+    padding: 16px 18px;
+    border: 1px solid var(--ms-border);
+}
+.merit-card.business { background: var(--ms-blue-100); border-top: 4px solid var(--azure-blue); }
+.merit-card.tech { background: #E8F5E9; border-top: 4px solid var(--ms-green); }
+.merit-card h4 { margin-bottom: 10px; font-size: 15px; }
+.merit-card.business h4 { color: var(--ms-blue-800); }
+.merit-card.tech h4 { color: var(--ms-green); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 8px 0; font-size: 14px; }
+
+.caution-box {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+}
+.caution-box ul { padding-left: 20px; }
+.caution-box li { margin: 8px 0; font-size: 14px; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 14px 0;
+}
+.usecase-card h4 {
+    color: var(--azure-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+.usecase-label { font-weight: 700; color: var(--ms-blue-800); }
+
+.flow-box {
+    background: #FFFFFF;
+    border: 1px dashed var(--azure-blue);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 10px 0;
+    font-size: 13px;
+    overflow-x: auto;
+    white-space: nowrap;
+    color: var(--ms-blue-900);
+}
+
+/* Regions */
+.region-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+.region-chip {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    color: var(--ms-blue-900);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 13px;
+}
+
+/* Related services */
+.related-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 10px 0;
+}
+.related-card .icon { font-size: 22px; }
+.related-card h4 { font-size: 14px; color: var(--ms-blue-800); margin-bottom: 4px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.link-list { padding-left: 20px; }
+.link-list li { margin: 8px 0; font-size: 14px; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), #FFFFFF);
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* Tags */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 20px 0 10px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 10px;
+}
+.footer p { margin: 6px 0; }
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .container { padding: 14px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Title -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Application Gateway for Containers</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>プライベートイングレス (Private Ingress)</h1>
+        <p class="subtitle">Private Link プライベートエンドポイント経由でのみアクセス可能なプライベートフロントエンド — パブリック IP を構造的に排除</p>
+        <p class="release-date">📅 リリース日: 2026-11-03</p>
+    </header>
+
+    <!-- Overview -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Application Gateway for Containers (AGC) に、承認された Azure Private Link プライベートエンドポイント経由でのみ到達可能な「プライベートフロントエンド」が Public Preview として追加されました。プライベートフロントエンドにはパブリック IP アドレスが割り当てられず、インターネットからの直接アクセス経路が構造的に存在しません。明示的にプロビジョニングされ、承認されたプライベートエンドポイント接続のみがトラフィックの入口となります。</p>
+        <p>プライベートエンドポイントは VNet・サブスクリプション・Microsoft Entra テナント・リージョンをまたいで機能するため、VNet ピアリングや共有アドレス空間、トランジットルーティングなしにクロス境界のプライベート接続を構成できます。CIDR 範囲が重複する環境でも接続可能です。また、1 つの AGC リソース上でパブリックフロントエンドとプライベートフロントエンドを同時にホストでき、それぞれに個別のルーティングルールと WAF ポリシーを適用できます。</p>
+        <div class="highlight-box">
+            プライベート化しても、Kubernetes ネイティブのレイヤー 7 ルーティング、TLS、ヘルスプローブ、WAF といった AGC の機能はそのまま利用できます。社内 API や共有サービス、クラスター間通信をプライベートネットワークに閉じたい組織に向けた機能です。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">0</div>
+                <div class="stat-label">パブリック IP (インターネット直接経路なし)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最大 200</div>
+                <div class="stat-label">プライベートフロントエンドあたりのプライベートエンドポイント接続数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">ピアリング不要</div>
+                <div class="stat-label">VNet / サブスクリプション / テナント / リージョン横断 (CIDR 重複許容)</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>AGC のフロントエンドの FQDN はパブリック IP に解決され、インターネット上の誰でもリクエストを送信できた。NSG・WAF・アプリケーション層の認証を併用しても、パブリック IP の公開自体が組織ポリシーやコンプライアンス要件に抵触するケースがあった</li>
+                    <li>別クラスターのサービスをパブリックフロントエンド経由で呼び出すと、同一リージョン内であってもトラフィックがパブリック IP へヘアピンし、不要な露出とレイテンシーが発生していた</li>
+                    <li>クロスリージョンの VNet ピアリングはルーティングの複雑さやアドレス空間の重複制約を伴っていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>フロントエンドからパブリック IP とインターネット直接経路を排除し、スキャン・攻撃対象となる公開エンドポイントそのものをなくせる</li>
+                    <li>明示的に承認されたプライベートエンドポイント経由のアクセスのみを強制 (未知のソースからの接続はフィルタリングではなく構造的に不可能)</li>
+                    <li>VNet ピアリング不要で VNet・サブスクリプション・テナント・リージョンをまたぐプライベート接続が可能 (CIDR 重複も許容)</li>
+                    <li>Azure Firewall やネットワーク仮想アプライアンス (NVA) を Kubernetes ワークロードの前段に配置するトポロジを構成可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Internet(["🌐 インターネット"])
+    subgraph ClientVNet["🏢 クライアント VNet (別サブスクリプション / テナント / リージョンも可)"]
+        Client(["👤 内部クライアント / 🔥 Azure Firewall・NVA"])
+        PE["🔒 プライベートエンドポイント&lt;br/&gt;(Private Link)"]
+    end
+    subgraph AGCVNet["☁️ AGC 側 VNet"]
+        FE["🚪 プライベートフロントエンド&lt;br/&gt;(パブリック IP なし)"]
+        ASSOC["🔗 Association&lt;br/&gt;(委任サブネット)"]
+    end
+    subgraph AKS["⚙️ AKS クラスター"]
+        Pods["📦 バックエンド Pod"]
+    end
+    Client --> PE
+    PE -- "承認済み接続のみ" --> FE
+    FE --> ASSOC
+    ASSOC -- "L7 ルーティング / TLS / WAF / ヘルスプローブ" --> Pods
+    Internet -. "❌ 直接アクセス不可" .-> FE
+            </pre>
+        </div>
+        <p>クライアントは自身の VNet 内のプライベートエンドポイントを経由して AGC のプライベートフロントエンドに接続し、AGC が AKS のバックエンド Pod へ L7 ルーティングします。パブリック IP が存在しないため、インターネットからの直接経路はありません。</p>
+    </section>
+
+    <!-- Key features -->
+    <section class="section">
+        <h2>⭐ サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🚫</div>
+            <div class="feature-content">
+                <h4>1. パブリック IP を持たないプライベートフロントエンド</h4>
+                <p>フロントエンドの FQDN は、プライベートエンドポイントが接続・承認された後に、クライアントのサブネット内に割り当てられたプライベート IP アドレスにのみ解決される。インターネットからの FQDN 解決は不可能。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">✅</div>
+            <div class="feature-content">
+                <h4>2. 承認ベースのプライベートエンドポイント接続</h4>
+                <ul>
+                    <li>同一サブスクリプション内では接続が自動承認される場合がある (プライベートエンドポイント権限を持つ場合)</li>
+                    <li>クロスサブスクリプション・クロステナントでは AGC リソース所有者による手動承認が必要</li>
+                    <li>1 つのプライベートフロントエンドに最大 200 のプライベートエンドポイントを接続可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>3. クロス境界接続 (VNet / サブスクリプション / テナント / リージョン)</h4>
+                <p>VNet ピアリング不要。CIDR 範囲が重複する VNet 間でも接続可能 (Private Link は VNet 層の IP ルーティングに依存しないため)。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>4. パブリック / プライベートフロントエンドの同居</h4>
+                <p>1 つの AGC リソースでパブリックとプライベートの両フロントエンドを同時にホストし、それぞれに個別のルーティングルールと WAF ポリシーを設定可能。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-content">
+                <h4>5. Kubernetes ネイティブの構成</h4>
+                <p>Gateway API では <code>gatewayClassName: azure-alb-internal</code>、Ingress API では <code>kubernetes.io/ingress.class: azure-alb-internal</code> アノテーションを指定するだけでプライベートフロントエンドを利用 (<code>azure-alb-external</code> はパブリック)。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>6. WAF サポート</h4>
+                <p>パブリックフロントエンドと同様に、<code>SecurityPolicy</code> リソースで WAF ポリシーをプライベートフロントエンドに関連付け可能 (フロントエンド単位・任意)。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech specs -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>ステータス</td><td>Public Preview (GA 時期未定)</td></tr>
+            <tr><td>フロントエンドタイプ指定</td><td>Gateway API: <code>gatewayClassName</code> に <code>azure-alb-external</code> (パブリック) / <code>azure-alb-internal</code> (プライベート)。Ingress API: <code>kubernetes.io/ingress.class</code> アノテーション</td></tr>
+            <tr><td>プライベートエンドポイント接続数</td><td>プライベートフロントエンドあたり最大 200</td></tr>
+            <tr><td>接続承認</td><td>同一サブスクリプション: 自動承認可 / クロスサブスクリプション・テナント: 手動承認</td></tr>
+            <tr><td>対応トポロジ</td><td>同一 VNet、同一リージョンのリモート VNet (ピアリング不要)、別リージョンの VNet (CIDR 重複許容)、別サブスクリプション (同一テナント)、別サブスクリプション (別テナント)</td></tr>
+            <tr><td>必要 REST API バージョン</td><td>2026-03-01 以降 (プレビュー期間中、<code>publicNetworkAccess</code> プロパティは <code>az network alb frontend create</code> では未対応のため <code>az rest</code> を使用)</td></tr>
+            <tr><td>必要 ALB Controller バージョン</td><td>v1.13 以降</td></tr>
+            <tr><td>Association の条件</td><td>2026 年 4 月 23 日以降に作成された Association リソースでのみプライベートフロントエンドを構成可能</td></tr>
+            <tr><td>DNS 解決</td><td>プライベートエンドポイント接続・承認後にのみ FQDN が解決。プライベート DNS ゾーンまたは hosts エントリで解決を構成</td></tr>
+            <tr><td>注意点</td><td>プライベート接続はプライベートエンドポイント経由で拡張される。Association サブネットのプライベート IP への直接アドレス指定は不可 (内部実装の詳細)</td></tr>
+        </table>
+    </section>
+
+    <!-- Setup -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <div class="highlight-box">
+            <ol style="padding-left: 20px;">
+                <li>AGC リソースと ALB Controller (AKS アドオンまたは Helm) のセットアップ (BYO デプロイの場合)、または ALB Controller + <code>ApplicationLoadBalancer</code> カスタムリソースによる AGC リソースのプロビジョニング (ALB マネージドデプロイの場合)</li>
+                <li>ALB Controller v1.13 以降</li>
+                <li>2026 年 4 月 23 日以降に作成された Association リソース</li>
+            </ol>
+        </div>
+
+        <h3>Azure CLI (BYO デプロイ)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code class="language-bash"># 1. プライベートフロントエンドを作成 (API バージョン 2026-03-01、publicNetworkAccess を disabled に設定)
+az rest --method PUT \
+  --url "https://management.azure.com/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.ServiceNetworking/trafficControllers/${AGFC_NAME}/frontends/${FRONTEND_NAME}?api-version=2026-03-01" \
+  --body "{
+    \"location\": \"${LOCATION}\",
+    \"properties\": {
+      \"publicNetworkAccess\": \"disabled\",
+      \"association\": {
+         \"id\": \"/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}/providers/Microsoft.ServiceNetworking/trafficControllers/${AGFC_NAME}/associations/${AGFC_ASSC_NAME}\"
+       }
+    }
+  }"
+
+# 2. クライアント側 VNet にプライベートエンドポイントを作成
+az network private-endpoint create \
+  --resource-group $PE_RESOURCE_GROUP \
+  --name $PE_NAME \
+  --vnet-name $PE_VNET_NAME \
+  --subnet $PE_SUBNET_NAME \
+  --private-connection-resource-id $AGFC_RESOURCE_ID \
+  --group-id $FRONTEND_NAME \
+  --connection-name $PE_CONNECTION_NAME
+
+# 3. 保留中の接続を承認 (クロスサブスクリプション / テナントの場合)
+az rest --method POST \
+  --url "https://management.azure.com${PENDING_CONNECTION_ID}/approve?api-version=2026-03-01" \
+  --body '{"properties": {"description": "Approved"}}'</code></pre>
+        </div>
+
+        <h3>Gateway API リソース</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">yaml</span></div>
+            <pre><code class="language-yaml">apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: gateway-01
+  namespace: test-infra
+  annotations:
+    alb.networking.azure.io/alb-id: $RESOURCE_ID
+spec:
+  gatewayClassName: azure-alb-internal   # プライベートフロントエンドを参照
+  listeners:
+  - name: http-listener
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Same
+  addresses:
+  - type: alb.networking.azure.io/alb-frontend
+    value: $FRONTEND_NAME</code></pre>
+        </div>
+        <p>ALB マネージドデプロイの場合は、<code>gatewayClassName: azure-alb-internal</code> を指定した <code>Gateway</code> リソースを作成するだけで、ALB Controller がプライベートフロントエンド (<code>fe-&lt;ランダム 8 文字&gt;</code>) を自動プロビジョニングします。承認済みプライベートエンドポイントが接続されるまで、コントローラーはアドレスを割り当てません。</p>
+        <p>DNS 解決は、プライベート DNS ゾーンをクライアント VNet にリンクして A レコードを登録する方法 (複数クライアント・複数 VNet にスケール) か、検証用途であれば hosts ファイルエントリで構成します。</p>
+    </section>
+
+    <!-- Merits -->
+    <section class="section">
+        <h2>💡 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>パブリック IP の公開を禁止する組織ポリシーやコンプライアンス要件 (インバウンドトラフィックがパブリックインターネットを経由しないことの保証) をネットワーク層で満たせる</li>
+                    <li>プラットフォームチームが共有サービスサブスクリプションで AGC を一元管理し、別サブスクリプションのアプリケーションチームやパートナー組織 (別テナント) にプライベートに提供する運用モデルが可能</li>
+                    <li>IP アドレス空間が重複するテスト / ステージング環境でも共有イングレスに接続でき、環境設計の自由度が向上</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>インターネット攻撃対象領域の排除 (発見・スキャン・攻撃可能なパブリック IP が存在しない)</li>
+                    <li>クラスター間通信がパブリック IP へのヘアピンなしに Azure のプライベートネットワークファブリック内で完結し、露出とレイテンシーを削減</li>
+                    <li>クロスリージョン接続に VNet ピアリングが不要 (ルーティングの複雑さ・アドレス空間制約を回避)</li>
+                    <li>プライベート化しても L7 ルーティング、TLS、ヘルスプローブ、WAF など AGC の全機能を維持</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Constraints -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>Public Preview のため、プレビューの補足利用条件が適用される (GA 時期未定)</li>
+                <li>2026 年 4 月 23 日より前に作成された Association リソースでは利用不可 (Association の再作成が必要)</li>
+                <li>REST API バージョン 2026-03-01 以降が必要。プレビュー期間中は <code>az network alb frontend create</code> コマンドが <code>publicNetworkAccess</code> プロパティ未対応のため、<code>az rest</code> での作成が必要</li>
+                <li>ALB Controller v1.13 以降が必要</li>
+                <li>Azure Firewall / NVA を AGC の前段に置くトポロジでは、ファイアウォールが SNAT を行うため元のクライアント IP が失われる (<code>X-Forwarded-For</code> にはファイアウォールのプライベート IP が入る)。クライアント IP が必要なワークロード (ジオロケーション、IP ベースのレート制限、不正検知など) では、AGC をファイアウォールの前段に置く逆トポロジの検討が必要</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Use cases -->
+    <section class="section">
+        <h2>🎯 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🔥 ユースケース 1: Azure Firewall / NVA をインターネットエントリポイントにする</h4>
+            <p><span class="usecase-label">シナリオ:</span> すべてのインターネットトラフィックを集中管理されたファイアウォール (脅威インテリジェンス、IDPS、TLS インスペクション、コンプライアンスログ) 経由にすることが組織で義務付けられている。</p>
+            <div class="flow-box">[インターネット] → [Azure Firewall / NVA] → [プライベートエンドポイント] → [AGC プライベートフロントエンド] → [AKS Pod]</div>
+            <p><span class="usecase-label">効果:</span> ファイアウォールポリシーの例外なしに Kubernetes ワークロードを保護できる。ただしクライアント IP の可視性が失われる点に注意 (上記制約参照)。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🏢 ユースケース 2: インターネットアクセスのない社内アプリケーション</h4>
+            <p><span class="usecase-label">シナリオ:</span> 社内 API、コーポレートポータル、データパイプライン、プラットフォームサービスなど、組織内ネットワークからのみアクセスされるワークロード。</p>
+            <div class="flow-box">[社内クライアント (オンプレミス / 内部 VNet)] → [プライベートエンドポイント] → [AGC プライベートフロントエンド] → [AKS Pod]</div>
+            <p><span class="usecase-label">効果:</span> インターネット露出なしで、パブリックデプロイと同等の Kubernetes ネイティブ L7 ルーティング・ヘルスプローブ・WAF・TLS を利用できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🔗 ユースケース 3: クラスター間サービス通信</h4>
+            <p><span class="usecase-label">シナリオ:</span> 別々の Kubernetes クラスターで動作するサービス間の通信。パブリックフロントエンド経由では同一リージョン内でもトラフィックがパブリック IP にヘアピンしてしまう。</p>
+            <div class="flow-box">[クラスター A の Pod] → [プライベートエンドポイント] → [クラスター B の AGC プライベートフロントエンド] → [クラスター B の AKS Pod]</div>
+            <p><span class="usecase-label">効果:</span> トラフィックが Azure のプライベートネットワーク内に留まり、露出とレイテンシーを削減。クロスリージョンでも VNet ピアリング不要で、CIDR 重複も許容。サービスディスカバリーは各クラスターの DNS でプライベートフロントエンド FQDN を自サブネットのプライベートエンドポイント IP に解決して実現。</p>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>プライベートイングレス機能自体の個別料金は、今回のアップデート情報およびドキュメントからは確認できませんでした。Application Gateway for Containers の料金は以下の公式料金ページを参照してください。なお、プライベートエンドポイント (Azure Private Link) には別途料金が発生します。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/application-gateway/" target="_blank" rel="noopener">Application Gateway 料金ページ</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/private-link/" target="_blank" rel="noopener">Azure Private Link 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Regions -->
+    <section class="section">
+        <h2>🗺️ 利用可能リージョン</h2>
+        <p>プライベートイングレス機能のプレビュー対象リージョンは個別に明記されていません。参考として、Application Gateway for Containers 自体は以下のリージョンで利用可能です (2026 年 11 月時点の公式ドキュメントより)。</p>
+        <div class="region-list">
+            <span class="region-chip">Australia Central 2</span>
+            <span class="region-chip">Australia East</span>
+            <span class="region-chip">Australia Southeast</span>
+            <span class="region-chip">Brazil South</span>
+            <span class="region-chip">Canada Central</span>
+            <span class="region-chip">Canada East</span>
+            <span class="region-chip">Central India</span>
+            <span class="region-chip">Central US</span>
+            <span class="region-chip">East Asia</span>
+            <span class="region-chip">East US</span>
+            <span class="region-chip">East US 2</span>
+            <span class="region-chip">France Central</span>
+            <span class="region-chip">Germany West Central</span>
+            <span class="region-chip">Italy North</span>
+            <span class="region-chip">Japan West</span>
+            <span class="region-chip">Korea Central</span>
+            <span class="region-chip">North Central US</span>
+            <span class="region-chip">North Europe</span>
+            <span class="region-chip">Norway East</span>
+            <span class="region-chip">South Central US</span>
+            <span class="region-chip">Southeast Asia</span>
+            <span class="region-chip">Sweden Central</span>
+            <span class="region-chip">Switzerland North</span>
+            <span class="region-chip">UAE North</span>
+            <span class="region-chip">UK South</span>
+            <span class="region-chip">West US</span>
+            <span class="region-chip">West US 2</span>
+            <span class="region-chip">West US 3</span>
+            <span class="region-chip">West Europe</span>
+        </div>
+    </section>
+
+    <!-- Related services -->
+    <section class="section">
+        <h2>🧩 関連サービス・機能</h2>
+        <div class="related-card">
+            <span class="icon">🔒</span>
+            <div>
+                <h4>Azure Private Link / プライベートエンドポイント</h4>
+                <p>本機能の中核。クライアント VNet 内のプライベート IP を持つネットワークインターフェイス (プライベートエンドポイント) が AGC プライベートフロントエンドへの唯一の接続経路となる。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <span class="icon">⚙️</span>
+            <div>
+                <h4>Azure Kubernetes Service (AKS)</h4>
+                <p>AGC のバックエンドターゲット。ALB Controller (または AKS マネージドアドオン) がクラスター内で Gateway API / Ingress リソースを監視し Azure 側に構成を反映。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <span class="icon">🔥</span>
+            <div>
+                <h4>Azure Firewall / ネットワーク仮想アプライアンス (NVA)</h4>
+                <p>プライベートフロントエンドの前段に配置して集中型のトラフィック検査 (IDPS、TLS インスペクション) を実現可能。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <span class="icon">🛡️</span>
+            <div>
+                <h4>Azure Web Application Firewall (WAF)</h4>
+                <p><code>SecurityPolicy</code> リソース経由でプライベートフロントエンドにも WAF ポリシーを関連付け可能。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <span class="icon">🌐</span>
+            <div>
+                <h4>Azure プライベート DNS ゾーン</h4>
+                <p>プライベートフロントエンド FQDN をプライベートエンドポイント IP に解決するための推奨手段 (複数クライアント・VNet にスケール)。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reference links -->
+    <section class="section">
+        <h2>🔗 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=576393" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li><a href="https://learn.microsoft.com/azure/application-gateway/for-containers/private-ingress" target="_blank" rel="noopener">Private ingress with Application Gateway for Containers (概要)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/application-gateway/for-containers/how-to-private-ingress-gateway-api" target="_blank" rel="noopener">Configure private ingress - Gateway API (構成手順)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/application-gateway/for-containers/overview" target="_blank" rel="noopener">Application Gateway for Containers の概要</a></li>
+            <li><a href="https://learn.microsoft.com/azure/application-gateway/for-containers/application-gateway-for-containers-components" target="_blank" rel="noopener">Application Gateway for Containers のコンポーネント</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/application-gateway/" target="_blank" rel="noopener">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Summary -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Application Gateway for Containers のプライベートイングレスは、Kubernetes ワークロードのイングレスからパブリック IP を完全に排除し、承認済み Private Link プライベートエンドポイント経由のアクセスのみを許可する機能です。「フィルタリングで守る」のではなく「経路そのものをなくす」アプローチであり、コンプライアンス要件の厳しい組織、共有サービス基盤を運用するプラットフォームチーム、クラスター間通信をプライベート化したいアーキテクチャに大きな価値があります。VNet ピアリング不要でサブスクリプション・テナント・リージョンをまたげる点、CIDR 重複を許容する点も設計の自由度を高めます。</p>
+            <p style="margin-top: 12px;">検証する際は、Association リソースの作成日 (2026 年 4 月 23 日以降)、ALB Controller v1.13 以降、REST API 2026-03-01 の利用が前提となる点、およびファイアウォール前段配置時のクライアント IP 可視性のトレードオフに注意してください。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Application Gateway for Containers</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">Private Link</span>
+            <span class="tag">Private Endpoint</span>
+            <span class="tag">AKS</span>
+            <span class="tag">Gateway API</span>
+            <span class="tag">WAF</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典:</strong> <a href="https://azure.microsoft.com/updates?id=576393" target="_blank" rel="noopener">Azure Updates - Application Gateway for Containers: Private Ingress (In preview)</a></p>
+        <p>出典: <a href="https://learn.microsoft.com/azure/application-gateway/for-containers/private-ingress" target="_blank" rel="noopener">Microsoft Learn - Private ingress with Application Gateway for Containers</a></p>
+        <p>本インフォグラフィックは Azure News Summary レポート (2026-11-03) を基に生成されています。</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

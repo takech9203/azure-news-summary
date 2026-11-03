@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Storage Discovery: Advanced Capacity Insights がパブリックプレビュー</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    /* Storage Category Color */
+    --storage-cyan: #00BCF2;
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.7;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--storage-cyan) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "🔎";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+.hero .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+.hero h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+.hero .subtitle { font-size: 16px; opacity: 0.92; }
+.hero .meta {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 14px;
+    opacity: 0.95;
+}
+.hero .meta span { background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 6px; }
+
+.service-badge {
+    background: rgba(255,255,255,0.22);
+    border: 1px solid rgba(255,255,255,0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+.badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 28px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+h3.sub-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 22px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+h3.sub-title:first-of-type { margin-top: 0; }
+
+p.lead { margin-bottom: 14px; }
+.keyword {
+    background: linear-gradient(transparent 60%, var(--ms-blue-200) 60%);
+    font-weight: 700;
+    padding: 0 2px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before, .after { border-radius: 8px; padding: 18px; }
+.before { background: #FFEBEE; border: 2px solid var(--ms-red); }
+.after { background: #E8F5E9; border: 2px solid var(--ms-green); }
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content h4 .en { font-size: 12px; color: var(--ms-text-secondary); font-weight: 500; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: white;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+.table-wrap { overflow-x: auto; }
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; list-style: none; margin: 12px 0; }
+.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 0 10px 52px;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 15px;
+}
+.steps li:last-child { border-bottom: none; }
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0; top: 8px;
+    width: 34px; height: 34px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+}
+
+/* ===== Code ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+code.inline {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* ===== Benefit / Caution ===== */
+.benefit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.benefit-card {
+    border-radius: 8px;
+    padding: 18px;
+    border: 2px solid var(--ms-blue-300);
+    background: var(--ms-blue-100);
+}
+.benefit-card h4 { color: var(--ms-blue-800); margin-bottom: 10px; font-size: 16px; }
+.benefit-card ul { padding-left: 20px; font-size: 14px; }
+.benefit-card li { margin-bottom: 8px; }
+
+.caution-box {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 18px;
+    margin: 16px 0;
+}
+.caution-box ul { padding-left: 20px; font-size: 14px; }
+.caution-box li { margin-bottom: 8px; }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--storage-cyan);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    background: var(--ms-surface);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.usecase-card h4 { font-size: 17px; color: var(--azure-dark-blue); margin-bottom: 10px; }
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin: 10px 0 6px;
+}
+.usecase-card p, .usecase-card ol { font-size: 14px; }
+.usecase-card ol { padding-left: 22px; }
+.usecase-card li { margin-bottom: 6px; }
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* ===== Related / Links ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 12px 0;
+}
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+    border-left: 4px solid var(--storage-cyan);
+}
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; }
+
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 0 8px 28px;
+    position: relative;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+}
+.link-list li:last-child { border-bottom: none; }
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+/* ===== Region ===== */
+.region-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 14px 0;
+}
+.region-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 14px;
+}
+.region-card h4 { color: var(--ms-blue-800); font-size: 15px; margin-bottom: 8px; }
+
+/* ===== Summary / Tags / Footer ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px;
+    margin: 10px 0;
+}
+.summary-box p { margin-bottom: 12px; font-size: 15px; }
+.summary-box p:last-child { margin-bottom: 0; }
+
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    border: 1px solid var(--ms-border);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 16px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 10px;
+}
+footer p { margin-bottom: 6px; }
+
+@media (max-width: 700px) {
+    .before-after, .benefit-grid, .region-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure Storage Discovery</span>
+            <span class="badge badge-preview">In Preview (パブリックプレビュー)</span>
+        </div>
+        <h1>高度な容量インサイト (Advanced Capacity Insights) がパブリックプレビュー</h1>
+        <p class="subtitle">組織全体の Blob / Data Lake Storage の「消費のされ方」を層・サイズ・保持の軸で深掘り分析</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-03</span>
+            <span>🧩 機能: Advanced Capacity Insights</span>
+            <span>📊 提供: Capacity details レポート</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p class="lead">Azure Storage Discovery において、<span class="keyword">高度な容量インサイト (Advanced Capacity Insights)</span> がパブリックプレビューとして利用可能になった。Storage Discovery は Azure Blob Storage / Azure Data Lake Storage の利用状況を組織全体 (最大 100 万ストレージアカウント) で可視化するフルマネージドサービスであり、今回のアップデートにより、<span class="keyword">アクセスパターン、データ年齢、ストレージ層 (アクセス層)、オブジェクトサイズ分布、保持 (retention) の状態、バージョニング</span>といった、より深い分析軸での可視化が可能になった。</p>
+        <p class="lead">新しいインサイトは Azure Portal の Storage Discovery ワークスペース内の<span class="keyword">「Capacity details」レポート</span>として提供される。従来の「Capacity overview」レポートが「どれだけのストレージを保有しているか」を示すのに対し、「Capacity details」は<span class="keyword">「ストレージをどのように消費しているか」</span>を示す位置付けとなる。インサイトはストレージアカウント・コンテナー・設定済みプレフィックスの各レベルでオブジェクトメタデータを集計したものであり、個々の BLOB のインベントリを提供するものではない。</p>
+        <div class="highlight-box">
+            💡 これらのインサイトにより、<strong>コスト削減機会の特定</strong>、<strong>ストレージ増加要因の把握</strong>、<strong>大規模なストレージ管理の意思決定</strong>を支援する。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">100 万</div>
+                <div class="stat-label">最大対応ストレージアカウント数 (組織全体)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">5 区分</div>
+                <div class="stat-label">オブジェクトサイズ分布<br>(0-1 KB 〜 1 TB 超)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">4 層</div>
+                <div class="stat-label">Hot / Cool / Cold / Archive の層分析</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">48 時間</div>
+                <div class="stat-label">有効化後、インサイト表示開始まで (最大)</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>容量レポートは合計容量・オブジェクト数・トレンドなどの概要が中心で、アクセス層やデータの古さ、オブジェクトサイズの内訳といった「消費のされ方」までは把握できなかった</li>
+                    <li>階層化 (Tiering) の最適化余地や、最低保持期間内のデータ削除による早期削除課金のリスクを、組織全体のスケールで横断的に評価する手段がなかった</li>
+                    <li>バージョン、スナップショット、論理削除 (ソフトデリート) 済みデータが容量に占める割合を、複数アカウントを横断して分析することが難しかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>作成日時・最終アクセス日時・最終更新日時の各時間軸で、Hot / Cool / Cold / Archive 層ごとの容量・オブジェクト数分布を分析でき、不適切な層に置かれたデータを発見できる</li>
+                    <li>オブジェクトサイズ分布 (0-1 KB 〜 1 TB 超の 5 バケット)、最低保持期間内データの早期削除リスク、ストレージ構成 (現行データ / 旧バージョン / スナップショット / 論理削除済み)、論理削除データの残存保持期間などを可視化できる</li>
+                    <li>各チャートから「View resources」で対象リソース一覧へドリルダウンし、CSV エクスポートしてスクリプトや Terraform での一括操作に活用できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph Estate["☁️ Azure ストレージ資産 (最大 100 万アカウント)"]
+        SA1[("🗄️ Blob Storage<br/>アカウント群")]
+        SA2[("🗄️ Data Lake Storage<br/>アカウント群")]
+    end
+
+    subgraph Discovery["🔎 Azure Storage Discovery ワークスペース (Standard)"]
+        AGG["⚙️ メタデータ集計<br/>(アカウント / コンテナー / プレフィックス)"]
+        CD["📊 Capacity details レポート<br/>(Advanced Capacity Insights)"]
+    end
+
+    subgraph Insights["💡 インサイト"]
+        I1["🌡️ 層 × 経過時間分布"]
+        I2["📦 オブジェクトサイズ分布"]
+        I3["⏳ 最低保持期間 / 論理削除分析"]
+        I4["🧩 ストレージ構成 / Top 10"]
+    end
+
+    ACT(["👤 管理者: View resources → CSV エクスポート → 一括対応"])
+
+    SA1 --> AGG
+    SA2 --> AGG
+    AGG --> CD
+    CD --> I1
+    CD --> I2
+    CD --> I3
+    CD --> I4
+    I1 --> ACT
+    I4 --> ACT
+            </pre>
+        </div>
+        <p class="diagram-caption">組織内の Blob Storage / Data Lake Storage のメタデータを Storage Discovery ワークスペースが集計し、「Capacity details」レポートとして層・サイズ・保持などの高度なインサイトを提供する。各チャートからリソース一覧へドリルダウンし、是正アクションにつなげられる。</p>
+    </section>
+
+    <!-- ===== Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌡️</div>
+            <div class="feature-content">
+                <h4>1. 層 × 経過時間の分析 <span class="en">(Size by tier and recency)</span></h4>
+                <ul>
+                    <li>Hot / Cool / Cold / Archive 層ごとの容量またはオブジェクト数を、作成日時・最終アクセス日時・最終更新日時の時間軸 (0-3 日〜 365 日超の 7 区分) で比較</li>
+                    <li>ホット層に残る古い非アクティブデータや、コールド層にある高頻度アクセスデータを発見し、ライフサイクル管理の見直しにつなげる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <div class="feature-content">
+                <h4>2. オブジェクトサイズ分布 <span class="en">(Size-bucket distribution)</span></h4>
+                <ul>
+                    <li>0-1 KB / 1 KB-1 MB / 1 MB-1 GB / 1 GB-1 TB / 1 TB 超の 5 区分で、容量とオブジェクト数の割合を比較</li>
+                    <li>小さいオブジェクトの集中 (運用・コスト分析が必要なワークロードの発見) や、容量を支配する大型オブジェクトの特定に活用</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⏳</div>
+            <div class="feature-content">
+                <h4>3. 最低保持期間の分析 <span class="en">(Minimum retention analysis)</span></h4>
+                <ul>
+                    <li>Cool (30 日) / Cold (90 日) / Archive (180 日) の最低保持期間内にあるデータを特定</li>
+                    <li>期間満了前の削除・上書き・層変更による早期削除課金のリスクを、変更前に把握できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>4. ストレージ構成 <span class="en">(Storage composition)</span></h4>
+                <ul>
+                    <li>現行データ、旧 BLOB バージョン、スナップショット、論理削除済みデータの容量比較</li>
+                    <li>非現行データ・保持データが容量に占める割合を把握し、ライフサイクル / 保持設定の見直し対象を特定</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗑️</div>
+            <div class="feature-content">
+                <h4>5. 論理削除データの保持分析 <span class="en">(Soft-deleted retention)</span></h4>
+                <ul>
+                    <li>論理削除済みデータの残存保持期間別にサイズ・件数を比較し、復旧可能期間と課金対象容量への影響を把握</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🏆</div>
+            <div class="feature-content">
+                <h4>6. Top 10 ランキング</h4>
+                <ul>
+                    <li>ストレージアカウント・コンテナー・設定済みプレフィックスをサイズまたはオブジェクト数でランキング (上位 / 下位 / 急成長 / 急減少)</li>
+                    <li>調査すべきリソースの優先順位付けに活用</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📥</div>
+            <div class="feature-content">
+                <h4>7. リソースへのドリルダウンと CSV エクスポート</h4>
+                <ul>
+                    <li>各チャートの「View resources」からリソース一覧を表示し、フィルター・ソート・列編集・CSV ダウンロードが可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <tr><th style="width:32%">項目</th><th>詳細</th></tr>
+                <tr><td>提供レポート</td><td>Storage Discovery ワークスペースの「Capacity details」レポート</td></tr>
+                <tr><td>対象サービス</td><td>Azure Blob Storage、Azure Data Lake Storage</td></tr>
+                <tr><td>集計レベル</td><td>ストレージアカウント / コンテナー / 設定済みプレフィックス (個別 BLOB のインベントリは提供しない)</td></tr>
+                <tr><td>必要プラン</td><td>Standard プラン (プレビュー期間中は既存ワークスペースでのみ有効化可能。作成時には有効化不可)</td></tr>
+                <tr><td>データ反映</td><td>有効化後、最大 48 時間でインサイトが表示開始</td></tr>
+                <tr><td>プレビュー時のカバレッジ</td><td>Discovery スコープあたり最大 50,000 ストレージアカウント (サイズ優先)。フラット名前空間アカウントあたり最大 100 億オブジェクト、階層型名前空間アカウントあたり最大 50 億オブジェクト</td></tr>
+                <tr><td>コンテナーレベルのインサイト</td><td>各アカウントのサイズ上位 100 コンテナーまで</td></tr>
+                <tr><td>設定済みプレフィックス</td><td>ワークスペースあたり最大 100 件</td></tr>
+                <tr><td>最終アクセス日時の分析</td><td>最終アクセス時刻追跡 (last access time tracking) が有効なストレージアカウントのみ対象</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 class="sub-title">📌 前提条件</h3>
+        <ol class="steps">
+            <li>Standard プランの Storage Discovery ワークスペース (Free プランの場合は有効化時に Standard へのアップグレードを促される)</li>
+            <li>ワークスペースをデプロイする ID に workspaceRoots (サブスクリプション / リソースグループ) への <strong>Reader</strong> 以上のアクセス権と <code class="inline">Microsoft.Storage/storageAccounts/read</code> 権限</li>
+            <li>有効化時の追加アクセスチェックに合格すること</li>
+            <li>プレビュー対応リージョンでの利用 (「利用可能リージョン」参照)</li>
+        </ol>
+
+        <h3 class="sub-title">🖥️ Azure Portal (Advanced Capacity Insights の有効化)</h3>
+        <ol class="steps">
+            <li>Azure Portal で Storage Discovery ワークスペースを開く</li>
+            <li>ワークスペースの <strong>Overview</strong> ページの <strong>Essentials</strong> セクションで <strong>Capacity details</strong> を探す</li>
+            <li><strong>Enable</strong> を選択</li>
+            <li>Free プランの場合は、プロンプトに従い <strong>Standard</strong> プランへアップグレード</li>
+            <li>追加のアクセスチェックを完了 (失敗した場合は報告された権限を修正して再試行)</li>
+            <li>有効化後、最大 48 時間でインサイトが表示され始める</li>
+        </ol>
+
+        <h3 class="sub-title">⌨️ Azure CLI (ワークスペースの新規作成)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI</span></div>
+            <pre><code class="language-bash"># Standard プランで Storage Discovery ワークスペースを作成
+az storage-discovery workspace create \
+    --resource-group &lt;your-resource-group&gt; \
+    --name &lt;your-workspace-name&gt; \
+    --location &lt;azure-region&gt; \
+    --workspace-roots "/subscriptions/&lt;your-subscription-id&gt;/resourceGroups/&lt;your-resource-group&gt;" \
+    --scopes '[{"displayName":"basic","resourceTypes":["Microsoft.Storage/storageAccounts"]}]' \
+    --sku Standard \
+    --description "Optional description"</code></pre>
+        </div>
+        <div class="highlight-box">
+            ⚠️ なお、プレビュー期間中、Advanced Capacity Insights の有効化はワークスペース作成時には行えず、作成済みワークスペースに対して Portal から有効化する。
+        </div>
+    </section>
+
+    <!-- ===== Benefits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>メリット</h2>
+        <div class="benefit-grid">
+            <div class="benefit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>ホット層に滞留する非アクティブデータの発見により、ストレージコスト削減の機会を組織全体のスケールで特定できる</li>
+                    <li>早期削除課金のリスク (最低保持期間内データ) を事前に把握し、想定外のコスト発生を回避できる</li>
+                    <li>ストレージ増加の要因 (急成長リソース、非現行データの蓄積など) を把握し、データ管理方針の意思決定を支援する</li>
+                </ul>
+            </div>
+            <div class="benefit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>フルマネージドで追加インフラ不要。Blob Inventory のような個別アカウントごとの設定なしに、アカウント・コンテナー・プレフィックスレベルの集計を横断的に取得できる</li>
+                    <li>各チャートからリソース一覧へのドリルダウンと CSV エクスポートにより、是正アクション (ライフサイクルポリシー設定、一括操作スクリプト) へスムーズに移行できる</li>
+                    <li>リージョン、パフォーマンス種別、暗号化、冗長性、タグ、期間などによるフィルターで分析対象を柔軟に絞り込める</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>プレビュー段階であり、本番用途以外 (非運用環境・テスト) での利用が前提</li>
+                <li><strong>Standard プラン (有償) が必須</strong>。Free プランでは利用できず、Free プランへ変更すると Advanced Capacity Insights は利用不可になる</li>
+                <li>プレビュー期間中は既存ワークスペースでのみ有効化可能 (ワークスペース作成時には有効化できない)</li>
+                <li>有効化後、初期データの反映に最大 48 時間かかる</li>
+                <li>カバレッジ制限あり: スコープあたり最大 50,000 アカウント、コンテナーレベルは各アカウントの上位 100 コンテナーのみ、プレフィックスは最大 100 件。オブジェクト数上限を超えるアカウントはレポートに含まれない場合がある</li>
+                <li>「最終アクセス日時」ベースの分析は、最終アクセス時刻追跡が有効なアカウントのみ対象。無効なアカウントがあると結果が不完全になる</li>
+                <li>対応リージョンが限定されている (順次拡大予定)。対応リージョン内でもカバレッジが部分的な場合がある</li>
+                <li>無効化すると新規インサイトの生成が停止し、再有効化時にはアクセスチェックを再度完了する必要がある</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>📉 ユースケース 1: アクセス層の最適化によるコスト削減</h4>
+            <span class="usecase-label">シナリオ</span>
+            <p>数百のストレージアカウントを持つ組織で、長期間アクセスされていないデータがホット層に残っておりコストが膨らんでいる。どのアカウント・コンテナーから階層化を進めるべきか優先順位を付けたい。</p>
+            <span class="usecase-label">実装例</span>
+            <ol>
+                <li>ワークスペースの「Capacity details」レポートを開き、分析対象の Discovery スコープを選択</li>
+                <li>「Size by tier and recency」チャートで View を <strong>Last accessed time</strong>、By を <strong>Size</strong> に設定</li>
+                <li>「365 日超」かつ Hot 層のセグメントを確認し、<strong>View resources</strong> で該当アカウント・コンテナーを特定</li>
+                <li><strong>Download as CSV</strong> で一覧をエクスポートし、ライフサイクル管理ポリシー (Cool / Archive への自動階層化) を適用</li>
+            </ol>
+            <div class="effect-box">✅ <strong>効果</strong>: 組織全体から階層化の効果が大きいリソースをデータに基づいて特定し、ストレージコストを削減できる。変更前に「Minimum retention analysis」で早期削除課金のリスクも確認できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🗃️ ユースケース 2: 非現行データ (バージョン・論理削除) の棚卸し</h4>
+            <span class="usecase-label">シナリオ</span>
+            <p>バージョニングとソフトデリートを有効にしているストレージで、課金対象容量のうち現行データ以外が占める割合を把握し、保持設定を見直したい。</p>
+            <span class="usecase-label">実装例</span>
+            <ol>
+                <li>「Capacity details」レポートの「Storage composition」チャートで、現行データ / 旧バージョン / スナップショット / 論理削除済みデータの容量を比較</li>
+                <li>「Soft-deleted retention」チャートで、論理削除データの残存保持期間と、寄与の大きいアカウント・コンテナーを特定</li>
+                <li>保持期間設定やバージョンのライフサイクルポリシーを見直し</li>
+            </ol>
+            <div class="effect-box">✅ <strong>効果</strong>: 非現行データによる容量・コストへの影響を定量的に把握し、保持ポリシーの適正化につなげられる。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p class="lead">Azure Storage Discovery には Free と Standard の 2 つの料金プランがあり、Advanced Capacity Insights の利用には <span class="keyword">Standard プラン</span>が必要。Standard プランでは、スコープ内のストレージリソース数 (ストレージアカウントなど) とデータオブジェクト数 (BLOB など) に応じて課金される (分析数が増えるほど平均単価は低下)。インサイトの保存・取得・生成自体に追加料金はかからない。ワークスペースごとに個別に課金され、同じストレージリソースを複数の有償ワークスペースに含めるとそれぞれのワークスペースで課金される。</p>
+        <div class="table-wrap">
+            <table>
+                <tr><th>プラン</th><th>容量インサイト</th><th>トランザクション</th><th>構成</th><th>履歴</th></tr>
+                <tr><td><strong>Free</strong></td><td>トレンド / 分布 / 上位アカウント</td><td>なし</td><td>なし</td><td>バックフィル 15 日 / 保持 15 日</td></tr>
+                <tr><td><strong>Standard</strong></td><td>トレンド / 分布 / 上位アカウント</td><td>トレンド / 分布 / 上位アカウント</td><td>リソース構成 / セキュリティ構成</td><td>バックフィル 15 日 / 保持 18 か月</td></tr>
+            </table>
+        </div>
+        <p style="font-size:14px; color: var(--ms-text-secondary);">具体的な単価は <a href="https://azure.microsoft.com/pricing/details/azure-storage-discovery" target="_blank" rel="noopener">Azure Storage Discovery 料金ページ</a> を参照。</p>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p class="lead">プレビュー期間中、Advanced Capacity Insights は <span class="keyword">50 以上のリージョン</span>で段階的に提供されている (順次拡大予定)。</p>
+        <div class="region-grid">
+            <div class="region-card">
+                <h4>📅 2026 年 10 月 22 日から</h4>
+                <p>Australia Central、Belgium Central、Canada Central / East、France Central / South、East Asia、Denmark East など</p>
+            </div>
+            <div class="region-card">
+                <h4>📅 2026 年 11 月 2 日から</h4>
+                <p>East US / East US 2、West Europe、North Europe、UK South、<strong>Japan East / Japan West</strong>、Southeast Asia、Korea Central など多数のリージョン</p>
+            </div>
+        </div>
+        <p style="font-size:14px; color: var(--ms-text-secondary);">対応リージョン内でもカバレッジが部分的な場合がある。全リージョンの一覧は <a href="https://learn.microsoft.com/en-us/azure/storage-discovery/analyze-blob-capacity-details" target="_blank" rel="noopener">Analyze Blob capacity details</a> を参照。</p>
+    </section>
+
+    <!-- ===== Related services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>Azure Blob Storage / Azure Data Lake Storage</strong>
+                分析対象となるストレージサービス。アクセス層 (Hot / Cool / Cold / Archive)、バージョニング、ソフトデリート、最終アクセス時刻追跡などの機能がインサイトの分析軸となる
+            </div>
+            <div class="related-card">
+                <strong>Blob ライフサイクル管理</strong>
+                インサイトで特定した非アクティブデータの自動階層化・削除ポリシー設定に活用。本アップデートの主要な是正アクション先
+            </div>
+            <div class="related-card">
+                <strong>Azure Blob Inventory</strong>
+                個別 BLOB レベルのインベントリを提供する補完機能。Storage Discovery は集計ベースのインサイトを提供し、両者のレポート比較方法もドキュメント化されている
+            </div>
+            <div class="related-card">
+                <strong>Azure Copilot</strong>
+                Storage Discovery と統合されており、クエリ言語を使わずに自然言語でインサイトを取得可能
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Links ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=578655" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/storage-discovery/overview" target="_blank" rel="noopener">Azure Storage Discovery 概要 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/storage-discovery/analyze-blob-capacity-details" target="_blank" rel="noopener">Analyze Blob capacity details (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/storage-discovery/create-workspace" target="_blank" rel="noopener">ワークスペースの作成と Advanced Capacity Insights の有効化 (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/storage-discovery/pricing" target="_blank" rel="noopener">Storage Discovery の料金 (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-storage-discovery" target="_blank" rel="noopener">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Storage Discovery の Advanced Capacity Insights により、組織全体の Blob Storage / Data Lake Storage について、<strong>アクセス層 × 経過時間、オブジェクトサイズ分布、最低保持期間リスク、バージョン / スナップショット / 論理削除データの構成</strong>といった「消費のされ方」まで踏み込んだ分析が可能になった。大規模なストレージ資産を持つ組織にとって、コスト最適化とデータ管理の意思決定を強力に支援するアップデートである。</p>
+            <p>Standard プランの既存ワークスペースを持つ場合は、「Capacity details」を有効化し (反映まで最大 48 時間)、まず「Size by tier and recency」で階層化の最適化余地を確認することを推奨する。最終アクセス日時ベースの分析を活用するには、対象ストレージアカウントで最終アクセス時刻追跡を有効にしておくこと。プレビュー段階のためカバレッジ制限 (アカウント数・コンテナー数・プレフィックス数) とリージョン制限に注意し、本番の意思決定に用いる際はドキュメントで最新の制限を確認されたい。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">#Storage</span>
+            <span class="tag">#Storage Accounts</span>
+            <span class="tag">#Azure Storage Discovery</span>
+            <span class="tag">#Blob Storage</span>
+            <span class="tag">#Data Lake Storage</span>
+            <span class="tag">#Cost Optimization</span>
+            <span class="tag">#Public Preview</span>
+        </div>
+    </section>
+
+    <footer>
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=578655" target="_blank" rel="noopener">Azure Updates — Azure Storage Discovery: Advanced Capacity Insights (Public Preview)</a></p>
+        <p>出典: <a href="https://learn.microsoft.com/en-us/azure/storage-discovery/overview" target="_blank" rel="noopener">Microsoft Learn — Azure Storage Discovery</a> / <a href="https://learn.microsoft.com/en-us/azure/storage-discovery/analyze-blob-capacity-details" target="_blank" rel="noopener">Analyze Blob capacity details</a></p>
+        <p>リリース日: 2026-11-03 | ステータス: In preview | 本インフォグラフィックは Azure News Summary レポートを基に生成</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
