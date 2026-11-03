@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Database for PostgreSQL flexible server: VNet 統合から Private Endpoint 対応構成への変更が GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .meta-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.release-date {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.header h1 {
+    font-size: 26px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ms-blue-700);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+.section ul {
+    margin: 10px 0 10px 24px;
+}
+
+.section li { margin: 6px 0; }
+
+a { color: var(--azure-blue); }
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 8px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; }
+.before ul, .after ul { margin-left: 20px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+.stat-card.stat-warn {
+    background: linear-gradient(135deg, var(--ms-red), #A52E00);
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 4px;
+}
+
+.feature-content ul { margin-left: 20px; }
+
+/* Table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    text-align: left;
+    padding: 10px 14px;
+}
+
+td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-tertiary); }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+code.inline {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+/* Steps */
+.steps {
+    counter-reset: step;
+    margin: 16px 0;
+    padding: 0;
+    list-style: none;
+}
+
+.steps li {
+    position: relative;
+    padding: 10px 0 10px 48px;
+    border-left: 2px dashed var(--ms-blue-300);
+    margin-left: 16px;
+}
+
+.steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: -17px;
+    top: 10px;
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.merit-card h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 8px;
+}
+
+.merit-card ul { margin-left: 20px; }
+
+/* Use case */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h3 { margin-top: 0; }
+
+.usecase-label {
+    display: inline-block;
+    background: var(--ms-purple);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-right: 6px;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-top: 4px solid var(--ms-blue-500);
+    border-radius: 0 0 8px 8px;
+    padding: 14px;
+    font-size: 14px;
+}
+
+.related-card h4 {
+    color: var(--ms-blue-800);
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Links list */
+.link-list { margin-left: 24px; }
+.link-list li { margin: 8px 0; }
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 12px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 12px;
+}
+
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 20px; }
+    .container { padding: 14px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="meta-badges">
+            <span class="service-badge">🐘 Azure Database for PostgreSQL flexible server</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="release-date">📅 リリース日: 2026-11-02</span>
+        </div>
+        <h1>VNet 統合から Private Endpoint 対応ネットワーク構成への変更が一般提供 (GA)</h1>
+        <p class="subtitle">既存の VNet 統合 (委任サブネット) サーバーを、再作成なしで Azure Private Link ベースの構成へ移行可能に</p>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Database for PostgreSQL flexible server において、既存の <strong>VNet 統合 (virtual network injection による委任サブネット配置)</strong> サーバーを、<strong>Private Endpoint 対応のネットワーク構成</strong>へ変更する機能が一般提供 (GA) となりました。変更後は Azure Private Link を通じたプライベート IP アドレス経由のセキュアなアクセスが可能になります。</p>
+        <p>従来、flexible server はサーバー作成時に「プライベートアクセス (VNet 統合)」または「パブリックアクセス + Private Endpoint」のいずれかのネットワークオプションを選択する必要があり、VNet 統合でデプロイしたサーバーを別の VNet やサブネットへ移動したり、Private Link 構成へ切り替えたりすることはできませんでした。今回の GA により、既存の VNet 統合サーバーを<strong>サーバー再作成なし</strong>で Private Endpoint 対応構成へ移行できるようになり、ネットワーク設計の柔軟性が大きく向上します。</p>
+        <div class="warning-box">
+            ⚠️ 移行では既存のバックアップ (geo 冗長バックアップを含む) が保持されます。ただし、<strong>一時的な接続中断</strong>が発生するため計画的な実施が必要であり、移行後は <strong>Private Endpoint の追加またはファイアウォール規則の構成を行うまでサーバーにはアクセスできません</strong>。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>ネットワーク構成はサーバー作成時にのみ選択可能で、VNet 統合でデプロイしたサーバーを後から別の VNet / サブネットへ移動することや、Private Endpoint 構成へ変更することができなかった</li>
+                    <li>VNet 統合 (VNet 注入) されたリソースは既定で Private Link と連携できず、Private Link を利用したい場合はサーバーの作り直しとデータ移行が必要だった</li>
+                    <li>委任サブネットは <code class="inline">Microsoft.DBforPostgreSQL/flexibleServers</code> 専用となり他のリソースを配置できないため、IP アドレス空間やサブネット設計上の制約があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>既存の VNet 統合サーバーを、Portal または Azure CLI の操作で Private Endpoint 対応構成へ変更可能になった</li>
+                    <li>Azure Private Link を通じ、プライベート IP アドレス経由のセキュアなアクセスを既存サーバーで利用できるようになった</li>
+                    <li>移行前に取得したバックアップ (geo 冗長バックアップを含む) は移行後もそのまま利用可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">最大 20 分</div>
+                <div class="stat-label">変更全体の所要時間 (Updating 状態)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最大 10 分</div>
+                <div class="stat-label">接続中断 (アクセス不可時間)</div>
+            </div>
+            <div class="stat-card stat-warn">
+                <div class="stat-value">不可逆</div>
+                <div class="stat-label">VNet 統合へは戻せない</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">保持</div>
+                <div class="stat-label">既存バックアップ (geo 冗長含む)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["Before: VNet 統合 (委任サブネット)"]
+        App1([👤 アプリケーション])
+        subgraph VNet1["🌐 VNet"]
+            Subnet["📦 委任サブネット<br/>(Microsoft.DBforPostgreSQL 専用)"]
+            PG1[("🐘 PostgreSQL<br/>Flexible Server")]
+            Subnet --- PG1
+        end
+        App1 -->|プライベート IP| Subnet
+    end
+
+    subgraph After["After: Private Endpoint 対応構成"]
+        App2([👤 アプリケーション])
+        subgraph VNet2["🌐 VNet"]
+            PE["🔗 Private Endpoint"]
+        end
+        PG2[("🐘 PostgreSQL<br/>Flexible Server")]
+        App2 -->|プライベート IP| PE
+        PE -->|"Azure Private Link"| PG2
+    end
+
+    Before -.->|"ネットワーク構成の変更<br/>(不可逆 / 最大約 20 分)"| After
+            </pre>
+        </div>
+        <p>委任サブネットに注入されていたサーバーが、変更後は Private Endpoint (Azure Private Link) 経由でアクセス可能な構成になります。変更は不可逆で、完了後に Private Endpoint またはファイアウォール規則の設定が必要です。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⚡ サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>1. 既存 VNet 統合サーバーのネットワーク構成変更</h4>
+                <ul>
+                    <li>委任サブネットに配置された既存サーバーを、Private Endpoint をサポートするネットワーク構成 (パブリックアクセス + Private Endpoint 方式) へ変更できる</li>
+                    <li>Azure Portal の「Networking」設定、または Azure CLI の <code class="inline">az postgres flexible-server migrate-network</code> コマンドで実行</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💾</div>
+            <div class="feature-content">
+                <h4>2. バックアップの保持</h4>
+                <ul>
+                    <li>変更前に取得されたすべてのバックアップ (geo 冗長バックアップを含む) は、変更後も引き続き利用可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>3. 変更後のアクセス制御</h4>
+                <ul>
+                    <li>変更後、パブリックアクセスは既定で無効。必要に応じてパブリックアクセスの有効化とファイアウォール規則の追加が可能</li>
+                    <li>Private Endpoint を追加することで、Private Link 経由のプライベート接続を構成</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象</td><td>VNet 統合 (委任サブネット) でデプロイされた既存の flexible server</td></tr>
+            <tr><td>変更先の構成</td><td>パブリックアクセス (許可 IP アドレス) + Private Endpoint 対応構成</td></tr>
+            <tr><td>所要時間</td><td>通常最大 20 分程度 (この間サーバーは <strong>Updating</strong> 状態)</td></tr>
+            <tr><td>接続中断</td><td>通常最大 10 分程度アクセス不可。既存接続は切断され、新規接続は拒否される</td></tr>
+            <tr><td>可逆性</td><td><strong>不可逆</strong>。変更後に VNet 統合 (委任サブネット) へ戻すことはできない</td></tr>
+            <tr><td>バックアップ</td><td>変更前のバックアップ (geo 冗長含む) は変更後も利用可能</td></tr>
+            <tr><td>変更直後のパブリックアクセス</td><td>既定で無効</td></tr>
+            <tr><td>変更後の接続</td><td>Private Endpoint の追加、またはパブリックアクセス有効化 + ファイアウォール規則の構成が必要</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>⚙️ 設定方法</h2>
+
+        <h3>✅ 前提条件</h3>
+        <ol class="steps">
+            <li>VNet 統合 (プライベートアクセス) でデプロイされた Azure Database for PostgreSQL flexible server が存在すること</li>
+            <li>接続中断 (最大 10 分程度) を許容できるメンテナンスウィンドウを確保すること</li>
+            <li>変更後の接続手段 (Private Endpoint またはファイアウォール規則) の構成計画があること</li>
+        </ol>
+
+        <h3>💻 Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code class="language-bash"># ネットワーク構成を Private Endpoint 対応構成へ変更
+az postgres flexible-server migrate-network \
+  --resource-group &lt;resource_group&gt; \
+  --name &lt;server&gt;
+
+# サーバーの状態を確認 (Updating → Ready になるまで待機)
+az postgres flexible-server show \
+  --resource-group &lt;resource_group&gt; \
+  --name &lt;server&gt; \
+  --query "state"</code></pre>
+        </div>
+
+        <h3>🖱️ Azure Portal</h3>
+        <ol class="steps">
+            <li>対象の Azure Database for PostgreSQL flexible server を選択</li>
+            <li>リソースメニューの「設定」セクションで「ネットワーク」を選択</li>
+            <li>「ネットワーク接続」の「接続方法」で「パブリックアクセス (許可された IP アドレス) およびプライベートエンドポイント」を選択</li>
+            <li>「保存」を選択</li>
+            <li>確認ダイアログで影響 (不可逆であること、変更中はアクセス不可となること、変更後は Private Endpoint またはファイアウォール規則の構成までアクセス不可であること) を確認し、「保存」で変更を開始</li>
+            <li>サーバーの状態が「Updating」から「Ready」に変わるまで Portal で監視</li>
+        </ol>
+
+        <h3>📌 変更後の作業</h3>
+        <div class="highlight-box">
+            <ul>
+                <li><a href="https://learn.microsoft.com/azure/postgresql/network/how-to-networking-servers-deployed-public-access-add-private-endpoint" target="_blank" rel="noopener">Private Endpoint 接続の追加</a>、またはパブリックアクセスの有効化とファイアウォール規則の追加のいずれかを実施するまで、サーバーにはアクセスできない</li>
+                <li>Terraform で管理している場合は、<code class="inline">azurerm_postgresql_flexible_server</code> リソースから <code class="inline">delegated_subnet_id</code> を削除し、<code class="inline">public_network_access_enabled</code> を実際の設定に合わせて明示する (省略すると既定値 <code class="inline">true</code> が適用される)。<code class="inline">terraform plan</code> でサーバーの再作成が計画されていないことを確認してから適用する</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>🌟 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>サーバーの再作成やデータ移行を行わずにネットワーク構成を近代化でき、移行プロジェクトのコストとリスクを削減</li>
+                    <li>既存バックアップが保持されるため、バックアップ保持要件やコンプライアンス要件を維持したまま構成変更が可能</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>Azure Private Link によるプライベート IP 経由のセキュアなアクセスを既存サーバーで利用可能</li>
+                    <li>委任サブネット専有の制約から解放され、ネットワーク設計 (IP アドレス空間、サブネット構成) の柔軟性が向上</li>
+                    <li>Private Endpoint 方式では必要に応じてパブリックアクセス (許可 IP アドレス) との併用も選択可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li><strong>操作は不可逆</strong>: 変更後に VNet 統合 (委任サブネット) 構成へ戻すことはできない</li>
+                <li><strong>接続中断</strong>: 変更中は通常最大 10 分程度サーバーにアクセスできず、既存接続は切断、新規接続は拒否される。変更全体には最大 20 分程度かかる</li>
+                <li><strong>変更直後はアクセス不可</strong>: Private Endpoint の追加またはパブリックアクセス + ファイアウォール規則の構成を行うまで接続できない</li>
+                <li><strong>論理レプリケーションへの影響</strong>: サーバーが論理レプリケーションのパブリッシャーの場合、委任サブネット経由のプライベート経路が失われるためサブスクライバーの接続が切れる可能性がある。変更後、各サブスクライバーが Private Endpoint に到達できること (同一 VNet、VNet ピアリング、VPN / ExpressRoute 経由など) を確認する必要がある</li>
+                <li><strong>IaC への影響</strong>: Terraform などの構成を更新しないと、サーバーの再作成が計画される恐れがある</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+        <div class="usecase-card">
+            <h3><span class="usecase-label">CASE 1</span>既存の VNet 統合サーバーを Private Link ベースの構成へ移行</h3>
+            <p><strong>シナリオ</strong>: VNet 統合で運用中の flexible server を、サーバーを作り直すことなく Private Endpoint 経由のアクセス構成へ切り替え、委任サブネットの制約を解消したい。</p>
+            <p><strong>実装例</strong>:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span></div>
+                <pre><code class="language-bash"># 1. メンテナンスウィンドウ内でネットワーク構成を変更
+az postgres flexible-server migrate-network \
+  --resource-group my-rg \
+  --name my-pgserver
+
+# 2. 状態が Ready になったことを確認
+az postgres flexible-server show \
+  --resource-group my-rg \
+  --name my-pgserver \
+  --query "state"
+
+# 3. Private Endpoint を追加して接続を復旧 (Portal またはドキュメントの手順に従う)</code></pre>
+            </div>
+            <div class="highlight-box">
+                <strong>効果</strong>: サーバー再作成・データ移行なしで Private Link 経由のプライベート接続へ移行でき、既存バックアップも保持される。
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>このネットワーク構成変更の操作自体に関する料金情報はアップデート発表には記載されていません。Private Endpoint (Azure Private Link) の利用には別途料金が発生します。詳細は以下の料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/postgresql/flexible-server/" target="_blank" rel="noopener">Azure Database for PostgreSQL の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/private-link/" target="_blank" rel="noopener">Azure Private Link の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🔒 Azure Private Link / Private Endpoint</h4>
+                <p>変更後の構成で利用するプライベート接続の基盤。プライベート IP アドレス経由でサーバーへセキュアにアクセスする</p>
+            </div>
+            <div class="related-card">
+                <h4>🌐 Azure Virtual Network (VNet)</h4>
+                <p>変更前の VNet 統合 (委任サブネットへの VNet 注入) と、変更後の Private Endpoint 配置先の両方で利用するネットワーク基盤</p>
+            </div>
+            <div class="related-card">
+                <h4>📛 Azure Private DNS</h4>
+                <p>VNet 統合構成で必須だった名前解決の仕組み。Private Endpoint 構成でもプライベート名前解決に利用される</p>
+            </div>
+            <div class="related-card">
+                <h4>🛣️ VPN Gateway / ExpressRoute</h4>
+                <p>オンプレミスや他ネットワークから Private Endpoint へ到達するための接続手段。論理レプリケーションのサブスクライバー接続の復旧にも関係する</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="highlight-box">
+            <p>Azure Database for PostgreSQL flexible server で、これまで作成後に変更できなかったネットワーク構成を、VNet 統合から Private Endpoint 対応構成へ変更できる機能が GA となりました。サーバーの再作成やデータ移行なしで Private Link ベースのネットワーク設計へ移行でき、既存バックアップも保持されます。一方で、操作は不可逆であり、最大 10 分程度の接続中断と、変更後の Private Endpoint またはファイアウォール規則の構成が必要です。VNet 統合サーバーを運用中で委任サブネットの制約に課題を感じている場合は、論理レプリケーションや IaC (Terraform) への影響を確認したうえで、メンテナンスウィンドウでの計画的な移行を検討することを推奨します。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Database for PostgreSQL</span>
+            <span class="tag">Private Link</span>
+            <span class="tag">Private Endpoint</span>
+            <span class="tag">Virtual Network</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Databases</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=574541" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/postgresql/network/how-to-migrate-vnet-private-endpoint-capable-server?tabs=portal-migrate" target="_blank" rel="noopener">Microsoft Learn: ネットワーク構成の変更手順 (VNet 統合 → Private Endpoint 対応構成)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/postgresql/network/concepts-networking-private" target="_blank" rel="noopener">Microsoft Learn: プライベートアクセス (VNet 統合) の概念</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/postgresql/flexible-server/" target="_blank" rel="noopener">料金ページ (Azure Database for PostgreSQL)</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=574541" target="_blank" rel="noopener">Microsoft Azure Updates (ID: 574541)</a> / <a href="https://learn.microsoft.com/azure/postgresql/network/how-to-migrate-vnet-private-endpoint-capable-server?tabs=portal-migrate" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>Azure News Summary — レポート: 2026-11-02-postgresql-vnet-to-private-endpoint.md | インフォグラフィック生成日: 2026-11-03</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

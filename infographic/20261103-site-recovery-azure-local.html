@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Site Recovery: Azure Local 向けサポートの一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ---------- Header ---------- */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "☁️";
+    position: absolute;
+    font-size: 140px;
+    right: -10px;
+    bottom: -40px;
+    opacity: 0.15;
+}
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+.header .subtitle { font-size: 15px; opacity: 0.95; }
+.header .meta {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 13px;
+}
+.header .meta span {
+    background: rgba(255,255,255,0.15);
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+.service-badge {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.6);
+    color: white;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ---------- Sections ---------- */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+}
+.section-title .icon { font-size: 26px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--ms-blue-800); }
+
+/* ---------- Before / After ---------- */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ---------- Mermaid ---------- */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* ---------- Feature cards ---------- */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; font-size: 16px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-primary); }
+.feature-content ul { padding-left: 20px; margin-top: 4px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* ---------- DR Lifecycle flow ---------- */
+.lifecycle-flow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: stretch;
+    justify-content: center;
+    margin: 16px 0;
+}
+.lifecycle-step {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+    border-radius: 10px;
+    padding: 10px 12px;
+    text-align: center;
+    flex: 1 1 150px;
+    min-width: 140px;
+}
+.lifecycle-step .step-icon { font-size: 22px; }
+.lifecycle-step .step-name { font-weight: 700; font-size: 13px; color: var(--ms-blue-800); margin: 4px 0; }
+.lifecycle-step .step-desc { font-size: 12px; color: var(--ms-text-secondary); }
+.lifecycle-arrow {
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    color: var(--azure-blue);
+    font-weight: bold;
+}
+
+/* ---------- Tables ---------- */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+}
+td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+/* ---------- Steps ---------- */
+.steps { counter-reset: step; list-style: none; margin: 16px 0; }
+.steps li {
+    position: relative;
+    padding: 12px 16px 12px 56px;
+    margin-bottom: 10px;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+.steps li strong { color: var(--ms-blue-800); }
+
+.prereq-list { padding-left: 24px; font-size: 14px; }
+.prereq-list li { margin-bottom: 8px; }
+
+/* ---------- Merit / Caution ---------- */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-box {
+    border-radius: 10px;
+    padding: 18px;
+    border: 2px solid var(--ms-blue-400);
+    background: var(--ms-blue-100);
+}
+.merit-box h4 { color: var(--ms-blue-800); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+.merit-box ul { padding-left: 20px; font-size: 14px; }
+.merit-box li { margin-bottom: 8px; }
+
+.caution-box {
+    background: #FFF8E6;
+    border: 2px solid var(--ms-orange);
+    border-radius: 10px;
+    padding: 18px;
+}
+.caution-box ul { padding-left: 20px; font-size: 14px; }
+.caution-box li { margin-bottom: 10px; }
+
+/* ---------- Use cases ---------- */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 14px 0;
+}
+.usecase-card h4 { color: var(--ms-purple); font-size: 16px; margin-bottom: 10px; }
+.usecase-card p { font-size: 14px; margin-bottom: 8px; }
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--ms-purple);
+    border-radius: 10px;
+    padding: 2px 10px;
+    margin-right: 6px;
+}
+
+/* ---------- Pricing ---------- */
+.pricing-notes { padding-left: 24px; font-size: 14px; margin-top: 10px; }
+.pricing-notes li { margin-bottom: 6px; }
+.free-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin: 14px 0;
+}
+.free-banner .big { font-size: 28px; font-weight: 900; color: var(--ms-green); white-space: nowrap; }
+.free-banner p { font-size: 14px; }
+
+/* ---------- Region ---------- */
+.region-banner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+    border-radius: 10px;
+    padding: 16px 20px;
+    font-size: 15px;
+}
+.region-banner .icon { font-size: 32px; }
+
+/* ---------- Related services ---------- */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 14px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13px;
+}
+.related-card h5 { color: var(--azure-blue); font-size: 14px; margin-bottom: 6px; }
+
+/* ---------- Links ---------- */
+.link-list { list-style: none; }
+.link-list li {
+    margin-bottom: 8px;
+    padding-left: 24px;
+    position: relative;
+    font-size: 14px;
+    word-break: break-all;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); }
+
+/* ---------- Summary ---------- */
+.summary-section {
+    background: linear-gradient(135deg, var(--ms-blue-100), #FFFFFF);
+    border: 2px solid var(--azure-blue);
+}
+.summary-section p { font-size: 15px; margin-bottom: 12px; }
+
+/* ---------- Tags ---------- */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+/* ---------- Footer ---------- */
+.footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 20px 10px 30px;
+}
+.footer ul { list-style: none; margin-top: 8px; }
+.footer li { margin-bottom: 4px; word-break: break-all; }
+
+/* ---------- Code (not used heavily but keep rule) ---------- */
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .lifecycle-arrow { transform: rotate(90deg); justify-content: center; width: 100%; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="service-badge">Azure Site Recovery</span>
+            <span class="service-badge">Azure Local</span>
+        </div>
+        <h1>Azure Site Recovery<br>Azure Local 向けサポートが一般提供開始 (GA)</h1>
+        <p class="subtitle">Azure Local 上の Windows / Linux VM を Azure へレプリケーション。オンプレミスの災害対策 (DR) をクラウドに拡張</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-02 (GA 時期: 2026 年 10 月)</span>
+            <span>🧩 機能: Azure Site Recovery for Azure Local</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📌</span>概要</h2>
+        <p>Azure Site Recovery (ASR) による Azure Local のサポートが一般提供 (GA) となりました。Azure Local 上で稼働するサポート対象の Windows / Linux 仮想マシンを Azure にレプリケーションすることで、オンプレミス環境の災害対策 (DR) をクラウドに拡張できます。エンタープライズグレードの DR が、これまで以上にシンプルかつセキュアに、容易にセットアップできるようになりました。</p>
+        <div class="highlight-box">
+            <strong>ポイント</strong>: Azure portal 上の Azure Local リソースから合理化されたセットアップを開始でき、本番のレプリケーションを中断することなく<strong>テストフェールオーバー</strong>で復旧計画を検証可能。計画的・非計画的な停止時には Azure へ<strong>フェールオーバー</strong>し、オンプレミス復旧後は Azure Local へ<strong>フェールバック</strong>できます。Azure Local がサポートされるすべてのリージョンで利用可能です。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Hyper-V 向け ASR の有効化は、Azure portal の<strong>複数ブレードにまたがる多段階設定</strong>が必要で、ノードごとに繰り返し作業が発生</li>
+                    <li>WDAC (App Control) 強制モード環境では、エージェント導入のために<strong>一時的に監査モードへ切り替える</strong>回避策が必要</li>
+                    <li>プロキシ設定はメインのセットアップフロー外での<strong>手動手順</strong>が必要</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li><strong>単一ページのウィザード</strong>で DR 環境全体を準備 (コンテナー・Hyper-V サイト作成、全ノードへのエージェント自動インストール、ポリシー関連付け、ホスト登録を一括実行)</li>
+                    <li><strong>WDAC 強制モードを維持したまま</strong> ASR エージェントをインストール可能</li>
+                    <li>プロキシのホスト・ポート・資格情報を<strong>ウィザード内で直接設定</strong>し、クラスター全体に一貫適用 (個別構成ファイルや手動手順が不要)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗺️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph OnPrem["🏢 オンプレミス: Azure Local"]
+        VM1["🖥️ Windows VM<br>(Gen 1 / Gen 2)"]
+        VM2["🐧 Linux VM<br>(Gen 1 / Gen 2)"]
+        Agent["📦 ASR エージェント<br>(各ノードに自動インストール)"]
+        VM1 --> Agent
+        VM2 --> Agent
+    end
+
+    subgraph Azure["☁️ Azure Cloud"]
+        Vault["🔐 Recovery Services コンテナー<br>(レプリケーションポリシー)"]
+        Storage[("💾 ストレージ<br>(マネージドディスク推奨)")]
+        AzVM["🖥️ フェールオーバー先 Azure VM"]
+        Storage --> AzVM
+    end
+
+    Agent -- "① 継続的レプリケーション<br>(VHD を複製)" --> Storage
+    Vault -. "② テストフェールオーバー /<br>フェールオーバー" .-> AzVM
+    AzVM -- "③ フェールバック<br>(差分のみ逆レプリケート)" --> OnPrem
+            </pre>
+        </div>
+        <p class="diagram-caption">Azure Local 上の VM の仮想ハードディスクを Azure のストレージへ継続的にレプリケートし、災害時には Azure VM としてフェールオーバー、オンプレミス復旧後はフェールバックと逆レプリケーションで保護を再開します。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>サービスアップデートの詳細: 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧙</div>
+            <div class="feature-content">
+                <h4>1. 一元化されたデプロイウィザード</h4>
+                <ul>
+                    <li>Azure portal の Azure Local リソースの「Capabilities」タブにある「Disaster recovery」タイルから、<strong>1 ページのウィザード</strong>で DR インフラ全体を準備</li>
+                    <li>Recovery Services コンテナーと Hyper-V サイトの作成、全ノードへの ASR エージェントの自動ダウンロード・インストール、レプリケーションポリシーの関連付け、ホスト登録までを一括実行</li>
+                    <li>マネージド ID がコンテナー登録キーを取得し、エージェントのインストールを完了</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>2. WDAC 強制モード対応</h4>
+                <p>Application Control ポリシーを無効化・緩和することなくエージェントをインストール可能</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>3. 組み込みプロキシ対応</h4>
+                <p>プロキシのホスト・ポート・資格情報をウィザード内で設定し、クラスター全体に一貫適用</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔁</div>
+            <div class="feature-content">
+                <h4>4. DR ライフサイクルのフルサポート</h4>
+                <div class="lifecycle-flow">
+                    <div class="lifecycle-step">
+                        <div class="step-icon">📡</div>
+                        <div class="step-name">レプリケーション</div>
+                        <div class="step-desc">VM の VHD を Azure ストレージへ複製</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">🧪</div>
+                        <div class="step-name">テストフェールオーバー</div>
+                        <div class="step-desc">分離ネットワークに VM を作成し、本番レプリケーションに影響なく DR 計画を検証</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">🚨</div>
+                        <div class="step-name">フェールオーバー<br>(計画的・非計画的)</div>
+                        <div class="step-desc">最後にレプリケートされた状態から Azure 上で VM を起動</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">↩️</div>
+                        <div class="step-name">再保護・フェールバック</div>
+                        <div class="step-desc">Azure からオンプレミスへ VM を戻す</div>
+                    </div>
+                    <div class="lifecycle-arrow">→</div>
+                    <div class="lifecycle-step">
+                        <div class="step-icon">🔄</div>
+                        <div class="step-name">逆レプリケーション</div>
+                        <div class="step-desc">Azure 停止中の差分変更のみを再レプリケートし継続的な保護を回復</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📋</div>
+            <div class="feature-content">
+                <h4>5. 復旧計画 (Recovery Plans)</h4>
+                <p>VM をグループ化し、フェールオーバー後の起動順序の定義や復旧タスクの自動化により、アプリケーションを単一ユニットとして復旧</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <tr><th style="width: 32%;">項目</th><th>詳細</th></tr>
+            <tr><td><strong>対象 VM</strong></td><td>Azure Local 上の Hyper-V VM (Windows Gen 1 / Gen 2、Linux Gen 1 / Gen 2)</td></tr>
+            <tr><td><strong>フェールオーバー</strong></td><td>Azure へのフェールオーバー (計画的・非計画的)</td></tr>
+            <tr><td><strong>フェールバック</strong></td><td>フェールオーバー元と同一または代替ホストへのフェールバックに対応 (同一 Hyper-V サイトで複数の Azure Local インスタンスを準備した場合、いずれかのインスタンスのホストにフェールバック可能)</td></tr>
+            <tr><td><strong>レプリケーション先ストレージ</strong></td><td>Azure Storage アカウント / マネージドディスク (マネージドディスク推奨)</td></tr>
+            <tr><td><strong>フェールオーバー後のデプロイモデル</strong></td><td>Azure Resource Manager</td></tr>
+            <tr><td><strong>操作場所</strong></td><td>インフラ準備は Azure Local リソースから、以降の操作は Recovery Services コンテナーから (いずれも Azure portal)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 style="color: var(--ms-blue-800); margin-bottom: 8px;">✅ 前提条件</h3>
+        <ol class="prereq-list">
+            <li>保護対象 VM をホストする Azure Local がインターネットにアクセスできること (レプリケーションのため)</li>
+            <li>Azure Local が登録済みであること</li>
+            <li>マネージド ID へ権限を割り当てるための Recovery Services コンテナーに対する所有者権限、および Azure Local リソースとその子リソースに対する読み取り/書き込み権限</li>
+            <li>キャパシティプランニングツールでレプリケーションとフェールオーバーの要件を事前評価すること</li>
+        </ol>
+
+        <h3 style="color: var(--ms-blue-800); margin: 18px 0 8px;">🖱️ Azure Portal での手順</h3>
+        <ol class="steps">
+            <li><strong>インフラの準備</strong>: Azure Local システムの「Overview」→「Capabilities」タブ →「Disaster recovery」タイル →「Protect VM workloads」→「Prepare infrastructure」を選択。Recovery Services コンテナー、Hyper-V サイト、レプリケーションポリシーを新規作成または既存から選択して実行</li>
+            <li><strong>レプリケーションの有効化</strong>: Recovery Services コンテナーで「Replicate」→「Hyper-V machines to Azure」を選択し、ソース環境 (Hyper-V サイト)、ターゲット環境 (サブスクリプション、フェールオーバー後のリソースグループ、ストレージ、仮想ネットワーク)、対象 VM、OS 種別とディスク、レプリケーションポリシーを指定</li>
+            <li><strong>テストフェールオーバー</strong>: VM が「Protected」状態になったら、分離ネットワークでテストフェールオーバーを実行して DR 計画を検証</li>
+            <li><strong>復旧計画の作成</strong>: Recovery Services コンテナーで VM をグループ化し、起動順序と自動化を定義</li>
+            <li><strong>フェールオーバー / フェールバック / 逆レプリケーション</strong>: 災害時は Azure へフェールオーバーし、復旧後はフェールバックと逆レプリケーションで保護を再開</li>
+        </ol>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌟</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-box">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>オンプレミス (Azure Local) 環境にエンタープライズグレードの DR をクラウドベースで追加でき、<strong>セカンダリデータセンターの構築・維持が不要</strong></li>
+                    <li>本番レプリケーションを中断しないテストフェールオーバーにより、<strong>DR 訓練を安全に実施可能</strong></li>
+                    <li>フェールオーバー/テストフェールオーバー実行時のみコンピューティング料金が発生するため、<strong>平常時の DR サイト維持コストを抑制</strong></li>
+                </ul>
+            </div>
+            <div class="merit-box">
+                <h4>🧑‍💻 技術面</h4>
+                <ul>
+                    <li><strong>単一ウィザードによるセットアップ</strong>で、ノードごとの繰り返し作業や複数ブレードにまたがる設定が不要</li>
+                    <li>WDAC 強制モードやプロキシ環境といった<strong>セキュリティ要件の厳しい環境でもセキュリティ構成を緩めずに導入可能</strong></li>
+                    <li>復旧計画により、複数 VM で構成されるアプリケーションの<strong>起動順序制御と復旧タスクの自動化</strong>が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li><strong>Arc 拡張機能</strong>: Arc によってインストールされた拡張機能は、フェールオーバー後の Azure VM 上では表示されず、Azure 側での管理 (インストール・アップグレード・アンインストール) ができない</li>
+                <li><strong>ゲスト構成ポリシー</strong>: VM が Azure 上にある間、ゲスト構成ポリシー (OS のセキュリティ・構成の監査) は実行されない (オンプレミスへ戻るまで)</li>
+                <li><strong>ログデータ</strong>: ログデータ (Sentinel、Defender、Azure Monitor) は、Azure 上では Azure VM に、オンプレミスでは Arc 対応サーバーに関連付けられる。portal の UX はリソース ID でデータを検索するため、各リソースでは一部のログしか表示されない (コンピューター名での検索で全ログを確認可能)</li>
+                <li><strong>Azure VM ゲストエージェント</strong>: オンプレミスへ戻す可能性がある場合、Arc との競合を避けるためインストールは非推奨 (インストールする場合は拡張機能管理を無効化する)</li>
+                <li><strong>手動介入</strong>: フェールオーバー後に Azure Local 側の VM を削除した場合、Azure Local での管理を継続するには手動の介入が必要</li>
+                <li><strong>既知の問題</strong>: Hyper-V が未セットアップのホストや、別の Hyper-V サイトに既に関連付けられたホストでは ASR エージェントのインストールが失敗する</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>ユースケース 1: Azure Local 上の基幹系 VM のクラウド DR</h4>
+            <p><span class="usecase-label">シナリオ</span>単一拠点の Azure Local 上で稼働する基幹系の Windows / Linux VM について、拠点全体の障害 (災害・停電など) に備えたい。セカンダリ拠点を持たないため、Azure を DR サイトとして利用する。</p>
+            <p><span class="usecase-label">実装例</span>Azure portal で Azure Local リソースの「Disaster recovery」タイルからインフラを準備し、対象 VM のレプリケーションを有効化。復旧計画でアプリケーションの起動順序を定義し、四半期ごとにテストフェールオーバーで DR 訓練を実施する。</p>
+            <p><span class="usecase-label">効果</span>セカンダリデータセンターなしで拠点障害に備えられ、障害時は Azure 上でワークロードを継続。復旧後はフェールバックと逆レプリケーション (差分のみ) で迅速に元の環境へ復帰できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>ユースケース 2: WDAC 強制モード環境への DR 導入</h4>
+            <p><span class="usecase-label">シナリオ</span>セキュリティ要件により WDAC (App Control) を強制モードで運用している Azure Local 環境に、セキュリティポリシーを緩めることなく DR を導入したい。</p>
+            <p><span class="usecase-label">実装例</span>GA 版のデプロイウィザードを使用し、WDAC 強制モードを維持したまま全ノードに ASR エージェントをインストール。プロキシ経由の通信もウィザード内で設定する。</p>
+            <p><span class="usecase-label">効果</span>従来必要だった監査モードへの一時切り替えが不要になり、セキュリティ態勢を維持したまま DR を構成できる。</p>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Azure Site Recovery は保護対象インスタンス単位の月額課金です。</p>
+        <div class="free-banner">
+            <div class="big">31 日間無料</div>
+            <p>保護対象インスタンスは最初の 31 日間無料。32 日目以降 (Azure への復旧) は保護対象インスタンスあたり月額課金 (最新の金額は料金ページを参照)</p>
+        </div>
+        <table>
+            <tr><th>項目</th><th>料金</th></tr>
+            <tr><td>保護対象インスタンス (最初の 31 日間)</td><td>無料</td></tr>
+            <tr><td>保護対象インスタンス (32 日目以降、Azure への復旧)</td><td>保護対象インスタンスあたり月額課金 (最新の金額は料金ページを参照)</td></tr>
+        </table>
+        <ul class="pricing-notes">
+            <li>課金は月間の「平均日次保護インスタンス数」単位</li>
+            <li>無料期間中もレプリカストレージ、ストレージトランザクション、スナップショット (復旧ポイント、マネージドディスク料金) は課金対象</li>
+            <li>フェールオーバー / テストフェールオーバー実行時のみ Azure VM のコンピューティング料金が発生</li>
+        </ul>
+        <p style="font-size: 14px; margin-top: 10px;">詳細: <a href="https://azure.microsoft.com/pricing/details/site-recovery/" target="_blank">Azure Site Recovery 料金ページ</a></p>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <div class="region-banner">
+            <span class="icon">🗺️</span>
+            <span><strong>Azure Local がサポートされるすべてのリージョン</strong>で利用可能です。</span>
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>🏢 Azure Local</h5>
+                <p>保護対象の Hyper-V VM が稼働するハイブリッドインフラ。Azure portal 上の Azure Local リソースから DR のセットアップを開始する</p>
+            </div>
+            <div class="related-card">
+                <h5>🌐 Azure Arc</h5>
+                <p>Azure Local の VM は Arc 対応で管理される。フェールオーバー中は Arc 拡張機能の管理やゲスト構成ポリシーに制約がある点に注意</p>
+            </div>
+            <div class="related-card">
+                <h5>🔐 Recovery Services コンテナー (Azure Backup / Site Recovery)</h5>
+                <p>レプリケーションポリシーや保護対象 VM の構成情報を格納し、フェールオーバー以降の操作を実施する</p>
+            </div>
+            <div class="related-card">
+                <h5>💾 Azure Storage / マネージドディスク</h5>
+                <p>レプリケーション先のストレージ。マネージドディスクの利用が推奨される</p>
+            </div>
+            <div class="related-card">
+                <h5>📊 Azure Monitor / Microsoft Sentinel / Microsoft Defender</h5>
+                <p>ログデータはフェールオーバー中とオンプレミス稼働中で関連付け先リソースが変わる</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section summary-section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <p>Azure Site Recovery の Azure Local サポートが GA となり、Azure Local 上の Windows / Linux VM を Azure へレプリケートするエンタープライズグレードの DR が正式に利用可能になりました。GA 版では<strong>単一ページのデプロイウィザード</strong>、<strong>WDAC 強制モード対応</strong>、<strong>組み込みプロキシ対応</strong>により、Preview 時に課題だったセットアップの煩雑さとセキュリティ要件との両立が大きく改善されています。</p>
+        <p>Azure Local を運用し、セカンダリ拠点を持たずに DR を実現したい組織にとって有力な選択肢です。まずは<strong>最初の 31 日間の無料期間</strong>を活用して対象 VM のレプリケーションとテストフェールオーバーを検証し、復旧計画の整備と定期的な DR 訓練への組み込みを推奨します。</p>
+        <p>なお、フェールオーバー中は Arc 拡張機能の管理やゲスト構成ポリシーに制約がある点、<strong>Trusted Launch VM 対応や代替オンプレミス拠点へのフェールバックは将来リリース予定</strong>である点に留意してください。</p>
+        <div class="tags">
+            <span class="tag">Azure Site Recovery</span>
+            <span class="tag">Azure Local</span>
+            <span class="tag">Azure Arc</span>
+            <span class="tag">Hybrid + multicloud</span>
+            <span class="tag">Disaster Recovery</span>
+            <span class="tag">Management and governance</span>
+            <span class="tag">Migration</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典・参考リンク</strong></p>
+        <ul>
+            <li>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=579111" target="_blank">https://azure.microsoft.com/updates?id=579111</a></li>
+            <li>Tech Community Blog: <a href="https://techcommunity.microsoft.com/blog/azurestackblog/azure-site-recovery-for-azure-local-is-now-generally-available/4529925" target="_blank">Azure Site Recovery for Azure Local is now generally available</a></li>
+            <li>Microsoft Learn: <a href="https://learn.microsoft.com/en-us/azure/azure-local/manage/azure-site-recovery?view=azloc-2610" target="_blank">Protect your Hyper-V virtual machine workloads on Azure Local with Azure Site Recovery</a></li>
+            <li>Microsoft Learn: <a href="https://learn.microsoft.com/en-us/azure/site-recovery/site-recovery-overview" target="_blank">About Site Recovery</a></li>
+            <li>料金ページ: <a href="https://azure.microsoft.com/pricing/details/site-recovery/" target="_blank">https://azure.microsoft.com/pricing/details/site-recovery/</a></li>
+        </ul>
+        <p style="margin-top: 12px;">ソースレポート: reports/2026/2026-11-02-site-recovery-azure-local.md | 生成日: 2026-11-03</p>
+    </footer>
+
+</div>
+</body>
+</html>

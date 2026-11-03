@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microsoft Defender for IoT: OT セキュリティ機能の提供終了 (Retirement)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.7;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-retirement { background: var(--ms-red); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 22px 0 12px;
+}
+
+.section p { margin: 12px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.safe-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+strong { color: var(--ms-blue-800); }
+.warning-box strong { color: var(--ms-red); }
+.safe-box strong { color: var(--ms-green); }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-card.red { background: linear-gradient(135deg, var(--ms-red), #A52C00); }
+.stat-card.green { background: linear-gradient(135deg, var(--ms-green), #0B5A0B); }
+
+.stat-value { font-size: 28px; font-weight: 700; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.92; margin-top: 6px; }
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.figure-caption {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 12px 14px;
+    text-align: left;
+    font-weight: 700;
+}
+
+td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.feature-content h4 {
+    font-size: 15px;
+    color: var(--ms-blue-800);
+    margin-bottom: 4px;
+}
+
+.feature-content p { font-size: 14px; margin: 0; color: var(--ms-text-secondary); }
+
+/* ===== Action Steps ===== */
+.action-step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin: 14px 0;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+.step-number {
+    background: var(--azure-blue);
+    color: white;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.action-step h4 { font-size: 15px; color: var(--ms-blue-800); margin-bottom: 2px; }
+.action-step p { font-size: 14px; margin: 0; color: var(--ms-text-secondary); }
+
+/* ===== Constraint list ===== */
+.constraint-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: #FFF4E5;
+    border: 1px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.constraint-icon { font-size: 18px; flex-shrink: 0; }
+
+/* ===== Data item chips ===== */
+.chip-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 14px 0;
+}
+
+.chip {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 16px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+.link-list { list-style: none; }
+.link-list li {
+    margin: 10px 0;
+    padding: 10px 14px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+/* ===== Tags ===== */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.tag {
+    background: var(--ms-blue-900);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">🛡️ Microsoft Defender for IoT</span>
+            <span class="badge badge-retirement">Retirement (提供終了)</span>
+        </div>
+        <h1>OT (Operational Technology) セキュリティコンポーネントの提供終了を発表</h1>
+        <div class="meta">📅 リリース日: 2026-11-02 ｜ 🔒 カテゴリ: Security ｜ 対象機能: OT セキュリティコンポーネント</div>
+    </header>
+
+    <!-- ===== Key Stats ===== -->
+    <div class="stats-grid">
+        <div class="stat-card red">
+            <div class="stat-value">2029年10月</div>
+            <div class="stat-label">完全非推奨化 (fully deprecated)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">3 年間</div>
+            <div class="stat-label">移行期間 (セキュリティ更新・バグ修正は継続)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">3 社</div>
+            <div class="stat-label">OT データコネクタ対応 (Armis / Dragos / Forescout)</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-value">対象外</div>
+            <div class="stat-label">Defender for Endpoint の Enterprise IoT 機能</div>
+        </div>
+    </div>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Microsoft は、Microsoft Defender for IoT の OT (Operational Technology) セキュリティコンポーネントを非推奨化 (deprecate) する正式な通知を発表しました。3 年間の移行期間を経て、<strong>2029 年 10 月にサービスが完全に非推奨化 (fully deprecated)</strong> されます。</p>
+        <div class="highlight-box">
+            移行期間中、既存のデプロイメントは引き続きサポートされ、<strong>定期的なセキュリティ更新とバグ修正は提供されます</strong>が、OT 固有の新機能追加や投資は行われません。既存の顧客契約と更新は 2029 年 10 月まで履行されます。
+        </div>
+        <div class="safe-box">
+            ✅ <strong>Microsoft Defender for Endpoint の Enterprise IoT 機能 (デバイス検出、脆弱性評価を含む) は今回の提供終了の対象外</strong>であり、引き続き利用可能です。
+        </div>
+
+        <h3>アップデート前後の変化</h3>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前)</h4>
+                <ul>
+                    <li>Microsoft Defender for IoT の OT セキュリティコンポーネントが、OT ネットワークの脅威検出・資産可視化の Microsoft ファーストパーティソリューションとして提供されていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後)</h4>
+                <ul>
+                    <li>OT セキュリティコンポーネントは 2029 年 10 月に完全非推奨化されるため、顧客は移行期間 (3 年間) 内に代替の OT セキュリティソリューションへの移行が必要</li>
+                    <li>Microsoft は特定の代替製品を指定しないが、Microsoft Security Exposure Management の OT データコネクタ (Armis、Dragos、Forescout) により、サードパーティ OT プラットフォームの資産・脆弱性データを Defender ポータルに取り込む統合パスを提供</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2>🗺️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["🏭 現在 (〜2029 年 10 月: 移行期間)"]
+        OT1[🔌 OT デバイス / 産業制御システム]
+        D4IoT[🛡️ Defender for IoT<br/>OT セキュリティ<br/>セキュリティ更新・バグ修正のみ継続]
+        OT1 --> D4IoT
+    end
+
+    subgraph After["☁️ 移行後 (2029 年 10 月まで に完了)"]
+        OT2[🔌 OT デバイス / 産業制御システム]
+        TP[🤝 サードパーティ OT セキュリティ<br/>Armis / Dragos / Forescout など]
+        XM[📊 Microsoft Security<br/>Exposure Management<br/>OT データコネクタ]
+        Portal[🖥️ Microsoft Defender ポータル<br/>統合デバイスインベントリ・脆弱性管理]
+        OT2 --> TP
+        TP -->|資産・脆弱性データ| XM
+        XM --> Portal
+    end
+
+    Before -.->|移行計画・実行| After
+            </pre>
+        </div>
+        <p class="figure-caption">Defender for IoT の OT セキュリティから、サードパーティ OT セキュリティソリューションへの移行パスを示しています。Armis、Dragos、Forescout は Exposure Management の OT データコネクタ経由で Defender ポータルに資産・脆弱性データを連携できます。</p>
+    </section>
+
+    <!-- ===== Details ===== -->
+    <section class="section">
+        <h2>🔍 サービスアップデートの詳細</h2>
+
+        <h3>提供終了の内容</h3>
+        <div class="feature-card" style="border-left-color: var(--ms-red);">
+            <div class="feature-icon" style="background: #FFEBEE;">🛑</div>
+            <div class="feature-content">
+                <h4>対象: Microsoft Defender for IoT の OT セキュリティコンポーネント</h4>
+                <p>OT ネットワークの脅威検出・監視機能が非推奨化の対象</p>
+            </div>
+        </div>
+        <div class="feature-card" style="border-left-color: var(--ms-green);">
+            <div class="feature-icon" style="background: #E8F5E9;">✅</div>
+            <div class="feature-content">
+                <h4>対象外: Microsoft Defender for Endpoint の Enterprise IoT 機能</h4>
+                <p>デバイス検出、脆弱性評価は引き続き利用可能</p>
+            </div>
+        </div>
+
+        <h3>⏳ タイムライン</h3>
+        <table>
+            <thead>
+                <tr><th>時期</th><th>内容</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>2026 年 11 月 (通知発表)</strong></td><td>移行期間の開始。デプロイメントの利用を直ちに停止する必要はない</td></tr>
+                <tr><td><strong>移行期間中 (〜2029 年 10 月)</strong></td><td>定期的なセキュリティ更新とバグ修正は継続。OT 固有の新機能追加・投資は行われない</td></tr>
+                <tr><td><strong>〜2029 年 10 月</strong></td><td>既存の顧客契約と更新は履行される</td></tr>
+                <tr><td><strong>2029 年 10 月</strong></td><td>完全非推奨化。この日までに移行を完了する必要がある</td></tr>
+            </tbody>
+        </table>
+
+        <h3>🔀 移行先の選択肢</h3>
+        <p>Microsoft は特定の代替製品を義務付けていませんが、以下の 3 つのサードパーティプロバイダー向けに OT データコネクタを提供しています。</p>
+        <table>
+            <thead>
+                <tr><th>プロバイダー</th><th>統合方法</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>Armis</strong></td><td>Microsoft Security Exposure Management の OT データコネクタ</td></tr>
+                <tr><td><strong>Dragos</strong></td><td>同上</td></tr>
+                <tr><td><strong>Forescout</strong></td><td>同上</td></tr>
+            </tbody>
+        </table>
+
+        <p>これらの OT データコネクタにより、サードパーティ OT プラットフォームから以下のデータを Defender ポータルに取り込めます。</p>
+        <div class="chip-grid">
+            <span class="chip">🏷️ OT デバイス・資産情報 (ホスト名、IP/MAC アドレス、シリアル番号などの識別子)</span>
+            <span class="chip">🔧 デバイスタイプ、ベンダー、モデル、ファームウェア、OS の詳細</span>
+            <span class="chip">📍 ロケーション、ゾーン、サイト、センサー、ネットワーク関連情報</span>
+            <span class="chip">⚖️ 資産のクリティカリティ (重要度)</span>
+            <span class="chip">🐞 OT デバイスに関連する脆弱性の検出結果</span>
+        </div>
+        <div class="highlight-box">
+            これにより、<strong>IT / IoT / OT デバイスを単一のインベントリで可視化</strong>し、CVE 検索や影響範囲の調査を Defender ポータル上で横断的に行えます。
+        </div>
+        <div class="warning-box">
+            ⚠️ <strong>サードパーティソリューションには別途ライセンス契約とデプロイメントが必要</strong>です。また、コネクタが提供されている 3 社以外の OT セキュリティプロバイダーを選択することも可能です。
+        </div>
+    </section>
+
+    <!-- ===== Actions ===== -->
+    <section class="section">
+        <h2>🧭 Solutions Architect が取るべきアクション</h2>
+        <div class="action-step">
+            <div class="step-number">1</div>
+            <div>
+                <h4>環境の評価</h4>
+                <p>OT デプロイメント、センサー、インテグレーション、ライセンス、契約、セキュリティ要件の棚卸しを行う</p>
+            </div>
+        </div>
+        <div class="action-step">
+            <div class="step-number">2</div>
+            <div>
+                <h4>移行先の検討</h4>
+                <p>要件に合う OT セキュリティソリューションを選定する (コネクタ対応の 3 社に限定されない)</p>
+            </div>
+        </div>
+        <div class="action-step">
+            <div class="step-number">3</div>
+            <div>
+                <h4>Microsoft 統合の理解</h4>
+                <p>サポートされるサードパーティコネクタが Exposure Management / Defender ポータルに OT データをどのように取り込むかを把握する</p>
+            </div>
+        </div>
+        <div class="action-step">
+            <div class="step-number">4</div>
+            <div>
+                <h4>移行計画の策定</h4>
+                <p>調達、テスト、運用検証、事業継続、データエクスポート、センサーの廃止 (デコミッション) を 2029 年 10 月までに完了する計画を立てる</p>
+            </div>
+        </div>
+        <div class="action-step">
+            <div class="step-number">5</div>
+            <div>
+                <h4>早期の着手</h4>
+                <p>OT プロバイダーに直接コンタクトするか、Microsoft アカウントチームに紹介を依頼する</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="constraint-item">
+            <span class="constraint-icon">🚫</span>
+            <span>移行期間中、Defender for IoT の OT セキュリティには新機能が追加されない (セキュリティ更新・バグ修正のみ)</span>
+        </div>
+        <div class="constraint-item">
+            <span class="constraint-icon">💰</span>
+            <span>サードパーティソリューションへの移行には、別途のライセンス費用とデプロイメント作業が発生する</span>
+        </div>
+        <div class="constraint-item">
+            <span class="constraint-icon">🛠️</span>
+            <span>センサーの再デプロイ、データエクスポート、運用プロセスの再構築など、移行には相応のプロジェクト工数が必要</span>
+        </div>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>Microsoft Security Exposure Management</h4>
+                <p>サードパーティ OT プラットフォーム (Armis / Dragos / Forescout) の資産・脆弱性データを取り込む OT データコネクタを提供</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>Microsoft Defender for Endpoint (Enterprise IoT)</h4>
+                <p>Enterprise IoT デバイスの検出・脆弱性評価は本提供終了の対象外で、引き続き利用可能</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>Microsoft Defender ポータル</h4>
+                <p>OT データコネクタ経由で取り込んだ OT デバイスを IT / IoT デバイスと統合インベントリで管理</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="highlight-box">
+            <p>Microsoft Defender for IoT の OT セキュリティコンポーネントが <strong>2029 年 10 月に完全非推奨化</strong>されることが正式に発表されました。<strong>3 年間</strong>という比較的長い移行期間が設けられており、期間中はセキュリティ更新とバグ修正が継続されますが、新機能の追加はありません。</p>
+            <p>OT セキュリティを Defender for IoT で運用している組織は、<strong>早期に環境の棚卸しと移行先の選定に着手</strong>すべきです。Microsoft は Armis、Dragos、Forescout との統合コネクタを Exposure Management で提供しており、移行後も Defender ポータルでの IT / OT 横断の可視化を維持できます。<strong>Enterprise IoT 機能 (Defender for Endpoint) は対象外</strong>である点にも留意してください。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">#DefenderForIoT</span>
+            <span class="tag">#OTSecurity</span>
+            <span class="tag">#Retirement</span>
+            <span class="tag">#ExposureManagement</span>
+            <span class="tag">#Security</span>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li>📢 <a href="https://azure.microsoft.com/updates?id=576255" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>🔌 <a href="https://learn.microsoft.com/security-exposure-management/ot-data-connectors" target="_blank" rel="noopener">OT データコネクタ (Microsoft Security Exposure Management)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/defender-for-iot/" target="_blank" rel="noopener">Microsoft Defender for IoT ドキュメント</a></li>
+            <li>🏢 <a href="https://learn.microsoft.com/azure/defender-for-iot/organizations/concept-enterprise" target="_blank" rel="noopener">Enterprise IoT セキュリティ (Defender for Endpoint)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=576255" target="_blank" rel="noopener">Azure Updates - Microsoft Defender for IoT OT Security Retirement</a></p>
+        <p>本インフォグラフィックは Azure News Summary レポート (2026-11-02) をもとに生成されました (生成日: 2026-11-03)</p>
+    </footer>
+
+</div>
+</body>
+</html>

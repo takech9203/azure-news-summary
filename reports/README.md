@@ -5,6 +5,14 @@
 
 ## 2026 年
 
+- [2026-11-02 - Azure Site Recovery: Azure Local 向けサポートの一般提供開始 (GA)](2026/2026-11-02-site-recovery-azure-local.md)
+- [2026-11-02 - Microsoft Defender for IoT: OT セキュリティ機能の提供終了 (Retirement) を発表](2026/2026-11-02-defender-iot-ot-security-retirement.md)
+- [2026-11-02 - Azure SQL Database: Azure portal からのデータベース再起動が一般提供 (GA)](2026/2026-11-02-sql-database-restart-portal.md)
+- [2026-11-02 - Azure Migrate: オンプレミス NAS 共有のディスカバリと評価 (Public Preview)](2026/2026-11-02-azure-migrate-nas-discovery.md)
+- [2026-11-02 - Azure Database for PostgreSQL flexible server: VNet 統合から Private Endpoint 対応ネットワーク構成への変更が一般提供 (GA)](2026/2026-11-02-postgresql-vnet-to-private-endpoint.md)
+- [2026-11-02 - Azure Storage Actions: タスク定義の自動反映・実行制御・大文字小文字を区別するマッチングが一般提供開始](2026/2026-11-02-storage-actions-task-management-enhancements.md)
+- [2026-11-02 - Azure Fluid Relay: サービス廃止 (2027 年 2 月 2 日)](2026/2026-11-02-azure-fluid-relay-retirement.md)
+- [2026-11-02 - Azure Service Bus: パーティション分割名前空間での Geo-Replication が一般提供開始 (GA)](2026/2026-11-02-service-bus-geo-replication-partitioned.md)
 - [2026-10-30 - Azure SQL Database: データベースレベル マネージド ID (FIC 対応) の Database Scoped Credential サポート (Public Preview)](2026/2026-10-30-sql-database-database-level-managed-identity.md)
 - [2026-10-29 - Azure Front Door: Premium WAF 向け HTTP DDoS ルールセットの一般提供開始](2026/2026-10-29-front-door-waf-http-ddos-ruleset.md)
 - [2026-10-29 - Azure MCP Server: バージョン 3.0 が一般提供 (GA) 開始](2026/2026-10-29-azure-mcp-server-3-0.md)

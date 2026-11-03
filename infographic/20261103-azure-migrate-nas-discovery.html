@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Migrate: オンプレミス NAS 共有のディスカバリと評価 (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .meta-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.badge-preview {
+    background: var(--ms-yellow);
+    color: var(--ms-text-primary);
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 26px; }
+
+.section p { margin-bottom: 12px; }
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 6px;
+    font-size: 16px;
+}
+
+.feature-content ul {
+    padding-left: 20px;
+    font-size: 14px;
+}
+
+.feature-content li { margin-bottom: 4px; }
+
+/* Table */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+.spec-table td:first-child {
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    white-space: nowrap;
+}
+
+/* Steps */
+.step-group-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin: 20px 0 10px;
+}
+
+.step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 10px 0;
+}
+
+.step-number {
+    background: var(--azure-blue);
+    color: white;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.step-content {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    flex: 1;
+}
+
+.step-content code {
+    background: var(--ms-blue-200);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+/* Benefit / Caution lists */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.benefit-card {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.benefit-card h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.benefit-card ul { padding-left: 20px; font-size: 14px; }
+.benefit-card li { margin-bottom: 8px; }
+
+.caution-list {
+    list-style: none;
+    padding: 0;
+}
+
+.caution-list li {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-orange);
+    padding: 10px 16px;
+    margin-bottom: 10px;
+    border-radius: 0 8px 8px 0;
+    font-size: 14px;
+}
+
+/* Use case */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 17px;
+    margin-bottom: 12px;
+}
+
+.usecase-item {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+.usecase-label {
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    height: fit-content;
+    margin-top: 2px;
+}
+
+/* Pricing */
+.pricing-box {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.pricing-box .price-icon { font-size: 36px; }
+.pricing-box .price-main {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--ms-green);
+}
+.pricing-box p { margin: 0; font-size: 14px; }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid #00BCF2;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.related-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 15px;
+    margin-bottom: 6px;
+}
+
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+.link-list { list-style: none; padding: 0; }
+.link-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+}
+.link-list li:last-child { border-bottom: none; }
+.link-list a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+.link-list a:hover { text-decoration: underline; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+
+.summary-box p { font-size: 15px; }
+
+/* Tags */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0;
+    border-top: 1px solid var(--ms-border);
+}
+
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .two-col { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="meta-badges">
+            <span class="service-badge">Azure Migrate</span>
+            <span class="badge badge-preview">In Preview</span>
+            <span style="font-size: 14px;">📅 リリース日: 2026-11-02</span>
+        </div>
+        <h1>オンプレミス NAS 共有のディスカバリと評価<br>(Public Preview)</h1>
+        <div class="subtitle">On-prem NAS share discovery and assessment — Dell PowerScale (OneFS) / NetApp ONTAP の Azure 移行計画を Azure Migrate で一元化</div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Migrate が、ネットワーク接続ストレージ (NAS) のディスカバリ (検出) と評価 (アセスメント) をパブリックプレビューとしてサポートした。これにより、<strong>Dell PowerScale (OneFS)</strong> および <strong>NetApp ONTAP</strong> ストレージの Azure への移行計画を Azure Migrate 上で立案できるようになる。</p>
+        <p>Azure Migrate アプライアンスが読み取り専用の資格情報を使用して NAS クラスターに直接接続し、<strong>SMB / NFS / S3 のすべての共有をインベントリ化</strong>する。各共有は Azure Files、Azure Blob Storage、Azure NetApp Files を移行先候補として評価され、移行準備状況 (readiness)、適切にサイジングされた Azure ターゲット構成、月額コスト見積もりが提示される。さらに、オンプレミスコストと Azure ストレージサービスを比較するビジネスケースの生成や、ウェーブプランによる移行順序の計画にも対応する。</p>
+        <div class="highlight-box">
+            💡 NAS はオンプレミス資産の中で最も規模が大きく、かつ把握が難しい領域であることが多い。NAS のディスカバリと評価が Azure Migrate に統合されたことで、<strong>ストレージをサーバー・アプリケーションと同じプロジェクト、同じビジネスケースの中で計画できる</strong>ようになった。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure Migrate は NAS 共有のディスカバリ・評価に対応しておらず、NAS の移行計画はスプレッドシートを使った手作業に依存していた</li>
+                    <li>大規模またはマルチプロトコルのストレージ資産では、共有単位の正確なインベントリやコスト根拠の把握が困難だった</li>
+                    <li>ストレージの移行計画が、依存するサーバー・アプリケーションの計画と分断されていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>アプライアンスが NAS クラスターに接続し、SMB / NFS / S3 共有を自動的にインベントリ化。検証済みの共有単位インベントリと説明可能なコスト根拠が得られる</li>
+                    <li>各共有を Azure Files / Azure Blob Storage / Azure NetApp Files に対して評価し、準備状況・推奨構成・月額コスト見積もりを提示</li>
+                    <li>NAS 共有を既存のサーバー・アプリケーション・データベースのインベントリと並べてグループ化・タグ付け・フィルタリングでき、同一プロジェクト内で一元的に移行計画を立てられる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph OnPrem["🏢 オンプレミス"]
+        NAS1[("🗄️ Dell PowerScale<br/>(OneFS)")]
+        NAS2[("🗄️ NetApp ONTAP<br/>(AFF / FAS)")]
+        APP["📦 Azure Migrate<br/>アプライアンス"]
+    end
+    subgraph Azure["☁️ Azure"]
+        PROJ["📋 Azure Migrate<br/>プロジェクト"]
+        ASSESS["📊 評価<br/>(readiness / 構成 / コスト)"]
+        T1["📁 Azure Files"]
+        T2["🧱 Azure Blob Storage"]
+        T3["💾 Azure NetApp Files"]
+    end
+    NAS1 -- "読み取り専用資格情報<br/>SMB/NFS/S3 共有の列挙" --> APP
+    NAS2 -- "読み取り専用資格情報<br/>SMB/NFS/S3 共有の列挙" --> APP
+    APP -- "共有・システムの<br/>メタデータ送信" --> PROJ
+    PROJ --> ASSESS
+    ASSESS --> T1
+    ASSESS --> T2
+    ASSESS --> T3
+            </pre>
+        </div>
+        <p class="diagram-caption">Azure Migrate アプライアンスが読み取り専用資格情報で NAS クラスターから共有メタデータを収集し、Azure Migrate プロジェクト上で Azure Files / Blob Storage / Azure NetApp Files を移行先候補とした評価を行う。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-content">
+                <h4>1. NAS クラスターと共有のディスカバリ</h4>
+                <ul>
+                    <li>Dell PowerScale / Isilon (OneFS)、NetApp ONTAP / FAS クラスターと、それらがホストする SMB / NFS / S3 共有を検出</li>
+                    <li>複数プロトコル (例: SMB + S3、NFS + S3) で公開されている共有はマルチプロトコル共有として識別される</li>
+                    <li>検出された NAS クラスターと共有は、アプライアンスが従来から検出する Windows / Linux ファイルサーバーと並んでプロジェクトのインベントリに表示される</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🗂️</div>
+            <div class="feature-content">
+                <h4>2. 既存インベントリとの統合管理</h4>
+                <ul>
+                    <li>NAS 共有を既存のサーバー・アプリケーション・データベースのインベントリと並べてグループ化・タグ付け・フィルタリングが可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>3. 共有単位の評価</h4>
+                <ul>
+                    <li>各共有について、移行準備状況 (readiness)、適切にサイジングされた Azure ターゲット構成、月額コスト見積もりを提示</li>
+                    <li>評価対象の移行先は Azure Files、Azure Blob Storage、Azure NetApp Files</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💼</div>
+            <div class="feature-content">
+                <h4>4. ビジネスケースとウェーブプラン</h4>
+                <ul>
+                    <li>Azure ストレージサービスとオンプレミスコストを比較するビジネスケースを生成</li>
+                    <li>ウェーブプランを使用して移行の実施順序を計画</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対応 NAS プラットフォーム</td><td>Dell Technologies: PowerScale (OneFS)、Dell EMC Isilon (OneFS) (レガシー) / NetApp: ONTAP AFF、FAS (レガシー)</td></tr>
+            <tr><td>検出対象プロトコル</td><td>SMB、NFS、S3、マルチプロトコル共有</td></tr>
+            <tr><td>評価対象の移行先</td><td>Azure Files、Azure Blob Storage、Azure NetApp Files</td></tr>
+            <tr><td>接続方式</td><td>Azure Migrate アプライアンスが NAS クラスターの管理エンドポイント (既定ポート 443) に接続</td></tr>
+            <tr><td>必要な資格情報</td><td>クラスターレベルの読み取り専用権限以上を持つ NAS クラスターアカウント (NAS システムへの書き込みは行わない)</td></tr>
+            <tr><td>収集する情報</td><td>共有とシステムのメタデータのみ (ファイル内容のクロール、ACL の分析、個人情報のスキャンは行わない)</td></tr>
+            <tr><td>非対応</td><td>SAN / LUN のディスカバリ、iSCSI などの非ファイルプロトコル</td></tr>
+            <tr><td>アプライアンス構成</td><td>サーバー検出と同じアプライアンスで構成可能。vCenter Server や NSX Manager のソースと NAS ソースを 1 台のアプライアンスに混在可能</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <div class="step-group-title">📌 前提条件</div>
+        <div class="step"><div class="step-number">1</div><div class="step-content">Azure Migrate プロジェクトと Azure Migrate アプライアンスがセットアップ済みであること (アプライアンスは最新版に更新する)</div></div>
+        <div class="step"><div class="step-number">2</div><div class="step-content">クラスターレベルの読み取り専用権限以上を持つ NAS クラスターアカウントを用意すること (共有・ボリューム単位ではなくクラスターレベルで権限を付与する。クォータを含むすべての共有メタデータを列挙するために必要)</div></div>
+        <div class="step"><div class="step-number">3</div><div class="step-content">アプライアンスから NAS クラスターの管理エンドポイント (既定: ポート 443) に到達できること</div></div>
+
+        <div class="step-group-title">🔑 NAS 資格情報の追加 (アプライアンス構成マネージャー)</div>
+        <div class="step"><div class="step-number">1</div><div class="step-content">アプライアンス構成マネージャーで <code>Manage credentials and discovery sources</code> に移動</div></div>
+        <div class="step"><div class="step-number">2</div><div class="step-content"><code>Provide infrastructure credentials</code> で <code>Add credentials</code> を選択</div></div>
+        <div class="step"><div class="step-number">3</div><div class="step-content"><code>Source type</code> で <code>NAS Server</code> を選択</div></div>
+        <div class="step"><div class="step-number">4</div><div class="step-content">フレンドリ名 (クラスター名など)、クラスターレベルの読み取り専用権限以上を持つアカウントのユーザー名とパスワードを入力</div></div>
+        <div class="step"><div class="step-number">5</div><div class="step-content"><code>Save</code> を選択。異なるアカウントを使用するクラスターごとに繰り返す (同一アカウントを共有するクラスターは 1 つの資格情報エントリを再利用可能)</div></div>
+
+        <div class="step-group-title">🌐 NAS ディスカバリソースの追加</div>
+        <div class="step"><div class="step-number">1</div><div class="step-content"><code>Provide infrastructure server details</code> で <code>Add discovery source</code> を選択</div></div>
+        <div class="step"><div class="step-number">2</div><div class="step-content"><code>Discovery source</code> で <code>NAS Server</code> を選択</div></div>
+        <div class="step"><div class="step-number">3</div><div class="step-content">NAS クラスター管理エンドポイントの IP アドレスまたは FQDN を入力</div></div>
+        <div class="step"><div class="step-number">4</div><div class="step-content">ポートを入力 (既定: 443)</div></div>
+        <div class="step"><div class="step-number">5</div><div class="step-content"><code>Map credentials</code> で作成した NAS 資格情報を選択</div></div>
+        <div class="step"><div class="step-number">6</div><div class="step-content"><code>Save</code> を選択。対象のすべての NAS クラスターについて繰り返す</div></div>
+
+        <div class="highlight-box">
+            すべての資格情報とディスカバリソースを追加したら、ページ末尾の <strong>「Start discovery」</strong> を選択してディスカバリを開始する。評価は Azure ポータルから直接実行できる。
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>メリット</h2>
+        <div class="two-col">
+            <div class="benefit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>スプレッドシートによる手作業の NAS 移行計画を、検証済みの共有単位インベントリと説明可能なコスト根拠に置き換えられる</li>
+                    <li>オンプレミスコストと Azure ストレージサービスを比較するビジネスケースを生成でき、移行の投資判断を支援する</li>
+                    <li>ストレージを、依存するサーバー・アプリケーションと同じプロジェクト・同じビジネスケースの中で計画できる</li>
+                </ul>
+            </div>
+            <div class="benefit-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>SMB / NFS / S3 のすべての共有を自動でインベントリ化し、マルチプロトコル共有も識別できる</li>
+                    <li>共有ごとに Azure Files / Azure Blob Storage / Azure NetApp Files への準備状況、推奨構成、月額コスト見積もりが得られる</li>
+                    <li>読み取り専用資格情報で動作し、NAS システムへの書き込みは行わない。メタデータのみを収集し、ファイル内容には触れない</li>
+                    <li>既存のサーバー検出用アプライアンスに NAS ソースを追加でき、新たなインフラの追加が不要</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li>パブリックプレビュー段階であり、本番運用前提の利用は想定されていない</li>
+            <li>対応プラットフォームは Dell PowerScale / Isilon (OneFS) と NetApp ONTAP / FAS に限定される</li>
+            <li>SAN / LUN のディスカバリは非対応。iSCSI や SAN マッピングなどの非ファイルプロトコルは対象外</li>
+            <li>ACL (アクセス制御リスト) の分析や個人情報のスキャンは行わない (メタデータ収集のみ)</li>
+            <li>NAS ソースに有効な資格情報を提供しないと、そのソースのインベントリは生成されない (NAS インベントリが空になる最も一般的な原因は資格情報の問題)</li>
+            <li>ベンダーごとに権限モデルが異なり、共有の一覧取得とクォータの列挙で必要な権限が異なる場合がある。共有メタデータの一部が欠落する場合は、クラスターレベルの読み取り専用権限を確認する必要がある</li>
+            <li>NAS クラスターのパスワードを変更した場合は、アプライアンス側で資格情報を更新し「Revalidate credentials」を実行する必要がある</li>
+        </ul>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>📁 ユースケース 1: 大規模ファイルサーバー資産の Azure 移行計画</h4>
+            <div class="usecase-item">
+                <span class="usecase-label">シナリオ</span>
+                <span>数百〜数千の SMB / NFS 共有を Dell PowerScale や NetApp ONTAP でホストしている企業が、データセンター撤退に向けて Azure への移行を計画する。</span>
+            </div>
+            <div class="usecase-item">
+                <span class="usecase-label">実装例</span>
+                <span>既存の Azure Migrate アプライアンスを更新し、NAS クラスターを資格情報とディスカバリソースとして追加。ディスカバリ実行後、Azure ポータルから共有ごとの評価を実行し、Azure Files / Blob Storage / Azure NetApp Files への準備状況とコスト見積もりを取得する。</span>
+            </div>
+            <div class="usecase-item">
+                <span class="usecase-label">効果</span>
+                <span>手作業の棚卸しなしで共有単位の正確なインベントリが得られ、移行先サービスの選定とコスト試算を迅速化できる。</span>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>📊 ユースケース 2: サーバーとストレージを統合したビジネスケース作成</h4>
+            <div class="usecase-item">
+                <span class="usecase-label">シナリオ</span>
+                <span>サーバー・データベース・アプリケーションの移行計画は Azure Migrate で進めているが、ファイルストレージの計画が別管理になっており、全体のコスト比較ができていない。</span>
+            </div>
+            <div class="usecase-item">
+                <span class="usecase-label">実装例</span>
+                <span>同一の Azure Migrate プロジェクトに NAS ディスカバリソースを追加し、NAS 共有をサーバー・アプリケーションのインベントリと並べてグループ化・タグ付けする。オンプレミスコストと Azure ストレージサービスを比較するビジネスケースを生成し、ウェーブプランで移行順序を決める。</span>
+            </div>
+            <div class="usecase-item">
+                <span class="usecase-label">効果</span>
+                <span>ストレージを含む移行対象全体を単一のプロジェクト・ビジネスケースで管理でき、依存関係を踏まえた移行の順序付けが可能になる。</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="pricing-box">
+            <div class="price-icon">🆓</div>
+            <div>
+                <div class="price-main">追加料金なしで利用可能</div>
+                <p>Azure Migrate のディスカバリと評価機能は追加料金なしで利用できる (Azure Migrate 本体および Microsoft 提供のツールは無料)。</p>
+                <p>詳細は <a href="https://azure.microsoft.com/pricing/details/azure-migrate/">Azure Migrate の料金ページ</a> を参照。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>📁 Azure Files</h4>
+                <p>NAS 共有の評価における移行先候補の 1 つ。SMB / NFS 対応のフルマネージドファイル共有サービス</p>
+            </div>
+            <div class="related-card">
+                <h4>🧱 Azure Blob Storage</h4>
+                <p>移行先候補の 1 つ。オブジェクトストレージ (S3 互換ワークロードや大容量データの移行先)</p>
+            </div>
+            <div class="related-card">
+                <h4>💾 Azure NetApp Files</h4>
+                <p>移行先候補の 1 つ。NetApp ONTAP ベースの高性能ファイルストレージサービス</p>
+            </div>
+            <div class="related-card">
+                <h4>📦 Azure Migrate アプライアンス</h4>
+                <p>NAS クラスターへの接続とメタデータ収集を行う軽量アプライアンス。サーバー検出 (vCenter Server、NSX 等) と同一アプライアンスで NAS ディスカバリを構成可能</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Migrate に NAS (Dell PowerScale / NetApp ONTAP) のディスカバリと評価機能がパブリックプレビューとして追加された。オンプレミス資産の中で最も把握が難しいことが多い NAS を、<strong>サーバー・アプリケーションと同じプロジェクト・ビジネスケースで計画できるようになる点が大きな価値</strong>である。ディスカバリと評価は無料で利用できるため、対象の NAS プラットフォームを運用している組織は、アプライアンスを更新して NAS ディスカバリソースを追加し、共有単位のインベントリとコスト見積もりの取得を試行することを推奨する。評価にあたっては、クラスターレベルの読み取り専用アカウントの準備と、SAN / LUN が対象外である点に留意すること。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Migrate</span>
+            <span class="tag">NAS</span>
+            <span class="tag">Dell PowerScale</span>
+            <span class="tag">NetApp ONTAP</span>
+            <span class="tag">Azure Files</span>
+            <span class="tag">Azure Blob Storage</span>
+            <span class="tag">Azure NetApp Files</span>
+            <span class="tag">Migration</span>
+            <span class="tag">In preview</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li>🌐 <a href="https://azure.microsoft.com/updates?id=577975">公式アップデート情報 (Azure Updates)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/en-us/azure/migrate/add-server-credentials?view=migrate">Microsoft Learn: インフラストラクチャ資格情報の提供 (NAS ファイル共有のディスカバリ)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/en-us/azure/migrate/migrate-appliance">Microsoft Learn: Azure Migrate アプライアンス</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/azure-migrate/">Azure Migrate 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=577975">Azure Updates - Azure Migrate: On-prem NAS share discovery and assessment (Public Preview)</a></p>
+        <p>レポート日: 2026-11-02 | インフォグラフィック生成日: 2026-11-03 | Azure News Summary</p>
+    </footer>
+
+</div>
+</body>
+</html>

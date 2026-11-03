@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SQL Database: Azure portal からのデータベース再起動が一般提供 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "🗄️";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+.header .meta-badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+.header .subtitle { font-size: 15px; opacity: 0.9; }
+.header .date-info {
+    margin-top: 16px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.15);
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 20px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    border-bottom: 3px solid var(--ms-blue-200);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+}
+.section-title .icon {
+    font-size: 22px;
+    background: var(--ms-blue-100);
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--ms-blue-800); }
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 6px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+.diagram-caption {
+    text-align: center;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin-top: 4px;
+}
+
+/* Feature Cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; font-size: 16px; }
+.feature-content p, .feature-content li { font-size: 14px; color: var(--ms-text-primary); }
+.feature-content ul { padding-left: 18px; margin-top: 4px; }
+.feature-content li { margin: 4px 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Table */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+}
+.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+.spec-table td:first-child { font-weight: 500; white-space: nowrap; }
+
+/* Steps */
+.steps {
+    counter-reset: step;
+    list-style: none;
+    margin: 12px 0;
+}
+.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 12px 10px 52px;
+    margin: 10px 0;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+.step-group-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 18px 0 6px;
+}
+
+/* Code */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+.code-note { font-size: 13px; color: var(--ms-text-secondary); margin-top: 8px; }
+
+/* Merit / Caution */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 16px;
+}
+.merit-business { background: #FFF8E1; border: 2px solid var(--ms-yellow); }
+.merit-tech { background: var(--ms-blue-100); border: 2px solid var(--azure-blue); }
+.merit-card h4 { margin-bottom: 10px; font-size: 16px; }
+.merit-business h4 { color: var(--ms-orange); }
+.merit-tech h4 { color: var(--ms-blue-800); }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin: 6px 0; }
+
+.caution-list { list-style: none; }
+.caution-list li {
+    background: #FFF4F0;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px 10px 40px;
+    margin: 10px 0;
+    font-size: 14px;
+    position: relative;
+}
+.caution-list li::before {
+    content: "⚠️";
+    position: absolute;
+    left: 10px;
+    top: 10px;
+}
+
+/* Use cases */
+.usecase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 5px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 18px;
+}
+.usecase-card h4 {
+    color: var(--ms-purple);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+.usecase-card .label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--ms-purple);
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin-right: 6px;
+}
+.usecase-card .label.effect { background: var(--ms-green); }
+
+/* Related services */
+.related-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.related-card .icon { font-size: 22px; flex-shrink: 0; }
+.related-card h4 { font-size: 15px; color: var(--ms-blue-800); margin-bottom: 4px; }
+
+/* Links */
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 12px 8px 36px;
+    margin: 6px 0;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    font-size: 14px;
+    position: relative;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 10px; }
+a { color: var(--azure-blue); word-break: break-all; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+    background: var(--ms-surface);
+    border: 1px solid var(--azure-blue);
+    color: var(--azure-blue);
+    font-size: 12px;
+    padding: 3px 12px;
+    border-radius: 14px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 24px 12px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 28px;
+}
+.footer a { color: var(--azure-blue); }
+.footer p { margin: 4px 0; }
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid, .usecase-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="meta-badges">
+            <span class="service-badge">Azure SQL Database</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Azure portal からのデータベース再起動が<br>一般提供 (GA) に</h1>
+        <div class="subtitle">機能: Azure portal からのデータベース再起動・フェールオーバー</div>
+        <div class="date-info">📅 リリース日: 2026-11-02 (GA 時期: 2026 年 10 月)</div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure SQL Database のデータベースを Azure portal から直接<strong>再起動 (restart)</strong> または<strong>フェールオーバー (failover)</strong> できる機能が一般提供 (GA) になりました。対象は<strong>単一データベース、Hyperscale データベース、エラスティックプール内のデータベース</strong>です。従来のように REST API に対するスクリプトを書いたり、サポートに問い合わせたりすることなく、ポータルの操作だけで再起動を実行できます。</p>
+        <div class="highlight-box">
+            再起動操作は、データベースの接続性やパフォーマンスに影響する<strong>一時的な問題 (transient issues)</strong> を解決することを目的として設計されています。再起動中はデータベースが一時的にオフラインになり、短時間のサービス中断が発生しますが、<strong>データベース内に保存されたデータには影響しません</strong>。この操作は、アプリケーションの障害回復性テスト (fault resiliency testing) に使われてきたものと同じ API を利用しています。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before: アップデート前の課題</h4>
+                <ul>
+                    <li>再起動 (フェールオーバー) の実行には、REST API (Database Failover / Elastic Pool Failover)、PowerShell (<code>Invoke-AzSqlDatabaseFailover</code> / <code>Invoke-AzSqlElasticPoolFailover</code>)、または Azure CLI の <code>az rest</code> によるスクリプト作成が必要</li>
+                    <li>スクリプトを用意できない場合は、サポートへの問い合わせが必要になるケースがあった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After: アップデート後の改善</h4>
+                <ul>
+                    <li>Azure portal の「設定 &gt; メンテナンス」ページから、GUI 操作のみでデータベースやエラスティックプールを再起動可能に</li>
+                    <li>スクリプト作成やサポート問い合わせが不要になり、一時的な問題発生時の初動対応が迅速化</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["❌ Before: スクリプト / サポート経由"]
+        OpsB(["👤 運用担当者"])
+        OpsB -->|"スクリプト作成"| API["🔧 REST API / PowerShell / az rest"]
+        OpsB -->|"または問い合わせ"| Support["📞 Azure サポート"]
+        API --> DBB[("🗄️ Azure SQL Database")]
+        Support --> DBB
+    end
+
+    subgraph After["✅ After: Azure portal から直接実行"]
+        OpsA(["👤 運用担当者"])
+        OpsA -->|"設定 > メンテナンス > 再起動"| Portal["🖥️ Azure portal"]
+        Portal -->|"再起動 / フェールオーバー"| DBA[("🗄️ 単一 DB / Hyperscale / エラスティックプール")]
+    end
+            </pre>
+        </div>
+        <p class="diagram-caption">従来はスクリプトやサポート問い合わせが必要だった再起動操作が、Azure portal のメンテナンスページから直接実行できるようになりました。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細: 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>1. Azure portal からのデータベース再起動</h4>
+                <ul>
+                    <li>データベースの「設定 &gt; メンテナンス」ページの「Restart」セクションから再起動を実行</li>
+                    <li>誤操作防止のため、確認ダイアログでデータベース名を入力してから再起動を開始する</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>2. エラスティックプールの再起動</h4>
+                <ul>
+                    <li>エラスティックプールの「設定 &gt; メンテナンス」ページから、プール単位で再起動を実行</li>
+                    <li><strong>プールを再起動すると、プール内のすべてのデータベースが再起動される</strong></li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>3. 幅広いデプロイ形態に対応</h4>
+                <ul>
+                    <li>単一データベース、Hyperscale データベース、エラスティックプール内のデータベースに対応</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">15 分に 1 回</div>
+                <div class="stat-label">DB / プールごとの実行頻度制限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">データ影響なし</div>
+                <div class="stat-label">保存済みデータは影響を受けない</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3 形態対応</div>
+                <div class="stat-label">単一 DB / Hyperscale / エラスティックプール</div>
+            </div>
+        </div>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象</td><td>単一データベース、Hyperscale データベース、エラスティックプール</td></tr>
+            <tr><td>操作の内容</td><td>再起動 (内部的にはフェールオーバー API と同じ仕組みを利用)</td></tr>
+            <tr><td>実行頻度の制限</td><td>データベース / エラスティックプールごとに 15 分に 1 回まで</td></tr>
+            <tr><td>データへの影響</td><td>なし (保存済みデータは影響を受けない)</td></tr>
+            <tr><td>サービスへの影響</td><td>一時的にオフラインになり、短時間の中断が発生</td></tr>
+            <tr><td>ゾーン冗長構成 (General Purpose) の場合</td><td>フェールオーバーにより、クライアント接続は別の可用性ゾーンの新しいプライマリにリダイレクトされる</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <div class="step-group-title">🖥️ Azure Portal — データベースの再起動</div>
+        <ol class="steps">
+            <li><a href="https://aka.ms/azuresqlhub">Azure SQL ハブ (aka.ms/azuresqlhub)</a> に移動する</li>
+            <li>リソースメニューで <strong>Azure SQL Database</strong> を展開し、<strong>SQL databases</strong> から対象データベースに移動する</li>
+            <li><strong>設定 (Settings)</strong> セクションの <strong>メンテナンス (Maintenance)</strong> を選択する</li>
+            <li><strong>Restart</strong> セクションで再起動のリンクを選択する</li>
+            <li>確認ダイアログにデータベース名を入力し、<strong>Restart</strong> を選択して再起動を開始する</li>
+        </ol>
+
+        <div class="step-group-title">🖥️ Azure Portal — エラスティックプールの再起動</div>
+        <ol class="steps">
+            <li>Azure SQL ハブのリソースメニューで <strong>Azure SQL Database</strong> を展開し、<strong>Elastic pools</strong> から対象プールに移動する</li>
+            <li><strong>設定 &gt; メンテナンス</strong> の <strong>Restart</strong> セクションから再起動を実行する (プール名の入力による確認あり)</li>
+        </ol>
+
+        <div class="step-group-title">💻 PowerShell / Azure CLI (従来からの方法)</div>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">PowerShell</span></div>
+            <pre><code class="language-powershell"># データベースのフェールオーバー (再起動と同じ API)
+Invoke-AzSqlDatabaseFailover -ResourceGroupName "myRG" -ServerName "myServer" -DatabaseName "myDB"
+
+# エラスティックプールのフェールオーバー
+Invoke-AzSqlElasticPoolFailover -ResourceGroupName "myRG" -ServerName "myServer" -ElasticPoolName "myPool"</code></pre>
+        </div>
+        <p class="code-note">Azure CLI からは <code>az rest</code> コマンドで REST API (Databases - Failover / Elastic Pools - Failover) を呼び出せます。</p>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>一時的な接続性・パフォーマンス問題への初動対応が迅速化され、復旧までの時間を短縮できる</li>
+                    <li>サポート問い合わせへの依存が減り、運用の自律性が向上する</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>スクリプトの作成・管理が不要になり、運用手順がシンプルになる</li>
+                    <li>障害回復性テストと同じ API を使用するため、再起動時の挙動 (フェールオーバー動作) をアプリケーションのリトライロジック検証にも活用できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li>再起動中はデータベースが一時的にオフラインになり、短時間のサービス中断が発生する</li>
+            <li>再起動 (フェールオーバー) 呼び出しは、データベース / エラスティックプールごとに <strong>15 分に 1 回</strong> に制限されている</li>
+            <li>エラスティックプールを再起動すると、プール内のすべてのデータベースが再起動される</li>
+            <li>広範囲なサービス障害が発生している状況での利用は推奨されない。再起動を実行する前に <a href="https://learn.microsoft.com/azure/service-health/overview">Azure Service Health</a> で進行中の問題がないか確認すること</li>
+            <li>Hyperscale データベースの読み取り可能セカンダリレプリカに対しては、Failover コマンドは利用できない</li>
+            <li>Microsoft Learn のドキュメント (本レポート作成時点) には、ポータルの再起動機能についてプレビューである旨の記載が残っており、Azure Updates の GA 発表とは記載が一致していない点に留意</li>
+        </ul>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+        <div class="usecase-grid">
+            <div class="usecase-card">
+                <h4>🚑 1. 一時的な接続・パフォーマンス問題の解消</h4>
+                <p><span class="label">シナリオ</span>データベースへの接続エラーや突発的なパフォーマンス低下が発生し、一時的な問題と判断された場合に、ポータルから即座に再起動して解消を試みる。</p>
+                <p><span class="label effect">効果</span>スクリプト準備やサポート問い合わせを待たずに、運用担当者がその場で復旧アクションを実行できる。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>🧪 2. アプリケーションの障害回復性テスト</h4>
+                <p><span class="label">シナリオ</span>本番導入前に、フェールオーバー発生時のアプリケーション挙動 (既存セッションへの影響、リトライロジックの動作、ゾーン間フェールオーバー後のネットワーク遅延変化) を検証する。</p>
+                <p><span class="label effect">効果</span>計画外イベント発生時の挙動を事前に確認し、アプリケーションの回復性を高められる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card">
+            <span class="icon">🩺</span>
+            <div>
+                <h4>Azure Service Health</h4>
+                <p>再起動の前に、広範囲なサービス障害が発生していないかを確認するために使用する。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <span class="icon">🌐</span>
+            <div>
+                <h4>ゾーン冗長構成 (Availability Zones)</h4>
+                <p>ゾーン冗長の General Purpose データベース / エラスティックプールでは、フェールオーバーによって接続が別の可用性ゾーンの新しいプライマリにリダイレクトされる。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <span class="icon">📈</span>
+            <div>
+                <h4>Hyperscale サービスティア</h4>
+                <p>本機能の対象。ただし読み取り可能セカンダリレプリカへの Failover コマンドは利用不可。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            Azure SQL Database のデータベース再起動・フェールオーバーが Azure portal から直接実行できるようになり、GA に到達しました。従来必要だった REST API スクリプトやサポート問い合わせが不要になり、一時的な接続・パフォーマンス問題への初動対応が大幅に簡素化されます。<strong>15 分に 1 回という実行頻度制限</strong>や、<strong>エラスティックプール再起動時はプール内全データベースが再起動される</strong>点に注意しつつ、運用手順書 (Runbook) にポータルからの再起動手順を組み込むことを推奨します。
+        </div>
+        <div class="tags">
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">Databases</span>
+            <span class="tag">Hybrid + multicloud</span>
+            <span class="tag">GA</span>
+            <span class="tag">運用管理</span>
+            <span class="tag">高可用性</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=577992">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/restart-database">Microsoft Learn: Restart a database or elastic pool</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/high-availability-sla-local-zone-redundancy">Microsoft Learn: Availability through local and zone redundancy (Test application fault resiliency)</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong></p>
+        <p>Azure Updates: <a href="https://azure.microsoft.com/updates?id=577992">https://azure.microsoft.com/updates?id=577992</a></p>
+        <p>Microsoft Learn: <a href="https://learn.microsoft.com/azure/azure-sql/database/restart-database">Restart a database or elastic pool</a> / <a href="https://learn.microsoft.com/azure/azure-sql/database/high-availability-sla-local-zone-redundancy">Availability through local and zone redundancy</a></p>
+        <p>レポート: reports/2026/2026-11-02-sql-database-restart-portal.md (Azure News Summary)</p>
+        <p>生成日: 2026-11-03</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
