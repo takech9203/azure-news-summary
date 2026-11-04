@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Firewall: IPv6 アプリケーションルール対応 (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    document.addEventListener('DOMContentLoaded', () => { hljs.highlightAll(); });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "🔥";
+    position: absolute;
+    font-size: 140px;
+    right: 24px;
+    bottom: -30px;
+    opacity: 0.15;
+}
+.hero .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+.hero .subtitle {
+    font-size: 16px;
+    opacity: 0.95;
+}
+.hero .date {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-top: 14px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* ===== Sections ===== */
+section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+section > h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--ms-blue-200);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+}
+section > h2 .sec-icon {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+}
+section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+section p { margin: 10px 0; }
+section ul { margin: 8px 0 8px 24px; }
+section li { margin: 6px 0; }
+a { color: var(--azure-blue); }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.keyword {
+    background: var(--ms-blue-200);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    color: var(--ms-blue-900);
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 8px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; }
+.before ul, .after ul { margin-left: 20px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 4px; }
+
+/* ===== Support status grid ===== */
+.support-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+.support-card {
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+    border: 2px solid var(--ms-green);
+    background: #E8F5E9;
+    position: relative;
+}
+.support-card .icon { font-size: 30px; }
+.support-card h4 { margin: 6px 0 4px; color: var(--ms-text-primary); }
+.support-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+.new-ribbon {
+    position: absolute;
+    top: -12px;
+    right: 12px;
+    background: var(--ms-orange);
+    color: #FFF;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 12px;
+    border-radius: 12px;
+}
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+}
+td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+td code, li code, p code {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--ms-blue-900);
+}
+
+/* ===== Pros / Cons ===== */
+.pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.pros-card {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+    border-radius: 10px;
+    padding: 18px;
+}
+.pros-card h4 { color: var(--ms-blue-800); margin-bottom: 8px; }
+.pros-card ul { margin-left: 20px; }
+
+.caution-box {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 16px 0;
+}
+.caution-box h4 { color: var(--ms-orange); margin-bottom: 8px; }
+.caution-box ul { margin-left: 20px; }
+
+/* ===== Use case ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 14px 0;
+}
+.usecase-card h3 { margin-top: 0; }
+.usecase-step {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin: 10px 0;
+}
+.usecase-step .step-label {
+    flex-shrink: 0;
+    background: var(--azure-blue);
+    color: #FFF;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 12px;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+/* ===== Flow steps (prerequisites) ===== */
+.flow-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: stretch;
+    margin: 16px 0;
+}
+.flow-step {
+    flex: 1 1 180px;
+    background: var(--ms-blue-100);
+    border: 2px solid var(--ms-blue-400);
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    font-size: 14px;
+}
+.flow-step .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: #FFF;
+    border-radius: 50%;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+.flow-arrow {
+    display: flex;
+    align-items: center;
+    font-size: 22px;
+    color: var(--azure-blue);
+    font-weight: 700;
+}
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 16px;
+}
+.related-card h4 { color: var(--ms-purple); margin-bottom: 6px; }
+.related-card p { font-size: 14px; margin: 0; }
+
+/* ===== Link list ===== */
+.link-list { list-style: none; margin-left: 0 !important; }
+.link-list li {
+    margin: 8px 0;
+    padding: 10px 14px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    border-left: 4px solid var(--azure-blue);
+}
+.link-list li::before { content: "🔗 "; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px 24px;
+}
+
+/* ===== Tags ===== */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 13px;
+}
+.tag::before { content: "# "; color: var(--azure-blue); }
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* ===== Footer ===== */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 8px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+footer a { color: var(--azure-blue); }
+
+@media (max-width: 700px) {
+    .before-after, .pros-cons { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+    .flow-arrow { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="hero">
+        <div class="meta-row">
+            <span class="service-badge">🔥 Azure Firewall</span>
+            <span class="badge badge-preview">In Preview (Public Preview)</span>
+        </div>
+        <h1>IPv6 アプリケーションルール対応<br>L7 フィルタリングが IPv6 トラフィックへ拡張</h1>
+        <p class="subtitle">IPv6 の HTTP / HTTPS トラフィックに対するアプリケーションルール (レイヤー 7 フィルタリング) がパブリックプレビューに。デュアルスタック環境で IPv4 と一貫したアプリケーションレベル制御を実現。</p>
+        <p class="date">📅 リリース日: 2026-11-04 | サービス: Azure Firewall | 機能: IPv6 アプリケーションルール (L7 フィルタリング)</p>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section>
+        <h2><span class="sec-icon">📋</span>概要</h2>
+        <div class="highlight-box">
+            Azure Firewall の IPv6 サポートにおいて、<span class="keyword">アプリケーションルール</span>がパブリックプレビューとして利用可能になりました。IPv6 の HTTP / HTTPS トラフィックに対する<span class="keyword">レイヤー 7 (アプリケーション層) フィルタリング</span>が可能になり、IPv6 およびデュアルスタック環境にアプリケーションレベルの制御を拡張できます。
+        </div>
+        <p>Azure Firewall の IPv6 サポート (デュアルスタックモード) は <strong>2026 年 8 月</strong>にパブリックプレビューとして発表されましたが、その時点で IPv6 に対応していたのは<strong>ネットワークルール (L3/L4) と DNS Proxy のみ</strong>で、アプリケーションルールは未対応でした。今回のアップデートにより、Microsoft Learn ドキュメント上でもアプリケーションルールが IPv6 トラフィックを完全サポートする機能として記載され、IPv6 トラフィックの許可/拒否ルールをアプリケーション層で作成できるようになりました。これにより、<span class="keyword">IPv4 と IPv6 の間で一貫したポリシー運用</span>を維持しやすくなります。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>IPv6 サポート (デュアルスタックモード) では<strong>ネットワークルールと DNS Proxy のみ</strong>が IPv6 対応。アプリケーションルール (FQDN ベースなどの L7 フィルタリング) は IPv6 トラフィックに適用できなかった</li>
+                    <li>IPv4 ではアプリケーションルールで制御している通信を、IPv6 側ではネットワークルール (IP アドレス/ポートベース) でしか制御できず、<strong>IPv4/IPv6 間でポリシーの一貫性を保ちにくかった</strong></li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>IPv6 の HTTP/HTTPS トラフィックに対して<strong>アプリケーションルールによるレイヤー 7 フィルタリング</strong>が可能に</li>
+                    <li>アプリケーションルールで IPv6 トラフィックの許可/拒否ルールを作成でき、デュアルスタック環境でも <strong>IPv4 と一貫したアプリケーションレベルの制御</strong>を適用可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section>
+        <h2><span class="sec-icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Workload(["🖥️ ワークロード<br/>(デュアルスタックサブネット)"])
+
+    subgraph Azure["☁️ Azure Cloud (デュアルスタック VNet)"]
+        subgraph FWSub["🛡️ AzureFirewallSubnet (IPv4 + IPv6)"]
+            FW["🔥 Azure Firewall<br/>(デュアルスタックモード)"]
+        end
+        Policy["📋 Firewall Policy"]
+        NetRule["🔀 ネットワークルール<br/>(L3/L4・IPv6 対応済み)"]
+        AppRule["✨ アプリケーションルール<br/>(L7・IPv6 対応 New!)"]
+    end
+
+    Web4["🌐 IPv4 Web (HTTP/HTTPS)"]
+    Web6["🌐 IPv6 Web (HTTP/HTTPS)"]
+
+    Workload -- "IPv4 / IPv6 トラフィック" --> FW
+    Policy --> FW
+    NetRule --> Policy
+    AppRule --> Policy
+    FW -- "L7 フィルタリング後" --> Web4
+    FW -- "L7 フィルタリング後" --> Web6
+            </pre>
+        </div>
+        <p>デュアルスタック構成の Azure Firewall において、従来のネットワークルールに加えてアプリケーションルールが IPv6 に対応し、IPv6 の HTTP/HTTPS アウトバウンドトラフィックもレイヤー 7 でフィルタリングできるようになりました。</p>
+    </section>
+
+    <!-- ===== サービスアップデートの詳細 ===== -->
+    <section>
+        <h2><span class="sec-icon">⚙️</span>サービスアップデートの詳細</h2>
+        <h3>主要機能</h3>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>IPv6 トラフィックに対するアプリケーションルール</h4>
+                <p>アプリケーションルールが IPv6 トラフィックを完全サポートし、IPv6 トラフィックの許可/拒否ルールを作成可能。IPv6 の HTTP および HTTPS トラフィックに対するレイヤー 7 フィルタリングを実現します。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>IPv4/IPv6 間で一貫したポリシー運用</h4>
+                <p>デュアルスタック環境において、IPv4 と IPv6 の両方にアプリケーションレベルの制御を適用でき、ポリシーの一貫性を維持しやすくなります。</p>
+            </div>
+        </div>
+
+        <h3>IPv6 サポート全体の現状 (本アップデート時点)</h3>
+        <p>Microsoft Learn ドキュメントに記載されている、デュアルスタックモードの Azure Firewall でサポートされるシナリオは以下のとおりです。</p>
+        <div class="support-grid">
+            <div class="support-card">
+                <div class="icon">🔀</div>
+                <h4>ネットワークルール</h4>
+                <p>IPv6 トラフィックを完全サポート</p>
+            </div>
+            <div class="support-card">
+                <span class="new-ribbon">今回追加 ✨</span>
+                <div class="icon">🛡️</div>
+                <h4>アプリケーションルール</h4>
+                <p>IPv6 トラフィックを完全サポート</p>
+            </div>
+            <div class="support-card">
+                <div class="icon">🌐</div>
+                <h4>DNS Proxy</h4>
+                <p>IPv6 ネットワークで構成可能</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section>
+        <h2><span class="sec-icon">🔬</span>技術仕様</h2>
+        <table>
+            <tr><th style="width:34%">項目</th><th>詳細</th></tr>
+            <tr><td><strong>対応トラフィック</strong></td><td>IPv6 の HTTP / HTTPS (レイヤー 7 フィルタリング)</td></tr>
+            <tr><td><strong>デプロイモード</strong></td><td>IPv4 のみ / デュアルスタック (IPv4 + IPv6)。IPv6 のみのファイアウォールは不可</td></tr>
+            <tr><td><strong>対応ルール (IPv6)</strong></td><td>ネットワークルール、アプリケーションルール</td></tr>
+            <tr><td><strong>DNS Proxy</strong></td><td>IPv6 ネットワークで対応</td></tr>
+            <tr><td><strong>SNAT</strong></td><td>アウトバウンド接続に適用。宛先が ULA 範囲 (<code>fc00::/7</code>) の場合は非適用 (仕様)</td></tr>
+            <tr><td><strong>構成手段 (デュアルスタック化)</strong></td><td>Azure Portal、PowerShell、Azure CLI</td></tr>
+            <tr><td><strong>非対応構成</strong></td><td>Classic Azure Firewall、Virtual Hub (vHub) Firewall</td></tr>
+            <tr><td><strong>非対応機能 (IPv6)</strong></td><td>DNAT ルール、Threat Intelligence、IDPS、Explicit Proxy、IP Groups</td></tr>
+            <tr><td><strong>元に戻す操作</strong></td><td>デュアルスタック化後、IPv4 のみへ戻すことは不可 (GA 時に解消予定の一時的制限)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section>
+        <h2><span class="sec-icon">🛠️</span>設定方法</h2>
+        <h3>前提条件</h3>
+        <ul>
+            <li>Azure サブスクリプション</li>
+            <li>デュアルスタックモード (IPv4 + IPv6) で構成された Azure Firewall</li>
+        </ul>
+        <p>既存の IPv4 のみのファイアウォールは、以下の手順でデュアルスタック化が可能です。手順は Azure Portal、PowerShell、Azure CLI でドキュメント化されています (詳細: <a href="https://learn.microsoft.com/en-us/azure/firewall/deploy-dual-stack-firewall">Deploy Azure Firewall in dual stack mode</a>)。</p>
+        <div class="flow-steps">
+            <div class="flow-step"><span class="num">1</span><br>VNet へ IPv6 アドレス空間を追加</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><span class="num">2</span><br><code>AzureFirewallSubnet</code> へ IPv6 サブネットプレフィックスを追加</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><span class="num">3</span><br>パブリック IPv6 アドレスをアタッチ</div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step"><span class="num">4</span><br>アプリケーションルールで IPv6 の許可/拒否ルールを作成</div>
+        </div>
+        <div class="highlight-box">
+            💡 デュアルスタックファイアウォールが構成済みであれば、<strong>Firewall Policy のアプリケーションルール</strong>で IPv6 トラフィックの許可/拒否ルールを作成できます。
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section>
+        <h2><span class="sec-icon">🎯</span>メリット</h2>
+        <div class="pros-cons">
+            <div class="pros-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>IPv6 移行 (デュアルスタック化) を進める組織が、IPv4 と同等のアプリケーションレベルのセキュリティ制御を IPv6 にも適用でき、移行時のセキュリティ要件を満たしやすくなる</li>
+                    <li>IPv4/IPv6 で異なる制御方式を使い分ける必要がなくなり、ポリシー管理・監査の一貫性が向上する</li>
+                </ul>
+            </div>
+            <div class="pros-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>IPv6 の HTTP/HTTPS トラフィックをレイヤー 7 でフィルタリングでき、IP アドレス/ポートベース (ネットワークルール) より粒度の高い制御が可能になる</li>
+                    <li>単一の Firewall Policy で IPv4/IPv6 両方のアプリケーションルールを一元管理できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section>
+        <h2><span class="sec-icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <h4>知っておくべき制約</h4>
+            <ul>
+                <li>パブリックプレビューであり、プレビューの補足利用条件が適用される。<strong>GA 日は未定</strong></li>
+                <li>IPv6 では <strong>DNAT ルール</strong>が引き続き未サポート</li>
+                <li>IPv6 では <strong>Threat Intelligence、IDPS、Explicit Proxy、IP Groups</strong> ベースのシナリオが引き続き未サポート</li>
+                <li><strong>Classic Azure Firewall</strong> および <strong>Virtual Hub (vHub) Firewall</strong> は未対応</li>
+                <li>一度デュアルスタック化すると <strong>IPv4 のみのモードへ戻せない</strong> (GA 時に解消予定の一時的制限)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section>
+        <h2><span class="sec-icon">💡</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h3>ユースケース 1: デュアルスタック環境での一貫したアウトバウンド Web フィルタリング</h3>
+            <div class="usecase-step">
+                <span class="step-label">シナリオ</span>
+                <p style="margin:0">デュアルスタック VNet 上のワークロードからインターネットへのアウトバウンド HTTP/HTTPS 通信を、IPv4/IPv6 を問わずアプリケーションルールで制御したい。</p>
+            </div>
+            <div class="usecase-step">
+                <span class="step-label">実装ポイント</span>
+                <div>
+                    <ul style="margin-left:20px">
+                        <li>既存の IPv4 ファイアウォールをデュアルスタックモードにアップグレードする</li>
+                        <li>Firewall Policy のアプリケーションルールで IPv6 トラフィックの許可/拒否ルールを定義し、IPv4 と同等の L7 制御を適用する</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="usecase-step">
+                <span class="step-label">効果</span>
+                <p style="margin:0">IPv6 側だけ制御が粗くなる (ネットワークルールのみ) 状態を解消し、<strong>IPv4/IPv6 で一貫したアウトバウンド制御</strong>を実現できる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section>
+        <h2><span class="sec-icon">💰</span>料金</h2>
+        <p>IPv6 アプリケーションルールに固有の料金情報は公式アップデートに記載されていません。Azure Firewall の料金体系は料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-firewall/">Azure Firewall 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section>
+        <h2><span class="sec-icon">🌍</span>利用可能リージョン</h2>
+        <p>本アップデートでのリージョン別の提供状況は公式情報で確認できませんでした。最新の対応状況は公式ドキュメントを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://learn.microsoft.com/en-us/azure/firewall/deploy-dual-stack-firewall">Deploy Azure Firewall in dual stack mode (preview)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section>
+        <h2><span class="sec-icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>📋 Azure Firewall Policy</h4>
+                <p>アプリケーションルール・ネットワークルールの定義と一元管理に使用。IPv4/IPv6 双方のルールを単一ポリシーで管理。</p>
+            </div>
+            <div class="related-card">
+                <h4>🕸️ Azure Virtual Network (デュアルスタック VNet)</h4>
+                <p>IPv6 アドレス空間と <code>AzureFirewallSubnet</code> への IPv6 サブネットプレフィックス追加が前提。</p>
+            </div>
+            <div class="related-card">
+                <h4>🌐 Azure Public IP (Standard SKU, IPv6)</h4>
+                <p>デュアルスタックファイアウォールにアタッチするパブリック IPv6 アドレスとして必要。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section>
+        <h2><span class="sec-icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=579507">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/firewall/deploy-dual-stack-firewall">Microsoft Learn: Deploy Azure Firewall in dual stack mode (preview)</a></li>
+            <li><a href="https://github.com/takech9203/azure-news-summary/blob/main/reports/2026/2026-08-18-azure-firewall-ipv6-preview.md">関連レポート: Azure Firewall IPv6 サポート (Public Preview, 2026-08-18)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/azure-firewall/">Azure Firewall 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section>
+        <h2><span class="sec-icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>2026 年 8 月の Azure Firewall IPv6 サポート (デュアルスタック) 発表時点では<strong>ネットワークルールと DNS Proxy に限定</strong>されていた IPv6 対応が、今回<strong>アプリケーションルール (L7 フィルタリング)</strong> に拡張されました。これにより、IPv6 の HTTP/HTTPS トラフィックにも FQDN ベースなどのアプリケーションレベル制御を適用でき、<span class="keyword">IPv4/IPv6 間で一貫したポリシー運用</span>が可能になります。</p>
+            <p>一方で <strong>DNAT、Threat Intelligence、IDPS などは IPv6 で引き続き未対応</strong>のため、必要なセキュリティ機能が充足できるかを確認した上で、検証環境でのデュアルスタック構成とアプリケーションルールの評価を進めることを推奨します。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Firewall</span>
+            <span class="tag">IPv6</span>
+            <span class="tag">アプリケーションルール</span>
+            <span class="tag">L7 フィルタリング</span>
+            <span class="tag">デュアルスタック</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- ===== フッター ===== -->
+    <footer>
+        <p><strong>出典:</strong>
+            <a href="https://azure.microsoft.com/updates?id=579507">Azure Updates (ID: 579507)</a> |
+            <a href="https://learn.microsoft.com/en-us/azure/firewall/deploy-dual-stack-firewall">Microsoft Learn: Deploy Azure Firewall in dual stack mode (preview)</a>
+        </p>
+        <p>ソースレポート: reports/2026/2026-11-04-azure-firewall-ipv6-application-rules.md (Azure News Summary)</p>
+        <p>生成日: 2026-11-04</p>
+    </footer>
+
+</div>
+</body>
+</html>

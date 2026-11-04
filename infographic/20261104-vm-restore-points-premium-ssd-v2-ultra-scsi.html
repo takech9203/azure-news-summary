@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure VM Restore Points: Premium SSD v2 / Ultra Disk 対応 crash-consistent restore points (パブリックプレビュー)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.header h1 {
+    font-size: 26px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta {
+    font-size: 14px;
+    opacity: 0.9;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border: 1px solid rgba(255,255,255,0.5);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 8px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 6px 0; font-size: 14px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 15px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { padding-left: 18px; font-size: 14px; }
+.feature-content li { margin: 4px 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--ms-blue-800);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+code.inline {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* Steps */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 10px 0;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+.step-num {
+    counter-increment: step;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+.step-num::before { content: counter(step); }
+.step-text { font-size: 14px; padding-top: 3px; }
+
+/* Pros/Cons lists */
+.pros-list, .cons-list { list-style: none; padding-left: 0; }
+.pros-list li, .cons-list li {
+    margin: 8px 0;
+    padding: 8px 12px 8px 36px;
+    position: relative;
+    border-radius: 6px;
+    font-size: 14px;
+}
+.pros-list li { background: #E8F5E9; }
+.pros-list li::before { content: "✅"; position: absolute; left: 10px; }
+.cons-list li { background: #FFF4E5; }
+.cons-list li::before { content: "⚠️"; position: absolute; left: 10px; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 18px;
+    margin: 14px 0;
+}
+.usecase-card h4 { color: var(--ms-purple); font-size: 15px; margin-bottom: 10px; }
+.usecase-card p { font-size: 14px; margin: 6px 0; }
+.usecase-label { font-weight: 700; color: var(--ms-blue-800); }
+
+/* Region chips */
+.region-chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.region-chip {
+    background: #FFEBEE;
+    border: 1px solid var(--ms-red);
+    color: var(--ms-red);
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Related services */
+.related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 14px 0; }
+.related-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 14px;
+}
+.related-card h4 { color: var(--ms-blue-800); font-size: 14px; margin-bottom: 6px; }
+
+/* Links */
+a { color: var(--azure-blue); }
+.links-list { padding-left: 20px; font-size: 14px; }
+.links-list li { margin: 6px 0; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 24px 0 8px;
+    border-top: 1px solid var(--ms-border);
+}
+.footer a { color: var(--azure-blue); }
+
+@media (max-width: 640px) {
+    .before-after { grid-template-columns: 1fr; }
+    .header h1 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Virtual Machines</span>
+            <span class="service-badge">Azure Disk Storage</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Premium SSD v2 / Ultra Disk 対応<br>マルチディスク crash-consistent VM restore points<br>(SCSI ディスクコントローラー VM) がパブリックプレビュー</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-04</span>
+            <span>🛠️ Multi-disk crash-consistent VM restore points for Premium SSD v2 and Ultra Disks on VMs with SCSI disk controller</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <div class="highlight-box">
+            <p><strong>Premium SSD v2 / Ultra Disk をデータディスクとして持つ VM (SCSI ディスクコントローラー搭載) で、マルチディスク crash-consistent (クラッシュ整合性) restore point がパブリックプレビューに。</strong>エージェントレスで VM のクラッシュ整合性のある復元ポイントを取得可能。2026 年 6 月からのプライベートプレビューを経てパブリックプレビューに拡大。</p>
+        </div>
+        <p>このプレビューは、既存のマルチディスク crash-consistent restore point のサポートを Premium SSD v2 と Ultra データディスクに拡張するもの。Standard HDD / Standard SSD / Premium SSD に対する既存サポートに変更はない。</p>
+        <p>さらに本プレビューでは、マルチディスク crash-consistent restore point に対する <strong>Instant Access</strong> もサポート (Premium SSD v2 / Ultra データディスクを持つ VM のみ対象)。バックグラウンドのデータコピー完了を待たずに restore point 作成直後からディスク復元を開始でき、<strong>RTO (目標復旧時間) の短縮</strong>に役立つ。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Premium SSD v2 / Ultra Disk を使う VM では、VM restore points は<strong>アプリケーション整合性モードのみ</strong>サポートされ、マルチディスク crash-consistent restore point は利用できなかった</li>
+                    <li>crash-consistent restore point が使えないため、VM エージェントに依存しない<strong>エージェントレス</strong>な復元ポイント取得を、高性能ディスク構成の VM に適用できなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>SCSI ディスクコントローラーの VM なら、Premium SSD v2 / Ultra データディスクを含むマルチディスク crash-consistent restore point を作成可能 (<code class="inline">consistencyMode: CrashConsistent</code>)</li>
+                    <li>VM エージェント不要 (エージェントレス) で、<strong>全ディスクの書き込み順序整合性</strong>を保ったスナップショットを取得可能</li>
+                    <li><strong>Instant Access</strong> により restore point 作成直後から復元を開始でき、RTO を短縮</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Admin([👤 管理者]) -->|consistencyMode: CrashConsistent で作成| RPC
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph VM["🖥️ VM (SCSI ディスクコントローラー)"]
+            OS[(💽 OS ディスク)]
+            PV2[(⚡ Premium SSD v2<br/>データディスク)]
+            Ultra[(🚀 Ultra Disk<br/>データディスク)]
+        end
+        RPC[📦 Restore Point Collection<br/>instantAccess: true]
+        RP[📸 マルチディスク crash-consistent<br/>restore point]
+        Restore[💾 ディスク復元]
+        RPC --> RP
+        VM -. 🤖 エージェントレスで<br/>書き込み順序整合スナップショット .-> RP
+        RP -->|⏱️ Instant Access で即時復元開始| Restore
+    end
+            </pre>
+        </div>
+        <p>SCSI ディスクコントローラーの VM に接続された OS ディスクと Premium SSD v2 / Ultra データディスクを、エージェントレスで書き込み順序整合性を保ったままスナップショット取得し、Instant Access によりバックグラウンドコピー完了を待たずに復元を開始できる。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⭐ サービスアップデートの詳細: 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>1. Premium SSD v2 / Ultra Disk へのマルチディスク crash-consistent restore point 拡張</h4>
+                <ul>
+                    <li>従来 Standard HDD / Standard SSD / Premium SSD のみだったサポートが、Premium SSD v2 と Ultra データディスクに拡張</li>
+                    <li>対象は SCSI ディスクコントローラーを持つ VM のみ (プレビュー)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>2. エージェントレスな crash-consistent スナップショット</h4>
+                <ul>
+                    <li>crash-consistent モードは全ディスクの書き込み順序整合性のあるスナップショットを取得 (電源断・クラッシュ直後の VM 状態と同等)</li>
+                    <li>VSS (Windows) や pre/post スクリプト (Linux) を使うアプリケーション整合性モードと異なり、VM エージェントに依存しない</li>
+                    <li>crash consistency ではすべての OS がサポートされる</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⏱️</div>
+            <div class="feature-content">
+                <h4>3. Instant Access のサポート</h4>
+                <ul>
+                    <li>マルチディスク crash-consistent restore point でも Instant Access を利用可能 (Premium SSD v2 / Ultra データディスクを持つ VM のみ)</li>
+                    <li>restore point collection で <code class="inline">instantAccess: true</code> を設定すると、バックグラウンドのデータコピー (ハイドレーション) 完了を待たずにディスク復元を開始可能</li>
+                    <li><code class="inline">instantAccessDurationMinutes</code> (60〜300 分、既定 300 分) で Instant Access の有効時間を指定</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 数字で見る技術仕様 -->
+    <section class="section">
+        <h2>🔢 数字で見る技術仕様</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">1 時間</div>
+                <div class="stat-label">crash-consistent restore point の最小作成間隔</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3 回/時</div>
+                <div class="stat-label">API スロットリング (VM あたりの作成回数)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">500</div>
+                <div class="stat-label">VM あたりの restore point 保持上限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">60〜300 分</div>
+                <div class="stat-label">Instant Access 有効時間 (既定 300 分)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">50</div>
+                <div class="stat-label">Instant Access 同時作成上限 (サブスクリプション・リージョンあたり)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>📐 技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象ディスク</td><td>Premium SSD v2 / Ultra Disk (データディスク) ※Standard HDD / Standard SSD / Premium SSD の既存サポートは変更なし</td></tr>
+            <tr><td>対象 VM</td><td>SCSI ディスクコントローラーの VM のみ (NVMe ディスクコントローラーは非サポート)</td></tr>
+            <tr><td>整合性モード</td><td>crash-consistent (<code class="inline">consistencyMode: CrashConsistent</code>)</td></tr>
+            <tr><td>エージェント</td><td>不要 (エージェントレス)</td></tr>
+            <tr><td>crash-consistent restore point の最小作成間隔</td><td>1 時間</td></tr>
+            <tr><td>API スロットリング</td><td>crash-consistent restore point 作成: VM あたり 3 回/時</td></tr>
+            <tr><td>restore point 保持上限</td><td>VM あたり最大 500 restore point</td></tr>
+            <tr><td>crash-consistent restore point の API バージョン</td><td>2021-07-01 以降</td></tr>
+            <tr><td>Instant Access の API バージョン</td><td>2025-04-01 以降</td></tr>
+            <tr><td>Instant Access 有効時間</td><td><code class="inline">instantAccessDurationMinutes</code>: 60〜300 分 (既定: 300 分)</td></tr>
+            <tr><td>Instant Access 同時作成上限</td><td>サブスクリプション・リージョンあたり 50</td></tr>
+            <tr><td>Instant Access の操作手段</td><td>REST API / Azure SDK / CLI / ARM テンプレート (Azure Portal は現時点で非対応)</td></tr>
+            <tr><td>crash consistency の OS サポート</td><td>すべての OS</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>⚙️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num"></div><div class="step-text">VM が <strong>SCSI ディスクコントローラー</strong>を使用していること (NVMe ディスクコントローラーおよび Azure Boost ハードウェア上の VM はディスクタイプを問わず非サポート)</div></div>
+            <div class="step"><div class="step-num"></div><div class="step-text"><strong>マネージドディスク</strong>を使用していること (書き込みアクセラレータ有効ディスク、エフェメラル OS ディスク、共有ディスクは crash consistency モード非サポート)</div></div>
+            <div class="step"><div class="step-num"></div><div class="step-text"><strong>プレビュー対象リージョン</strong>であること (下記「利用可能リージョン」参照)</div></div>
+        </div>
+
+        <h3>REST API</h3>
+        <p>restore point collection 内に restore point を作成する際、<code class="inline">consistencyMode</code> を <code class="inline">CrashConsistent</code> に設定する。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">JSON</span><span>Restore Point 作成リクエスト</span></div>
+            <pre><code class="language-json">{
+  "properties": {
+    "consistencyMode": "CrashConsistent"
+  }
+}</code></pre>
+        </div>
+        <p>Instant Access を使う場合は、restore point collection 側で <code class="inline">instantAccess</code> を <code class="inline">true</code> に設定し (API バージョン 2025-04-01 以降)、restore point 側で <code class="inline">instantAccessDurationMinutes</code> (60〜300 分) を指定する。</p>
+
+        <h3>⚠️ Azure Boost ハードウェアへの配置に関する注意</h3>
+        <div class="highlight-box" style="border-left-color: var(--ms-orange); background: #FFF4E5;">
+            <p>SCSI ディスクコントローラー + Premium SSD v2 / Ultra データディスクの VM は、米国リージョンでは新世代の Azure Boost ハードウェアに配置される場合がある。その場合 crash-consistent restore point の作成は <code class="inline">UserErrorCrashConsistentSnapshotNotSupportedForAzureBoostVms</code> エラーで失敗する。</p>
+            <p>回避策として VM に <code class="inline">LegacyVMNVA</code> タグを適用して Azure Boost ハードウェアへの配置を回避する。既存 VM の場合はタグ適用だけでは配置は変わらないため、以下の手順が必要 (<strong>ダウンタイムを計画すること</strong>)。</p>
+        </div>
+        <div class="steps">
+            <div class="step"><div class="step-num"></div><div class="step-text">VM を停止する</div></div>
+            <div class="step"><div class="step-num"></div><div class="step-text">VM に <code class="inline">LegacyVMNVA</code> タグを適用する</div></div>
+            <div class="step"><div class="step-num"></div><div class="step-text">VM を再デプロイしてタグに従った配置にする</div></div>
+            <div class="step"><div class="step-num"></div><div class="step-text">crash-consistent restore point の作成を再試行する</div></div>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>👍 メリット</h2>
+        <h3>💼 ビジネス面</h3>
+        <ul class="pros-list">
+            <li>Instant Access との組み合わせで restore point 作成直後から復元を開始でき、<strong>RTO (目標復旧時間) を短縮</strong>できる</li>
+            <li>高性能ディスク (Premium SSD v2 / Ultra Disk) を使うワークロードでも、定期的な crash-consistent restore point により<strong>データ損失リスクを低減</strong>できる</li>
+        </ul>
+        <h3>🔧 技術面</h3>
+        <ul class="pros-list">
+            <li><strong>エージェントレス</strong>のため VM エージェントや VSS / pre-post スクリプトに依存せず復元ポイントを取得できる (アプリケーション整合性モードで多い VM エージェント起因の失敗を回避)</li>
+            <li>複数ディスクにまたがる<strong>書き込み順序整合性</strong>が保証されるため、OS ディスクと複数データディスクを持つ VM 全体を一貫した時点で保護できる</li>
+            <li>crash consistency は<strong>すべての OS</strong> でサポートされる</li>
+            <li>restore point は<strong>インクリメンタル</strong> (初回はフルコピー、以降は差分のみ) でストレージコストを抑制できる</li>
+        </ul>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <ul class="cons-list">
+            <li><strong>パブリックプレビュー</strong>のため、本番環境での利用は非推奨 (非本番・テスト用途向け)</li>
+            <li><strong>SCSI ディスクコントローラーの VM のみ</strong>対象。NVMe ディスクコントローラーの VM および Azure Boost ハードウェア上の VM は、ディスクタイプを問わずマルチディスク crash consistency 非サポート</li>
+            <li>米国リージョンでは SCSI VM でも Azure Boost ハードウェアに配置されることがあり、<code class="inline">LegacyVMNVA</code> タグの適用と VM の再デプロイ (ダウンタイムあり) が必要になる場合がある</li>
+            <li>一部リージョン (South Central US、West US 3、East US 2) ではプレビューを利用できない</li>
+            <li>crash-consistent restore point の最小作成間隔は <strong>1 時間</strong> (アプリケーション整合性は 3 時間)。これを下回る頻度での作成は失敗する</li>
+            <li>書き込みアクセラレータ有効ディスク、エフェメラル OS ディスク、共有ディスクは crash consistency モード非サポート</li>
+            <li>Instant Access は現時点で <strong>Azure Portal 非対応</strong> (REST API / SDK / CLI / ARM テンプレートのみ)</li>
+            <li>同一 VM に対する restore point の<strong>同時作成は不可</strong>。VM あたりの restore point 保持上限は 500</li>
+        </ul>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🗄️ ユースケース 1: 高性能データベース VM のエージェントレス保護</h4>
+            <p><span class="usecase-label">シナリオ:</span> Premium SSD v2 / Ultra Disk を複数データディスクとして使用するデータベースサーバーで、VM エージェントや VSS に依存せず、1 時間ごとに VM 全体の整合性ある復元ポイントを取得したい。</p>
+            <p><span class="usecase-label">実装例:</span> restore point collection を作成し、<code class="inline">consistencyMode: CrashConsistent</code> を指定した restore point を 1 時間間隔で作成する (最小間隔 1 時間、VM あたり 3 回/時のスロットリングに注意)。</p>
+            <p><span class="usecase-label">効果:</span> 全ディスクの書き込み順序整合性が保たれた復元ポイントを定期取得でき、障害時にはクラッシュ直後と同等の状態へ VM を復元できる。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>⏱️ ユースケース 2: Instant Access による RTO 短縮</h4>
+            <p><span class="usecase-label">シナリオ:</span> 障害発生時に、restore point のバックグラウンドデータコピー完了を待たずに即座にディスクを復元したい。</p>
+            <p><span class="usecase-label">実装例:</span> restore point collection で <code class="inline">instantAccess: true</code> を設定し (API バージョン 2025-04-01 以降)、restore point 作成時に <code class="inline">instantAccessDurationMinutes</code> を指定する。</p>
+            <p><span class="usecase-label">効果:</span> スナップショットのハイドレーション完了を待たずに復元を開始でき、RTO を大幅に短縮できる。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>restore point 自体の料金に関する公式情報は今回のアップデートでは確認できなかった。スナップショットは Managed Disks の料金体系に従う。</p>
+        <p>Instant Access スナップショットは<strong>使用量ベースの課金</strong>で、以下の 2 種類の料金が発生する (Microsoft Learn ドキュメントで確認):</p>
+        <table>
+            <tr><th>項目</th><th>料金</th></tr>
+            <tr><td>スナップショットストレージ</td><td>作成時はコストなし。ソースディスクの変更に伴い増加した差分データ分のみ課金</td></tr>
+            <tr><td>復元操作</td><td>復元のたびに、復元時点のディスクのプロビジョニングサイズに基づく一回限りの料金</td></tr>
+        </table>
+        <p>詳細: <a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank" rel="noopener">Managed Disks の料金ページ</a></p>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2>🌍 利用可能リージョン</h2>
+        <p>プレビューは<strong>以下を除くすべてのパブリックリージョン</strong>で利用可能:</p>
+        <div class="region-chips">
+            <span class="region-chip">🚫 South Central US</span>
+            <span class="region-chip">🚫 West US 3</span>
+            <span class="region-chip">🚫 East US 2</span>
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>💽 Azure Disk Storage (Premium SSD v2 / Ultra Disk)</h4>
+                <p>今回のプレビューで crash-consistent restore point の対象に追加された高性能マネージドディスク</p>
+            </div>
+            <div class="related-card">
+                <h4>⚡ Instant Access スナップショット</h4>
+                <p>Premium SSD v2 / Ultra データディスク向けの即時復元機能。本プレビューのマルチディスク crash-consistent restore point でも利用可能</p>
+            </div>
+            <div class="related-card">
+                <h4>📸 VM restore points (アプリケーション整合性モード)</h4>
+                <p>VSS / pre-post スクリプトを使う既存の整合性モード。Premium SSD v2 / Ultra Disk では従来からサポート</p>
+            </div>
+            <div class="related-card">
+                <h4>🛡️ Azure Backup</h4>
+                <p>VM のバックアップ・リストアのマネージドサービス。restore points は API ベースのより粒度の細かい保護手段として補完関係にある</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="links-list">
+            <li><a href="https://azure.microsoft.com/updates?id=579162" target="_blank" rel="noopener">公式アップデート情報</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machines/virtual-machines-create-restore-points" target="_blank" rel="noopener">Microsoft Learn: Use virtual machine restore points</a></li>
+            <li><a href="https://learn.microsoft.com/azure/virtual-machines/concepts-restore-points" target="_blank" rel="noopener">Microsoft Learn: Support matrix for VM restore points</a></li>
+            <li><a href="https://aka.ms/mdccPv2PublicPreview" target="_blank" rel="noopener">Microsoft Learn: プレビュー詳細 (aka.ms/mdccPv2PublicPreview)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank" rel="noopener">料金ページ (Managed Disks)</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Premium SSD v2 / Ultra Disk を使う VM でマルチディスク crash-consistent restore point が利用可能になったことで、高性能ディスク構成のワークロードでも<strong>エージェントレスな VM 保護</strong>が実現できる。<strong>Instant Access との組み合わせで RTO の短縮</strong>も見込める。</p>
+            <p style="margin-top: 10px;">ただし <strong>SCSI ディスクコントローラー限定</strong>であり、NVMe / Azure Boost ハードウェアは非サポート、米国の一部リージョンでは利用不可かつ <code class="inline">LegacyVMNVA</code> タグによる配置制御が必要になる場合がある点に注意。Premium SSD v2 / Ultra Disk を使う VM の保護戦略を検討している場合は、<strong>非本番環境でプレビューを評価</strong>することを推奨する。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">#Storage</span>
+            <span class="tag">#Compute</span>
+            <span class="tag">#Azure Disk Storage</span>
+            <span class="tag">#Virtual Machines</span>
+            <span class="tag">#Compliance</span>
+            <span class="tag">#Management</span>
+            <span class="tag">#Feature</span>
+        </div>
+    </section>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <p>出典: <a href="https://azure.microsoft.com/updates?id=579162" target="_blank" rel="noopener">Azure Updates (ID: 579162)</a> /
+        <a href="https://learn.microsoft.com/azure/virtual-machines/virtual-machines-create-restore-points" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>ソースレポート: reports/2026/2026-11-04-vm-restore-points-premium-ssd-v2-ultra-scsi.md (Azure News Summary)</p>
+        <p>生成日: 2026-11-04</p>
+    </footer>
+
+</div>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
