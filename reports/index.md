@@ -5,6 +5,8 @@
 
 ## 2026 年
 
+- [2026-11-09 - Azure Static Web Apps: .NET 8 / .NET 9 サポート終了 (2026 年 11 月 10 日)](2026/2026-11-09-static-web-apps-dotnet8-9-retirement.md)
+- [2026-11-09 - Azure File Sync: Arc-enabled Windows Server のモダナイズ (ガイド付きポータル体験)](2026/2026-11-09-file-sync-arc-windows-servers.md)
 - [2026-11-05 - Azure Application Gateway: WAF Insights の一般提供開始 (GA)](2026/2026-11-05-app-gateway-waf-insights.md)
 - [2026-11-05 - Azure Front Door: TLS 鍵交換ポリシー (ポスト量子対応) が一般提供開始](2026/2026-11-05-front-door-tls-post-quantum.md)
 - [2026-11-04 - Azure Virtual Machines / Azure Disk Storage: Premium SSD v2 / Ultra Disk 対応マルチディスク crash-consistent VM restore points (SCSI ディスクコントローラー VM) がパブリックプレビュー](2026/2026-11-04-vm-restore-points-premium-ssd-v2-ultra-scsi.md)
