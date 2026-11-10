@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Container Storage: DACS on AKS パブリックプレビュー</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.7;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin: 16px 0 24px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "☁️";
+    position: absolute;
+    right: -10px;
+    bottom: -25px;
+    font-size: 140px;
+    opacity: 0.12;
+}
+.hero .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hero h1 {
+    font-size: 27px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+.hero .subtitle { font-size: 15px; opacity: 0.92; }
+.hero .meta {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 14px;
+}
+.hero .meta span { background: rgba(255,255,255,0.15); padding: 4px 14px; border-radius: 14px; }
+
+.service-badge {
+    background: rgba(255,255,255,0.22);
+    border: 1px solid rgba(255,255,255,0.5);
+    color: white;
+    padding: 5px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--ms-blue-200);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+.section-title .icon {
+    font-size: 22px;
+    background: var(--ms-blue-100);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 18px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 18px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 18px;
+    margin: 14px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { font-size: 16px; color: var(--azure-dark-blue); margin-bottom: 6px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 20px; margin-top: 6px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+table.info-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+}
+table.info-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+table.info-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+table.info-table td:first-child { font-weight: 500; white-space: nowrap; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Code ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #CCCCCC;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+code.inline-code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* ===== Pros / Cons ===== */
+.pros-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.pros-col {
+    border-radius: 8px;
+    padding: 18px;
+}
+.pros-col.business { background: var(--ms-blue-100); border: 2px solid var(--azure-blue); }
+.pros-col.technical { background: #F3EDFA; border: 2px solid var(--ms-purple); }
+.pros-col h4 { margin-bottom: 10px; font-size: 16px; }
+.pros-col.business h4 { color: var(--azure-dark-blue); }
+.pros-col.technical h4 { color: var(--ms-purple); }
+.pros-col ul { padding-left: 20px; font-size: 14px; }
+.pros-col li { margin: 8px 0; }
+
+.caution-list { list-style: none; padding: 0; }
+.caution-list li {
+    background: #FFF8E7;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 16px;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--azure-blue);
+    border-radius: 10px;
+    padding: 2px 10px;
+    margin-right: 6px;
+}
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 16px;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card strong { color: var(--azure-dark-blue); display: block; margin-bottom: 4px; }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.link-list { list-style: none; padding: 0; }
+.link-list li {
+    padding: 10px 14px;
+    margin: 8px 0;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.link-list li::before { content: "🔗 "; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* ===== Tags & footer ===== */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+}
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 16px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+footer p { margin: 6px 0; }
+
+@media (max-width: 700px) {
+    .before-after, .pros-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 21px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure Container Storage</span>
+            <span class="service-badge">Azure Kubernetes Service (AKS)</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Distributed accelerator for cloud storage (DACS) on AKS<br>パブリックプレビュー開始</h1>
+        <p class="subtitle">クラスター内の NVMe を束ねた分散 read-through キャッシュで、AI 推論・トレーニングのモデル / データセット読み取りを高速化</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-10</span>
+            <span>🧩 機能: Distributed accelerator for cloud storage (DACS)</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>AKS 上の AI ワークロード向けに、<strong>Distributed accelerator for cloud storage (DACS)</strong> がパブリックプレビューとして公開されました。DACS は AKS クラスター内で動作する<strong>分散型の読み取りスルー (read-through) キャッシュ</strong>で、クラスター内の複数ノードに搭載された<strong>ローカル NVMe ディスク</strong>を活用し、Azure Blob Storage 上の頻繁に読み取られるデータを GPU コンピュートの近くに保持します。2026 年 6 月のプライベートプレビューを経て、今回パブリックプレビューに到達しました。</p>
+        <p>推論 (inference) ワークロードでは、スケールアウト・再起動・ノード置換からの復旧時に発生する<strong>ウォームモデルのロード時間と Blob Storage への繰り返し読み取りを削減</strong>します。新規ノードや置換ノードは、Blob Storage から再ダウンロードする代わりに、クラスター内に既にキャッシュされたモデルデータを再利用できます。また、データセットの同じ部分を繰り返し読み取るトレーニングワークロードの高速化にも利用できます。性能向上の度合いは、データの再利用頻度とキャッシュがコールドかウォームかに依存します。</p>
+        <div class="highlight-box">
+            DACS は <strong>Azure Container Storage</strong> を通じて有効化・管理し、<strong>Run:ai Model Streamer / BlobFuse2 / ネイティブ Python クライアント</strong>でワークロードと統合します。Azure Blob Storage は引き続き永続的な「信頼できる唯一の情報源 (Source of Truth)」であり、データがキャッシュされていない場合やキャッシュが利用できない場合、クライアントは Blob Storage から直接読み取ります。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">最大 100</div>
+                <div class="stat-label">ノードまでスケール</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">無料</div>
+                <div class="stat-label">DACS ソフトウェア自体の追加課金なし</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">K8s 1.35+</div>
+                <div class="stat-label">必要な Kubernetes バージョン</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3 方式</div>
+                <div class="stat-label">クライアント統合 (BlobFuse2 / Python / Run:ai)</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>推論 Pod が大きなモデルファイルのダウンロード完了を待たないとリクエストを処理できなかった</li>
+                    <li>GPU ノードを追加するたびに、同じモデルデータが Blob Storage から繰り返しダウンロードされていた</li>
+                    <li>Pod の再起動、ノード置換、ローリングアップグレードのたびに同じモデルデータを再取得する必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>頻繁に読み取られるモデルチャンクを、Blob Storage ではなくローカル / ピアの NVMe から提供し、ウォームモデルのロードが高速化</li>
+                    <li>新規・置換ノードがクラスター内の既存キャッシュデータを再利用でき、スケールアウトと復旧が高速化</li>
+                    <li>プリフェッチ機能により、計画的なスケールイベントの前にモデルデータを事前投入可能</li>
+                    <li>リクエストされたバイト範囲をカバーするチャンクのみをキャッシュする範囲ベースのキャッシングに対応</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph AKS["🚢 AKS クラスター"]
+            APP["🤖 AI 推論 / トレーニング Pod<br>(DACS クライアント統合)"]
+            CTRL["🎛️ DACS コントローラー<br>(kube-system / マネージド拡張機能)"]
+            subgraph CACHE["⚡ 分散キャッシュ層 (Cache リソース)"]
+                N1[("💾 キャッシュサーバー 1<br>ローカル NVMe")]
+                N2[("💾 キャッシュサーバー 2<br>ローカル NVMe")]
+                N3[("💾 キャッシュサーバー 3<br>ローカル NVMe")]
+            end
+        end
+        BLOB[("🗄️ Azure Blob Storage<br>モデル / データセット<br>(Source of Truth)")]
+    end
+
+    APP -- "① キャッシュヒット時に読み取り<br>(コンシステントハッシュでサーバー特定)" --> N1
+    APP -. "② ミス時 / フォールバック時は直接読み取り" .-> BLOB
+    APP -. "③ 非同期でキャッシュに投入" .-> N2
+    N1 <-- "チャンク転送 (Ethernet / InfiniBand)" --> N2
+    N2 <-- " " --> N3
+    CTRL -- "Cache リソースを調整<br>ディスカバリー情報を公開" --> CACHE
+            </pre>
+        </div>
+        <p>アプリケーションの DACS クライアントが<strong>コンシステントハッシュリング</strong>でチャンクの所有サーバーを特定し、キャッシュヒット時は NVMe から、ミス時は Blob Storage から直接読み取ってキャッシュへ非同期投入します。コントローラーはリソース管理のみを担い、データ読み取りのプロキシにはなりません。</p>
+    </section>
+
+    <!-- ===== Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細: 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>1. 分散 read-through キャッシュ</h4>
+                <ul>
+                    <li>モデルデータをチャンクに分割し、複数のキャッシュサーバーに分散配置</li>
+                    <li>コンシステントハッシュリングでチャンクをサーバーにマッピングし、データパスに集中管理ポイントを持たない</li>
+                    <li>キャッシュサーバー間のデータ転送は、VM サイズとクラスタートポロジーに応じて Ethernet または InfiniBand を使用</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>2. マネージドデプロイ</h4>
+                <ul>
+                    <li>Azure CLI の <code class="inline-code">--enable-azure-container-storage distributedAccelerator</code> で有効化</li>
+                    <li><code class="inline-code">distributedaccelerator</code> マネージド拡張機能が、DACS コントローラーと NVMe 前提 DaemonSet を <code class="inline-code">kube-system</code> にデプロイし、Cache カスタムリソース定義 (CRD) を登録</li>
+                    <li>前提 DaemonSet がラベル付けされたキャッシュノード上のローカル NVMe ディスクを検出・フォーマット・マウント</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📐</div>
+            <div class="feature-content">
+                <h4>3. Cache カスタムリソースによるキャッシュ定義</h4>
+                <ul>
+                    <li>サーバー数、容量、CPU/メモリ制限、対象ノードを Kubernetes の <code class="inline-code">Cache</code> リソース (<code class="inline-code">storage.azure.com/v1</code>) で宣言的に定義</li>
+                    <li>コントローラーがキャッシュサーバー Pod を調整し、クライアント向けのディスカバリー情報を公開</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔌</div>
+            <div class="feature-content">
+                <h4>4. 複数のクライアント統合方式</h4>
+                <div class="table-wrap">
+                    <table class="info-table">
+                        <tr><th>統合方式</th><th>適するケース</th><th>アプリケーション変更</th></tr>
+                        <tr>
+                            <td>BlobFuse2 (Azure Blob CSI ドライバー経由)</td>
+                            <td>Linux ファイルシステムパスで Blob データを読む場合</td>
+                            <td>読み取り専用の BlobFuse2 ボリュームを構成。既存のファイル読み取りコードはそのまま</td>
+                        </tr>
+                        <tr>
+                            <td>ネイティブ Python クライアント</td>
+                            <td>明示的な同期 / 非同期キャッシュ操作が必要な場合</td>
+                            <td>DACS クライアントをインポートして呼び出し</td>
+                        </tr>
+                        <tr>
+                            <td>Run:ai Model Streamer</td>
+                            <td>Run:ai Model Streamer でモデルをロードする場合</td>
+                            <td>モデルロードワークフローに DACS 統合を構成</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>5. プリフェッチと安全なフォールバック</h4>
+                <ul>
+                    <li>推論 Pod 起動前に選択したモデルデータを事前投入するプリフェッチに対応</li>
+                    <li>キャッシュが利用不可の場合、クライアントは Azure Blob Storage に自動フォールバック</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🌐</div>
+            <div class="feature-content">
+                <h4>6. オープンソースプロジェクト</h4>
+                <ul>
+                    <li>DACS は Azure AI Platform と Azure Storage の協業によるオープンソースプロジェクト (<a href="https://github.com/Azure/dacs" target="_blank" rel="noopener">Azure/dacs</a>)</li>
+                    <li>キャッシュサーバー、ネイティブ C/C++ クライアント、Python アダプター、Rust ラッパー、Kubernetes チャートなどを公開</li>
+                    <li>ただし、オープンソース版とマネージドプレビュー版はデプロイ・サポート範囲が異なる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table class="info-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>オーケストレーター</td><td>AKS (Kubernetes 1.35 以降)</td></tr>
+                <tr><td>対象ワークロード</td><td>主に推論のモデルロード、トレーニングの繰り返しデータセット読み取り</td></tr>
+                <tr><td>オリジン</td><td>Azure Blob Storage のみ (Hugging Face への直接アクセスは非対応)</td></tr>
+                <tr><td>キャッシュメディア</td><td>Linux キャッシュノード上のローカル NVMe (例: <code class="inline-code">Standard_L*s_v3</code> VM ファミリー)</td></tr>
+                <tr><td>スケール</td><td>最大 100 ノード</td></tr>
+                <tr><td>CPU アーキテクチャ</td><td>x64 および Arm64</td></tr>
+                <tr><td>ネットワーク</td><td>Ethernet、対応 VM サイズでは InfiniBand</td></tr>
+                <tr><td>ウォームアップ</td><td>オンデマンド投入およびプリフェッチ</td></tr>
+                <tr><td>コールドリード調整</td><td>同時コールドリードの調整機能はプレビューでは非対応</td></tr>
+                <tr><td>インストール</td><td>Azure CLI で有効化する専用マネージド拡張機能 (<code class="inline-code">microsoft.distributedaccelerator</code>)</td></tr>
+                <tr><td>必要な CLI 拡張</td><td><code class="inline-code">aks-preview</code> 22.0.0b9 以降</td></tr>
+                <tr><td>NVMe マウントポイント</td><td><code class="inline-code">/var/lib/ssd/cacheserver</code></td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 12px 0 8px;">前提条件</h3>
+        <ol style="padding-left: 24px; font-size: 14.5px;">
+            <li>DACS プレビュー要件を満たす既存の AKS クラスター (Kubernetes 1.35 以降)</li>
+            <li>ローカル NVMe データディスクを持つ Linux キャッシュノードプール (例: <code class="inline-code">Standard_L*s_v3</code> VM ファミリー)</li>
+            <li>モデルデータを格納した Azure Storage アカウントと Blob コンテナー</li>
+            <li>Azure CLI (<code class="inline-code">aks-preview</code> 拡張 22.0.0b9 以降)、<code class="inline-code">kubectl</code>、コンテナーイメージビルドツール</li>
+            <li>AKS 拡張機能のインストール、Kubernetes リソース管理、ノードプールラベル更新、ストレージデータアクセスロール割り当ての権限</li>
+        </ol>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 20px 0 4px;">Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>DACS の有効化</span></div>
+            <pre><code class="language-bash"># aks-preview 拡張機能のインストール/更新
+az extension add --name aks-preview --upgrade --yes
+
+# キャッシュノードプールにラベルを付与 (ノード置換後もラベルを維持)
+az aks nodepool update \
+  --resource-group $RESOURCE_GROUP \
+  --cluster-name $CLUSTER_NAME \
+  --name $CACHE_NODE_POOL \
+  --labels dacs.azure.com/processing-unit=cpu
+
+# DACS を有効化 (distributedAccelerator の大文字 A が必須)
+az aks update \
+  --resource-group $RESOURCE_GROUP \
+  --name $CLUSTER_NAME \
+  --enable-azure-container-storage distributedAccelerator
+
+# 拡張機能の状態を確認
+az k8s-extension show \
+  --cluster-type managedClusters \
+  --cluster-name $CLUSTER_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --name distributedaccelerator \
+  --query '{extensionType:extensionType,provisioningState:provisioningState,currentVersion:currentVersion}' \
+  --output table</code></pre>
+        </div>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 20px 0 4px;">Cache リソースの作成</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Cache カスタムリソース</span></div>
+            <pre><code class="language-bash"># NVMe 前提 DaemonSet の準備完了を確認してから Cache リソースを作成
+kubectl rollout status daemonset/dacs-prereq --namespace kube-system --timeout=10m
+
+cat &lt;&lt;EOF | kubectl apply -f -
+apiVersion: storage.azure.com/v1
+kind: Cache
+metadata:
+  name: cache-sample
+  namespace: dacs-cache-system
+spec:
+  scaling:
+    static:
+      numServers: 3
+  serverSizeInGB: 1000
+  serverThreads: 80
+  cpuLimit: 4
+  memoryLimitMB: 32000
+  port: 9065
+  metricsPort: 9096
+  nodeSelectorKey: dacs.azure.com/processing-unit
+  nodeSelectorValue: cpu
+  storage:
+    hostPath:
+      nodeCacheFolderPath: /var/lib/ssd/cacheserver
+EOF
+
+# キャッシュの準備完了を待機し、ディスカバリー URL を取得
+kubectl wait --namespace dacs-cache-system --for=condition=Ready cache/cache-sample --timeout=10m
+kubectl get cache cache-sample --namespace dacs-cache-system -o jsonpath='{.status.discoveryURL}'</code></pre>
+        </div>
+
+        <h3 style="color: var(--azure-dark-blue); margin: 20px 0 4px;">Blob へのアクセス権付与</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>最小権限のロール割り当て</span></div>
+            <pre><code class="language-bash"># AKS kubelet マネージド ID にコンテナースコープで最小権限の読み取りロールを割り当て
+az role assignment create \
+  --assignee-object-id $KUBELET_OBJECT_ID \
+  --assignee-principal-type ServicePrincipal \
+  --role "Storage Blob Data Reader" \
+  --scope "$STORAGE_ID/blobServices/default/containers/$STORAGE_CONTAINER"</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== Benefits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="pros-grid">
+            <div class="pros-col business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>推論エンドポイントのスケールアウト・復旧が高速化し、需要変動への追従性とサービス可用性が向上</li>
+                    <li>Blob Storage への繰り返し読み取りが削減され、オリジンへのトラフィックを抑制</li>
+                    <li>DACS ソフトウェア自体の追加課金なし (既存の VM・Blob Storage・ネットワーク料金のみ)</li>
+                    <li>オープンソースとして公開されており、実装の検証やコミュニティ貢献が可能</li>
+                </ul>
+            </div>
+            <div class="pros-col technical">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>コンシステントハッシュによる分散設計で、データパスに単一障害点となる集中コンポーネントがない</li>
+                    <li>キャッシュ不可用時は Blob Storage への自動フォールバックがあり、可用性への影響を抑えられる</li>
+                    <li>範囲ベースキャッシングにより、ファイル全体ではなく必要なバイト範囲のチャンクのみをキャッシュ</li>
+                    <li>BlobFuse2 統合ならアプリケーションコードの変更なしで導入可能</li>
+                    <li>Prometheus 形式のメトリクス (クライアントのキャッシュヒット/ミス、サーバーのリクエストカウンター) で動作を検証可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Limitations ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li>プレビュー段階のため SLA はなく、本番ワークロードでの利用は非推奨</li>
+            <li>キャッシュデータはエフェメラルで耐久性のためのレプリケーションはない。キャッシュノード喪失時は該当チャンクが失われ、Blob Storage から再取得される</li>
+            <li>永続ボリューム・StorageClass ではなく、Blob Storage の代替でもない (トレーニング出力やチェックポイントの永続化には使えない)</li>
+            <li>オリジンは Azure Blob Storage のみ。Hugging Face などへの直接アクセスは非対応 (事前に Blob Storage へ配置が必要)</li>
+            <li>KV キャッシュ、コンテナーイメージキャッシュ、汎用共有ファイルアクセスはプレビューの対象外</li>
+            <li>コールドキャッシュ時の同時読み取りは調整されず、複数クライアントが同じデータを独立に取得する可能性がある (プリフェッチで緩和)</li>
+            <li>クラスター規模は最大 100 ノードまで</li>
+            <li>キャッシュ投入は非同期のため、直後の再読み取りがミスになる場合がある</li>
+            <li>キャッシュはマルチテナント分離を提供しないため、信頼できるクラスター内でのみ使用する</li>
+            <li>NVMe ディスクはキャッシュ専用にする必要がある (他のソフトウェアと共有不可)</li>
+        </ul>
+    </section>
+
+    <!-- ===== Use cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 1</span>LLM 推論エンドポイントのスケールアウト高速化</h4>
+            <p><strong>シナリオ</strong>: 大規模モデルを使った推論サービスで、負荷増に応じて GPU ノードを追加すると、各ノードが Blob Storage から数十 GB のモデルファイルをダウンロードするため、Pod がサービス開始可能になるまで時間がかかる。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+                <pre><code class="language-bash"># DACS を有効化し Cache リソースを作成後、
+# Run:ai Model Streamer または BlobFuse2 経由でモデルをロード
+# 計画的なスケールイベント前にプリフェッチでモデルデータを事前投入</code></pre>
+            </div>
+            <div class="usecase-effect"><strong>効果</strong>: 新規・置換ノードはクラスター内の NVMe キャッシュからモデルデータを取得でき、ウォームモデルのロード時間と Blob Storage への繰り返し読み取りが削減される。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4><span class="usecase-label">CASE 2</span>トレーニングでのデータセット繰り返し読み取りの高速化</h4>
+            <p><strong>シナリオ</strong>: 複数のトレーニングワーカーが、エポックやジョブをまたいで同じデータセットの一部を繰り返し読み取る。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+                <pre><code class="language-bash"># ネイティブ Python クライアント (PyPI: dacs-client) で Blob 上の
+# データセットを読み取り、2 回目以降はクラスター内キャッシュから取得
+pip install "dacs-client==0.1.0"</code></pre>
+            </div>
+            <div class="usecase-effect"><strong>効果</strong>: データの再利用頻度が高いほどキャッシュヒット率が向上し、Blob Storage へのオリジン読み取りが削減される。効果はワーキングセットサイズとキャッシュのウォーム状態に依存する。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>DACS ソフトウェア自体への課金はありません。ただし、キャッシュノードの Azure VM、Azure Blob Storage、ネットワークの料金は通常どおり発生します。</p>
+        <div class="table-wrap">
+            <table class="info-table">
+                <tr><th>項目</th><th>料金</th></tr>
+                <tr><td>DACS ソフトウェア</td><td><strong style="color: var(--ms-green);">無料 (プレビュー時点)</strong></td></tr>
+                <tr><td>キャッシュノード (NVMe 搭載 VM、例: <code class="inline-code">Standard_L*s_v3</code>)</td><td>通常の VM 料金</td></tr>
+                <tr><td>Azure Blob Storage</td><td>通常のストレージ / トランザクション料金</td></tr>
+                <tr><td>ネットワーク</td><td>通常のネットワーク料金</td></tr>
+            </table>
+        </div>
+        <p style="font-size: 14px;">詳細は各料金ページを参照: <a href="https://azure.microsoft.com/pricing/details/virtual-machines/linux/" target="_blank" rel="noopener">Virtual Machines の料金</a> / <a href="https://azure.microsoft.com/pricing/details/storage/blobs/" target="_blank" rel="noopener">Blob Storage の料金</a></p>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <div class="highlight-box">
+            プレビューは<strong>すべての Azure パブリッククラウドリージョン</strong>で利用可能です (ドキュメント記載の DACS preview support requirements による)。
+        </div>
+    </section>
+
+    <!-- ===== Related services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>Azure Container Storage</strong>DACS の有効化・ライフサイクル管理を担う。永続ボリュームが必要な場合はローカル NVMe / Elastic SAN ベースの Azure Container Storage を使用</div>
+            <div class="related-card"><strong>Azure Blob Storage</strong>モデル・データセットの永続的な Source of Truth。キャッシュミス / フォールバック時の読み取り先</div>
+            <div class="related-card"><strong>Azure Kubernetes Service (AKS)</strong>DACS の実行基盤。マネージド拡張機能としてインストール</div>
+            <div class="related-card"><strong>BlobFuse2 / Azure Blob CSI ドライバー</strong>ファイルシステムパス経由の統合方式</div>
+            <div class="related-card"><strong>Azure Managed Lustre</strong>マネージド並列ファイルシステムが必要な場合の代替選択肢</div>
+            <div class="related-card"><strong>Microsoft Entra ID</strong>ワークロードの Blob Storage アクセスには Entra ID (マネージド ID) または SAS を使用</div>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=578454" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage/container-storage/distributed-accelerator-for-cloud-storage-overview" target="_blank" rel="noopener">What is distributed accelerator for cloud storage? (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage/container-storage/distributed-accelerator-for-cloud-storage-quickstart" target="_blank" rel="noopener">Get started with distributed accelerator for cloud storage on AKS (クイックスタート)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage/container-storage/" target="_blank" rel="noopener">Azure Container Storage ドキュメント</a></li>
+            <li><a href="https://github.com/Azure/dacs" target="_blank" rel="noopener">Azure DACS リポジトリ (GitHub)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>DACS は、AKS 上の AI 推論・トレーニングワークロードにおける<strong>「同じモデル / データセットを繰り返し Blob Storage からダウンロードする」という典型的なボトルネック</strong>を、クラスター内の NVMe を束ねた分散 read-through キャッシュで解消するプレビュー機能です。</p>
+            <p style="margin-top: 10px;">Blob Storage を Source of Truth としたまま、アプリケーション変更を最小限 (BlobFuse2 なら変更なし) に導入でき、<strong>DACS 自体は無料でオープンソース</strong>としても公開されています。NVMe 搭載ノードプール (例: <code class="inline-code">Standard_L*s_v3</code>) と Kubernetes 1.35 以降が前提となるため、LLM 推論のスケールアウトに課題を持つチームは、<strong>非本番環境でキャッシュヒット率と実測のロード時間短縮効果を検証する</strong>ことを推奨します。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Container Storage</span>
+            <span class="tag">AKS</span>
+            <span class="tag">DACS</span>
+            <span class="tag">分散キャッシュ</span>
+            <span class="tag">NVMe</span>
+            <span class="tag">Blob Storage</span>
+            <span class="tag">AI 推論</span>
+            <span class="tag">Public Preview</span>
+            <span class="tag">Containers</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <p><strong>出典</strong>:
+            <a href="https://azure.microsoft.com/updates?id=578454" target="_blank" rel="noopener">Azure Updates - Public Preview: Azure Container Storage - Distributed accelerator for cloud storage (DACS) on AKS</a>
+        </p>
+        <p>
+            <a href="https://learn.microsoft.com/azure/storage/container-storage/distributed-accelerator-for-cloud-storage-overview" target="_blank" rel="noopener">Microsoft Learn: DACS Overview</a> /
+            <a href="https://learn.microsoft.com/azure/storage/container-storage/distributed-accelerator-for-cloud-storage-quickstart" target="_blank" rel="noopener">DACS Quickstart</a> /
+            <a href="https://github.com/Azure/dacs" target="_blank" rel="noopener">GitHub: Azure/dacs</a>
+        </p>
+        <p>レポート作成日: 2026-11-10 | Azure News Summary プロジェクトにより自動生成</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

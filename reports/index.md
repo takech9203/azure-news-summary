@@ -5,6 +5,11 @@
 
 ## 2026 年
 
+- [2026-11-10 - Azure Route Server: IPv4/IPv6 デュアルスタックサポート (Public Preview)](2026/2026-11-10-route-server-dual-stack-ipv6.md)
+- [2026-11-10 - Azure Front Door: Edge Actions の一般提供開始 (GA)](2026/2026-11-10-front-door-edge-actions.md)
+- [2026-11-10 - Azure Front Door: ネイティブ gRPC サポート (Public Preview)](2026/2026-11-10-front-door-grpc-support.md)
+- [2026-11-10 - Azure Functions: .NET 11 サポートの一般提供開始 (GA)](2026/2026-11-10-functions-dotnet-11.md)
+- [2026-11-10 - Azure Container Storage: Distributed accelerator for cloud storage (DACS) on AKS パブリックプレビュー](2026/2026-11-10-aks-distributed-accelerator-cloud-storage.md)
 - [2026-11-09 - Azure Static Web Apps: .NET 8 / .NET 9 サポート終了 (2026 年 11 月 10 日)](2026/2026-11-09-static-web-apps-dotnet8-9-retirement.md)
 - [2026-11-09 - Azure File Sync: Arc-enabled Windows Server のモダナイズ (ガイド付きポータル体験)](2026/2026-11-09-file-sync-arc-windows-servers.md)
 - [2026-11-05 - Azure Application Gateway: WAF Insights の一般提供開始 (GA)](2026/2026-11-05-app-gateway-waf-insights.md)

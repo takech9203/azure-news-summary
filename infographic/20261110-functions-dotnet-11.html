@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Functions: .NET 11 サポートの一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.7;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "⚡";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 120px;
+    opacity: 0.12;
+}
+.hero .meta-badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hero h1 {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+.hero .subtitle { font-size: 16px; opacity: 0.92; }
+.hero .release-date {
+    display: inline-block;
+    margin-top: 14px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-size: 14px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.hero .service-badge { background: rgba(255, 255, 255, 0.22); border: 1px solid rgba(255, 255, 255, 0.5); }
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-warning { background: var(--ms-red); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section h2 {
+    font-size: 22px;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.alert-box {
+    background: #FDEDE9;
+    border-left: 4px solid var(--ms-red);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.alert-box strong { color: var(--ms-red); }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 8px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 6px 0; font-size: 14px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 28px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+.stat-card.red { background: linear-gradient(135deg, #A4300B, var(--ms-red)); }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { padding-left: 20px; margin-top: 6px; }
+.feature-content li { font-size: 14px; margin: 4px 0; }
+.feature-content p { font-size: 14px; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-tertiary); }
+code.inline {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+.eol { color: var(--ms-red); font-weight: 700; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Steps */
+.step-list { counter-reset: step; list-style: none; padding: 0; }
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 12px 10px 52px;
+    margin: 10px 0;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* Pros / Cons */
+.pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.pros, .cons {
+    border-radius: 8px;
+    padding: 16px;
+}
+.pros { background: #E8F5E9; border: 2px solid var(--ms-green); }
+.cons { background: #FFF4E5; border: 2px solid var(--ms-orange); }
+.pros h3, .cons h3 { margin-top: 0; }
+.pros h3 { color: var(--ms-green); }
+.cons h3 { color: var(--ms-orange); }
+.pros ul, .cons ul { padding-left: 20px; }
+.pros li, .cons li { font-size: 14px; margin: 6px 0; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin: 16px 0;
+}
+.usecase-card h3 { margin-top: 0; color: var(--ms-purple); }
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--ms-purple);
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin-right: 8px;
+}
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+
+/* Links */
+.link-list { list-style: none; padding: 0; }
+.link-list li {
+    margin: 8px 0;
+    padding: 10px 14px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.link-list a { color: var(--ms-blue-800); font-weight: 500; text-decoration: none; word-break: break-all; }
+.link-list a:hover { text-decoration: underline; }
+
+/* Related services */
+.related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card h4 { color: var(--azure-blue); margin-bottom: 6px; }
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 13px;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 36px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+footer a { color: var(--azure-blue); word-break: break-all; }
+
+@media (max-width: 700px) {
+    .before-after, .pros-cons { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <header class="hero">
+        <div class="meta-badges">
+            <span class="service-badge">Azure Functions</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Azure Functions<br>.NET 11 サポートの一般提供開始 (GA)</h1>
+        <p class="subtitle">分離ワーカーモデル (isolated worker model) で .NET 11 をターゲットとする関数アプリを本番環境で構築・実行可能に</p>
+        <span class="release-date">📅 リリース日: 2026-11-10</span>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Functions における <strong>.NET 11 のサポートが一般提供 (GA)</strong> となりました。分離ワーカーモデル (isolated worker model) を使用して .NET 11 をターゲットとする関数アプリを構築でき、従来どおり Azure Functions のプログラミングモデルとホスト統合をそのまま利用できます。</p>
+        <div class="highlight-box">
+            .NET 11 は <strong>Azure Functions ランタイム バージョン 4.x</strong> の分離ワーカーモデルで利用可能です。最新の .NET ランタイム、C#、ライブラリ、SDK の改善をサーバーレスアプリに取り込むことで、<strong>ランタイムのパフォーマンス最適化・より充実した API・強化された開発者ツール</strong>の恩恵を受けられます。
+        </div>
+        <div class="alert-box">
+            <strong>⚠️ 重要:</strong> in-process モデルは .NET 11 をサポートしません。<strong>in-process モデルのサポートは 2026 年 11 月 10 日に終了</strong>するため、.NET の新バージョンを利用するには分離ワーカーモデルへの移行が必須です。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">.NET 11</div>
+                <div class="stat-label">GA サポート開始<br>(isolated worker)</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-value">2026-11-10</div>
+                <div class="stat-label">in-process モデル<br>サポート終了</div>
+            </div>
+            <div class="stat-card red">
+                <div class="stat-value">.NET 8 / 9</div>
+                <div class="stat-label">同日にサポート終了<br>(2026-11-10)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">4.x</div>
+                <div class="stat-label">対応 Functions<br>ランタイム</div>
+            </div>
+        </div>
+
+        <h3>アップデート前後の比較</h3>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (課題)</h4>
+                <ul>
+                    <li>GA サポートされる最新の .NET バージョンは .NET 10 までで、.NET 11 の新しいランタイム最適化や API、C# の言語機能をサーバーレスアプリで利用できなかった</li>
+                    <li>Azure Functions は Preview / Go-live 段階の .NET リリースでは動作しないため、.NET 11 の正式サポート開始を待つ必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (改善)</h4>
+                <ul>
+                    <li>分離ワーカーモデルで <code class="inline">net11.0</code> をターゲットとする関数アプリを本番環境で構築・実行できるようになった</li>
+                    <li>最新 .NET ランタイムによるパフォーマンス最適化・充実した API・強化された開発者ツールをサーバーレスで活用可能に</li>
+                    <li><code class="inline">Azure.Functions.Sdk</code> ベースの構成により <code class="inline">dotnet run</code> で Functions ホストを起動できるなどツール統合が改善</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Client([👤 クライアント / イベントソース]) -->|⚡ トリガー| Host
+    subgraph Azure["☁️ Azure Functions (ランタイム 4.x)"]
+        Host["🏠 Functions ホストプロセス&lt;br/&gt;トリガー・バインディング管理"]
+        subgraph Worker["🔒 分離ワーカープロセス (isolated worker)"]
+            NET["🚀 .NET 11 ランタイム"]
+            Code["📦 関数アプリ コード&lt;br/&gt;Azure.Functions.Sdk 1.0.1+&lt;br/&gt;Worker 2.50.0+"]
+        end
+        Host <-->|"🔗 gRPC"| NET
+        NET --> Code
+    end
+    Code --> Output[("🗄️ 出力バインディング先&lt;br/&gt;Storage / Service Bus など")]
+            </pre>
+        </div>
+        <p>分離ワーカーモデルでは、関数アプリのコードが Functions ホストとは別の .NET 11 ワーカープロセスで実行されます。ホストがトリガー・バインディングを管理し、ワーカープロセスとは gRPC で通信するため、<strong>ホストのランタイムコンポーネントに依存せず .NET バージョンを独立して選択できます</strong>。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⚡ 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>.NET 11 ターゲットの関数アプリ構築 (GA)</h4>
+                <ul>
+                    <li>分離ワーカーモデルで <code class="inline">net11.0</code> をターゲットにでき、Azure Functions ランタイム 4.x 上で本番利用が可能</li>
+                    <li>従来の Azure Functions プログラミングモデル (トリガー / バインディング) とホスト統合はそのまま利用可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧰</div>
+            <div class="feature-content">
+                <h4><code class="inline">Azure.Functions.Sdk</code> ベースの新しいプロジェクト構成</h4>
+                <ul>
+                    <li>.NET 11 プロジェクトはプロジェクト SDK として <code class="inline">Azure.Functions.Sdk</code> 1.0.1 以降が必須</li>
+                    <li><code class="inline">Microsoft.Azure.Functions.Worker</code> パッケージの明示的な参照が必要 (2.50.0 以降を推奨)</li>
+                    <li><code class="inline">Azure.Functions.Sdk</code> が <code class="inline">AzureFunctionsVersion</code> を <code class="inline">v4</code> に自動設定し、メタデータ用ソースジェネレーター・アナライザーを追加。Azure Functions Core Tools がインストールされていれば <code class="inline">dotnet run</code> で Functions ホストを起動可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <div class="feature-content">
+                <h4>最新 .NET ランタイムのメリット</h4>
+                <ul>
+                    <li>ランタイムのパフォーマンス最適化</li>
+                    <li>より充実した API</li>
+                    <li>強化された開発者ツール</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対応ランタイム</td><td>Azure Functions ランタイム 4.x</td></tr>
+            <tr><td>実行モデル</td><td>分離ワーカーモデル (isolated worker model) のみ。in-process モデルは .NET 11 非対応</td></tr>
+            <tr><td>ターゲットフレームワーク</td><td><code class="inline">net11.0</code></td></tr>
+            <tr><td>プロジェクト SDK</td><td><code class="inline">Azure.Functions.Sdk</code> 1.0.1 以降 (必須)</td></tr>
+            <tr><td>ワーカーパッケージ</td><td><code class="inline">Microsoft.Azure.Functions.Worker</code> 2.50.0 以降を推奨 (明示的な参照が必須)</td></tr>
+            <tr><td>対応言語</td><td>現時点では C# のみ (F# サポートは一時的に利用不可)</td></tr>
+            <tr><td>ホスティングプランの制約</td><td>Linux の従量課金 (Consumption) プランは .NET 10 以降非対応。Flex Consumption プランへの移行が必要</td></tr>
+        </table>
+
+        <h3>Functions 4.x (分離ワーカーモデル) でサポートされる .NET バージョン</h3>
+        <table>
+            <tr><th>バージョン</th><th>サポートレベル</th><th>サポート終了予定日</th></tr>
+            <tr><td><strong>.NET 11</strong></td><td>GA</td><td>.NET サポートポリシーに準拠</td></tr>
+            <tr><td>.NET 10</td><td>GA</td><td>2028-11-14</td></tr>
+            <tr><td>.NET 9</td><td>GA</td><td class="eol">2026-11-10 (本日終了)</td></tr>
+            <tr><td>.NET 8</td><td>GA</td><td class="eol">2026-11-10 (本日終了)</td></tr>
+            <tr><td>.NET Framework 4.8.1</td><td>GA</td><td>.NET Framework サポートポリシーに準拠</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>⚙️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="step-list">
+            <li><a href="https://dotnet.microsoft.com/download/dotnet/11.0">.NET 11 SDK</a> のインストール</li>
+            <li>Azure Functions Core Tools および開発ツール・テンプレートを最新版に更新</li>
+            <li>Linux Consumption プランのアプリの場合は、事前に Flex Consumption プランへ移行</li>
+        </ol>
+
+        <h3>新規プロジェクトの作成 (Azure Functions Core Tools)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code class="language-bash"># .NET 11 の分離ワーカープロジェクトを作成
+func init --worker-runtime dotnet-isolated --target-framework net11.0</code></pre>
+        </div>
+        <p>生成されるプロジェクトファイルの例 (SDK / パッケージのバージョンはテンプレートのバージョンにより異なります):</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">xml</span></div>
+            <pre><code class="language-xml">&lt;Project Sdk="Azure.Functions.Sdk/1.0.1"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net11.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+  &lt;/PropertyGroup&gt;
+&lt;/Project&gt;</code></pre>
+        </div>
+
+        <h3>既存プロジェクトのアップグレード</h3>
+        <ol class="step-list">
+            <li>プロジェクト SDK を <code class="inline">Azure.Functions.Sdk/1.0.1</code> に変更する (<code class="inline">Project</code> 要素の <code class="inline">Microsoft.NET.Sdk</code> と <code class="inline">Microsoft.Azure.Functions.Worker.Sdk</code> パッケージ参照を置き換え)</li>
+            <li>ターゲットフレームワークを <code class="inline">net11.0</code> に変更する</li>
+            <li><code class="inline">Microsoft.Azure.Functions.Worker</code> の明示的な参照と、使用しているトリガー / バインディング拡張パッケージの参照は維持する</li>
+            <li>ビルド SDK の移行自体にアプリコードの変更は不要だが、依存関係の互換性を確認し、アプリをテストする</li>
+            <li>デプロイ時には、Azure 側の関数アプリが .NET 11 の分離ワーカースタックを使用するように構成する</li>
+        </ol>
+    </section>
+
+    <!-- メリット / デメリット -->
+    <section class="section">
+        <h2>⚖️ メリット / デメリット・制約事項</h2>
+        <div class="pros-cons">
+            <div class="pros">
+                <h3>✅ メリット</h3>
+                <p><strong>ビジネス面</strong></p>
+                <ul>
+                    <li>最新の .NET ランタイムによるパフォーマンス最適化で、サーバーレスワークロードの実行効率向上が期待できる</li>
+                    <li>in-process モデルのサポート終了 (2026-11-10) 後も、分離ワーカーモデル + 最新 .NET でフルサポートを継続して受けられる</li>
+                    <li>社内標準の .NET バージョンを .NET 11 に統一する際、サーバーレス層も足並みを揃えられる</li>
+                </ul>
+                <p style="margin-top:10px;"><strong>技術面</strong></p>
+                <ul>
+                    <li>.NET 11 の新しい API・C# 言語機能・ライブラリ・SDK の改善をそのまま関数アプリで利用できる</li>
+                    <li>分離ワーカーモデルにより、Functions ホストのランタイムコンポーネントに依存せず .NET バージョンを独立して選択できる</li>
+                    <li><code class="inline">Azure.Functions.Sdk</code> により <code class="inline">dotnet run</code> での Functions ホスト起動などツール統合が強化される</li>
+                </ul>
+            </div>
+            <div class="cons">
+                <h3>⚠️ デメリット・制約事項</h3>
+                <ul>
+                    <li><strong>in-process モデルは .NET 11 非対応</strong>: .NET 11 を利用するには分離ワーカーモデルへの移行が必須</li>
+                    <li><strong>C# のみ対応</strong>: .NET 11 では現時点で C# のみサポート。F# サポートは一時的に利用不可</li>
+                    <li><strong>Linux Consumption プラン非対応</strong>: Linux の従量課金プランでは .NET 10 以降を実行できない。Flex Consumption プランへの移行が必要</li>
+                    <li><strong>SDK / パッケージ要件</strong>: <code class="inline">Azure.Functions.Sdk</code> 1.0.1 以降と <code class="inline">Microsoft.Azure.Functions.Worker</code> の明示的な参照が必須のため、既存プロジェクトはプロジェクトファイルの更新が必要</li>
+                    <li>Azure Functions は Preview / Go-live 段階の .NET リリースでは動作しないため、利用できるのは GA リリースのみ</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💼 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h3><span class="usecase-label">CASE 1</span>.NET 8 / .NET 9 関数アプリの .NET 11 へのアップグレード</h3>
+            <p><strong>シナリオ</strong>: 分離ワーカーモデルで稼働中の .NET 8 / .NET 9 関数アプリ (いずれも 2026-11-10 にサポート終了) を、最新の .NET 11 へアップグレードしてサポートを継続する。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">xml</span></div>
+                <pre><code class="language-xml">&lt;!-- プロジェクトファイルを更新 --&gt;
+&lt;Project Sdk="Azure.Functions.Sdk/1.0.1"&gt;
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net11.0&lt;/TargetFramework&gt;
+  &lt;/PropertyGroup&gt;
+&lt;/Project&gt;</code></pre>
+            </div>
+            <p><strong>効果</strong>: サポート切れを回避しつつ、.NET 11 のランタイム最適化と新 API を活用できる。アプリコードの変更は原則不要 (依存関係の互換性確認とテストは必要)。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h3><span class="usecase-label">CASE 2</span>in-process モデルからの移行先としての .NET 11</h3>
+            <p><strong>シナリオ</strong>: in-process モデル (.NET 8) で稼働中の関数アプリを、サポート終了 (2026-11-10) に伴い分離ワーカーモデルへ移行し、あわせて .NET 11 へアップグレードする。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span></div>
+                <pre><code class="language-bash"># 新しい .NET 11 分離ワーカープロジェクトを作成して移行
+func init --worker-runtime dotnet-isolated --target-framework net11.0</code></pre>
+            </div>
+            <p><strong>効果</strong>: フルサポートの継続に加え、今後の .NET 新バージョンへの追従が容易な構成に刷新できる。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>このアップデートによる<strong>追加料金は確認されていません</strong>。Azure Functions の料金はホスティングプラン (Consumption / Flex Consumption / Premium / Dedicated) に基づきます。詳細は料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/functions/">Azure Functions の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2>🌏 利用可能リージョン</h2>
+        <p>アップデート情報にリージョン固有の記載はありません。注意点として、<strong>Linux Consumption プランでは .NET 10 以降 (当然 .NET 11 も) を実行できず、Flex Consumption プランが必要</strong>です。詳細は公式ドキュメントを参照してください。</p>
+        <ul class="link-list">
+            <li>🔗 <a href="https://learn.microsoft.com/azure/azure-functions/dotnet-isolated-process-guide#supported-versions">サポートされる .NET バージョン</a></li>
+        </ul>
+    </section>
+
+    <!-- 関連サービス -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🛠️ Azure Functions Core Tools</h4>
+                <p><code class="inline">func init</code> による .NET 11 プロジェクトの作成、ローカル開発・デバッグに使用</p>
+            </div>
+            <div class="related-card">
+                <h4>📦 Flex Consumption プラン</h4>
+                <p>Linux で .NET 10 以降を実行する場合の移行先ホスティングプラン</p>
+            </div>
+            <div class="related-card">
+                <h4>🌐 Azure App Service</h4>
+                <p>Functions のホスト基盤。ランタイムのマイナーバージョン削除などのリリース情報は App Service announcements で通知される</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li>📰 <a href="https://azure.microsoft.com/updates?id=578773">公式アップデート情報</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/azure-functions/dotnet-isolated-process-guide">.NET isolated worker model ガイド (Microsoft Learn)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/azure-functions/functions-versions">Azure Functions ランタイムバージョンの比較 (Microsoft Learn)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/azure-functions/migrate-dotnet-to-isolated-model">isolated worker model への移行ガイド (Microsoft Learn)</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/functions/">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="highlight-box">
+            <p>Azure Functions の .NET 11 サポートが GA となり、分離ワーカーモデルで最新の .NET ランタイムを本番利用できるようになりました。このアップデートの重要性は、<strong>同日 (2026-11-10) に in-process モデルのサポートと .NET 8 / .NET 9 の分離ワーカーモデルでのサポートが終了する</strong>点にあります。</p>
+            <p style="margin-top:10px;">該当する関数アプリを運用している場合は、<code class="inline">Azure.Functions.Sdk</code> 1.0.1 以降への移行と <code class="inline">net11.0</code> (または LTS の <code class="inline">net10.0</code>) へのアップグレードを早急に計画することを推奨します。Linux Consumption プランのアプリは、先に Flex Consumption プランへの移行が必要な点にも注意してください。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Functions</span>
+            <span class="tag">.NET 11</span>
+            <span class="tag">isolated worker model</span>
+            <span class="tag">Serverless</span>
+            <span class="tag">Compute</span>
+            <span class="tag">GA</span>
+            <span class="tag">SDK and Tools</span>
+        </div>
+    </section>
+
+    <footer>
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=578773">Azure Updates - Azure Functions: .NET 11 サポートの一般提供開始 (GA)</a></p>
+        <p>レポート: reports/2026/2026-11-10-functions-dotnet-11.md (リリース日: 2026-11-10 / ステータス: Launched (GA))</p>
+        <p>本インフォグラフィックは Azure News Summary プロジェクトにより自動生成されました。</p>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

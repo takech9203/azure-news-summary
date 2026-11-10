@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Front Door: Edge Actions の一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::after {
+    content: "⚡";
+    position: absolute;
+    right: 24px;
+    bottom: -20px;
+    font-size: 140px;
+    opacity: 0.12;
+}
+
+.hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.hero h1 {
+    font-size: clamp(24px, 4vw, 34px);
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.hero .subtitle {
+    font-size: 16px;
+    opacity: 0.95;
+}
+
+.hero .meta {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin-bottom: 18px;
+    padding-bottom: 10px;
+    border-bottom: 3px solid var(--ms-blue-200);
+}
+
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+.section ul { margin: 8px 0 8px 22px; }
+.section li { margin: 6px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.keyword {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 1px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before, .after {
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 8px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; }
+.before ul, .after ul { margin-left: 20px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value {
+    font-size: 30px;
+    font-weight: bold;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 13px;
+    opacity: 0.9;
+    margin-top: 6px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+
+.feature-content h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 4px;
+    font-size: 16px;
+}
+
+.feature-content p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+}
+
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+/* ===== Steps ===== */
+.step-list { counter-reset: step; list-style: none; margin: 16px 0 0 0 !important; }
+
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 12px 14px 12px 56px;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    margin: 10px 0;
+}
+
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    font-weight: 700;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===== Pros / Cons ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+
+.merit-card h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 8px;
+}
+
+.merit-card ul { margin-left: 20px; font-size: 14px; }
+
+.warning-box {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+
+.warning-box ul { margin-left: 20px; }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin: 14px 0;
+}
+
+.usecase-card .uc-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+}
+
+.uc-num {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+}
+
+.usecase-card dl { margin: 0; font-size: 14px; }
+.usecase-card dt {
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin-top: 8px;
+}
+.usecase-card dd { margin-left: 0; color: var(--ms-text-secondary); }
+
+.uc-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 8px 12px;
+    border-radius: 0 6px 6px 0;
+    margin-top: 10px;
+}
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { list-style: none; margin-left: 0 !important; }
+.link-list li {
+    padding: 8px 12px 8px 36px;
+    position: relative;
+    border-bottom: 1px dashed var(--ms-border);
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 8px;
+}
+
+/* ===== Code Blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-blue-900);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* ===== Summary / Footer ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px 24px;
+}
+
+footer {
+    margin-top: 32px;
+    padding: 24px;
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    font-size: 13px;
+}
+
+footer h4 { margin-bottom: 10px; font-size: 14px; }
+footer ul { list-style: none; }
+footer li { margin: 6px 0; }
+footer a { color: var(--azure-light-blue); }
+footer .credit {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    opacity: 0.85;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .section { padding: 20px 16px; }
+    .hero { padding: 28px 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="hero-badges">
+            <span class="service-badge">🌐 Azure Front Door</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Edge Actions の一般提供開始<br>エッジでのサーバーレスコンピューティング</h1>
+        <p class="subtitle">Front Door のエッジ PoP 上で軽量な JavaScript 関数を実行し、リクエスト / レスポンスをリアルタイムに加工・判断</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-10</span>
+            <span>⚙️ 機能: Edge Actions</span>
+            <span>🏷️ Networking / Security / Serverless</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Front Door の <span class="keyword">Edge Actions</span> が一般提供 (GA) となりました。クライアントリクエスト / レスポンス処理中に軽量な <span class="keyword">JavaScript 関数</span>を実行できる、エッジでのサーバーレスコンピューティング機能です。ユーザーに近いエッジ PoP (Point of Presence) でリアルタイムな判断を行うことで、オリジンインフラに複雑さを追加することなく、パフォーマンス・セキュリティ・アプリケーションの柔軟性を向上させます。</p>
+        <div class="highlight-box">
+            <strong>代表的なシナリオ</strong>: A/B テスト、カナリアデプロイ、ヘッダー操作、リクエストフィルタリング、動的オリジン選択、高度なルーティング、エッジでの認証/認可 (JWT 検証) など。ルールエンジン、キャッシュ、ルーティング、WAF といった既存の Front Door 機能とシームレスに統合されます。
+        </div>
+        <p>実行基盤には Microsoft のセキュアなマイクロ VM 技術である <span class="keyword">Hyperlight</span> が採用されており、顧客コードの実行に対してハードウェアベースの分離を提供します。<strong>Front Door Standard / Premium の両 SKU</strong> で利用可能です。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>A/B テスト、JWT 検証、動的オリジン選択などのカスタムロジックは、オリジン側で実装するか、ルールエンジンの定義済みアクションの範囲内で表現する必要があった</li>
+                    <li>リアルタイムな判断をユーザーに近い場所で実行する手段がなく、オリジンインフラ側に処理の複雑さが集中していた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Front Door のエッジ PoP 上で任意の JavaScript コードを実行し、リクエスト / レスポンスをリアルタイムに加工・判断できるようになった</li>
+                    <li>Hyperlight マイクロ VM によるハードウェアベースの分離環境でコードが実行され、セキュリティを確保しつつオリジンの負荷と複雑さを軽減できる</li>
+                    <li>GA となったことで本番ワークロードでの利用が可能になった</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>📊 数字で見る Edge Actions</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">16 KB</div>
+                <div class="stat-label">コードサイズ上限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">10 ms</div>
+                <div class="stat-label">実行時間上限</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">最大バージョン数 / Edge Action</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">100</div>
+                <div class="stat-label">サブスクリプションあたりの最大リソース数</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+sequenceDiagram
+    participant C as 👤 クライアント
+    participant FD as 🌐 Front Door PoP&lt;br/&gt;(WAF + ルールエンジン)
+    participant EA as ⚡ Edge Action&lt;br/&gt;(Hyperlight micro-VM)
+    participant O as 🖥️ オリジン
+
+    C->>FD: ① HTTP リクエスト
+    FD->>FD: ② WAF 評価 → ルールマッチ
+    FD->>EA: ③ Client Request 呼び出し
+    EA-->>FD: ④ リクエスト加工 (ヘッダー/URL/オリジン選択など)
+    FD->>O: ⑤ キャッシュ確認 → オリジン転送
+    O-->>FD: ⑥ レスポンス
+    FD->>EA: ⑦ Client Response 呼び出し
+    EA-->>FD: ⑧ レスポンス加工
+    FD-->>C: ⑨ レスポンス返却
+            </pre>
+        </div>
+        <p>クライアントリクエストは WAF 評価・ルールエンジンを経て、<strong>Client Request</strong> 呼び出しポイントで Edge Action により加工され、オリジンからのレスポンスは <strong>Client Response</strong> 呼び出しポイントで加工されてからクライアントに返却されます。Edge Action は Front Door エッジサーバー内の Hyperlight マイクロ VM 上で分離実行されます。</p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>1. 2 つの呼び出しポイント (Client Request / Client Response)</h4>
+                <p>ルールエンジンのアクションとして「Invoke Edge Action」を設定し、クライアントリクエスト処理時またはクライアントレスポンス処理時に JavaScript コードを実行できる。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧰</div>
+            <div class="feature-content">
+                <h4>2. 豊富なサポートシナリオ</h4>
+                <p>A/B テスト、リクエスト / レスポンスヘッダー操作、リクエスト拒否、動的オリジン選択、URL リライト、URL リダイレクト、JWT 検証など。サンプルコードは <a href="https://github.com/Azure/EdgeActionsSamples">Azure/EdgeActionsSamples</a> リポジトリで公開。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>3. Hyperlight ベースのセキュアな実行環境</h4>
+                <p>呼び出しごとに Hyperlight サンドボックスが作成され、セキュアな JavaScript ランタイム、コンテキスト変数 (サーバー変数、正常なオリジン一覧、リクエスト元の国コード、User-Agent から導出したデバイスタイプ、現在日時) がロードされる。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔁</div>
+            <div class="feature-content">
+                <h4>4. バージョン管理と実行フィルター</h4>
+                <p>1 つの Edge Action につき最大 3 バージョンのコードを保持し、デフォルトバージョンを切り替え可能。実行フィルター (特定のヘッダー名 / 値) により、デフォルト以外のバージョンを選択的に実行でき、カナリアリリースやゼロダウンタイムのバージョン切り替えを実現。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">💻</div>
+            <div class="feature-content">
+                <h4>5. ブラウザー内でのコード編集・テスト</h4>
+                <p>Azure Portal 上でコードを編集し、ヘッダー・オリジン・コンテキストを指定したローカルテストを実行して Summary / Console / Raw output を確認できる。JavaScript ファイルのアップロードにも対応。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <div class="feature-content">
+                <h4>6. ログと監視</h4>
+                <p>診断設定で <code class="inline">EdgeActionConsoleLog</code> (<code class="inline">console.log</code> の出力、<code class="inline">TrackingReference</code>、バージョン情報など) を Log Analytics に送信可能。Front Door アクセスログの <code class="inline">edgeActionsStatusCode</code> 列 (200: 成功、503: エラー) で実行結果を確認できる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対応 SKU</td><td>Azure Front Door Standard / Premium</td></tr>
+            <tr><td>対応言語</td><td>JavaScript のみ</td></tr>
+            <tr><td>コードサイズ上限</td><td>16 KB</td></tr>
+            <tr><td>最大バージョン数</td><td>3 / Edge Action</td></tr>
+            <tr><td>実行時間上限</td><td>10 ms (超過時はコードを停止し、Edge Action 処理なしで続行)</td></tr>
+            <tr><td>サブスクリプションあたりの Edge Actions リソース数</td><td>最大 100</td></tr>
+            <tr><td>呼び出しポイント</td><td>Client Request / Client Response</td></tr>
+            <tr><td>実行環境</td><td>Hyperlight マイクロ VM (ハードウェアベースの分離)</td></tr>
+            <tr><td>呼び出し方法</td><td>Front Door ルートに関連付けたルールセット経由のみ</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ul>
+            <li>Azure Front Door Standard または Premium のプロファイル</li>
+            <li>Edge Action を実行対象とするルート (ルールセット経由で関連付けるため)</li>
+        </ul>
+
+        <h3>Azure Portal での手順</h3>
+        <ol class="step-list">
+            <li><strong>Edge Action の作成</strong>: Front Door プロファイルの <strong>Settings &gt; Edge actions</strong> から <strong>+ Create</strong> を選択 (または Portal 検索で「Edge Actions」を検索して単独作成)</li>
+            <li><strong>バージョンの作成</strong>: Edge Action の <strong>Settings &gt; Versions</strong> で <strong>+ Add</strong> を選択し、ブラウザー内エディターで JavaScript コードを編集・テストするか、既存の JavaScript ファイルをアップロード。<strong>Set default</strong> でデフォルトバージョンに設定</li>
+            <li><strong>ルートへのアタッチ</strong>: ①プロファイルの <strong>Edge actions</strong> ページから <strong>Associate with route</strong> (簡易アタッチ)、②ルート構成の <strong>Attach Edge Actions</strong> リンクから選択、③<strong>Rule sets</strong> でルールを作成しアクションに <strong>Invoke Edge Action</strong> を選択して <strong>Client Request</strong> / <strong>Client Response</strong> の呼び出しポイントを指定 — のいずれかの方法で関連付け</li>
+            <li><strong>検証</strong>: Front Door manager でルートの <strong>Manage Edge Actions</strong> から関連付けを確認</li>
+        </ol>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>A/B テストやカナリアデプロイをエッジで実現でき、新機能の段階的リリースと検証が容易になる</li>
+                    <li>オリジンインフラの改修なしでパーソナライズやルーティング制御を追加でき、開発・運用コストを抑制できる</li>
+                    <li>実行フィルターによるゼロダウンタイムのバージョン切り替えとロールバックで、リリースリスクを低減できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>ユーザーに近いエッジ PoP で処理することで、オリジン往復なしのリアルタイム判断が可能</li>
+                    <li>WAF、ルールエンジン、キャッシュなど既存の Front Door 機能とシームレスに統合</li>
+                    <li>Hyperlight マイクロ VM によるハードウェアベースの分離で、コード実行のセキュリティを確保</li>
+                    <li><code class="inline">console.log</code> ベースのログを Log Analytics で分析でき、<code class="inline">X-Azure-Ref</code> の追跡参照でアクセスログと突合可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Limitations ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>対応言語は <strong>JavaScript のみ</strong></li>
+                <li>コードサイズは <strong>16 KB</strong> まで、実行時間は <strong>10 ms</strong> まで (超過すると処理がスキップされる)</li>
+                <li>バージョンは 1 つの Edge Action につき<strong>最大 3 つ</strong>、サブスクリプションあたりの Edge Actions リソースは<strong>最大 100</strong></li>
+                <li>呼び出しは Front Door ルート構成 (ルールセット) 経由のみ。<strong>ルートにアタッチしない限り実行されない</strong></li>
+                <li>実行フィルターが参照しているバージョンは<strong>削除・更新不可</strong> (バージョン保護)</li>
+                <li>ブラウザー内テストはローカルテストであり、<strong>実際の Front Door 経由の動作確認は別途必要</strong></li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="uc-title"><span class="uc-num">1</span>カナリアリリース / A/B テスト</div>
+            <dl>
+                <dt>シナリオ</dt>
+                <dd>新バージョンの Edge Action コードを、一部のリクエストのみに適用して検証してから全体に展開したい。</dd>
+                <dt>実装例</dt>
+                <dd>実行フィルターで非デフォルトバージョンにヘッダー名 <code class="inline">test</code> / 値 <code class="inline">execution</code> を設定し、クライアントからそのヘッダー付きリクエストを送信してテストバージョンを実行。検証後にデフォルトバージョンへ昇格。</dd>
+            </dl>
+            <div class="uc-effect">✅ <strong>効果</strong>: ダウンタイムなしで新バージョンを段階的に展開でき、問題発生時は即座に旧バージョンへロールバックできる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="uc-title"><span class="uc-num">2</span>エッジでの JWT 検証</div>
+            <dl>
+                <dt>シナリオ</dt>
+                <dd>認証トークンの検証をオリジンに到達する前に行い、不正なリクエストをエッジで拒否したい。</dd>
+                <dt>実装例</dt>
+                <dd>Client Request 呼び出しポイントで JWT を検証する Edge Action をルートにアタッチ (<a href="https://github.com/Azure/EdgeActionsSamples">公式サンプルリポジトリ</a>に JWT 検証のサンプルあり)。</dd>
+            </dl>
+            <div class="uc-effect">✅ <strong>効果</strong>: 不正リクエストがオリジンに到達しなくなり、オリジンの負荷軽減とセキュリティ向上を同時に実現できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="uc-title"><span class="uc-num">3</span>動的オリジン選択・高度なルーティング</div>
+            <dl>
+                <dt>シナリオ</dt>
+                <dd>リクエスト元の国コードやデバイスタイプに応じて転送先オリジンや URL を動的に切り替えたい。</dd>
+                <dt>実装例</dt>
+                <dd>コンテキスト変数 (国コード、デバイスタイプ、正常なオリジン一覧など) を参照する Edge Action を Client Request 呼び出しポイントで実行し、オリジン選択や URL リライトを実施。</dd>
+            </dl>
+            <div class="uc-effect">✅ <strong>効果</strong>: ルールエンジンの定義済みアクションでは表現しにくい複雑な条件分岐を、コードで柔軟に実装できる。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Edge Actions は、<strong>呼び出し数</strong>と<strong>呼び出しごとの 1 ms を超えた実行時間</strong>に基づく 2 部構成の課金モデルです (Standard / Premium 共通)。</p>
+        <table>
+            <tr><th>項目</th><th>料金</th></tr>
+            <tr><td>呼び出し (Invocations)</td><td>$0.10 / 100 万呼び出し</td></tr>
+            <tr><td>超過実行時間 (1 ms を超えた累積実行時間)</td><td>$0.00005 / 秒</td></tr>
+        </table>
+        <p>詳細は <a href="https://azure.microsoft.com/pricing/details/frontdoor/">Azure Front Door 料金ページ</a>および<a href="https://learn.microsoft.com/azure/frontdoor/billing#example-7-edge-actions">課金ドキュメントの Example 7 (Edge Actions)</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗺️</span>利用可能リージョン</h2>
+        <p>Edge Actions は Azure Front Door の<strong>エッジ PoP 上で実行</strong>されます。エッジロケーションの一覧は <a href="https://learn.microsoft.com/azure/frontdoor/edge-locations-by-region">Azure Front Door edge locations</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">📐</div>
+            <div class="feature-content">
+                <h4>Azure Front Door ルールエンジン</h4>
+                <p>Edge Action の呼び出しはルールセットのアクション「Invoke Edge Action」として構成する。条件マッチと組み合わせて柔軟に制御可能。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>Azure Web Application Firewall (WAF)</h4>
+                <p>WAF 評価はルールエンジン処理 (Edge Action 呼び出し) の前に実行され、セキュリティレイヤーとして併用できる。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗄️</div>
+            <div class="feature-content">
+                <h4>Azure Front Door キャッシュ / ルーティング</h4>
+                <p>Client Request の加工はキャッシュ・オリジン処理の前に、Client Response の加工はキャッシュ処理後・クライアント返却前に適用される。</p>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>Azure Monitor / Log Analytics</h4>
+                <p>診断設定で <code class="inline">EdgeActionConsoleLog</code> を送信し、実行ログやバージョン情報を分析できる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Front Door Edge Actions の GA により、<strong>CDN エッジでのサーバーレスコンピューティングが Azure でも本番利用可能</strong>になりました。A/B テスト、JWT 検証、動的オリジン選択などのロジックをオリジンからエッジにオフロードでき、Hyperlight マイクロ VM による分離とバージョン管理・実行フィルターにより、安全なデプロイ運用も可能です。</p>
+            <p>Front Door Standard / Premium を利用中で、ルールエンジンの定義済みアクションでは実現できないカスタムロジックが必要な場合は、<a href="https://github.com/Azure/EdgeActionsSamples">公式サンプルリポジトリ</a>を起点に評価を始めることを推奨します。<strong>コードサイズ 16 KB・実行時間 10 ms という制約</strong>があるため、軽量なリクエスト / レスポンス加工に用途を絞る設計が重要です。</p>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <h4>📚 出典・参考リンク</h4>
+        <ul>
+            <li>出典 (公式アップデート情報): <a href="https://azure.microsoft.com/updates?id=579310">https://azure.microsoft.com/updates?id=579310</a></li>
+            <li>Microsoft Learn: Edge Actions - Azure Front Door: <a href="https://learn.microsoft.com/azure/frontdoor/edge-actions">https://learn.microsoft.com/azure/frontdoor/edge-actions</a></li>
+            <li>JavaScript サンプル: <a href="https://github.com/Azure/EdgeActionsSamples">https://github.com/Azure/EdgeActionsSamples</a></li>
+            <li>料金ページ: <a href="https://azure.microsoft.com/pricing/details/frontdoor/">https://azure.microsoft.com/pricing/details/frontdoor/</a></li>
+            <li>エッジロケーション一覧: <a href="https://learn.microsoft.com/azure/frontdoor/edge-locations-by-region">https://learn.microsoft.com/azure/frontdoor/edge-locations-by-region</a></li>
+            <li>レポート: reports/2026/2026-11-10-front-door-edge-actions.md (Azure News Summary)</li>
+        </ul>
+        <div class="credit">
+            タグ: Azure Front Door, Edge Actions, Networking, Security, Serverless, JavaScript, Hyperlight, GA<br>
+            リリース日: 2026-11-10 | ステータス: Launched (GA) | 本インフォグラフィックは Azure News Summary レポートを基に生成されています。
+        </div>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        },
+        sequence: {
+            actorFontFamily: "'Noto Sans JP', 'Segoe UI', sans-serif",
+            messageFontFamily: "'Noto Sans JP', 'Segoe UI', sans-serif",
+            noteFontFamily: "'Noto Sans JP', 'Segoe UI', sans-serif"
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
