@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Monitor workspace インジェスト制限の自動スケーリング (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "📊";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+.header .subtitle { font-size: 15px; opacity: 0.9; }
+.header .meta {
+    margin-top: 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 14px;
+}
+.header .meta span {
+    background: rgba(255,255,255,0.15);
+    padding: 4px 14px;
+    border-radius: 16px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+.header .service-badge { background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.5); }
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* ===== Section ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--ms-blue-200);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+.section-title .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    flex-shrink: 0;
+}
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.keyword {
+    background: linear-gradient(transparent 60%, var(--ms-blue-200) 60%);
+    font-weight: 700;
+    padding: 0 2px;
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+.ba-arrow {
+    text-align: center;
+    font-size: 30px;
+    color: var(--azure-blue);
+    margin: -8px 0 4px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-top: 8px;
+}
+
+/* ===== Table ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 16px 0;
+}
+.spec-table th, .spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+}
+.spec-table th {
+    background: var(--ms-blue-100);
+    color: var(--azure-dark-blue);
+    white-space: nowrap;
+    width: 28%;
+}
+.spec-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+.spec-table code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* ===== Code block ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 14px;
+}
+.merit-business { background: var(--ms-blue-100); border-top: 4px solid var(--azure-blue); }
+.merit-tech { background: #F3EEF9; border-top: 4px solid var(--ms-purple); }
+.merit-card h4 { font-size: 16px; margin-bottom: 10px; }
+.merit-business h4 { color: var(--azure-blue); }
+.merit-tech h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 8px 0; }
+
+.caution-box {
+    background: #FFF8E6;
+    border: 2px solid var(--ms-yellow);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.caution-box ul { padding-left: 20px; }
+.caution-box li { margin: 8px 0; }
+
+/* ===== Use case ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 17px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-label {
+    display: inline-block;
+    background: var(--azure-blue);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-right: 6px;
+}
+.usecase-card p { font-size: 14px; margin: 10px 0; }
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 14px;
+}
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+}
+.related-card h4 {
+    color: var(--ms-blue-800);
+    font-size: 14.5px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.related-card p { color: var(--ms-text-secondary); }
+
+/* ===== Links ===== */
+.link-list { list-style: none; }
+.link-list li {
+    margin: 10px 0;
+    padding-left: 28px;
+    position: relative;
+    font-size: 14px;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+a { color: var(--azure-blue); word-break: break-all; }
+a:hover { color: var(--ms-blue-800); }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+.summary-points { margin-top: 14px; display: grid; gap: 10px; }
+.summary-point {
+    background: var(--ms-surface);
+    border-radius: 8px;
+    padding: 10px 16px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    font-size: 14px;
+}
+.summary-point .num {
+    background: var(--azure-blue);
+    color: white;
+    font-weight: 700;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+/* ===== Tags / Footer ===== */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 13px;
+    padding: 4px 14px;
+    border-radius: 16px;
+}
+.footer {
+    background: var(--azure-dark-blue);
+    color: white;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-top: 28px;
+    font-size: 13px;
+}
+.footer h4 { font-size: 15px; margin-bottom: 10px; }
+.footer a { color: var(--azure-light-blue); }
+.footer ul { list-style: none; }
+.footer li { margin: 6px 0; }
+.footer .copyright {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.3);
+    opacity: 0.8;
+}
+
+ul.plain { padding-left: 22px; font-size: 14.5px; }
+ul.plain li { margin: 6px 0; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .container { padding: 14px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="badge badge-preview">🔍 In Preview (Public Preview)</span>
+            <span class="service-badge">Azure Monitor</span>
+        </div>
+        <h1>Azure Monitor workspace<br>インジェスト制限の自動スケーリング</h1>
+        <p class="subtitle">Auto scaling of ingestion limits in Azure Monitor workspace — Managed Prometheus のクォータ上限が使用パターンに追従</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-12</span>
+            <span>🧩 Azure Monitor workspace / Managed Prometheus</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>
+            <span class="keyword">Azure Monitor workspace (AMW)</span> において、インジェスト制限 (クォータ上限) を実際の使用パターンに基づいて
+            <span class="keyword">自動的にスケーリング</span>する機能が Public Preview として発表されました。
+            AMW は <strong>Azure Monitor managed service for Prometheus</strong> のメトリクス格納先であり、ワークスペースごとに
+            「アクティブ時系列数」と「1 分あたりのイベント数」のインジェスト制限 (いずれもデフォルト 100 万) が設定されています。
+        </p>
+        <div class="highlight-box" style="margin-top: 16px;">
+            本機能を有効化すると、メトリクス量の増加に応じて制限が<strong>自動的に引き上げ</strong>られ、使用量が低い状態が一定期間続くと制限が<strong>引き下げ</strong>られます。
+            これにより、制限超過による<span class="keyword">スロットリング (メトリクスのドロップ)</span> のリスクと、手動でのクォータ管理の運用負荷の両方を軽減できます。
+            制限の変更はすべてワークスペースの<span class="keyword">アクティビティログに記録</span>されるため、いつ・どの方向に制限が変化したかの履歴を確認でき、変更イベントに対するアラートも設定できます。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">100 万</div>
+                <div class="stat-label">デフォルト制限<br>(時系列数 / イベント毎分)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">⬆️⬇️ 自動</div>
+                <div class="stat-label">使用量に応じて<br>制限を増減</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">¥0</div>
+                <div class="stat-label">課金への影響なし<br>(実インジェスト量課金)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">📝 100%</div>
+                <div class="stat-label">変更履歴を<br>アクティビティログに記録</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>使用量が制限を超えそうな場合、<strong>サポートリクエスト</strong> (または Preview の ARM API) によって手動で制限引き上げを申請し、適用を待つ必要があった</li>
+                    <li>使用量の増加が制限の引き上げに追いつかないと、<strong>メトリクスがドロップ</strong>され、環境が変化しているまさにそのタイミングで可視性を失うリスクがあった</li>
+                    <li>繰り返しの申請を避けるため、必要以上に大きなヘッドルームを要求する<strong>過剰プロビジョニング</strong>が起こりがちだった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>使用量がしきい値に近づくと制限が<strong>自動的に引き上げ</strong>られ、スロットリングを未然に防止</li>
+                    <li>使用量が低い状態が一定期間続くと未使用の容量が<strong>自動的に回収</strong>される (インジェスト自体には影響なし)</li>
+                    <li>制限変更の履歴が<strong>アクティビティログに記録</strong>され、監査・アラート設定が可能</li>
+                    <li><strong>課金への影響はなし</strong> (課金は実際にインジェストした量に基づくため、クォータ上限の変更では課金額は変わらない)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Before["😣 従来: 静的な制限"]
+        B1["📈 メトリクス量の増加"] --> B2{"⚠️ 制限超過?"}
+        B2 -->|"Yes"| B3["🚫 スロットリング<br/>メトリクスのドロップ"]
+        B3 --> B4["🎫 サポートリクエストで<br/>手動クォータ引き上げ"]
+    end
+    subgraph After["😊 新機能: Auto scaling (Preview)"]
+        A1["📈 使用パターンを継続監視"] --> A2{"📊 使用率しきい値"}
+        A2 -->|"上限に接近"| A3["⬆️ 制限を自動で引き上げ"]
+        A2 -->|"低使用が継続"| A4["⬇️ 制限を自動で引き下げ"]
+        A3 --> A5["📝 アクティビティログに記録"]
+        A4 --> A5
+    end
+            </pre>
+        </div>
+        <p class="diagram-caption">
+            💡 従来は制限超過によるスロットリング発生後に手動でクォータ引き上げを申請する必要がありましたが、Auto scaling を有効化すると使用状況に基づいて制限が自動的に増減し、変更履歴はアクティビティログに記録されます。
+        </p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">⬆️</div>
+            <div class="feature-content">
+                <h4>1. 使用量ベースの自動スケールアップ</h4>
+                <p>インジェスト使用率が上限しきい値に近づくと、制限が自動的に引き上げられ、スロットリングを防止する</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⬇️</div>
+            <div class="feature-content">
+                <h4>2. 低使用時の自動スケールダウン</h4>
+                <p>使用量が低い状態が一定期間継続すると、未使用の容量が回収される。スケールダウンしてもインジェスト自体には影響しない</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📝</div>
+            <div class="feature-content">
+                <h4>3. アクティビティログによる変更履歴の記録</h4>
+                <p>制限の変更はすべてワークスペースのアクティビティログに記録され、変更イベントに対するアクティビティログアラートを設定できる</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎛️</div>
+            <div class="feature-content">
+                <h4>4. ワークスペース単位のオプトイン設定</h4>
+                <p>ワークスペースごとに有効/無効を切り替え可能。無効化すると制限は固定され、従来どおり手動管理となる</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>対象リソース</th><td>Azure Monitor workspace (<code>Microsoft.Monitor/accounts</code>)</td></tr>
+            <tr><th>対象の制限</th><td>Events per minute (デフォルト 100 万)、Active time series (デフォルト 100 万)</td></tr>
+            <tr><th>有効化方法</th><td>ARM API 更新 (<code>properties.limits.enableAutoScale=true</code>)、API バージョン <code>2026-09-03-preview</code></td></tr>
+            <tr><th>設定単位</th><td>ワークスペース単位 (オプトイン)</td></tr>
+            <tr><th>変更履歴</th><td>ワークスペースのアクティビティログに記録</td></tr>
+            <tr><th>課金への影響</th><td>なし (課金は実際のインジェスト量・クエリ量に基づく)</td></tr>
+            <tr><th>監視用メトリクス</th><td><code>ActiveTimeSeriesPercentUtilization</code>、<code>EventsPerMinuteIngestedPercentUtilization</code></td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+        <h3 class="subsection-title">✅ 前提条件</h3>
+        <ul class="plain">
+            <li>Azure Monitor workspace が作成済みであること</li>
+            <li>ワークスペースに対する<span class="keyword">書き込みアクセス権</span>があること</li>
+        </ul>
+        <h3 class="subsection-title">💻 Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Auto scaling の有効化</span></div>
+            <pre><code class="language-bash"># Azure Monitor workspace の default metricsContainer に対して Auto scaling を有効化
+resourceId="/subscriptions/&lt;subscriptionId&gt;/resourceGroups/&lt;resourceGroupName&gt;/providers/Microsoft.Monitor/accounts/&lt;azureMonitorWorkspaceName&gt;/metricsContainers/default"
+
+az resource update \
+  --ids $resourceId \
+  --api-version 2026-09-03-preview \
+  --set properties.limits.enableAutoScale=true \
+  --force-string
+
+# 無効化する場合は enableAutoScale=false を設定 (制限は固定され手動管理に戻る)</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌟</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>クォータ管理 (サポートリクエストの作成・適用待ち) にかかる<strong>運用工数を削減</strong></li>
+                    <li>環境の変化・成長期における<strong>監視データ欠損のリスクを低減</strong>し、可観測性を維持</li>
+                    <li><strong>過剰プロビジョニング</strong> (必要以上のヘッドルーム要求) が不要になる</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>使用率に基づく自動スケールアップで<strong>スロットリング (429) を未然に防止</strong></li>
+                    <li>低使用時の自動スケールダウンにより<strong>制限値が実態に追従</strong></li>
+                    <li>アクティビティログで制限変更を追跡でき、<strong>アラートによる変更検知</strong>も可能</li>
+                    <li>クォータ上限の変更のみで<strong>課金に影響しない</strong>ため、安心して有効化できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li><strong>Public Preview</strong> のため、本番環境での利用は <strong>SLA の対象外</strong></li>
+                <li>ワークスペースごとの<strong>オプトイン設定</strong>であり、デフォルトでは無効</li>
+                <li>現時点で確認できた有効化手段は <strong>ARM API 経由 (<code>az resource update</code>) のみ</strong> (Preview API バージョン <code>2026-09-03-preview</code> を使用)</li>
+                <li>Auto scaling を使わない場合の手動引き上げには従来どおり条件がある (API 経由は<strong>最大 2,000 万</strong>まで、200 万超は現在使用量が希望値の 50% に達している必要あり、2,000 万超はサポートチケット)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🚀 ユースケース 1: 成長中の AKS クラスターの Prometheus メトリクス監視</h4>
+            <p><span class="usecase-label">シナリオ</span>AKS クラスターのノード・Pod 数が継続的に増加しており、Managed Prometheus のアクティブ時系列数がデフォルト制限 (100 万) に近づいている。スパイク時のメトリクスドロップを避けたいが、都度のクォータ申請は避けたい。</p>
+            <p><span class="usecase-label">実装例</span></p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+                <pre><code class="language-bash"># 1. Auto scaling を有効化
+az resource update \
+  --ids "/subscriptions/&lt;subId&gt;/resourceGroups/&lt;rg&gt;/providers/Microsoft.Monitor/accounts/&lt;amw&gt;/metricsContainers/default" \
+  --api-version 2026-09-03-preview \
+  --set properties.limits.enableAutoScale=true \
+  --force-string
+
+# 2. 推奨アラート (使用率 75% / 95%) を併用して利用状況を監視
+#    Azure Portal: Azure Monitor workspace &gt; Alerts &gt; Set up recommended alerts</code></pre>
+            </div>
+            <div class="effect-box">
+                <strong>🎯 効果</strong>: クラスターの成長に合わせて制限が自動で引き上げられ、スロットリングによるメトリクス欠損を防止。閑散期には制限が自動で引き下げられ、クォータが実態に追従する。
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="highlight-box">
+            Auto scaling の有効化による<span class="keyword">追加料金や課金の変更はありません</span>。本機能はインジェスト制限 (クォータ上限) を調整するのみで、課金は従来どおり<strong>実際にインジェスト・クエリしたデータ量</strong>に基づきます。
+            Azure Monitor managed service for Prometheus 自体および Azure Monitor workspace の作成に直接のコストはなく、収集データのインジェストとクエリに対して課金されます。
+        </div>
+        <p style="font-size: 14px;">詳細は <a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank">Azure Monitor 料金ページ</a> の Metrics タブを参照してください。</p>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>📈 Azure Monitor managed service for Prometheus</h4>
+                <p>Azure Monitor workspace は Prometheus メトリクスの格納先であり、本機能のインジェスト制限はこのメトリクス取り込みに適用される</p>
+            </div>
+            <div class="related-card">
+                <h4>☸️ Azure Kubernetes Service (AKS)</h4>
+                <p>Managed Prometheus の主要なデータソース。クラスター規模の拡大に伴う時系列数の増加に本機能が対応</p>
+            </div>
+            <div class="related-card">
+                <h4>📝 アクティビティログ / アクティビティログアラート</h4>
+                <p>制限変更イベントの履歴確認と変更検知アラートに利用</p>
+            </div>
+            <div class="related-card">
+                <h4>🔔 Azure Monitor 推奨アラート</h4>
+                <p>インジェスト使用率 75% / 95% のしきい値で通知する推奨アラートルールを併用可能</p>
+            </div>
+            <div class="related-card">
+                <h4>📊 Azure Managed Grafana</h4>
+                <p>AMW に格納したメトリクスの可視化に利用</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=578207" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-monitor/metrics/azure-monitor-workspace-monitor-ingest-limits#autoscale-ingestion-limits-in-azure-monitor-workspace-preview" target="_blank">Monitor Azure Monitor workspace metrics ingestion (Autoscale ingestion limits)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-monitor/fundamentals/service-limits#prometheus-metrics" target="_blank">Azure Monitor service limits (Prometheus metrics)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-monitor/metrics/prometheus-metrics-overview" target="_blank">Overview of Azure Monitor with Prometheus</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank">Azure Monitor 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📌</span>まとめ</h2>
+        <div class="summary-box">
+            <p>
+                Azure Monitor workspace のインジェスト制限自動スケーリングは、Managed Prometheus 運用における
+                <span class="keyword">「スロットリングリスク」「手動クォータ申請の手間」「過剰プロビジョニング」</span>
+                という 3 つの課題を一度に解消する機能です。
+            </p>
+            <div class="summary-points">
+                <div class="summary-point"><span class="num">1</span><span>課金への影響はなく<strong>オプトイン</strong>で有効化できるため、AKS など成長中の環境で Managed Prometheus を利用している場合は、Preview 段階から<strong>非本番環境で評価する価値</strong>があります。</span></div>
+                <div class="summary-point"><span class="num">2</span><span>有効化とあわせて、<strong>推奨アラート (使用率 75% / 95%)</strong> と<strong>アクティビティログアラート</strong>を設定し、制限変更を可視化する運用を推奨します。</span></div>
+            </div>
+        </div>
+        <div class="tags">
+            <span class="tag"># Azure Monitor</span>
+            <span class="tag"># Azure Monitor workspace</span>
+            <span class="tag"># Managed Prometheus</span>
+            <span class="tag"># AKS</span>
+            <span class="tag"># Ingestion Limits</span>
+            <span class="tag"># Auto Scaling</span>
+            <span class="tag"># Public Preview</span>
+            <span class="tag"># Observability</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <h4>📖 出典</h4>
+        <ul>
+            <li>レポート: 「Azure Monitor: Azure Monitor workspace インジェスト制限の自動スケーリング (Public Preview)」 (2026-11-12, Azure News Summary)</li>
+            <li>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=578207" target="_blank">https://azure.microsoft.com/updates?id=578207</a></li>
+            <li>Microsoft Learn: <a href="https://learn.microsoft.com/azure/azure-monitor/metrics/azure-monitor-workspace-monitor-ingest-limits#autoscale-ingestion-limits-in-azure-monitor-workspace-preview" target="_blank">Monitor Azure Monitor workspace metrics ingestion</a></li>
+            <li>Microsoft Learn: <a href="https://learn.microsoft.com/azure/azure-monitor/fundamentals/service-limits#prometheus-metrics" target="_blank">Azure Monitor service limits (Prometheus metrics)</a></li>
+            <li>Microsoft Learn: <a href="https://learn.microsoft.com/azure/azure-monitor/metrics/prometheus-metrics-overview" target="_blank">Overview of Azure Monitor with Prometheus</a></li>
+            <li>料金ページ: <a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank">https://azure.microsoft.com/pricing/details/monitor/</a></li>
+        </ul>
+        <p class="copyright">本インフォグラフィックは Azure News Summary プロジェクトのレポート (reports/2026/2026-11-12-azure-monitor-workspace-ingestion-auto-scaling.md) を元に生成されています。</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
