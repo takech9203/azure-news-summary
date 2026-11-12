@@ -5,6 +5,7 @@
 
 ## 2026 年
 
+- [2026-11-11 - Azure Front Door Premium WAF: レート制限グルーピング (Public Preview)](2026/2026-11-11-front-door-waf-rate-limit-grouping.md)
 - [2026-11-10 - Azure Route Server: IPv4/IPv6 デュアルスタックサポート (Public Preview)](2026/2026-11-10-route-server-dual-stack-ipv6.md)
 - [2026-11-10 - Azure Front Door: Edge Actions の一般提供開始 (GA)](2026/2026-11-10-front-door-edge-actions.md)
 - [2026-11-10 - Azure Front Door: ネイティブ gRPC サポート (Public Preview)](2026/2026-11-10-front-door-grpc-support.md)
