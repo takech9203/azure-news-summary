@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Network Security Perimeter: サービスタグ インバウンドルール & ペリメーターリンク (Public Preview)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+
+    /* Networking category color */
+    --networking-green: #00A651;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::after {
+    content: "🛡️";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+
+.hero .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.hero h1 {
+    font-size: 27px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.hero .subtitle { font-size: 15px; opacity: 0.92; }
+.hero .meta { margin-top: 14px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 18px; opacity: 0.95; }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 22px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    border-bottom: 3px solid var(--ms-blue-200);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+}
+
+.section-title .icon {
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 10px;
+    font-size: 22px;
+}
+
+h3.sub-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-700);
+    margin: 18px 0 10px;
+}
+
+p.lead { margin-bottom: 12px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.keyword {
+    background: var(--ms-blue-200);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    color: var(--ms-blue-900);
+}
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: var(--ms-blue-900);
+}
+
+/* ===== Two-feature summary cards ===== */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.update-card {
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 18px;
+    background: var(--ms-surface);
+}
+.update-card h4 {
+    color: var(--azure-blue);
+    font-size: 16px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.update-card p { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px; height: 44px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; font-size: 16px; }
+.feature-content ul { padding-left: 18px; font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content li { margin-bottom: 5px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Table ===== */
+.spec-table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 14px 0; }
+.spec-table th {
+    background: var(--ms-blue-800);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+}
+.spec-table td { padding: 10px 14px; border-bottom: 1px solid var(--ms-border); vertical-align: top; }
+.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+.table-wrap { overflow-x: auto; }
+
+/* ===== Steps ===== */
+.step-list { list-style: none; counter-reset: step; margin: 14px 0; }
+.step-list li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 14px 10px 54px;
+    margin-bottom: 10px;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.step-list li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px; top: 50%;
+    transform: translateY(-50%);
+    width: 30px; height: 30px;
+    background: var(--azure-blue);
+    color: white;
+    font-weight: 700;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+}
+
+/* ===== Merit / Caution lists ===== */
+.merit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.merit-box {
+    border-radius: 10px;
+    padding: 16px;
+    border: 2px solid var(--ms-blue-300);
+    background: var(--ms-blue-100);
+}
+.merit-box h4 { color: var(--ms-blue-800); margin-bottom: 10px; }
+.merit-box ul { padding-left: 20px; font-size: 14px; }
+.merit-box li { margin-bottom: 8px; }
+
+.caution-box {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-orange);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 12px 0;
+}
+.caution-box ul { padding-left: 20px; font-size: 14px; }
+.caution-box li { margin-bottom: 8px; }
+.caution-strong { color: var(--ms-red); font-weight: 700; }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--networking-green);
+    border-radius: 10px;
+    padding: 18px;
+    margin: 14px 0;
+    background: var(--ms-surface);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.usecase-card h4 { color: var(--networking-green); margin-bottom: 10px; font-size: 16px; }
+.usecase-row { display: flex; gap: 10px; margin-bottom: 8px; font-size: 14px; }
+.usecase-label {
+    flex-shrink: 0;
+    background: var(--ms-surface-tertiary);
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-weight: 700;
+    color: var(--ms-text-secondary);
+    white-space: nowrap;
+    height: fit-content;
+}
+
+/* ===== Related / Links ===== */
+.related-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+}
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; }
+
+.link-list { list-style: none; }
+.link-list li { margin-bottom: 8px; font-size: 14px; padding-left: 24px; position: relative; }
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+.link-list a { color: var(--azure-blue); word-break: break-all; }
+
+/* ===== Region ===== */
+.region-box {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--ms-blue-100);
+    border-radius: 10px;
+    padding: 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.region-box .globe { font-size: 26px; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-size: 15px;
+}
+.summary-box ul { padding-left: 20px; margin-top: 10px; }
+.summary-box li { margin-bottom: 8px; }
+
+/* ===== Code block ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Tags & Footer ===== */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+    color: var(--ms-text-secondary);
+}
+
+footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 28px 0 10px;
+    font-size: 13px;
+}
+footer h4 { margin-bottom: 10px; font-size: 15px; }
+footer ul { list-style: none; }
+footer li { margin-bottom: 6px; }
+footer a { color: var(--azure-light-blue); word-break: break-all; }
+footer .copyright { margin-top: 14px; opacity: 0.75; border-top: 1px solid rgba(255,255,255,0.25); padding-top: 12px; }
+
+@media (max-width: 720px) {
+    .two-col, .before-after, .merit-grid, .related-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 21px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure Network Security Perimeter</span>
+            <span class="service-badge">Azure Private Link</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>サービスタグによるインバウンドルール &amp;<br>ペリメーターリンク (クロスペリメーター) がパブリックプレビュー</h1>
+        <p class="subtitle">Microsoft Ignite に合わせて発表された、PaaS リソースの論理的ネットワーク境界 (NSP) を強化する 2 つの新機能</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-17</span>
+            <span>🏷️ 機能: サービスタグ インバウンドルール / ペリメーターリンク</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📰</span>概要</h2>
+        <p class="lead">
+            Azure Network Security Perimeter (NSP) は、仮想ネットワーク外にデプロイされる PaaS リソース (Azure Storage、Key Vault など) の周囲に
+            <span class="keyword">論理的なネットワーク境界</span>を作成し、パブリックアクセスの制御と<span class="keyword">データ流出の防止</span>を実現するサービスです。
+            今回、Microsoft Ignite に合わせて 2 つの新機能がパブリックプレビューとして発表されました。
+        </p>
+        <div class="two-col">
+            <div class="update-card">
+                <h4>🏷️ サービスタグによるインバウンドルール</h4>
+                <p>NSP 保護リソースへのインバウンドアクセスルールのソースとして Azure サービスタグ (<code class="inline">PowerPlatform</code>、<code class="inline">AzureMonitor</code>、<code class="inline">AzureDatabricks</code> など) を指定可能に。サービスタグは Azure サービスの IP アドレスプレフィックス群を表し、Microsoft がアドレス変更時に自動更新するため、IP アドレスの手動管理が不要になります。</p>
+            </div>
+            <div class="update-card">
+                <h4>🔗 ペリメーターリンク (クロスペリメーター接続)</h4>
+                <p>異なる NSP で保護されたリソース間のセキュアな接続を実現。2 つの境界間に信頼関係を確立し、必要なインバウンド/アウトバウンドルールを両側に自動生成します。セキュリティ境界をまたぐ制御された通信が必要な、複雑な分散アプリケーションアーキテクチャでも NSP を安心して採用できます。</p>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure サービスからのインバウンドアクセス許可には、個別の IP ベース (CIDR) ルールの作成・維持が必要で、サービス側の IP アドレス変更への追従が負担だった</li>
+                    <li>異なる NSP に属するリソース間 (例: 境界 A の Key Vault → 境界 B の Storage アカウント) の通信には、双方の境界に手動でアクセスルールを作成する必要があった</li>
+                    <li>組織・ワークロードごとの境界分割は境界間通信の管理が複雑になり、大規模・分散アーキテクチャでの NSP 採用の障壁となっていた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>サービスタグをインバウンドルールのソースとして指定でき、IP プレフィックスの管理を Microsoft に任せられる (リージョナルサービスタグにも対応)</li>
+                    <li>ペリメーターリンクを作成するだけで、両境界のプロファイルに必要な許可ルールが自動生成され、手動ルール作成が不要に</li>
+                    <li>ゼロトラスト原則 (境界ベースのアクセス制御、マネージド ID 認証) を維持したまま、境界をまたぐサービス間通信を実現</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🗺️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    SVC["🏷️ Azure サービス<br>(PowerPlatform / AzureMonitor<br>/ AzureDatabricks など)"]
+
+    subgraph NSPA["🛡️ Network Security Perimeter A"]
+        PA["📋 Profile-A1<br>(サービスタグ インバウンドルール)"]
+        KV["🔑 Key Vault"]
+        SQL[("🗄️ SQL Database")]
+    end
+
+    subgraph NSPB["🛡️ Network Security Perimeter B"]
+        PB["📋 Profile-B1"]
+        ST[("🗄️ Storage Account")]
+    end
+
+    SVC -- "サービスタグで許可<br>(Public Preview)" --> PA
+    PA --- KV
+    PA --- SQL
+    PB --- ST
+    NSPA == "🔗 ペリメーターリンク<br>ルール自動生成 + MSI 認証<br>(Public Preview)" ==> NSPB
+
+    PUB["🌐 その他のパブリックアクセス"] -. "既定で拒否" .-x NSPA
+            </pre>
+        </div>
+        <p class="diagram-note">
+            NSP で保護されたリソースへは、サービスタグベースのインバウンドルールで Azure サービスからのアクセスを許可でき、
+            異なる NSP 間はペリメーターリンクによる信頼関係で追加ルールなしに通信できます。許可されていないパブリックアクセスは既定で拒否されます。
+        </p>
+    </section>
+
+    <!-- ===== Key features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>サービスアップデートの詳細: 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🏷️</div>
+            <div class="feature-content">
+                <h4>1. サービスタグによるインバウンドアクセスルール</h4>
+                <ul>
+                    <li>NSP プロファイルのインバウンドアクセスルールのソースタイプとして「Service Tag」を選択可能</li>
+                    <li>サービスタグは Azure サービスの IP プレフィックス群を表し、Microsoft が自動更新するため IP の手動管理が不要</li>
+                    <li><code class="inline">Storage.WestUS</code> のようなリージョナルサービスタグも利用可能で、より狭い範囲の許可が可能</li>
+                    <li>既存の CIDR (IP ベース) ルールやサブスクリプションベースルールと併用可能 (補完関係)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>2. ペリメーターリンク (クロスペリメーター接続)</h4>
+                <ul>
+                    <li>2 つの独立した NSP を 1 つのリンクで接続し、信頼関係を確立</li>
+                    <li>リンク先プロファイルに関連付けられたリソース同士は、追加の手動アクセスルールなしで通信可能 (必要なインバウンド/アウトバウンド許可ルールを両側に自動生成、ソースタイプは「Network security perimeter」)</li>
+                    <li>リンクは対称的で、構成元が「ローカル」、接続先が「リモート」の境界となる</li>
+                    <li>認証にはマネージド ID (MSI) が必須</li>
+                    <li>リンク削除は片方の管理者のみで実行可能 (リモート側の承認不要)。削除すると自動生成ルールが除去され、クロスペリメーター通信は拒否される</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">2</div>
+                <div class="stat-label">新機能が Public Preview</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最大 10</div>
+                <div class="stat-label">NSP あたりのペリメーターリンク数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">MSI</div>
+                <div class="stat-label">リンク認証はマネージド ID 必須</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">0</div>
+                <div class="stat-label">IP プレフィックスの手動管理 (Microsoft が自動更新)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr>
+                    <td>サービスタグ対応リソース (インバウンドルール)</td>
+                    <td>Azure Key Vault、Azure Monitor、Azure AI Search、Azure Event Hubs、Azure Service Bus</td>
+                </tr>
+                <tr>
+                    <td>サービスタグの例</td>
+                    <td><code class="inline">PowerPlatform</code>、<code class="inline">AzureMonitor</code>、<code class="inline">AzureDatabricks</code>、<code class="inline">MicrosoftDiscoveryService</code>、<code class="inline">Storage.WestUS</code></td>
+                </tr>
+                <tr>
+                    <td>ペリメーターリンク対応 PaaS (プレビュー期間中)</td>
+                    <td>Azure SQL Database、Azure Storage、Azure Cosmos DB、Azure Key Vault、Azure Monitor、Azure Service Bus</td>
+                </tr>
+                <tr>
+                    <td>ペリメーターリンクの上限</td>
+                    <td>NSP あたり最大 10 リンク</td>
+                </tr>
+                <tr>
+                    <td>ペリメーターリンクの認証</td>
+                    <td>マネージド ID (MSI) 必須 (他の認証方式は非サポート)</td>
+                </tr>
+                <tr>
+                    <td>ペリメーターリンクの操作手段</td>
+                    <td>Azure Portal、CLI、PowerShell、API</td>
+                </tr>
+                <tr>
+                    <td>NSP のアクセスルール種別</td>
+                    <td>インバウンド: サブスクリプションベース / IP ベース / サービスタグ、アウトバウンド: FQDN ベース</td>
+                </tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 class="sub-title">前提条件</h3>
+        <div class="highlight-box">
+            <ul style="padding-left: 20px; font-size: 14px;">
+                <li>アクティブなサブスクリプションを持つ Azure アカウント</li>
+                <li>既存の Network Security Perimeter とプロファイル</li>
+                <li>NSP に関連付けられた Azure リソース</li>
+                <li>NSP のインバウンドアクセスルールを管理する権限 (RBAC 要件を参照)</li>
+                <li>(ペリメーターリンクをサブスクリプション間で構成する場合) リンク開始側がリモート NSP のサブスクリプションに対する <strong>Contributor</strong> 権限、または <code class="inline">Microsoft.Network/networkSecurityPerimeters/linkPerimeter/action</code> 権限を持つこと</li>
+            </ul>
+        </div>
+
+        <h3 class="sub-title">Azure Portal での手順 (サービスタグによるインバウンドルール)</h3>
+        <ol class="step-list">
+            <li>Azure Portal で「Network security perimeters」を検索して選択</li>
+            <li>構成する NSP を選択し、「Profiles」から対象プロファイルを選択</li>
+            <li>「Inbound access rules」で「+ Add」を選択</li>
+            <li>「Source type」で「<strong>Service Tag</strong>」を選択 (一覧にはサポートされている GA のサービスタグのみ表示される)</li>
+            <li>サービスタグ (例: <code class="inline">PowerPlatform</code>)、ルール名 (例: <code class="inline">Allow-PowerPlatform</code>)、アクション (Allow) を設定し「Add」で保存</li>
+            <li>プロファイルの「Inbound access rules」に新しいルールが表示されることを確認し、対象サービスからの接続テストと NSP アクセスログで疎通を検証</li>
+        </ol>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌟</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-box">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>IP アドレスの手動管理が不要になり、運用負荷とルールのメンテナンスコストが削減される</li>
+                    <li>境界をまたぐ通信が必要な複雑・分散アーキテクチャでも NSP を採用でき、組織全体でのゼロトラスト導入を促進</li>
+                    <li>アクセスログによる監査・コンプライアンス対応を維持しながら境界間連携が可能</li>
+                </ul>
+            </div>
+            <div class="merit-box">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>サービスタグの IP プレフィックスは Microsoft が自動更新するため、サービス側の IP 変更による接続断を回避できる</li>
+                    <li>ペリメーターリンクが必要な許可ルールを両側に自動生成し、手動ルールの設定ミスを防止</li>
+                    <li>マネージド ID 認証の強制により、境界間通信でも強力な ID ベースのアクセス制御を維持</li>
+                    <li>リージョナルサービスタグにより最小権限の原則に沿った絞り込みが可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>両機能とも<span class="caution-strong">パブリックプレビュー</span>であり、SLA はなく本番ワークロードでの使用は非推奨</li>
+                <li><span class="caution-strong">Azure Storage はサービスタグによるインバウンドアクセスルールを現時点でサポートしない</span> (一部シナリオは動作するように見えても、挙動が不安定になる可能性があるため使用を避ける。例外は Azure Databricks サーバーレス向けの Storage 構成)</li>
+                <li>すべてのサービスタグがインバウンドルールとして使用できるわけではない (一覧に表示されるのはサポート対象の GA タグのみ)</li>
+                <li>サービスタグは複数の Microsoft 所有サービスインスタンス (マルチテナントワークロードやサードパーティコードを含む場合がある) のトラフィックを含み得るため、より厳格な分離が必要な場合は IP 範囲やサブスクリプションベースのルールを検討する</li>
+                <li>ペリメーターリンクの自動承認は同一サブスクリプション内の NSP 間のみ。サブスクリプションをまたぐ場合はリモート側への権限が必要</li>
+                <li>ペリメーターリンクは NSP あたり<span class="caution-strong">最大 10 個</span>まで</li>
+                <li>ペリメーターリンクの削除はリモート側の承認なしに片方の管理者が実行でき、削除時点でクロスペリメーター通信が拒否される点に注意</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>ユースケース 1: Power Platform から NSP 保護リソースへのアクセス許可</h4>
+            <div class="usecase-row">
+                <span class="usecase-label">シナリオ</span>
+                <span>Power Platform (Power Apps / Power Automate) から NSP で保護された Key Vault や Event Hubs にアクセスする必要があるが、Power Platform 側の IP アドレスを個別に管理したくない。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-label">実装例</span>
+                <span>NSP プロファイルのインバウンドアクセスルールで Source type に「Service Tag」、タグに <code class="inline">PowerPlatform</code> を指定して許可ルール (<code class="inline">Allow-PowerPlatform</code>) を作成する。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-label">効果</span>
+                <span>Microsoft が IP プレフィックスを自動更新するため、CIDR ルールの棚卸しが不要になり、IP 変更による接続障害を防げる。検証後は冗長な CIDR ルールを削除してルールセットを簡素化できる。</span>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>ユースケース 2: 部門ごとに分離した境界間のサービス連携</h4>
+            <div class="usecase-row">
+                <span class="usecase-label">シナリオ</span>
+                <span>部門 A の NSP に属する Key Vault が、部門 B の NSP に属する Storage アカウントにアクセスする必要がある。双方で手動ルールを管理するのは運用負荷が高い。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-label">実装例</span>
+                <span>両 NSP のプロファイル間にペリメーターリンクを作成する (Portal / CLI / PowerShell / API)。必要なインバウンド/アウトバウンドルールが両側に自動生成され、リソース間はマネージド ID で認証して通信する。</span>
+            </div>
+            <div class="usecase-row">
+                <span class="usecase-label">効果</span>
+                <span>境界ごとの独立したガバナンスを維持しつつ、境界間のサービス間通信をルール自動生成で安全かつ簡単に実現できる。</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <div class="region-box">
+            <span class="globe">🌐</span>
+            <div>
+                <strong>Network Security Perimeter 本体 (GA)</strong><br>
+                すべての Azure パブリッククラウドリージョンと Azure Government リージョン (US Gov Virginia、US Gov Texas、US Gov Arizona、US DoD East、US DoD Central) で一般提供済み
+            </div>
+        </div>
+        <div class="region-box">
+            <span class="globe">🔗</span>
+            <div>
+                <strong>ペリメーターリンク (プレビュー)</strong><br>
+                NSP がサポートされるすべての Azure パブリッククラウドおよび Azure Government リージョンで利用可能
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Related services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>Azure Private Link</strong>
+                VNet から PaaS リソースへのプライベート接続を提供。NSP はプライベートエンドポイント経由のトラフィックを明示的なルールなしで許可する
+            </div>
+            <div class="related-card">
+                <strong>サービスエンドポイント (Standard)</strong>
+                ネットワーク識別子 (パブリック IP / プレフィックス) を使った IaaS から PaaS へのインバウンド認可に利用
+            </div>
+            <div class="related-card">
+                <strong>Azure Monitor / Log Analytics</strong>
+                NSP の診断設定により境界内リソースのアクセスログを収集し、監査・コンプライアンスに活用 (Azure Monitor 自体も NSP 対応サービス)
+            </div>
+            <div class="related-card">
+                <strong>マネージド ID (Microsoft Entra ID)</strong>
+                ペリメーターリンク経由のサービス間通信で必須となる認証方式
+            </div>
+            <div class="related-card" style="grid-column: 1 / -1;">
+                <strong>対応 PaaS サービス</strong>
+                Azure Storage、Key Vault、SQL Database、Cosmos DB、Event Hubs、Service Bus、Azure AI Search、Microsoft Foundry など (対応状況はサービスごとに GA / プレビューが異なる)
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>
+                今回の 2 つのパブリックプレビューは、Network Security Perimeter の実運用における大きな課題であった
+                <span class="keyword">「Azure サービスからのインバウンドアクセスの IP 管理」</span>と
+                <span class="keyword">「境界をまたぐサービス間通信」</span>をそれぞれ解決するアップデートです。
+            </p>
+            <ul>
+                <li><strong>サービスタグによるインバウンドルール</strong>は IP 管理を Microsoft に委ねられる</li>
+                <li><strong>ペリメーターリンク</strong>はルール自動生成とマネージド ID 必須化により、ゼロトラストを維持したまま境界間連携を可能にする</li>
+                <li>NSP の導入を検討している、あるいは複数境界への分割を見送っていた組織は、Transition モードでアクセスパターンを検証した上で、これらのプレビュー機能を非本番環境で評価することを推奨</li>
+                <li>注意点: Azure Storage はサービスタグによるインバウンドルールに未対応。ペリメーターリンクは NSP あたり 10 個までで MSI 認証が必須</li>
+            </ul>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure Network Security Perimeter</span>
+            <span class="tag">Azure Private Link</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Service Tags</span>
+            <span class="tag">Perimeter Link</span>
+            <span class="tag">Zero Trust</span>
+            <span class="tag">Public Preview</span>
+            <span class="tag">Microsoft Ignite</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <h4>📚 出典・参考リンク</h4>
+        <ul>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=579201" target="_blank" rel="noopener">公式アップデート情報: Service tags for inbound rules in network security perimeter</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=579206" target="_blank" rel="noopener">公式アップデート情報: Perimeter link (cross perimeter) in network security perimeter</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/private-link/network-security-perimeter-concepts" target="_blank" rel="noopener">Microsoft Learn: Network Security Perimeter の概要</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/private-link/configure-network-security-perimeter-service-tag" target="_blank" rel="noopener">Microsoft Learn: サービスタグによるインバウンドアクセスルールの構成</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/private-link/perimeter-links-overview" target="_blank" rel="noopener">Microsoft Learn: ペリメーターリンクの概要</a></li>
+        </ul>
+        <p class="copyright">
+            ソース: reports/2026/2026-11-17-network-security-perimeter-updates.md (Azure News Summary) | リリース日: 2026-11-17 | インフォグラフィック生成日: 2026-11-18
+        </p>
+    </footer>
+
+</div>
+
+<!-- Mermaid.js -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+
+<!-- highlight.js -->
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

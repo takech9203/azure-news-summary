@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SRE Agent: マルチクラウド対応・エージェントガバナンス・A2A・Teams 統合 (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+}
+
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta { font-size: 14px; opacity: 0.9; display: flex; flex-wrap: wrap; gap: 20px; }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+h3.sub-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin: 10px 0; }
+
+/* ===== Highlight ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== 4 update pillars ===== */
+.pillar-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.pillar {
+    border-radius: 12px;
+    padding: 18px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.pillar .pillar-icon { font-size: 28px; }
+.pillar h4 { font-size: 15px; font-weight: 700; line-height: 1.4; }
+.pillar p { font-size: 13px; opacity: 0.95; margin: 0; }
+.pillar-1 { background: linear-gradient(135deg, #0078D4, #005A9E); }
+.pillar-2 { background: linear-gradient(135deg, #8764B8, #5C2E91); }
+.pillar-3 { background: linear-gradient(135deg, #008575, #006455); }
+.pillar-4 { background: linear-gradient(135deg, #5B5FC7, #3D3F9E); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { padding-left: 20px; font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content li { margin: 5px 0; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--ms-blue-800);
+    color: white;
+    text-align: left;
+    padding: 10px 14px;
+}
+td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-tertiary); }
+td code, li code, p code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; list-style: none; margin: 16px 0; }
+.steps li {
+    position: relative;
+    padding: 12px 16px 12px 56px;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* ===== Pros / Cons ===== */
+.pros-list, .cons-list { list-style: none; margin: 10px 0; }
+.pros-list li, .cons-list li {
+    padding: 10px 14px 10px 40px;
+    position: relative;
+    border-radius: 8px;
+    margin: 8px 0;
+    font-size: 14px;
+}
+.pros-list li { background: #E8F5E9; }
+.pros-list li::before { content: "✔"; position: absolute; left: 14px; color: var(--ms-green); font-weight: 700; }
+.cons-list li { background: #FFF4E5; }
+.cons-list li::before { content: "⚠"; position: absolute; left: 14px; color: var(--ms-orange); }
+
+/* ===== Use cases ===== */
+.usecase {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 14px 0;
+}
+.usecase h4 {
+    color: var(--azure-blue);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase p { font-size: 14px; margin: 8px 0; }
+.usecase .label {
+    display: inline-block;
+    background: var(--ms-blue-300);
+    color: var(--ms-blue-900);
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-right: 6px;
+}
+.usecase .effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 10px;
+}
+
+/* ===== Pricing ===== */
+.pricing-note {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 14px 18px;
+    font-size: 14px;
+    margin-top: 12px;
+}
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+.related-item {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13px;
+}
+.related-item strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; font-size: 14px; }
+
+/* ===== Links ===== */
+.link-list { list-style: none; }
+.link-list li {
+    margin: 8px 0;
+    padding-left: 24px;
+    position: relative;
+    font-size: 14px;
+    word-break: break-all;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px;
+    font-size: 15px;
+}
+
+/* ===== Tags ===== */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+}
+
+/* ===== Code ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    background: #1E1E1E;
+}
+
+/* ===== Footer ===== */
+.footer {
+    background: var(--azure-dark-blue);
+    color: white;
+    border-radius: 12px;
+    padding: 24px 28px;
+    font-size: 13px;
+}
+.footer h3 { font-size: 15px; margin-bottom: 10px; }
+.footer a { color: var(--azure-light-blue); }
+.footer ul { list-style: none; }
+.footer li { margin: 5px 0; word-break: break-all; }
+.footer .note { margin-top: 14px; opacity: 0.8; }
+
+@media (max-width: 700px) {
+    .before-after { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure SRE Agent</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Azure SRE Agent<br>マルチクラウド対応・エージェントガバナンス・A2A プロトコル・Teams 統合</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-17</span>
+            <span>🎪 Microsoft Ignite 2026 発表</span>
+            <span>🧪 4 機能すべて Public Preview</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title">📋 概要</h2>
+        <p>Microsoft Ignite 2026 に合わせて、Azure SRE Agent に 4 つの大型アップデートがパブリックプレビューとして同時発表された。Azure SRE Agent は、インシデントのトリアージ、スケジュールされた運用タスク、サイト信頼性ワークフローを自動化する AI エージェントサービスであり、今回のアップデートで<strong>マルチクラウド対応、エージェントの ID ガバナンス、エージェント間連携、コラボレーションツール統合</strong>という 4 つの方向に機能が拡張された。</p>
+
+        <div class="pillar-grid">
+            <div class="pillar pillar-1">
+                <div class="pillar-icon">☁️</div>
+                <h4>1. AWS / Google Cloud ネイティブサポート</h4>
+                <p>組み込みコネクタで Azure に加えて AWS と Google Cloud を横断してアプリと依存関係を調査。認証はマネージド ID + ID フェデレーション (AWS IAM ロール / GCP Workload Identity Federation) で長期キー管理が不要。</p>
+            </div>
+            <div class="pillar pillar-2">
+                <div class="pillar-icon">🪪</div>
+                <h4>2. Entra Agent ID / Agent 365 対応</h4>
+                <p>各エージェントがマネージド ID に加えて独自の Agent ID を保持。組織内の他のエージェントと並べて可視化・ガバナンスでき、Purview / Defender による監視にも対応。</p>
+            </div>
+            <div class="pillar pillar-3">
+                <div class="pillar-icon">🤝</div>
+                <h4>3. Agent-to-Agent (A2A) プロトコル対応</h4>
+                <p>オープンな A2A プロトコルで他のエージェントへタスクを引き渡し・受領。各エージェントは自チームの権限を保持したまま協調動作する。</p>
+            </div>
+            <div class="pillar pillar-4">
+                <div class="pillar-icon">💬</div>
+                <h4>4. Microsoft Teams 統合</h4>
+                <p>Teams を離れることなく、1 対 1 / グループチャット、チャネル、会議チャットで調査の開始・フォローアップ・エージェントとの共同作業が可能に。</p>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>AWS / Google Cloud の調査には、アクセスキーやサービスアカウントキーの管理、カスタムコネクタの構築、MCP サーバーのホスティングが必要</li>
+                    <li>エージェントの操作はマネージド ID として記録され、組織内の他の AI エージェントと統一的に可視化・ガバナンスする仕組みがない</li>
+                    <li>チーム間 (例: アプリチームと DB チーム) の調査連携は人手によるエスカレーションが必要</li>
+                    <li>エージェントとの対話は SRE Agent のインターフェイス上に限られ、日常のコミュニケーションツールから分断</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>組み込みコネクタ + ID フェデレーションにより、キーレスで AWS / Google Cloud を横断した調査が可能</li>
+                    <li>Entra Agent ID でアクションが「エージェント自身」として Entra / Azure アクティビティログに記録。Agent 365 のレジストリで組織全体を統一管理</li>
+                    <li>A2A で各チームのエージェントが権限を保持したままタスクを委譲・受領し、結果を 1 つの調査に統合</li>
+                    <li>Teams 上で調査と承認フロー (承認カードの投稿) が完結</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title">🗺️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Engineer([👩‍💻 エンジニア]) -->|"💬 Teams で調査依頼・承認"| Teams["📱 Microsoft Teams<br/>(1:1 / グループ / チャネル / 会議)"]
+    Teams --> SRE["🤖 Azure SRE Agent<br/>(マネージド ID + Entra Agent ID)"]
+    SRE -->|"A2A プロトコル"| OtherAgent["🤖 他チームのエージェント<br/>(例: DB チーム)"]
+    SRE -->|"組み込みコネクタ<br/>(IAM ロール連携)"| AWS["☁️ AWS<br/>(CloudTrail で監査)"]
+    SRE -->|"組み込みコネクタ<br/>(Workload Identity Federation)"| GCP["☁️ Google Cloud<br/>(Audit Logs で監査)"]
+    SRE --> Azure["☁️ Azure リソース<br/>(RBAC で制御)"]
+    Governance["🛡️ Entra Agent ID / Agent 365<br/>Purview・Defender で監視"] -.->|"可視化・ガバナンス"| SRE
+            </pre>
+        </div>
+        <div class="highlight-box">
+            エンジニアは Teams からエージェントと対話し、エージェントは Entra Agent ID でガバナンスされながら Azure・AWS・Google Cloud を横断して調査し、必要に応じて A2A プロトコルで他チームのエージェントと協調する。
+        </div>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title">⚙️ サービスアップデートの詳細 (主要機能)</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">☁️</div>
+            <div class="feature-content">
+                <h4>1. AWS / Google Cloud 組み込みコネクタ <span class="badge badge-preview">Public Preview</span></h4>
+                <ul>
+                    <li>Azure マネージド ID と ID フェデレーションで認証し、AWS アクセスキーや Google Cloud サービスアカウントキーの管理が不要</li>
+                    <li>AWS は AWS IAM ロール (OIDC フェデレーションで一時認証情報を発行)、Google Cloud は Workload Identity Federation と連携</li>
+                    <li>AWS は複数アカウントに対して個別の接続を使用。Google Cloud はフェデレーション ID が権限を持つ複数プロジェクトに 1 つの接続で対応可能</li>
+                    <li>自然言語での問い合わせのほか、インシデント対応プラン・スケジュールタスク・ワークフローによる調査の自動化に対応</li>
+                    <li>アクセスと操作はクラウド IAM、SRE Agent の実行モード (run modes)、ツール承認で制御。AWS CloudTrail / Google Cloud Audit Logs による監査が可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🪪</div>
+            <div class="feature-content">
+                <h4>2. Microsoft Entra Agent ID / Microsoft Agent 365 対応 <span class="badge badge-preview">Public Preview</span></h4>
+                <ul>
+                    <li>各エージェントがマネージド ID に加えて独自の Agent ID を保持可能</li>
+                    <li>Agent ID に Azure ロールを割り当てると、エージェントのアクションが Entra / Azure アクティビティログ上で「エージェント自身」として記録される</li>
+                    <li>管理者はテナントのエージェントレジストリ (Agent 365) で SRE エージェントを検索し、Microsoft Purview と Microsoft Defender で活動を監視できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🤝</div>
+            <div class="feature-content">
+                <h4>3. Agent-to-Agent (A2A) プロトコル対応 <span class="badge badge-preview">Public Preview</span></h4>
+                <ul>
+                    <li>SRE エージェントが他のエージェントにタスクを引き渡し、また受け取ることが可能。各エージェントは自チームの権限を保持</li>
+                    <li>例: アプリケーションチームのエージェントがレイテンシ急増を調査中に、データベースチームのエージェントへクエリパフォーマンス確認を依頼し、結果を同じ調査に取り込む</li>
+                    <li>管理者は SRE エージェントが呼び出せるエージェントを決定し、同一 Microsoft Entra テナント内で受信側の呼び出し元を承認。リクエストを処理するカスタムエージェントの選択も可能</li>
+                    <li>接続にはマネージド ID を使用し、リモートエージェントに呼び出し元のツールや権限への直接アクセスは付与されない</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">💬</div>
+            <div class="feature-content">
+                <h4>4. Microsoft Teams 統合 <span class="badge badge-preview">Public Preview</span></h4>
+                <ul>
+                    <li>1 対 1 チャット、グループチャット、チャネル、会議チャットで調査の開始・フォローアップ・共同作業が可能</li>
+                    <li>承認が必要なアクションは、エージェントが会話内に承認カードを投稿</li>
+                    <li>エージェントが参加できる共有会話は管理者が決定。既存のツールポリシーでアクションの「許可 / 承認必須 / 拒否」を判定</li>
+                    <li>Teams 上のプレゼンスは Microsoft Entra Agent ID により実現。Azure リソースへのアクセスは引き続きマネージド ID と Azure RBAC で管理</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title">🔧 技術仕様</h2>
+        <table>
+            <tr><th style="width: 32%;">項目</th><th>詳細</th></tr>
+            <tr><td>AWS 認証方式</td><td>OIDC フェデレーション。マネージド ID の ID トークンを AWS STS が検証し、<code>SREAgentRole</code> の一時認証情報を発行 (長期キー不使用)</td></tr>
+            <tr><td>AWS 信頼ポリシー条件</td><td><code>aud</code> (クライアント ID)、<code>oaud</code> (固定値)、<code>sub</code> (プリンシパル ID) の 3 条件で対象 ID を限定</td></tr>
+            <tr><td>AWS 提供ポリシー</td><td>必須の <code>AWSMCPSignInOAuthAccessPolicy</code> に加え、読み取り専用の <code>SREAgentReadOnlyAccess</code>、再起動・スケーリング等を許可する <code>SREAgentWriteAccess</code> を提供</td></tr>
+            <tr><td>AWS MCP エンドポイント</td><td>N. Virginia、Oregon、Singapore、Sydney、Tokyo、Frankfurt、Ireland、London から選択</td></tr>
+            <tr><td>Google Cloud 認証方式</td><td>Workload Identity Federation との連携</td></tr>
+            <tr><td>A2A の前提</td><td>オープンな Agent-to-Agent (A2A) プロトコル。接続にマネージド ID を使用</td></tr>
+            <tr><td>ガバナンス</td><td>実行モード (Review / Autonomous)、ツールレベルのアクセス制御 (allow / ask / deny)、エージェントフック</td></tr>
+            <tr><td>監査</td><td>AWS CloudTrail、Google Cloud Audit Logs、Entra / Azure アクティビティログ、Microsoft Purview、Microsoft Defender</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title">🛠️ 設定方法</h2>
+
+        <h3 class="sub-title">前提条件 (AWS コネクタの場合)</h3>
+        <ol class="steps">
+            <li>既存の SRE Agent (プレビュー機能のため、エージェント設定で「Early access to features」を有効化)</li>
+            <li>コネクタの作成・更新権限と、エージェントのセレクタで利用可能な Azure マネージド ID</li>
+            <li>対象 AWS アカウントで IAM の ID プロバイダー、ロール、ポリシーを設定できるアクセス権と、12 桁のアカウント ID</li>
+        </ol>
+
+        <h3 class="sub-title">設定手順 (AWS コネクタ)</h3>
+        <ol class="steps">
+            <li>SRE Agent の「Build + configure」→「Extensions &gt; Cloud providers」→「Create connection &gt; Amazon Web Services (AWS)」を選択</li>
+            <li>ウィザードでマネージド ID を選択し、表示されるテナント ID・クライアント ID・プリンシパル ID・Original audience を控える</li>
+            <li>AWS 側で OIDC プロバイダー (<code>https://login.microsoftonline.com/&lt;TENANT_ID&gt;/v2.0</code>) と IAM ロール <code>SREAgentRole</code> を作成 (Microsoft 提供の Terraform スクリプトでの自動構成も可能)</li>
+            <li>接続名、AWS MCP エンドポイント、12 桁アカウント ID を入力して接続テストを実行し、「Review tools + connect」でツールを確認して保存</li>
+        </ol>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title">👍 メリット</h2>
+
+        <h3 class="sub-title">ビジネス面</h3>
+        <ul class="pros-list">
+            <li>マルチクラウド環境のインシデント調査を 1 つのエージェントに集約でき、ツール切り替えや縦割りのエスカレーションによる MTTR の増大を抑制できる</li>
+            <li>Agent 365 / Entra Agent ID により、組織内に増える AI エージェントを人間の ID と同様のガバナンス体系で統制でき、監査・コンプライアンス要件に対応しやすくなる</li>
+            <li>Teams 統合により、エンジニアが日常的に使うツール上で調査と承認が完結し、運用フローへの導入障壁が下がる</li>
+        </ul>
+
+        <h3 class="sub-title">技術面</h3>
+        <ul class="pros-list">
+            <li>キーレス認証 (ID フェデレーション) により、クロスクラウドのシークレット管理・ローテーションの負担とキー漏えいリスクを排除できる</li>
+            <li>A2A プロトコルにより、各チームのエージェントが最小権限を保持したまま協調でき、権限の集中を避けながら調査を自動化できる</li>
+            <li>実行モード、ツールポリシー (allow / ask / deny)、承認カードなど多層のガードレールの下で自動化を段階的に拡大できる</li>
+        </ul>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title">⚠️ デメリット・制約事項</h2>
+        <ul class="cons-list">
+            <li>4 機能すべてパブリックプレビューであり、本番環境での利用は推奨されない (AWS / Google Cloud コネクタは「Early access to features」の有効化が必要)</li>
+            <li>AWS コネクタはロール固定 (<code>SREAgentRole</code>) で、ロールチェーンおよびクロスアカウントアクセスは不可。別アカウントには別コネクタの追加が必要</li>
+            <li>AWS のロールセッションはユーザー単位ではなくエージェント単位の共有 ID であり、トークンがチャット間で再利用される可能性がある。<code>SREAgentRole</code> を信頼するすべての ID が同一権限を持つ点に注意</li>
+            <li>MCP サインインポリシーは調査対象リソースの権限を代替しないため、最小権限からの開始と書き込み権限の慎重な付与が必要</li>
+            <li>A2A の呼び出し元承認は同一 Microsoft Entra テナント内が対象</li>
+        </ul>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title">💡 ユースケース</h2>
+
+        <div class="usecase">
+            <h4>🌐 ユースケース 1: マルチクラウド構成のレイテンシ調査</h4>
+            <p><span class="label">シナリオ</span>フロントエンドは Azure、一部のバックエンド API は AWS Lambda、データ分析基盤は Google Cloud で稼働するシステムで、レイテンシの急増が発生した。</p>
+            <p><span class="label">実装例</span>SRE Agent に AWS / Google Cloud コネクタを構成し、チャットで「<code>aws-connection</code> 接続を使って東京リージョンの Lambda エラーを調査して」のように自然言語で依頼する。インシデント対応プランに組み込めば、アラート発生時にクロスクラウドの証拠収集を自動化できる。</p>
+            <p class="effect"><strong>効果</strong>: クラウドごとのコンソールを行き来せず、1 つの調査スレッドで Azure・AWS・Google Cloud を横断した根本原因分析ができる。</p>
+        </div>
+
+        <div class="usecase">
+            <h4>🤝 ユースケース 2: チーム間のエージェント協調による調査</h4>
+            <p><span class="label">シナリオ</span>アプリケーションチームのエージェントがレイテンシ急増を調査中、データベース側の問題が疑われる。</p>
+            <p><span class="label">実装例</span>A2A プロトコルを有効化し、管理者が呼び出し可能なエージェントと受信側の承認を設定。アプリケーションチームのエージェントが DB チームのエージェントにクエリパフォーマンス確認のタスクを引き渡し、結果を同じ調査に取り込む。</p>
+            <p class="effect"><strong>効果</strong>: 各チームの権限境界を保ったまま、チーム横断の調査を自動化できる。</p>
+        </div>
+
+        <div class="usecase">
+            <h4>💬 ユースケース 3: Teams 上でのインシデント対応</h4>
+            <p><span class="label">シナリオ</span>障害対応のブリッジ (Teams 会議・チャネル) 上でそのままエージェントに調査を依頼し、緩和アクションを承認したい。</p>
+            <p><span class="label">実装例</span>管理者がエージェントの参加可能な共有会話を設定。エンジニアはチャネルや会議チャットで調査を依頼し、承認が必要なアクションはエージェントが投稿する承認カードで承認する。</p>
+            <p class="effect"><strong>効果</strong>: ツールを切り替えずにインシデント対応が完結し、対応の経緯が会話として残る。</p>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title">💰 料金</h2>
+        <p>Azure SRE Agent の課金は標準化された消費単位 <strong>Azure Agent Unit (AAU)</strong> に基づき、2 つのコンポーネントで構成される。</p>
+        <table>
+            <tr><th style="width: 40%;">項目</th><th>料金</th></tr>
+            <tr><td>常時稼働フロー (Always-on flow)</td><td>エージェントごとに 4 AAU/時間 (作成から削除まで継続課金)</td></tr>
+            <tr><td>アクティブフロー (Active flow)</td><td>タスク実行中の LLM トークン消費量ベース (トークンタイプとモデルごとの固定 AAU レート)</td></tr>
+        </table>
+        <div class="pricing-note">
+            AAU あたりの具体的な単価は料金ページで確認のこと (確認時点では公開価格の記載なし)。無料枠・Dev/Test 向け AAU は現時点で提供されていないが、常時稼働チャージなしで試せるキャンペーンが案内されている。詳細は <a href="https://azure.microsoft.com/pricing/details/sre-agent/" target="_blank" rel="noopener">料金ページ</a> を参照。
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2 class="section-title">🧩 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-item"><strong>Microsoft Entra Agent ID / Microsoft Agent 365</strong>エージェントの ID 付与・レジストリ管理・ガバナンスの基盤。今回のアップデートで SRE Agent が対応</div>
+            <div class="related-item"><strong>Microsoft Purview / Microsoft Defender</strong>Agent 365 経由でエージェントの活動を監視</div>
+            <div class="related-item"><strong>Azure Monitor / Application Insights / Log Analytics</strong>SRE Agent が調査時に参照する監視・可観測性データソース</div>
+            <div class="related-item"><strong>PagerDuty / ServiceNow</strong>インシデント管理プラットフォーム連携。調査サマリーのチケット自動作成に対応</div>
+            <div class="related-item"><strong>GitHub / Azure DevOps</strong>デプロイイベントとの相関分析に使用するソース管理連携</div>
+            <div class="related-item"><strong>MCP (Model Context Protocol)</strong>Datadog、Splunk、New Relic などの外部可観測性プラットフォーム接続やカスタムツール連携の標準</div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title">📝 まとめ</h2>
+        <div class="summary-box">
+            <p>今回の 4 つのパブリックプレビューにより、Azure SRE Agent は「Azure 専用の運用エージェント」から、<strong>マルチクラウドを横断</strong>し、<strong>組織のエージェントガバナンス (Entra Agent ID / Agent 365) に組み込まれ</strong>、<strong>他のエージェントと協調 (A2A)</strong> し、<strong>日常のコラボレーションツール (Teams) に溶け込む</strong>運用プラットフォームへと進化した。</p>
+            <p>マルチクラウド環境を運用する組織や、AI エージェントの統制基盤を整備中の組織は、まず<strong>読み取り専用権限 + Review モードでの PoC</strong> から評価を始めることを推奨する。いずれもプレビューのため、本番適用は GA を待って判断したい。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure SRE Agent</span>
+            <span class="tag">AWS</span>
+            <span class="tag">Google Cloud</span>
+            <span class="tag">Multicloud</span>
+            <span class="tag">Microsoft Entra Agent ID</span>
+            <span class="tag">Agent 365</span>
+            <span class="tag">A2A</span>
+            <span class="tag">Microsoft Teams</span>
+            <span class="tag">AI Agent</span>
+            <span class="tag">Public Preview</span>
+            <span class="tag">Microsoft Ignite</span>
+        </div>
+    </section>
+
+    <!-- ===== フッター (出典) ===== -->
+    <footer class="footer">
+        <h3>📚 出典・参考リンク</h3>
+        <ul>
+            <li>公式アップデート情報 (Native AWS and Google Cloud support): <a href="https://azure.microsoft.com/updates?id=580975" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=580975</a></li>
+            <li>公式アップデート情報 (Microsoft Entra Agent ID and Agent 365): <a href="https://azure.microsoft.com/updates?id=580763" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=580763</a></li>
+            <li>公式アップデート情報 (Agent-to-Agent (A2A) protocol support): <a href="https://azure.microsoft.com/updates?id=580758" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=580758</a></li>
+            <li>公式アップデート情報 (Microsoft Teams integration): <a href="https://azure.microsoft.com/updates?id=580753" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=580753</a></li>
+            <li>Microsoft Learn (Azure SRE Agent の概要): <a href="https://learn.microsoft.com/azure/sre-agent/overview" target="_blank" rel="noopener">https://learn.microsoft.com/azure/sre-agent/overview</a></li>
+            <li>AWS コネクタガイド: <a href="https://sre.azure.com/docs/capabilities/aws-connector" target="_blank" rel="noopener">https://sre.azure.com/docs/capabilities/aws-connector</a></li>
+            <li>Google Cloud コネクタガイド: <a href="https://sre.azure.com/docs/capabilities/gcp-connector" target="_blank" rel="noopener">https://sre.azure.com/docs/capabilities/gcp-connector</a></li>
+            <li>料金ページ: <a href="https://azure.microsoft.com/pricing/details/sre-agent/" target="_blank" rel="noopener">https://azure.microsoft.com/pricing/details/sre-agent/</a></li>
+        </ul>
+        <p class="note">ソースレポート: reports/2026/2026-11-17-azure-sre-agent-updates.md | 生成日: 2026-11-18 | Azure News Summary プロジェクト</p>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

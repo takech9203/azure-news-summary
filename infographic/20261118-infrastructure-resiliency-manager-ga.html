@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Infrastructure Resiliency Manager 一般提供開始 (GA)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "🛡️";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 10px;
+}
+.header .subtitle {
+    font-size: 16px;
+    opacity: 0.95;
+}
+.header .date {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-top: 10px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-ignite { background: var(--ms-purple); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+.section p { margin-bottom: 12px; }
+
+/* ===== Journey cards (3 journeys) ===== */
+.journey-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.journey-card {
+    border-radius: 12px;
+    padding: 18px;
+    color: white;
+    text-align: center;
+}
+.journey-card .jc-icon { font-size: 34px; margin-bottom: 8px; }
+.journey-card h4 { font-size: 16px; margin-bottom: 6px; }
+.journey-card p { font-size: 13px; opacity: 0.95; margin: 0; }
+.jc-start { background: linear-gradient(135deg, #0078D4, #106EBE); }
+.jc-get { background: linear-gradient(135deg, #107C10, #0B5A0B); }
+.jc-stay { background: linear-gradient(135deg, #8764B8, #5C3E8E); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* ===== Highlight box ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+.diagram-caption {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { padding-left: 20px; }
+.feature-content li { font-size: 14px; margin-bottom: 6px; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+td code, li code, p code {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    color: var(--ms-blue-900);
+}
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 14px;
+    align-items: flex-start;
+}
+.step-num {
+    counter-increment: step;
+    min-width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+.step-body { font-size: 14px; padding-top: 4px; }
+
+/* ===== Pros / Cons ===== */
+.pros-cons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.pros-card, .cons-card {
+    border-radius: 8px;
+    padding: 18px;
+}
+.pros-card { background: #E8F5E9; border: 1px solid #A5D6A7; }
+.cons-card { background: #FFF4E5; border: 1px solid #FFCC80; }
+.pros-card h4 { color: var(--ms-green); margin-bottom: 10px; }
+.cons-card h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.pros-card ul, .cons-card ul { padding-left: 20px; }
+.pros-card li, .cons-card li { font-size: 14px; margin-bottom: 8px; }
+
+/* ===== Use case cards ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-row { display: flex; gap: 10px; margin-bottom: 10px; font-size: 14px; }
+.usecase-label {
+    min-width: 84px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    flex-shrink: 0;
+}
+
+/* ===== Pricing matrix ===== */
+.price-free { color: var(--ms-green); font-weight: 700; }
+.price-paid { color: var(--ms-red); font-weight: 700; }
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 13px;
+}
+.related-card strong { color: var(--ms-blue-900); display: block; margin-bottom: 4px; font-size: 14px; }
+
+/* ===== Links ===== */
+.links-list { list-style: none; }
+.links-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+}
+.links-list li:last-child { border-bottom: none; }
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px;
+    font-size: 15px;
+}
+
+/* ===== Tags ===== */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 12px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+.footer a { word-break: break-all; }
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+@media (max-width: 720px) {
+    .before-after, .pros-cons { grid-template-columns: 1fr; }
+    .header h1 { font-size: 23px; }
+    .container { padding: 14px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">Azure Infrastructure Resiliency Manager</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="badge badge-ignite">Microsoft Ignite 2026</span>
+        </div>
+        <h1>Azure Infrastructure Resiliency Manager<br>一般提供開始 (GA)</h1>
+        <div class="subtitle">アプリケーション回復性管理の統合エクスペリエンス — ゾーン回復性を評価・改善・検証</div>
+        <div class="date">📅 リリース日: 2026-11-17</div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Microsoft Ignite 2026 に合わせて、<strong>Azure Infrastructure Resiliency Manager</strong> が一般提供 (GA) となりました。Azure 全体でアプリケーションの回復性 (レジリエンシー) を強化するための、<strong>目標駆動型の統合管理エクスペリエンス</strong>を提供するサービスです。現時点のリリースは<strong>ゾーン回復性 (Availability Zone 対応)</strong> にフォーカスしています。</p>
+
+        <div class="journey-grid">
+            <div class="journey-card jc-start">
+                <div class="jc-icon">🚀</div>
+                <h4>Start Resilient</h4>
+                <p>最初から回復性を組み込んだ新規構築 (IaC テンプレート生成)</p>
+            </div>
+            <div class="journey-card jc-get">
+                <div class="jc-icon">🔧</div>
+                <h4>Get Resilient</h4>
+                <p>既存ワークロードの回復性を評価・改善</p>
+            </div>
+            <div class="journey-card jc-stay">
+                <div class="jc-icon">🔄</div>
+                <h4>Stay Resilient</h4>
+                <p>変化に追随して回復性を維持 (ドリフト検出・ドリル)</p>
+            </div>
+        </div>
+
+        <p>ゾーン回復性のあるデプロイテンプレートによる新規構築、Service Groups と回復性ゴールを使った大規模なアプリケーション評価、コスト影響を考慮した推奨事項の優先順位付け、回復性ドリフトの検出、リソース/アプリケーションの監視、組み込みのドリル (訓練) 機能による回復可能性の検証とコンプライアンスレポートまでを一貫して提供します。あわせて、アプリケーション境界の自動検出や修復スクリプトの提示を行う <strong>Resiliency Agent</strong> (Azure Copilot / GitHub Copilot 連携) が<span class="badge badge-preview">プレビュー</span>として利用できます。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>可用性ゾーン対応状況は<strong>リソース単位で個別に確認</strong>する必要があり、アプリケーション (ワークロード) 単位の回復性ポスチャを一元的に評価する手段がなかった</li>
+                    <li>回復性の改善策は Azure Advisor などの推奨事項を<strong>手動で収集・優先順位付け</strong>する必要があり、ゾーン障害時の復旧手順の検証 (訓練) も個別に設計が必要だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li><strong>Service Groups</strong> でサブスクリプション・リソースグループ・タグを横断してアプリケーション境界を定義し、ゾーン回復性ゴールの割り当て、ポスチャの可視化、推奨事項のレビューを<strong>一元化</strong></li>
+                    <li><strong>Availability Zone Down Drills</strong> (ゾーン障害シミュレーション) と <strong>Recovery Orchestration Plan</strong> により、復旧準備状況の検証と複数リソースにまたがる復旧の自動調整が可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        IRM["🛡️ Infrastructure Resiliency Manager<br>(グローバル / 非リージョナル)"]
+        subgraph SG["📦 Service Group (アプリケーション境界)"]
+            VM["🖥️ VM / VMSS"]
+            DB[("🗄️ データベース")]
+            LB["🔀 Load Balancer"]
+        end
+        AGENT["🤖 Resiliency Agent<br>(プレビュー)"]
+    end
+    USER(["👤 Solutions Architect / 運用チーム"])
+
+    USER -->|"ゴール割り当て・ポスチャ確認"| IRM
+    AGENT -->|"アプリ境界の自動検出・修復支援"| IRM
+    IRM -->|"評価・推奨事項・ドリフト検出"| SG
+    IRM -->|"Zone Down Drill / 復旧オーケストレーション"| SG
+            </pre>
+        </div>
+        <p class="diagram-caption">Infrastructure Resiliency Manager はグローバルな非リージョナルサービスとして動作し、Service Group にまとめたアプリケーションのゾーン回復性を評価・改善・検証します。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2>⚡ サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>1. Start Resilient: 回復性を組み込んだ新規構築</h4>
+                <ul>
+                    <li>Resiliency Agent に自然言語での説明、アーキテクチャ図のアップロード、既存の IaC テンプレートの提供を行うと、アーキテクチャガイダンスのレビューと、回復性を考慮した <strong>Bicep / ARM JSON / Terraform テンプレートの生成</strong>が可能</li>
+                    <li>GitHub Copilot (VS Code / CLI) からローカルリポジトリの IaC を評価・生成する体験も<strong>限定プレビュー</strong>で提供</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card" style="border-left-color: var(--ms-green);">
+            <div class="feature-icon">🔧</div>
+            <div class="feature-content">
+                <h4>2. Get Resilient: 既存アプリケーションの評価と改善</h4>
+                <ul>
+                    <li>Service Group を作成しなくても<strong>リソース単位</strong>のゾーン回復性ポスチャを確認可能</li>
+                    <li>Service Groups でアプリケーション境界を定義し、ゾーン回復性ゴールを割り当てて<strong>アプリケーション単位</strong>のポスチャを評価</li>
+                    <li>推奨事項を<strong>影響度 (高・中・低) 別</strong>にレビューし、ポータルまたはエージェント支援の修復で改善</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card" style="border-left-color: var(--ms-purple);">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>3. Stay Resilient: 継続的な検証と復旧準備</h4>
+                <ul>
+                    <li>Service Group の再評価によりポスチャ・可観測性・ドリル・復旧計画のギャップ (<strong>ドリフト</strong>) を特定</li>
+                    <li><strong>Availability Zone Down Drills</strong>: ゾーン障害をシミュレートして回復準備状況を検証</li>
+                    <li><strong>Recovery Orchestration Plan</strong>: アクティブなフェールオーバーが必要な複数リソースの復旧を調整</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card" style="border-left-color: var(--ms-yellow);">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>4. Resiliency Agent <span class="badge badge-preview">プレビュー</span></h4>
+                <ul>
+                    <li>アプリケーションのリソースと依存関係を<strong>自動検出</strong>して Service Group の境界を提案</li>
+                    <li>修復スクリプトの提示や、ドリル・復旧計画の準備、構成ブロッカーの調査を会話形式で支援 (ドリルやフェールオーバーの<strong>実行自体はポータルから</strong>行う)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2>🔬 技術仕様</h2>
+        <table>
+            <tr><th style="width: 32%;">項目</th><th>詳細</th></tr>
+            <tr><td>サービス種別</td><td>グローバル / 非リージョナルサービス (全リージョンのリソースを横断管理)</td></tr>
+            <tr><td>現リリースの対象</td><td>ゾーン回復性 (Availability Zone)</td></tr>
+            <tr><td>アプリケーション境界</td><td>Service Groups (サブスクリプション・リソースグループ・タグ横断、リソースの複数グループ共有可)</td></tr>
+            <tr><td>無料機能</td><td>ゴール割り当て、大規模ポスチャ表示、推奨事項レビュー</td></tr>
+            <tr><td>有料機能</td><td>Availability Zone Down Drills、Recovery Orchestration Plans (Usage Plan への登録が必要)</td></tr>
+            <tr><td>課金単位</td><td>時間単位で計算し月額レートに比例配分 (Usage Plan のリソース ID に対して課金)</td></tr>
+            <tr><td>リソースプロバイダー</td><td><code>Microsoft.AzureResilienceManagement</code></td></tr>
+            <tr><td>GA 時期</td><td>2026 年 11 月</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2>⚙️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <div class="highlight-box">
+            <ul style="padding-left: 20px;">
+                <li>Usage Plan を作成するサブスクリプションで <code>Microsoft.AzureResilienceManagement</code> リソースプロバイダーが登録されていること (有料機能を使う場合)</li>
+                <li>アプリケーション単位の評価を行う場合は Service Group の作成とゴールの割り当て</li>
+            </ul>
+        </div>
+
+        <h3>Azure Portal での手順</h3>
+        <div class="steps">
+            <div class="step"><div class="step-num">1</div><div class="step-body">Azure Portal で <strong>Resiliency</strong> を開き、<strong>Overview</strong> からポスチャを確認 (Resource resiliency / Service group resiliency タブ)</div></div>
+            <div class="step"><div class="step-num">2</div><div class="step-body"><strong>Resource resiliency</strong> タブの <strong>Create service group</strong> でリソースをアプリケーションとしてグループ化</div></div>
+            <div class="step"><div class="step-num">3</div><div class="step-body">Service Group にゾーン回復性ゴールを割り当て、推奨事項をレビュー</div></div>
+            <div class="step"><div class="step-num">4</div><div class="step-body">有料機能を使う場合: Service Group の <strong>Resiliency</strong> &gt; <strong>Usage Plans</strong> から <strong>Create and Upgrade</strong> を選択し、新規または既存の Usage Plan に登録</div></div>
+            <div class="step"><div class="step-num">5</div><div class="step-body">登録後に Zone Down Drill の定義や Recovery Orchestration Plan の作成・構成が可能</div></div>
+        </div>
+    </section>
+
+    <!-- ===== メリット / デメリット ===== -->
+    <section class="section">
+        <h2>⚖️ メリットとデメリット・制約事項</h2>
+
+        <div class="pros-cons">
+            <div class="pros-card">
+                <h4>👍 メリット (ビジネス面)</h4>
+                <ul>
+                    <li>アプリケーション単位で回復性ポスチャと対応ギャップを可視化でき、投資の優先順位付けを<strong>コスト影響とあわせて判断</strong>できる</li>
+                    <li>ドリルの実行結果を<strong>コンプライアンスレポート</strong>に活用でき、回復性に関する説明責任 (監査・規制対応) を果たしやすい</li>
+                    <li>ゴール・ポスチャ・推奨事項は<strong>追加コストなし</strong>で利用でき、スモールスタートが可能</li>
+                </ul>
+            </div>
+            <div class="pros-card">
+                <h4>👍 メリット (技術面)</h4>
+                <ul>
+                    <li>サブスクリプションやリソースグループを横断した Service Groups により、<strong>実際のアプリケーション境界に即した評価</strong>ができる</li>
+                    <li>Availability Zone Down Drills で本番前にゾーン障害時の復旧可否を検証でき、Recovery Orchestration Plan で複数リソースの復旧手順を自動調整できる</li>
+                    <li><strong>回復性ドリフト検出</strong>により、構成変更後も回復性の劣化を継続的に検知できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="cons-card">
+            <h4>⚠️ デメリット・制約事項</h4>
+            <ul>
+                <li>現リリースは<strong>ゾーン回復性にフォーカス</strong>しており、リージョン間 DR などは対象のスコープが異なる</li>
+                <li>有効な Usage Plan に登録済みの Service Group は、<strong>ゴールの割り当てのみでも課金対象</strong>となる (無料機能のみ使いたい場合は Usage Plan への登録を解除する必要がある)</li>
+                <li>ドリルや復旧計画を「構成した」だけでは復旧成功は保証されない。<strong>ドリルを実行して結果を検証し、構成を更新する運用</strong>が必要</li>
+                <li>Resiliency Agent (アプリ境界の自動検出・修復支援) および GitHub Copilot 連携は<strong>プレビュー / 限定プレビュー</strong>であり、GA 機能とはサポートレベルが異なる</li>
+                <li>ドリル・フェールオーバー・再保護の実行は<strong>ポータルから行う必要</strong>があり、エージェント経由では実行できない</li>
+                <li>ゴールと推奨事項の対応リソースには制限がある (<strong>サポートマトリクス</strong>を参照)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2>💼 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🏢 ユースケース 1: 既存ミッションクリティカルアプリのゾーン回復性評価</h4>
+            <div class="usecase-row"><span class="usecase-label">シナリオ</span><span>複数サブスクリプションにまたがる基幹アプリケーションについて、可用性ゾーン対応状況を棚卸しし、ギャップを計画的に解消したい。</span></div>
+            <div class="usecase-row"><span class="usecase-label">実装例</span><span>Resiliency Agent でアプリケーションのリソースと依存関係を検出し、提案された境界をレビューして Service Group を作成。ゾーン回復性ゴールを割り当て、影響度別の推奨事項をコスト影響とあわせて優先順位付けして修復する。</span></div>
+            <div class="usecase-row"><span class="usecase-label">効果</span><span>リソース単位の場当たり的な対応ではなく、アプリケーション単位で回復性ポスチャを管理でき、非クリティカルなリソースを評価から除外してノイズを削減できる。</span></div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>📝 ユースケース 2: ゾーン障害を想定した復旧訓練とコンプライアンス報告</h4>
+            <div class="usecase-row"><span class="usecase-label">シナリオ</span><span>規制要件により、ゾーン障害時に基幹システムが復旧可能であることを定期的に検証・報告する必要がある。</span></div>
+            <div class="usecase-row"><span class="usecase-label">実装例</span><span>Service Group を Usage Plan に登録し、Availability Zone Down Drill を定義・実行。アクティブフェールオーバーが必要なリソースには Recovery Orchestration Plan を構成し、ドリル結果をレビューして構成を更新する。</span></div>
+            <div class="usecase-row"><span class="usecase-label">効果</span><span>ゾーン障害シミュレーションにより実際の復旧可否を事前に検証でき、ドリル結果を監査・コンプライアンスレポートに活用できる。</span></div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>ゴール割り当て・大規模ポスチャ表示・推奨事項レビューは<strong>追加コストなし</strong>で利用できます。Availability Zone Down Drills と Recovery Orchestration Plans は<strong>有料機能</strong>で、Service Group を Usage Plan に登録する必要があります (Usage Plan にティアはありません)。</p>
+
+        <table>
+            <tr><th>条件</th><th style="width: 42%;">課金</th></tr>
+            <tr><td>Usage Plan 未登録 + ゴール割り当てのみ</td><td class="price-free">無料 (ポスチャ・推奨事項も無料)</td></tr>
+            <tr><td>Usage Plan 登録済み + 回復性アーティファクトなし</td><td class="price-free">無料 (登録のみでは課金されない)</td></tr>
+            <tr><td>Usage Plan 登録済み + ゴールのみ割り当て</td><td class="price-paid">課金対象 (ドリル・復旧計画がなくても課金)</td></tr>
+            <tr><td>Usage Plan 登録済み + ドリルまたは復旧計画あり</td><td class="price-paid">課金対象</td></tr>
+        </table>
+
+        <div class="warning-box">
+            <strong>⚠️ 課金の注意点</strong><br>
+            課金は両条件 (有効な Usage Plan への登録 + 回復性アーティファクトの存在) を満たした時間に対して<strong>時間単位</strong>で計算され、月の途中でアーティファクトをすべて削除した場合は実時間で按分されます。ドリルや復旧計画の「実行」有無ではなく<strong>「存在」で課金が決まる</strong>点に注意してください。具体的な料金レートは <a href="https://azure.microsoft.com/products/infrastructure-resiliency-manager#pricing" target="_blank">料金ページ</a>を参照してください。
+        </div>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2>🌏 利用可能リージョン</h2>
+        <div class="highlight-box">
+            Infrastructure Resiliency Manager は<strong>グローバルな非リージョナルサービス</strong>であり、特定のリージョンに依存せず、<strong>すべての Azure リージョン</strong>のリソースを管理・オーケストレーションできます。
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>📦 Azure Service Groups</strong>
+                アプリケーション境界を定義するグループ化機能。Infrastructure Resiliency Manager の評価・ゴール割り当ての単位
+            </div>
+            <div class="related-card">
+                <strong>🤖 Azure Copilot (Resiliency Agent)</strong>
+                アプリ境界の自動検出、修復支援、ドリル準備を会話形式で支援するエージェント (プレビュー)
+            </div>
+            <div class="related-card">
+                <strong>💻 GitHub Copilot (Resiliency Agent)</strong>
+                VS Code / CLI から回復性を考慮した IaC (Bicep / ARM / Terraform) の評価・生成を支援 (限定プレビュー)
+            </div>
+            <div class="related-card">
+                <strong>💾 Azure Backup / Business Continuity</strong>
+                Resiliency の Overview ではゾーン回復性とバックアップ保護状況 (Backup Enabled) を統合的に表示
+            </div>
+            <div class="related-card">
+                <strong>📊 Azure Cost Management</strong>
+                Usage Plan のリソース ID 単位で課金が記録され、タグで Service Group ごとの利用を識別可能
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Infrastructure Resiliency Manager の GA により、<strong>ゾーン回復性の評価・改善・検証をアプリケーション単位で一元管理</strong>できるようになりました。</p>
+            <p>ゴール・ポスチャ・推奨事項は無料で利用できるため、まずは Service Group を作成してゾーン回復性ゴールを割り当て、自社アプリケーションの回復性ギャップを可視化することを推奨します。その上で、ミッションクリティカルなワークロードには Usage Plan を登録し、<strong>Availability Zone Down Drills</strong> と <strong>Recovery Orchestration Plan</strong> による復旧検証の定常運用を検討してください。</p>
+            <p style="margin-bottom: 0;"><strong>⚠️ Usage Plan 登録済みの Service Group はゴールのみでも課金される</strong>点にはご注意ください。</p>
+        </div>
+        <div class="tags">
+            <span class="tag"># Azure Infrastructure Resiliency Manager</span>
+            <span class="tag"># Resiliency</span>
+            <span class="tag"># Availability Zones</span>
+            <span class="tag"># Service Groups</span>
+            <span class="tag"># Zone Down Drills</span>
+            <span class="tag"># Recovery Orchestration</span>
+            <span class="tag"># Microsoft Ignite</span>
+            <span class="tag"># GA</span>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="links-list">
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=580748" target="_blank">公式アップデート情報 (Azure Updates)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/en-us/azure/resiliency/infrastructure-resiliency-manager-overview" target="_blank">Infrastructure Resiliency Manager 概要 (Microsoft Learn)</a></li>
+            <li>🚀 <a href="https://learn.microsoft.com/en-us/azure/resiliency/quickstart-infrastructure-resiliency-manager" target="_blank">クイックスタート (Microsoft Learn)</a></li>
+            <li>💰 <a href="https://learn.microsoft.com/en-us/azure/resiliency/infrastructure-resiliency-manager-pricing" target="_blank">課金と価格 (Microsoft Learn)</a></li>
+            <li>📋 <a href="https://learn.microsoft.com/en-us/azure/resiliency/goals-recommendations-support-matrix" target="_blank">ゴールと推奨事項のサポートマトリクス (Microsoft Learn)</a></li>
+            <li>🏷️ <a href="https://azure.microsoft.com/products/infrastructure-resiliency-manager#pricing" target="_blank">料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong>: Azure News Summary レポート「Azure Infrastructure Resiliency Manager: 一般提供開始 (GA)」(2026-11-17)</p>
+        <p>公式情報: <a href="https://azure.microsoft.com/updates?id=580748" target="_blank">https://azure.microsoft.com/updates?id=580748</a></p>
+        <p>生成日: 2026-11-18 | Azure News Summary Project</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

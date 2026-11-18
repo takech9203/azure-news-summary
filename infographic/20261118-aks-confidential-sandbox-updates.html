@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AKS: Confidential VM / Pod Sandboxing 関連アップデート群 (Ignite 2026)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+.header .service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: #FFFFFF;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+    margin-right: 8px;
+    margin-bottom: 12px;
+}
+.header h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin: 12px 0;
+}
+.header .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    font-size: 14px;
+    opacity: 0.95;
+    margin-top: 12px;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section h2 {
+    color: var(--azure-blue);
+    font-size: 22px;
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section h3 {
+    color: var(--ms-blue-800);
+    font-size: 17px;
+    margin: 20px 0 10px;
+}
+.section p { margin: 10px 0; }
+
+/* Cards */
+.card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Update list */
+.update-item {
+    display: flex;
+    gap: 14px;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 10px 0;
+    align-items: flex-start;
+}
+.update-num {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.update-item h4 { font-size: 15px; margin-bottom: 4px; }
+.update-item p { font-size: 14px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 8px 0; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; margin-bottom: 6px; color: var(--ms-blue-800); }
+.feature-content ul { padding-left: 18px; font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content li { margin: 4px 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    text-align: left;
+    padding: 10px 14px;
+    border: 1px solid var(--ms-border);
+    white-space: nowrap;
+}
+td {
+    padding: 10px 14px;
+    border: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+td code, li code, p code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-900);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+}
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+    border: 1px solid var(--ms-border);
+    background: var(--ms-surface-secondary);
+}
+.merit-card h4 { margin-bottom: 10px; color: var(--ms-blue-800); }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin: 8px 0; }
+
+.caution-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.caution-box ul { padding-left: 20px; font-size: 14px; }
+.caution-box li { margin: 8px 0; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+}
+.usecase-card h4 { color: var(--ms-purple); margin-bottom: 10px; font-size: 16px; }
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+.usecase-label {
+    display: inline-block;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin-right: 6px;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; }
+
+/* Links */
+.link-list { padding-left: 20px; font-size: 14px; }
+.link-list li { margin: 6px 0; }
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Tags */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+}
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 20px 24px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 36px;
+}
+.footer ul { list-style: none; padding: 0; }
+.footer li { margin: 4px 0; }
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Title -->
+    <header class="header">
+        <div>
+            <span class="service-badge">Azure Kubernetes Service (AKS)</span>
+            <span class="service-badge">Microsoft Ignite 2026</span>
+        </div>
+        <h1>AKS: Confidential VM / Pod Sandboxing 関連アップデート群</h1>
+        <p>Pod Sandboxing kata-vm-isolation-v2 / Confidential VMs Intel TDX / CVM OS Disk Encryption / Agent Sandbox 拡張 / Pod snapshot 拡張</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-17</span>
+            <span class="badge badge-ga">Launched (GA) 1 件</span>
+            <span class="badge badge-preview">In Preview 4 件</span>
+        </div>
+    </header>
+
+    <!-- Overview -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Microsoft Ignite 2026 に合わせて、AKS のワークロード分離 (Isolation) と機密コンピューティング (Confidential Computing) に関する 5 つのアップデートが同日に発表された。いずれも「ホストや他のワークロードから隔離された安全な実行環境を、性能・運用コストを犠牲にせずに提供する」という共通テーマを持つ。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">5</div>
+                <div class="stat-label">同日発表のアップデート</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">GA 1 件</div>
+                <div class="stat-label">Intel TDX サポート</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">Preview 4 件</div>
+                <div class="stat-label">v2 / OS 暗号化 / 拡張 2 種</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2 GiB / 2 vCPU</div>
+                <div class="stat-label">v2 Pod ゲスト VM (現行 Preview)</div>
+            </div>
+        </div>
+
+        <div class="update-item">
+            <div class="update-num">1</div>
+            <div>
+                <h4>Pod Sandboxing <code>kata-vm-isolation-v2</code> ランタイムクラス <span class="badge badge-preview">Public Preview</span></h4>
+                <p>事前初期化済みのテンプレート VM から Kata サンドボックス Pod を生成し、コールドスタート遅延とメモリオーバーヘッドを削減する新ランタイムクラス。</p>
+            </div>
+        </div>
+        <div class="update-item">
+            <div class="update-num">2</div>
+            <div>
+                <h4>Confidential VMs の Intel TDX サポート <span class="badge badge-ga">GA</span></h4>
+                <p>AKS の CVM ノードプールが AMD SEV-SNP に加えて Intel TDX (Trust Domain Extensions) に対応。VM SKU から適切な CVM イメージが自動選択される。</p>
+            </div>
+        </div>
+        <div class="update-item">
+            <div class="update-num">3</div>
+            <div>
+                <h4>Confidential VMs の OS Disk Encryption <span class="badge badge-preview">Public Preview</span></h4>
+                <p>Ubuntu 26.04 の CVM ノードプールで OS ディスク暗号化がデフォルトで有効化され、メモリ (使用中) とディスク (保存時) の両方を保護。</p>
+            </div>
+        </div>
+        <div class="update-item">
+            <div class="update-num">4</div>
+            <div>
+                <h4>Agent Sandbox cluster extension <span class="badge badge-preview">Public Preview</span></h4>
+                <p>AI エージェントが生成した信頼できないコードをセッションごとに分離実行するためのサンドボックス作成・ライフサイクル管理・ウォームプールをマネージド拡張機能として提供。</p>
+            </div>
+        </div>
+        <div class="update-item">
+            <div class="update-num">5</div>
+            <div>
+                <h4>Pod snapshot cluster extension <span class="badge badge-preview">Public Preview</span></h4>
+                <p>対応する Pod のメモリ・プロセス状態を Azure Blob にキャプチャし、オンデマンドで復元。初期化処理の再実行を回避する。</p>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <strong>💡 組み合わせ効果</strong>: Agent Sandbox と Pod snapshot は組み合わせて利用でき、分離されたエージェント環境の状態をスナップショット・復元することで、サンドボックスのライフサイクル全体でランタイム状態を維持できる。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>従来の Pod Sandboxing (<code>kata-vm-isolation</code>) では Pod ごとに新しい Kata VM をコールドブートするため、起動遅延と Pod あたりの追加メモリオーバーヘッドが発生</li>
+                    <li>CVM ノードイメージは AMD SEV-SNP のみ対応で、Intel TDX を attestation / ハードウェア機密性の標準とする顧客は該当ワークロードを AKS で実行できなかった</li>
+                    <li>CVM ノードプールはメモリ内の保護はできても OS ディスクは保存時に暗号化されず、規制対象の顧客はギャップをプラットフォーム外で補う必要があった</li>
+                    <li>AI エージェントのコード実行環境を Kubernetes 上に構築するチームは、サンドボックスのライフサイクル・ストレージ・ウォームアップロジックを自前で構築する必要があった</li>
+                    <li>サンドボックス化ワークロードの再起動のたびにメモリ内状態が失われ、モデル再読み込み・JVM ウォームアップ・キャッシュ再構築などを再実行する必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li><code>kata-vm-isolation-v2</code> は一時停止状態の事前初期化済みテンプレート VM からクローンして Pod を生成。Kata の Rust ランタイム採用と合わせ、VM 分離を維持したまま高速起動と低ランタイムコストを実現</li>
+                    <li>Intel TDX 対応 VM SKU を選択するだけで CVM イメージが自動選択され、attestation モデルや AKS の構成・API を変更せず移行可能 (Azure Container Linux で GA、Ubuntu 26.04 はプレビュー)</li>
+                    <li>Ubuntu 26.04 CVM ノードプールでは TDX / SEV-SNP 両 SKU で OS ディスク暗号化がデフォルト有効。vTPM にバインドされたキーで初回ブート前から保護。新しい設定や API は不要</li>
+                    <li>Agent Sandbox 拡張 (OSS の Kubernetes Agent Sandbox 基盤) により、宣言的なサンドボックス作成・ライフサイクル管理・ウォームアップ済みプールがマネージドで利用可能</li>
+                    <li>Pod snapshot 拡張により、メモリとプロセスの状態を Azure Blob に保存し、コールドスタートの代わりにキャプチャ済み状態から再開可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph CVMPool["🔒 CVM ノードプール (TEE)"]
+            TDX["🛡️ Intel TDX / AMD SEV-SNP<br/>メモリ暗号化 (GA)"]
+            OSD["💽 OS Disk Encryption<br/>vTPM バインドキー (Preview)"]
+        end
+        subgraph SandboxPool["📦 Pod Sandboxing ノードプール (Azure Linux)"]
+            TPL["🧊 事前初期化テンプレート VM<br/>(一時停止状態)"]
+            P1["🚀 Kata Pod VM #1<br/>kata-vm-isolation-v2"]
+            P2["🚀 Kata Pod VM #2<br/>kata-vm-isolation-v2"]
+            TPL -->|"クローン (高速起動)"| P1
+            TPL -->|"クローン (高速起動)"| P2
+        end
+        AGS["🤖 Agent Sandbox 拡張<br/>宣言的作成・ウォームプール"]
+        SNAP["📸 Pod snapshot 拡張<br/>状態キャプチャ / 復元"]
+        BLOB[("🗄️ Azure Blob<br/>スナップショット保存")]
+        AGS -->|"分離環境を管理"| SandboxPool
+        SNAP -->|"メモリ/プロセス状態"| BLOB
+        AGS <-->|"組み合わせて状態保持"| SNAP
+    end
+            </pre>
+        </div>
+        <div class="highlight-box">
+            CVM ノードプールは<strong>ノード単位 (メモリ + OS ディスク) の機密性境界</strong>を提供し、Pod Sandboxing は <strong>Pod 単位の VM 分離境界</strong>を提供する。Agent Sandbox / Pod snapshot 拡張は、この分離環境の上に AI エージェント向けのライフサイクル管理と状態保持を追加する。
+        </div>
+    </section>
+
+    <!-- Key features -->
+    <section class="section">
+        <h2>⚙️ 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>1. <code>kata-vm-isolation-v2</code> ランタイムクラス <span class="badge badge-preview">Preview</span></h4>
+                <ul>
+                    <li>GA 版の <code>kata-vm-isolation</code> と並んで提供され、ワークロードのマニフェストの <code>runtimeClassName</code> で v1/v2 を選択 (ノードプールの <code>--workload-runtime KataVmIsolation</code> は共通)</li>
+                    <li>各ノードで DaemonSet (<code>kata-ctl factory init</code>) によりテンプレート VM を初期化し、以降の Pod はテンプレートからクローン生成</li>
+                    <li>現行プレビューではテンプレート初期化後の各 v2 Pod は、Pod の limits にかかわらず 2 GiB メモリ / 2 vCPU のゲスト VM となる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>2. Confidential VMs の Intel TDX サポート <span class="badge badge-ga">GA</span></h4>
+                <ul>
+                    <li>CVM ノードプールで Intel TDX が AMD SEV-SNP と並んでサポートされ、VM SKU から適切な CVM イメージが自動選択</li>
+                    <li>Azure Container Linux で GA。Ubuntu 26.04 でもプレビューとしてサポート</li>
+                    <li>Intel TDX VM サイズの利用には Ubuntu 26.04 CVM ノードプール (または Azure Container Linux) が必要</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">💽</div>
+            <div class="feature-content">
+                <h4>3. CVM OS Disk Encryption <span class="badge badge-preview">Preview</span></h4>
+                <ul>
+                    <li>Ubuntu 26.04 CVM ノードプールで OS ディスク暗号化がデフォルト有効 (無効化は不可)</li>
+                    <li>ディスク暗号化キーは VM の vTPM にバインドされ、保護されたディスク内容はその VM からのみアクセス可能。初回ブート前にクラウド側で暗号化される</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>4. Agent Sandbox cluster extension <span class="badge badge-preview">Preview</span></h4>
+                <ul>
+                    <li>オープンソースの Kubernetes Agent Sandbox プロジェクトを基盤とするマネージド拡張機能</li>
+                    <li>宣言的なサンドボックス作成、ライフサイクル管理、事前ウォームアップ済みプールを提供し、モデル生成コードのセッション単位の分離実行を容易にする</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📸</div>
+            <div class="feature-content">
+                <h4>5. Pod snapshot cluster extension <span class="badge badge-preview">Preview</span></h4>
+                <ul>
+                    <li>対応する Pod のメモリ・プロセス状態を Azure Blob にキャプチャし、オンデマンドで復元</li>
+                    <li>Agent Sandbox 拡張と組み合わせることで、分離されたエージェント環境のキャプチャと復元が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech specs -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td><code>kata-vm-isolation-v2</code> 前提条件</td><td>Azure CLI 2.80.0 以降、<code>KataVMIsolationV2Preview</code> フィーチャーフラグ登録、Kubernetes 1.34.0 以降、Azure Linux ノードイメージ <code>202610.30.1</code> 以降</td></tr>
+            <tr><td>v2 対応 VM SKU ファミリー</td><td>Dasv6, Dadsv6, Dalsv6, Daldsv6, Easv6, Eadsv6, Falsv6, Fasv6, Famsv6 (v6/v7 SKU)</td></tr>
+            <tr><td>Pod Sandboxing 対応 OS</td><td>Azure Linux のみ (Ubuntu / Windows / Azure Container Linux は非対応)</td></tr>
+            <tr><td>v2 Pod のゲスト VM サイズ</td><td>テンプレート初期化後は 2 GiB メモリ / 2 vCPU 固定 (現行プレビュー)</td></tr>
+            <tr><td>CVM 対応 TEE</td><td>AMD SEV-SNP、Intel TDX</td></tr>
+            <tr><td>CVM 対応 OS SKU</td><td>Ubuntu (20.04/24.04)、Ubuntu 26.04 (プレビュー)、Azure Linux 3.0、Azure Container Linux (Kubernetes 1.34+)</td></tr>
+            <tr><td>Intel TDX / OS Disk Encryption 要件</td><td>Ubuntu 26.04 CVM ノードプール (Kubernetes 1.36 以降、<code>Ubuntu2604Preview</code> フィーチャー登録、プレビュー CLI 21.0.0b14 以降)</td></tr>
+            <tr><td>Pod snapshot の保存先</td><td>Azure Blob</td></tr>
+        </table>
+    </section>
+
+    <!-- Setup -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol style="padding-left: 20px; font-size: 14px;">
+            <li>既存の AKS クラスターと、対象リージョンでの CVM / 対応 VM サイズのクォータ</li>
+            <li>プレビュー機能ごとのフィーチャーフラグ登録 (<code>KataVMIsolationV2Preview</code>、Ubuntu 26.04 は <code>Ubuntu2604Preview</code>)</li>
+            <li><code>kubectl</code> と Azure CLI (2.80.0 以降、Ubuntu 26.04 プレビューは 21.0.0b14 以降)</li>
+        </ol>
+
+        <h3>Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code class="language-bash"># kata-vm-isolation-v2 のフィーチャーフラグ登録
+az feature register \
+  --namespace "Microsoft.ContainerService" \
+  --name "KataVMIsolationV2Preview"
+az provider register --namespace "Microsoft.ContainerService"
+
+# Pod Sandboxing 対応ノードプールの追加 (v1/v2 共通で KataVmIsolation を指定)
+az aks nodepool add \
+  --cluster-name myAKSCluster \
+  --resource-group myResourceGroup \
+  --name nodepool2 \
+  --os-sku AzureLinux \
+  --workload-runtime KataVmIsolation \
+  --node-vm-size Standard_D4ads_v6 \
+  --node-count 1
+
+# CVM ノードプールの追加 (CVM 対応 VM サイズを指定するだけで有効化)
+az aks nodepool add \
+  --resource-group myResourceGroup \
+  --cluster-name myAKSCluster \
+  --name cvmnodepool \
+  --node-count 3 \
+  --node-vm-size Standard_DC4as_v5</code></pre>
+        </div>
+
+        <p>v2 ランタイムの選択はワークロードのマニフェストで行う。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">yaml</span></div>
+            <pre><code class="language-yaml">apiVersion: v1
+kind: Pod
+metadata:
+  name: isolated-pod-v2
+spec:
+  runtimeClassName: kata-vm-isolation-v2
+  containers:
+  - name: kata
+    image: mcr.microsoft.com/aks/fundamental/base-ubuntu:v0.0.11</code></pre>
+        </div>
+
+        <div class="caution-box">
+            <strong>⚠️ 注意</strong>: テンプレート VM の初期化は、各ノードで <code>kata-ctl factory init</code> を実行する DaemonSet で行う (公式ドキュメントにマニフェスト例あり)。init コンテナーはノード上で root として実行されるため、デプロイ前にセキュリティチームによるレビューが推奨されている。
+        </div>
+    </section>
+
+    <!-- Merits -->
+    <section class="section">
+        <h2>✨ メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>規制産業 (政府契約・コンプライアンス要件) の機密ワークロードを、コード変更なしで AKS に移行できる選択肢が拡大 (Intel TDX 対応により Intel 標準の顧客もカバー)</li>
+                    <li>メモリ (使用中) + OS ディスク (保存時) のエンドツーエンドの機密性により、データ保存時の保護をプラットフォーム外で補う運用コストを削減</li>
+                    <li>AI エージェントのサンドボックス基盤を自前構築せずに済み、エージェント系サービスの市場投入を加速</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>Pod レベルの VM 分離を維持したまま、サンドボックス Pod の起動高速化とメモリオーバーヘッド削減を両立</li>
+                    <li>Intel TDX は VM SKU からイメージが自動選択され、新しい構成や API サーフェスの学習が不要</li>
+                    <li>Pod snapshot により JVM ウォームアップやモデルロードなどの初期化を繰り返さず、キャプチャ済み状態から再開可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demerits -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li><code>kata-vm-isolation-v2</code>、CVM OS Disk Encryption、Agent Sandbox、Pod snapshot はいずれもプレビューであり、SLA 対象外。本番利用は非推奨</li>
+                <li>Pod Sandboxing は Azure Linux のみ対応。FIPS、Trusted Launch、Arm64 は併用不可。Microsoft Defender for Containers は Kata ランタイム Pod の評価に非対応。Kata のホストネットワークアクセスも非対応</li>
+                <li>v2 は現行プレビューではテンプレート初期化後の Pod が 2 GiB / 2 vCPU 固定となるため、Pod の requests/limits との整合とスケジューリング挙動の検証が必要。<code>emptyDir</code> は <code>medium: Memory</code> と <code>sizeLimit</code> の明示が必要</li>
+                <li>v1 から v2 への移行はワークロードマニフェストの明示的な変更であり、既存 Pod の <code>runtimeClassName</code> は変更不可 (Pod の再作成が必要)。挙動が v1 と同一とは限らない</li>
+                <li>CVM ノードプールは FIPS、ARM64、Trusted Launch (Azure Container Linux を除く)、Pod sandboxing、Confidential containers、ノード自動プロビジョニング (NAP) と併用不可。Windows ノードプールは非対応</li>
+                <li>Ubuntu 26.04 CVM ノードプールでは OS ディスク暗号化を無効化できない</li>
+                <li>v2 のリージョン展開は段階的であり、利用可否は AKS release tracker で確認が必要</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- Use cases -->
+    <section class="section">
+        <h2>🎯 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🤖 ユースケース 1: AI エージェントのコード実行サンドボックス</h4>
+            <p><span class="usecase-label">シナリオ:</span>LLM が生成した信頼できないコードをセッションごとに分離環境で実行する AI エージェントサービス。セッション開始の待ち時間を最小化し、中断後も実行コンテキストを維持したい。</p>
+            <p><span class="usecase-label">実装例:</span>Agent Sandbox 拡張でウォームプール付きのサンドボックスを宣言的に作成し、<code>kata-vm-isolation-v2</code> により VM 分離を確保。Pod snapshot 拡張でモデルロード済みの状態を Azure Blob にキャプチャし、再開時に復元する。</p>
+            <p><span class="usecase-label">効果:</span>サンドボックス基盤の自前構築が不要になり、コールドスタートと初期化の再実行を回避してユーザーの待ち時間を削減。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🏛️ ユースケース 2: 規制対象ワークロードの AKS 移行</h4>
+            <p><span class="usecase-label">シナリオ:</span>金融・政府系で Intel TDX ベースの attestation を標準とする組織が、機密データを扱うコンテナーワークロードを AKS に移行する。</p>
+            <p><span class="usecase-label">実装例:</span>Intel TDX 対応 VM サイズで CVM ノードプールを作成 (Ubuntu 26.04 プレビューまたは Azure Container Linux)。Ubuntu 26.04 では OS ディスク暗号化がデフォルトで有効になる。</p>
+            <p><span class="usecase-label">効果:</span>コード変更なしでメモリ暗号化 + OS ディスク暗号化を獲得し、使用中データと保存時データの両方の保護要件を AKS プラットフォーム内で満たせる。</p>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>今回の発表に個別の追加料金の記載はない。Pod Sandboxing / CVM はノードプールの VM サイズ (例: DCas_v5 / ECas_v5、TDX 対応 SKU、v2 対応の v6 SKU ファミリー) に基づく通常の AKS / VM 課金となる。Pod snapshot は Azure Blob への保存を利用するためストレージ料金が発生し得る。詳細は料金ページを参照。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/kubernetes-service/" target="_blank" rel="noopener">AKS 料金ページ</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/virtual-machines/linux/" target="_blank" rel="noopener">Linux Virtual Machines 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Regions -->
+    <section class="section">
+        <h2>🌏 利用可能リージョン</h2>
+        <p>公式発表にリージョン一覧の記載はない。<code>kata-vm-isolation-v2</code> のリージョン展開状況は <a href="https://releases.aks.azure.com/AKSRelease" target="_blank" rel="noopener">AKS release tracker</a> で、CVM 対応 VM サイズの提供リージョンは各 VM サイズのドキュメントで確認すること。</p>
+    </section>
+
+    <!-- Related services -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>Azure Confidential Computing (Confidential VMs)</strong>AKS CVM ノードプールの基盤となる AMD SEV-SNP / Intel TDX ベースの TEE を提供</div>
+            <div class="related-card"><strong>Azure Linux container host for AKS</strong>Pod Sandboxing が唯一サポートするノード OS</div>
+            <div class="related-card"><strong>Azure Blob Storage</strong>Pod snapshot 拡張がメモリ・プロセス状態の保存先として利用</div>
+            <div class="related-card"><strong>Kata Containers (OSS)</strong>Pod Sandboxing のランタイム基盤。v2 では Rust ランタイムを採用</div>
+            <div class="related-card"><strong>Kubernetes Agent Sandbox (OSS)</strong>Agent Sandbox cluster extension の基盤プロジェクト</div>
+        </div>
+    </section>
+
+    <!-- Summary -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Ignite 2026 の AKS 発表は、「分離」と「機密性」を性能・運用コストと両立させる方向への大きな前進である。Intel TDX サポートの GA は Intel 標準の規制産業顧客にとって即時に検証を始められるアップデートであり、CVM 利用中または検討中の組織はまず TDX 対応 SKU と Ubuntu 26.04 / Azure Container Linux の要件を確認したい。<code>kata-vm-isolation-v2</code> と Agent Sandbox / Pod snapshot 拡張はいずれもプレビューだが、AI エージェントのコード実行基盤を Kubernetes 上に構築しているチームには、自前実装を置き換えられる可能性のある重要な組み合わせであり、非本番環境での早期評価を推奨する。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">AKS</span>
+            <span class="tag">Confidential Computing</span>
+            <span class="tag">Intel TDX</span>
+            <span class="tag">AMD SEV-SNP</span>
+            <span class="tag">Pod Sandboxing</span>
+            <span class="tag">Kata Containers</span>
+            <span class="tag">AI Agents</span>
+            <span class="tag">Microsoft Ignite</span>
+            <span class="tag">Preview</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- References -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=581120" target="_blank" rel="noopener">公式アップデート情報: Pod Sandboxing kata-vm-isolation-v2 runtime class (Preview)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=581130" target="_blank" rel="noopener">公式アップデート情報: Confidential VMs with Intel TDX support on AKS (GA)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=581125" target="_blank" rel="noopener">公式アップデート情報: Confidential VMs with OS Disk Encryption support on AKS (Preview)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=580916" target="_blank" rel="noopener">公式アップデート情報: Agent Sandbox cluster extension (Preview)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=580921" target="_blank" rel="noopener">公式アップデート情報: Pod snapshot cluster extension (Preview)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/aks/use-pod-sandboxing" target="_blank" rel="noopener">Microsoft Learn: Pod sandboxing with AKS</a></li>
+            <li><a href="https://learn.microsoft.com/azure/aks/use-cvm" target="_blank" rel="noopener">Microsoft Learn: Use Confidential VMs in AKS</a></li>
+            <li><a href="https://releases.aks.azure.com/AKSRelease" target="_blank" rel="noopener">AKS release tracker</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/kubernetes-service/" target="_blank" rel="noopener">AKS 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong></p>
+        <ul>
+            <li>レポート: Azure Kubernetes Service (AKS): Confidential VM / Pod Sandboxing 関連アップデート群 (Ignite 2026) — 2026-11-17</li>
+            <li><a href="https://azure.microsoft.com/updates?id=581120" target="_blank" rel="noopener">azure.microsoft.com/updates?id=581120</a> / <a href="https://azure.microsoft.com/updates?id=581130" target="_blank" rel="noopener">581130</a> / <a href="https://azure.microsoft.com/updates?id=581125" target="_blank" rel="noopener">581125</a> / <a href="https://azure.microsoft.com/updates?id=580916" target="_blank" rel="noopener">580916</a> / <a href="https://azure.microsoft.com/updates?id=580921" target="_blank" rel="noopener">580921</a></li>
+            <li><a href="https://learn.microsoft.com/azure/aks/use-pod-sandboxing" target="_blank" rel="noopener">learn.microsoft.com/azure/aks/use-pod-sandboxing</a> / <a href="https://learn.microsoft.com/azure/aks/use-cvm" target="_blank" rel="noopener">learn.microsoft.com/azure/aks/use-cvm</a></li>
+        </ul>
+        <p style="margin-top: 12px;">Generated: 2026-11-18 | Azure News Summary</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Workload Center: SAP / Oracle 向け Workload Center と Azure Copilot Run Agent (Limited Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 220px;
+    height: 220px;
+    background: radial-gradient(circle, rgba(80,230,255,0.25), transparent 70%);
+    border-radius: 50%;
+}
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+.header h1 {
+    font-size: 26px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+.header .meta {
+    font-size: 14px;
+    opacity: 0.92;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.service-badge {
+    background: rgba(255,255,255,0.18);
+    border: 1px solid rgba(255,255,255,0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-ignite { background: var(--ms-purple); }
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon {
+    font-size: 22px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+h3.sub-title {
+    font-size: 16px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+    font-weight: 700;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+.highlight-box strong { color: var(--azure-dark-blue); }
+
+/* Key points */
+.key-points { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 18px 0; }
+.key-point {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 14px;
+}
+.key-point .kp-icon { font-size: 22px; flex-shrink: 0; }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+.diagram-caption {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; font-size: 16px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-primary); }
+.feature-content ul { padding-left: 20px; margin-top: 4px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* Table */
+.spec-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+.spec-table th, .spec-table td { border: 1px solid var(--ms-border); padding: 10px 14px; text-align: left; vertical-align: top; }
+.spec-table th { background: var(--ms-blue-100); color: var(--azure-dark-blue); white-space: nowrap; }
+.spec-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* Steps */
+.steps { counter-reset: step; margin: 16px 0; }
+.step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 14px;
+}
+.step-number {
+    counter-increment: step;
+    background: var(--azure-blue);
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.step-number::before { content: counter(step); }
+.step-content { font-size: 14px; padding-top: 4px; }
+.step-content strong { color: var(--ms-blue-800); }
+
+/* Benefit / constraint */
+.benefit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 16px 0; }
+.benefit-card {
+    border-radius: 10px;
+    padding: 18px;
+    border: 2px solid var(--ms-blue-300);
+    background: var(--ms-blue-100);
+}
+.benefit-card.tech { border-color: #B9E0C9; background: #E8F5E9; }
+.benefit-card h4 { margin-bottom: 10px; color: var(--azure-dark-blue); }
+.benefit-card.tech h4 { color: var(--ms-green); }
+.benefit-card ul { padding-left: 20px; font-size: 14px; }
+.benefit-card li { margin-bottom: 8px; }
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.warning-box ul { padding-left: 20px; font-size: 14px; }
+.warning-box li { margin-bottom: 8px; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 14px 0;
+}
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    margin-bottom: 12px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-item { font-size: 14px; margin-bottom: 8px; }
+.usecase-item .label {
+    display: inline-block;
+    background: var(--ms-blue-700);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin-right: 8px;
+}
+.usecase-item .label.effect { background: var(--ms-green); }
+
+/* Regions */
+.region-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin: 16px 0; }
+.region-chip {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    text-align: center;
+    font-weight: 500;
+    color: var(--azure-dark-blue);
+}
+.region-chip.jp {
+    background: var(--azure-blue);
+    color: white;
+    border-color: var(--azure-blue);
+    font-weight: 700;
+}
+
+/* Related services */
+.related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 16px 0; }
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card h4 { color: var(--ms-blue-800); font-size: 15px; margin-bottom: 6px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Timeline */
+.timeline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 16px 0; }
+.timeline-node {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+    border-radius: 10px;
+    padding: 10px 16px;
+    text-align: center;
+    font-size: 13px;
+    flex: 1;
+    min-width: 150px;
+}
+.timeline-node strong { display: block; color: var(--azure-dark-blue); font-size: 14px; }
+.timeline-node.current { background: var(--azure-blue); color: white; }
+.timeline-node.current strong { color: white; }
+.timeline-node.future { background: var(--ms-surface-tertiary); border-style: dashed; border-color: var(--ms-text-disabled); color: var(--ms-text-secondary); }
+.timeline-node.future strong { color: var(--ms-text-secondary); }
+.timeline-arrow { font-size: 20px; color: var(--azure-blue); font-weight: 700; }
+
+/* Links */
+.link-list { list-style: none; padding: 0; }
+.link-list li {
+    margin-bottom: 8px;
+    font-size: 14px;
+    padding-left: 24px;
+    position: relative;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-size: 15px;
+}
+.summary-box strong { color: var(--azure-dark-blue); }
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: var(--ms-text-secondary);
+}
+
+/* Code block (highlight.js) */
+.code-block { background: #1E1E1E; border-radius: 8px; overflow: hidden; margin: 16px 0; }
+.code-header { background: #2D2D2D; padding: 8px 16px; display: flex; justify-content: space-between; font-size: 12px; }
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) { background: #1E1E1E; margin: 0; padding: 0; overflow-x: auto; }
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+/* Footer */
+.footer {
+    background: var(--azure-dark-blue);
+    color: white;
+    border-radius: 12px;
+    padding: 24px 28px;
+    font-size: 13px;
+}
+.footer h4 { margin-bottom: 10px; font-size: 15px; }
+.footer ul { list-style: none; }
+.footer li { margin-bottom: 6px; }
+.footer a { color: var(--azure-light-blue); }
+.footer .copyright { margin-top: 16px; opacity: 0.8; font-size: 12px; }
+
+@media (max-width: 700px) {
+    .before-after, .benefit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 21px; }
+    .timeline { flex-direction: column; }
+    .timeline-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Workload Center</span>
+            <span class="badge badge-preview">In Preview (Limited Preview)</span>
+            <span class="badge badge-ignite">Microsoft Ignite 発表</span>
+        </div>
+        <h1>Azure Workload Center for SAP / Oracle と<br>Azure Copilot Run SAP / Oracle Agent</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-17</span>
+            <span>🧩 機能: Workload Center for SAP / Oracle + 専用 AI エージェント</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <div class="highlight-box">
+            Microsoft Ignite に合わせて、<strong>Azure Workload Center for SAP</strong> と <strong>Azure Workload Center for Oracle</strong> が、専用 AI エージェント <strong>Azure Copilot Run SAP Agent / Run Oracle Agent</strong> とともに Limited Preview として発表。<strong>Workload Virtual Instance (WVI)</strong> を基盤とした「ワークロード認識型 (workload-aware)」の運用エクスペリエンスを提供する。
+        </div>
+        <div class="key-points">
+            <div class="key-point"><span class="kp-icon">🧩</span><div>WVI は SAP システム (セントラルサービス、アプリケーションサーバー、DB サーバー、Web ディスパッチャーなど) や Oracle システムのコンポーネントと、それを支える Azure のコンピュート・ストレージ・ネットワークリソースを <strong>1 つの論理的な Azure リソース</strong>として表現</div></div>
+            <div class="key-point"><span class="kp-icon">🔍</span><div>ワークロードの健全性把握、構成逸脱の特定、プラットフォーム障害がアプリケーションに与える影響の評価を、<strong>担当するシステムの文脈</strong>で実行可能に</div></div>
+            <div class="key-point"><span class="kp-icon">📊</span><div>個々の Azure リソースを独立したインフラとして扱うのではなく、「ワークロード全体」としての<strong>構成管理・ヘルス監視・推奨事項・AI 支援トラブルシューティング</strong>を実現</div></div>
+        </div>
+        <h3 class="sub-title">プレビューの経緯</h3>
+        <div class="timeline">
+            <div class="timeline-node"><strong>2026 年 6 月</strong>Private Preview 開始</div>
+            <span class="timeline-arrow">→</span>
+            <div class="timeline-node current"><strong>2026 年 11 月</strong>Limited Preview (申込制) へ移行</div>
+            <span class="timeline-arrow">→</span>
+            <div class="timeline-node future"><strong>GA</strong>時期未定</div>
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>SAP / Oracle システムを構成する VM・ストレージ・ネットワークなどの Azure リソースを個別に管理する必要があり、ワークロード全体の構成・健全性の把握には各インフラビューを手動でつなぎ合わせる必要があった</li>
+                    <li>障害発生時に、Azure プラットフォームの問題がどの SAP / Oracle コンポーネントに影響するかを、運用チームが手作業で調査・関連付けする必要があった</li>
+                    <li>Azure / SAP on Azure / Oracle on Azure のベストプラクティスからの構成逸脱 (ドリフト) を継続的に検出する仕組みがなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>WVI によりシステム・コンポーネント・Azure リソースを単一ビューに統合し、ワークロード単位での管理が可能に</li>
+                    <li>Azure Monitor のヘルスモデルにより、アプリ・DB・インフラの各レイヤーを横断した健全性インサイトと、劣化の発生箇所・影響範囲の特定が可能に</li>
+                    <li>ベストプラクティスに対する構成検証が自動実行され、逸脱の内容・影響・修復手順を確認可能に</li>
+                    <li>Run SAP / Run Oracle Agent に自然言語で質問し、構成変更の把握・影響評価・修復ガイダンスを取得 (変更の実行判断はチーム側に残る)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Ops([👤 運用チーム / SAP Basis / DBA])
+    Copilot["🤖 Azure Copilot<br/>Run SAP / Run Oracle Agent"]
+    subgraph Azure["☁️ Azure Workload Center for SAP / Oracle"]
+        WVI["🧩 Workload Virtual Instance (WVI)<br/>ワークロードの論理表現"]
+        Val["✅ 構成検証<br/>(ベストプラクティス / ドリフト検出)"]
+        Health["📊 Azure Monitor ヘルスモデル"]
+        Advisor["💡 Azure Advisor 推奨事項"]
+    end
+    subgraph Workload["🏢 SAP / Oracle ワークロード"]
+        App["🖥️ アプリケーション層<br/>(App サーバー / セントラルサービス)"]
+        DB[("🗄️ データベース層<br/>(SAP DB / Oracle DB)")]
+        Infra["⚙️ Azure リソース<br/>(Compute / Storage / Network)"]
+    end
+    Ops --> Copilot --> WVI
+    Ops --> WVI
+    WVI --> Val
+    WVI --> Health
+    WVI --> Advisor
+    WVI -.ワークロードとして表現.-> App
+    WVI -.-> DB
+    WVI -.-> Infra
+            </pre>
+        </div>
+        <p class="diagram-caption">WVI が SAP / Oracle システムのコンポーネントと Azure リソースを 1 つのワークロードとして表現し、その文脈の上で構成検証・ヘルス監視・Advisor 推奨事項・Copilot エージェントによる AI 支援が提供される。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>1. Workload Virtual Instance (WVI)</h4>
+                <ul>
+                    <li>SAP / Oracle システムを表現する論理的な Azure リソース。アーキテクチャ、依存関係、メタデータ、運用コンテキストを単一ビューに集約</li>
+                    <li>既存リソースを移動・変更することなく、Azure リソースを「ワークロードコンポーネント」(例: Database Services、Application Services) にグループ化</li>
+                    <li>SAP SID / Oracle SID や本番環境指定などのワークロード固有情報により、チームと AI エージェントが各環境を文脈的に理解</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔎</div>
+            <div class="feature-content">
+                <h4>2. ワークロードの検出とオンボーディング</h4>
+                <ul>
+                    <li>既存の SAP / Oracle システムをオンボードすると WVI が作成される</li>
+                    <li>Oracle は Oracle AI Database@Azure (Exadata Database Service on Dedicated Infrastructure、Oracle Autonomous AI Database など) と Azure VM 上の Oracle の両方に対応</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">✅</div>
+            <div class="feature-content">
+                <h4>3. 構成検証とドリフト検出</h4>
+                <ul>
+                    <li>Azure および SAP on Azure / Oracle on Azure のベストプラクティスに対して構成を継続的に評価</li>
+                    <li>逸脱の内容・影響・修復ガイダンスを提示</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>4. ヘルス監視とトラブルシューティング</h4>
+                <ul>
+                    <li>Azure Monitor のヘルスモデルで、システム・コンポーネント・リソースの健全性を階層的に可視化</li>
+                    <li>劣化の発生元と全体への影響範囲を特定</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💡</div>
+            <div class="feature-content">
+                <h4>5. ワークロードを考慮した推奨事項</h4>
+                <ul>
+                    <li>WVI を構成するリソースに対する Azure Advisor の推奨事項をワークロードビュー内で表示し、影響コンポーネントに基づく優先順位付けが可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>6. Azure Copilot Run SAP / Run Oracle Agent (AI エージェント)</h4>
+                <ul>
+                    <li>自然言語で「何が変わったか」の把握、構成値の取得・比較、劣化の原因調査、影響評価、推奨される次のステップの特定を支援</li>
+                    <li>Azure プラットフォーム障害とワークロードトポロジを相関させた影響分析 (インパクト分析) を提供</li>
+                    <li>意思決定と修復の実行権限はあくまで運用チーム側に残る設計</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>基盤リソース</td><td>Workload Virtual Instance (WVI) — ワークロードの論理表現となる Azure リソース</td></tr>
+            <tr><td>対象ワークロード (SAP)</td><td>Azure 上の SAP システム (セントラルサービス、アプリケーションサーバー、DB サーバー、Web ディスパッチャーなど)</td></tr>
+            <tr><td>対象ワークロード (Oracle)</td><td>Oracle AI Database@Azure (Exadata Database Service on Dedicated Infrastructure、Oracle Autonomous AI Database など) および Azure VM 上の Oracle</td></tr>
+            <tr><td>ヘルス監視</td><td>Azure Monitor ヘルスモデル</td></tr>
+            <tr><td>推奨事項</td><td>Azure Advisor との統合</td></tr>
+            <tr><td>AI エージェント</td><td>Azure Copilot Run SAP Agent / Run Oracle Agent</td></tr>
+            <tr><td>提供形態</td><td>Limited Preview (申込フォームによる登録・承認が必要)</td></tr>
+            <tr><td>プレビュー経緯</td><td>Private Preview: 2026 年 6 月 → Limited Preview: 2026 年 11 月、GA 未定</td></tr>
+        </table>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+        <h3 class="sub-title">前提条件</h3>
+        <div class="steps">
+            <div class="step"><div class="step-number"></div><div class="step-content"><strong>Limited Preview への参加申込</strong> (サブスクリプション単位での登録)<br>SAP: <a href="https://aka.ms/workloadcenter/SAPPreviewSignup" target="_blank">https://aka.ms/workloadcenter/SAPPreviewSignup</a><br>Oracle: <a href="https://aka.ms/workloadcenter/Oracle-Ignite" target="_blank">https://aka.ms/workloadcenter/Oracle-Ignite</a></div></div>
+            <div class="step"><div class="step-number"></div><div class="step-content">対象リージョン (下記「利用可能リージョン」参照) で SAP / Oracle ワークロードを運用していること</div></div>
+            <div class="step"><div class="step-number"></div><div class="step-content">プレビュー機能のため <a href="https://azure.microsoft.com/support/legal/preview-supplemental-terms/" target="_blank">Supplemental Terms of Use for Microsoft Azure Previews</a> が適用される</div></div>
+        </div>
+        <h3 class="sub-title">Azure Portal での手順</h3>
+        <div class="steps">
+            <div class="step"><div class="step-number"></div><div class="step-content">Limited Preview の承認後、既存の SAP / Oracle システムを Azure Workload Center に<strong>オンボード</strong>する</div></div>
+            <div class="step"><div class="step-number"></div><div class="step-content">オンボードにより <strong>WVI が作成</strong>され、システムのコンポーネントと Azure リソースがワークロードとして表現される</div></div>
+            <div class="step"><div class="step-number"></div><div class="step-content"><strong>構成検証・ヘルスモデル・Advisor 推奨事項</strong>をワークロードビューで確認し、Azure Copilot から <strong>Run SAP / Run Oracle Agent</strong> を利用する</div></div>
+        </div>
+        <p style="font-size: 13px; color: var(--ms-text-secondary);">詳細な手順は Microsoft Learn のオンボーディングドキュメントを参照 (参考リンク)。</p>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌟</span>メリット</h2>
+        <div class="benefit-grid">
+            <div class="benefit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>ミッションクリティカルな SAP / Oracle ワークロードの障害調査時間を短縮し、ダウンタイムによるビジネス影響を低減</li>
+                    <li>構成逸脱を運用問題化する前にプロアクティブに是正でき、ベストプラクティス準拠を維持しやすい</li>
+                    <li>SAP Basis / DBA チームとクラウド運用チームが同一のワークロードビューを共有でき、組織間の調査・連携コストを削減</li>
+                </ul>
+            </div>
+            <div class="benefit-card tech">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>インフラ単位ではなくワークロード単位の管理により、依存関係・影響範囲の手動の突き合わせ作業が不要に</li>
+                    <li>Azure Monitor ヘルスモデルによるレイヤー横断 (アプリ / DB / インフラ) の健全性可視化</li>
+                    <li>自然言語での調査 (構成値の取得・比較、劣化原因の調査) により、トラブルシューティングの初動を高速化</li>
+                    <li>AI エージェントは調査・ガイダンスに徹し、変更の実行はチームの判断に委ねられるため、ガバナンスを維持できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li>Limited Preview のため、申込フォームでの登録とサブスクリプション単位の承認が必要 (即時利用はできない)</li>
+                <li>利用可能リージョンは現時点で 10 リージョンに限定される</li>
+                <li>GA 時期は未定であり、プレビュー規約 (Supplemental Terms of Use) が適用されるため、本番運用の中核に据えるには時期尚早</li>
+                <li>プレビュー時点での料金・SLA に関する公式情報は確認できていない</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💼</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>🧾 ユースケース 1: SAP 本番システムの構成ドリフト検出と是正</h4>
+            <p class="usecase-item"><span class="label">シナリオ</span>Azure 上で複数の SAP 本番システム (SID 単位) を運用しており、SAP on Azure ベストプラクティスからの構成逸脱を定期的に棚卸ししたい。</p>
+            <p class="usecase-item"><span class="label">実装例</span>SAP システムを Workload Center にオンボードして WVI を作成し、構成検証の結果 (逸脱の内容・影響・修復手順) をワークロードビューで確認。Run SAP Agent に「前回から何が変わったか」を質問し、変更内容と影響を把握した上で是正する。</p>
+            <p class="usecase-item"><span class="label effect">効果</span>手動の構成棚卸し作業を削減し、逸脱が運用障害に発展する前に対処できる。</p>
+        </div>
+        <div class="usecase-card">
+            <h4>🚨 ユースケース 2: Azure プラットフォーム障害の Oracle ワークロードへの影響評価</h4>
+            <p class="usecase-item"><span class="label">シナリオ</span>Azure のインフラ障害発生時に、Oracle AI Database@Azure / Azure VM 上の Oracle システムのどのコンポーネントが影響を受けるかを迅速に判断したい。</p>
+            <p class="usecase-item"><span class="label">実装例</span>WVI のトポロジと Azure プラットフォームシグナルを相関させるインパクト分析を利用し、Run Oracle Agent に影響を受ける VM / コンポーネントを質問して初動対応を決定する。</p>
+            <p class="usecase-item"><span class="label effect">効果</span>障害時の影響範囲特定と根本原因調査を高速化し、MTTR を短縮できる。</p>
+        </div>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p style="font-size: 14px;">SAP / Oracle とも以下の <strong>10 リージョン</strong>で利用可能 (Limited Preview 時点):</p>
+        <div class="region-grid">
+            <div class="region-chip">Australia East</div>
+            <div class="region-chip">Central US</div>
+            <div class="region-chip">East US</div>
+            <div class="region-chip">East US 2</div>
+            <div class="region-chip">Germany West Central</div>
+            <div class="region-chip">Italy North</div>
+            <div class="region-chip jp">Japan East 🇯🇵</div>
+            <div class="region-chip">Korea Central</div>
+            <div class="region-chip">North Europe</div>
+            <div class="region-chip">South Central US</div>
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>📊 Azure Monitor</h4>
+                <p>WVI のヘルスモデルの基盤。アプリ・DB・インフラの各レイヤーの健全性インサイトを提供</p>
+            </div>
+            <div class="related-card">
+                <h4>💡 Azure Advisor</h4>
+                <p>WVI を構成するリソースへの推奨事項をワークロードビューに統合表示</p>
+            </div>
+            <div class="related-card">
+                <h4>🤖 Azure Copilot</h4>
+                <p>Run SAP / Run Oracle Agent の実行基盤。自然言語での調査・ガイダンスを提供</p>
+            </div>
+            <div class="related-card">
+                <h4>🏢 Azure Center for SAP solutions</h4>
+                <p>従来からの SAP on Azure 管理機能。Workload Center for SAP の WVI 概要ドキュメントは同ドキュメントセット配下で提供</p>
+            </div>
+            <div class="related-card">
+                <h4>🗄️ Oracle AI Database@Azure</h4>
+                <p>Azure データセンター内で Oracle が運用するデータベースサービス群 (Exadata Database Service on Dedicated Infrastructure、Oracle Autonomous AI Database など)。Workload Center for Oracle の対象ワークロード</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Workload Center for SAP / Oracle は、ミッションクリティカルなエンタープライズワークロードの運用を<strong>「リソース単位」から「ワークロード単位」へ</strong>引き上げる、Ignite 発表の中でも注目度の高いアップデートである。WVI によるワークロード表現を基盤に、<strong>構成検証・ヘルス監視・Advisor 統合・Azure Copilot エージェント</strong>が一体で提供され、<strong>AI は調査とガイダンスに徹し実行判断は人間に残す</strong>という設計も実運用を意識している。Azure 上で SAP / Oracle を運用しているチームは、<strong>Japan East を含む対象リージョン</strong>であれば Limited Preview への申込を検討し、構成検証とインパクト分析の効果を早期に評価することを推奨する。GA 時期は未定のため、現時点では評価・検証用途での利用が適切である。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">#Azure Workload Center</span>
+            <span class="tag">#SAP on Azure</span>
+            <span class="tag">#Oracle on Azure</span>
+            <span class="tag">#Workload Virtual Instance</span>
+            <span class="tag">#Azure Copilot</span>
+            <span class="tag">#AI Agent</span>
+            <span class="tag">#Azure Monitor</span>
+            <span class="tag">#Azure Advisor</span>
+            <span class="tag">#Limited Preview</span>
+            <span class="tag">#Microsoft Ignite</span>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <h4>📚 出典・参考リンク</h4>
+        <ul>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=581209" target="_blank">公式アップデート情報 (SAP)</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=581214" target="_blank">公式アップデート情報 (Oracle)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/sap/center-sap-solutions/workload-virtual-instance-overview" target="_blank">Microsoft Learn: Workload virtual instances - Azure Workload Center for SAP</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/oracle/overview" target="_blank">Microsoft Learn: Azure Workload Center for Oracle overview (Preview)</a></li>
+            <li>🔗 <a href="https://aka.ms/workloadcenterforsap-blog" target="_blank">Tech Community ブログ (SAP)</a></li>
+            <li>🔗 <a href="https://aka.ms/workloadcenter/Oracle-blog" target="_blank">Tech Community ブログ (Oracle)</a></li>
+            <li>🔗 <a href="https://aka.ms/workloadcenter/SAPPreviewSignup" target="_blank">Limited Preview 申込 (SAP)</a></li>
+            <li>🔗 <a href="https://aka.ms/workloadcenter/Oracle-Ignite" target="_blank">Limited Preview 申込 (Oracle)</a></li>
+        </ul>
+        <p class="copyright">Source: Azure News Summary Report (2026-11-17) | Generated: 2026-11-18</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Cobalt 200 Arm ベース VM シリーズ GA | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+.hero .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hero h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+.hero .subtitle { font-size: 15px; opacity: 0.92; }
+.hero .meta { margin-top: 16px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 16px; }
+.hero .meta span { background: rgba(255,255,255,0.15); padding: 4px 12px; border-radius: 6px; }
+
+.service-badge {
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon { font-size: 26px; }
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+.section p { margin: 10px 0; }
+
+/* ===== Highlight ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+.diagram-caption {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; font-size: 16px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-primary); }
+.feature-content ul { padding-left: 20px; margin-top: 6px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== VM Series Cards ===== */
+.vm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 14px;
+    margin: 20px 0;
+}
+.vm-card {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 10px;
+    padding: 16px 12px;
+    text-align: center;
+    position: relative;
+}
+.vm-card.new { border-color: var(--ms-green); background: #E8F5E9; }
+.vm-card .new-tag {
+    position: absolute;
+    top: -10px;
+    right: 8px;
+    background: var(--ms-green);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+}
+.vm-card .vm-icon { font-size: 26px; }
+.vm-card .vm-name { font-size: 17px; font-weight: 700; color: var(--azure-dark-blue); margin: 4px 0; }
+.vm-card .vm-type { font-size: 13px; font-weight: 500; color: var(--ms-blue-800); }
+.vm-card .vm-spec { font-size: 12px; color: var(--ms-text-secondary); margin-top: 6px; }
+
+/* ===== Table ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+table.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+}
+table.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+table.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+table.spec-table td:first-child { font-weight: 500; white-space: nowrap; color: var(--ms-blue-800); }
+
+/* ===== Code ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Merit / Caution ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 10px;
+    padding: 18px;
+}
+.merit-card.business { background: var(--ms-blue-100); border: 2px solid var(--ms-blue-400); }
+.merit-card.technical { background: #F3EEF9; border: 2px solid var(--ms-purple); }
+.merit-card h4 { margin-bottom: 10px; }
+.merit-card.business h4 { color: var(--ms-blue-800); }
+.merit-card.technical h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 8px 0; font-size: 14px; }
+
+.caution-box {
+    background: #FFF8E6;
+    border: 2px solid var(--ms-yellow);
+    border-radius: 10px;
+    padding: 18px;
+    margin: 16px 0;
+}
+.caution-box h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.caution-box ul { padding-left: 20px; }
+.caution-box li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Use Cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.usecase-card .usecase-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+.usecase-num {
+    background: var(--azure-blue);
+    color: white;
+    min-width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+.usecase-card h4 { color: var(--azure-dark-blue); font-size: 16px; }
+.usecase-card .label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    background: var(--ms-blue-200);
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin: 8px 0 4px;
+}
+.usecase-card .effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* ===== Regions ===== */
+.region-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0; }
+.region-tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== Related / Links ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+    border-left: 4px solid var(--ms-blue-500);
+}
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; }
+
+.link-list { list-style: none; }
+.link-list li { margin: 8px 0; font-size: 14px; }
+.link-list a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+.link-list a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+}
+.summary-box ol { padding-left: 24px; margin-top: 10px; }
+.summary-box li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Footer ===== */
+footer {
+    text-align: center;
+    padding: 24px;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+}
+footer a { color: var(--azure-blue); text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ===== Tags ===== */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 12px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Hero ===== -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">🖥️ Azure Virtual Machines</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Azure Cobalt 200 Arm ベース VM<br>Dplsv7 / Dpsv7 / Epsv7 / Mpsv4 / Lpsv5 シリーズが一般提供開始</h1>
+        <p class="subtitle">Microsoft 第 2 世代の自社開発 Arm プロセッサ「Azure Cobalt 200」搭載。CPU 性能最大 50% 向上、高メモリ Mpsv4 と高密度ストレージ Lpsv5 の新カテゴリ追加で Arm の適用範囲が大きく拡大 (Microsoft Ignite に合わせた発表)。</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-17</span>
+            <span>🏷️ Compute / Arm / Microsoft Ignite</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Microsoft 第 2 世代の自社開発 Arm プロセッサ「<strong>Azure Cobalt 200</strong>」を搭載した VM シリーズが一般提供 (GA) となりました。対象は汎用の <strong>Dplsv7 / Dpsv7</strong>、メモリ最適化の <strong>Epsv7</strong>、高メモリの <strong>Mpsv4</strong>、高密度ストレージの <strong>Lpsv5</strong> の 5 系統です。Mpsv4 と Lpsv5 は Cobalt 世代で新たに追加されたカテゴリです。</p>
+
+        <div class="vm-grid">
+            <div class="vm-card">
+                <div class="vm-icon">🖥️</div>
+                <div class="vm-name">Dplsv7</div>
+                <div class="vm-type">汎用 (低メモリ)</div>
+                <div class="vm-spec">2 GiB/vCPU<br>最大 256 GiB</div>
+            </div>
+            <div class="vm-card">
+                <div class="vm-icon">🖥️</div>
+                <div class="vm-name">Dpsv7</div>
+                <div class="vm-type">汎用</div>
+                <div class="vm-spec">4 GiB/vCPU<br>最大 512 GiB</div>
+            </div>
+            <div class="vm-card">
+                <div class="vm-icon">📊</div>
+                <div class="vm-name">Epsv7</div>
+                <div class="vm-type">メモリ最適化</div>
+                <div class="vm-spec">8 GiB/vCPU<br>最大 1,024 GiB</div>
+            </div>
+            <div class="vm-card new">
+                <span class="new-tag">NEW</span>
+                <div class="vm-icon">🧮</div>
+                <div class="vm-name">Mpsv4</div>
+                <div class="vm-type">高メモリ</div>
+                <div class="vm-spec">16 GiB/vCPU<br>最大 1,388 GiB</div>
+            </div>
+            <div class="vm-card new">
+                <span class="new-tag">NEW</span>
+                <div class="vm-icon">💾</div>
+                <div class="vm-name">Lpsv5</div>
+                <div class="vm-type">高密度ストレージ</div>
+                <div class="vm-spec">ローカル NVMe<br>最大 23 TB</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <strong>🧠 Cobalt 200 プロセッサ</strong>: TSMC 3nm プロセス製造、Arm Neoverse V3 コアを 132 基搭載したマルチチップレット構成。各 vCPU に物理コア 1 個を割り当てる設計 (SMT なし)。Deterministic モードで一貫した 3.2 GHz、Opportunistic モードで最大 3.6 GHz 動作。
+        </div>
+
+        <h3>📈 数字で見る性能向上 (Cobalt 100 比)</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">最大 50%</div>
+                <div class="stat-label">CPU 性能向上<br>(ワークロード依存)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">+20%</div>
+                <div class="stat-label">NVMe リモート<br>ストレージ IOPS</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">+10%</div>
+                <div class="stat-label">リモートストレージ<br>スループット</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">+15%</div>
+                <div class="stat-label">ネットワーク帯域</div>
+            </div>
+        </div>
+
+        <p>すでに <strong>OpenAI (ChatGPT ワークロード)、Databricks、Snowflake、Amadeus、InMobi</strong> などの顧客や、<strong>Azure SQL、Microsoft 365、Teams、GitHub Actions</strong> といった Microsoft 自社サービスで実績があり、Microsoft は「<strong>価格性能比で Azure フリート最高の汎用 VM</strong>」と位置付けています。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Arm ベース VM は Cobalt 100 世代 (Dpsv6 / Dplsv6 / Epsv6 など) が最新で、最大 96 vCPU / 672 GiB メモリ程度の構成が上限だった</li>
+                    <li>Arm ベース VM には高メモリ (M シリーズ相当) やローカル NVMe の高密度ストレージ (L シリーズ相当) のカテゴリが存在せず、インメモリ DB やストレージ集約型ワークロードを Arm に移行しにくかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>CPU 性能最大 50% 向上、最大 128 vCPU / 1,388 GiB メモリ、最大 85 Gbps のネットワーク帯域へスケールアップ</li>
+                    <li>高メモリの Mpsv4 (16 GiB/vCPU)、ローカル NVMe 最大 23 TB の Lpsv5 が加わり、Arm で対応できるワークロードの幅が大きく拡大</li>
+                    <li>メモリ暗号化のデフォルト有効化、全サーバーへの Azure Integrated HSM / Azure Boost 搭載によりセキュリティと I/O 性能が強化</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        CPU["🧠 Azure Cobalt 200<br/>Arm Neoverse V3 / 132 コア / 3nm<br/>最大 3.6 GHz・メモリ暗号化標準"]
+        BOOST["🚀 Azure Boost + Integrated HSM<br/>ネットワーク/ストレージのオフロードと鍵保護"]
+        CPU --> BOOST
+        BOOST --> D1["🖥️ Dplsv7<br/>汎用 (2 GiB/vCPU)<br/>最大 256 GiB"]
+        BOOST --> D2["🖥️ Dpsv7<br/>汎用 (4 GiB/vCPU)<br/>最大 512 GiB"]
+        BOOST --> E["📊 Epsv7<br/>メモリ最適化 (8 GiB/vCPU)<br/>最大 1,024 GiB"]
+        BOOST --> M["🧮 Mpsv4<br/>高メモリ (16 GiB/vCPU)<br/>最大 1,388 GiB"]
+        BOOST --> L["💾 Lpsv5<br/>高密度ストレージ<br/>ローカル NVMe 最大 23 TB"]
+    end
+            </pre>
+        </div>
+        <p class="diagram-caption">Cobalt 200 プロセッサと Azure Boost / Integrated HSM を共通基盤として、ワークロード特性に応じた 5 系統の VM シリーズが提供されます。</p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>1. Cobalt 100 比で大幅な性能向上</h4>
+                <ul>
+                    <li>CPU 性能最大 50% 向上 (ワークロード依存)。Web サービングで最大 1.5 倍、Java 系で最大 1.6 倍、データベースで 1.9 倍、Teams メディア処理で 1.65 倍などの実測値が公表</li>
+                    <li>NVMe リモートストレージ IOPS +20%、スループット +10%、ネットワーク帯域 +15%</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎛️</div>
+            <div class="feature-content">
+                <h4>2. Processor Mode (動作モード切替)</h4>
+                <ul>
+                    <li><strong>Deterministic モード</strong>: 一貫した 3.2 GHz で予測可能な性能</li>
+                    <li><strong>Opportunistic モード</strong>: 最大 3.6 GHz までブーストし最大 12% の性能向上 (周波数は変動)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🆕</div>
+            <div class="feature-content">
+                <h4>3. 新カテゴリの追加 (Mpsv4 / Lpsv5)</h4>
+                <ul>
+                    <li><strong>Mpsv4</strong>: 16 GiB/vCPU・最大 1,388 GiB の高メモリ VM。インメモリ DB、ERP、大規模ベクトル検索向け</li>
+                    <li><strong>Lpsv5</strong>: ローカル NVMe 最大 23 TB の高密度ストレージ VM。AI 学習データ準備、検索・インデックスエンジン向け</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>4. セキュリティの標準強化</h4>
+                <ul>
+                    <li>メモリ暗号化がデフォルトで有効 (遅延はごくわずか)</li>
+                    <li>全サーバーに Azure Integrated HSM を搭載し、暗号鍵をハードウェアで保護</li>
+                    <li>圧縮・暗号化アクセラレータを内蔵し、Azure SQL のバックアップ時間を最大 2.5 倍短縮</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>5. エージェント型 AI ワークロードへの対応</h4>
+                <p>CPU ベースのエージェントサンドボックス、ツール実行、オーケストレーションサービス向けを明示。AI エージェントのツール実行で最大 1.5 倍の性能向上。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Spec ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>プロセッサ</td><td>Azure Cobalt 200 (Arm Neoverse V3、Arm64、TSMC 3nm、132 コア、L2 3 MB/コア、システムレベルキャッシュ 192 MB、DDR5 12 チャネル)</td></tr>
+                <tr><td>クロック</td><td>Opportunistic モード最大 3.6 GHz / Deterministic モード 3.2 GHz</td></tr>
+                <tr><td>Dplsv7 (汎用・低メモリ)</td><td>1〜128 vCPU、2 GiB/vCPU、最大 256 GiB</td></tr>
+                <tr><td>Dpsv7 (汎用)</td><td>1〜128 vCPU、4 GiB/vCPU、4〜512 GiB、ローカルディスクなし</td></tr>
+                <tr><td>Epsv7 (メモリ最適化)</td><td>1〜128 vCPU、8 GiB/vCPU、8〜1,024 GiB、ローカルディスクなし</td></tr>
+                <tr><td>Mpsv4 (高メモリ・新)</td><td>1〜128 vCPU、最大 16 GiB/vCPU、16〜1,388 GiB、ローカルディスクなし</td></tr>
+                <tr><td>Lpsv5 (高密度ストレージ・新)</td><td>8 GiB/vCPU、ローカル NVMe 最大 23 TB</td></tr>
+                <tr><td>リモートストレージ</td><td>最大 64 ディスク、最大 320,000 IOPS / 8,770 MBps (Ultra Disk / Premium SSD v2)。Standard SSD/HDD、Premium SSD、Premium SSD v2、Ultra Disk 対応</td></tr>
+                <tr><td>ネットワーク</td><td>最大 15 NIC、最大 85,000 Mbps (85 Gbps)、Accelerated Networking 必須 (デフォルト有効)、MANA 対応</td></tr>
+                <tr><td>ローカルディスク付きバリアント</td><td>Dpldsv7 / Dpdsv7 / Epdsv7 / Mpdsv4</td></tr>
+                <tr><td>対応 OS</td><td>Ubuntu、RHEL、SUSE、Debian、AlmaLinux、Rocky Linux、Oracle Linux、Azure Linux、Windows 11 Client (NVMe 対応イメージが必要)</td></tr>
+                <tr><td>デプロイ手段</td><td>Azure Portal / CLI / PowerShell / ARM・Bicep テンプレート、VM Scale Sets、AKS ノードプール</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <h3>✅ 前提条件</h3>
+        <div class="highlight-box">
+            <ol style="padding-left: 20px;">
+                <li>NVMe 対応の OS イメージを使用すること (非対応イメージではデプロイ時にエラーとなる)</li>
+                <li>Arm64 アーキテクチャ対応の OS イメージ・アプリケーションを使用すること</li>
+                <li>対象リージョンで該当 VM サイズの vCPU クォータを確保していること</li>
+            </ol>
+        </div>
+
+        <h3>💻 Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI</span></div>
+            <pre><code class="language-bash"># Cobalt 200 搭載の Dpsv7 シリーズ VM を作成する例
+az vm create \
+  --resource-group myResourceGroup \
+  --name myCobalt200VM \
+  --image Ubuntu2404 \
+  --size Standard_D4ps_v7 \
+  --location eastus2 \
+  --admin-username azureuser \
+  --generate-ssh-keys
+
+# リージョンで利用可能な Cobalt 200 VM サイズを確認
+az vm list-sizes --location eastus2 --output table | grep -E "ps_v7|ps_v4|ps_v5"</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>Microsoft が「価格性能比で Azure フリート最高の汎用 VM」と位置付けており、x86 ベース VM や Cobalt 100 からの移行でコスト効率の改善が期待できる</li>
+                    <li>OpenAI、Databricks、Snowflake、Amadeus (フライト検索スループット 30% 以上改善)、InMobi など実ワークロードでの実績が公表されており、採用判断の材料が豊富</li>
+                    <li>Azure SQL、Microsoft 365、Teams、GitHub Actions など Microsoft 自社サービスでの運用実績がある</li>
+                </ul>
+            </div>
+            <div class="merit-card technical">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>Cobalt 100 比で CPU 性能最大 50%、ストレージ IOPS 20%、ネットワーク帯域 15% の向上</li>
+                    <li>1 vCPU = 1 物理コア (SMT なし) のため、性能の予測可能性が高い</li>
+                    <li>メモリ暗号化デフォルト有効 + Azure Integrated HSM によりセキュリティが標準で強化</li>
+                    <li>高メモリ (Mpsv4) と高密度ストレージ (Lpsv5) の追加で、Arm に移行できるワークロードの範囲が拡大</li>
+                    <li>既に Arm64 対応済みのワークロードは Cobalt 100 からそのまま移行可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <h4>⚠️ 知っておくべき制約</h4>
+            <ul>
+                <li>Arm64 アーキテクチャのため、x86 専用のソフトウェア・エージェント類は再ビルドまたは代替が必要</li>
+                <li>NVMe 対応 OS イメージが必須 (非対応イメージではデプロイ不可)</li>
+                <li>Dplsv7 / Dpsv7 / Epsv7 / Mpsv4 はローカル (一時) ディスクなし。必要な場合は Dpldsv7 / Dpdsv7 / Epdsv7 / Mpdsv4 を選択する</li>
+                <li>Ephemeral OS ディスク、入れ子仮想化 (Nested Virtualization)、Azure Disk Encryption (ADE)、Live Migration、第 1 世代 VM は非サポート (Dpsv7 / Epsv7 / Mpsv4 のドキュメントで確認)</li>
+                <li>GA 時点の提供リージョンは 14 リージョンで、日本リージョンは含まれていない (2026 年末までに 23 リージョンへ拡大予定)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use Cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-head">
+                <div class="usecase-num">1</div>
+                <h4>スケールアウト型 Web / アプリケーションサーバーの価格性能改善</h4>
+            </div>
+            <span class="label">シナリオ</span>
+            <p>Cobalt 100 (Dpsv6) や x86 VM で稼働中の Web / アプリケーションサーバー層を Dpsv7 に移行し、同一コスト帯でスループットを向上させる。</p>
+            <span class="label">実装例</span>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI</span></div>
+                <pre><code class="language-bash"># VM Scale Set を Dpsv7 で作成
+az vmss create \
+  --resource-group myResourceGroup \
+  --name myWebScaleSet \
+  --image Ubuntu2404 \
+  --vm-sku Standard_D8ps_v7 \
+  --instance-count 3 \
+  --location eastus2</code></pre>
+            </div>
+            <div class="effect"><strong>効果</strong>: Web サービングで最大 1.5 倍、Java 系ワークロードで最大 1.6 倍の性能向上 (Cobalt 100 比) が公表されており、インスタンス数削減やレスポンス改善が期待できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-head">
+                <div class="usecase-num">2</div>
+                <h4>インメモリ DB・大規模キャッシュの Arm 移行</h4>
+            </div>
+            <span class="label">シナリオ</span>
+            <p>これまで Arm VM では対応できなかった大容量メモリ要件 (1 TB 超) のインメモリ DB や ERP、ベクトル検索を、新設の Mpsv4 (最大 1,388 GiB) で稼働させる。</p>
+            <div class="effect"><strong>効果</strong>: データベースワークロードで 1.9 倍 (Cobalt 100 比) の性能向上が公表されており、高メモリ領域でも Arm の価格性能メリットを享受できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-head">
+                <div class="usecase-num">3</div>
+                <h4>AI エージェント基盤 (ツール実行サンドボックス)</h4>
+            </div>
+            <span class="label">シナリオ</span>
+            <p>エージェント型 AI のオーケストレーション、ツール実行サンドボックスなど CPU ベースの処理を Dpsv7 / Dplsv7 で実行する。</p>
+            <div class="effect"><strong>効果</strong>: AI エージェントのツール実行で最大 1.5 倍の性能向上。GPU を使わない周辺処理のコスト効率を高められる。</div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>GA 発表時点で具体的な単価は公式ブログ・Updates に記載されていません。Microsoft は「<strong>価格性能比で Azure フリート最高の汎用 VM</strong>」としています。最新の料金は以下で確認してください。</p>
+        <ul class="link-list">
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/virtual-machines/linux/" target="_blank" rel="noopener">Linux Virtual Machines の料金</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/calculator/" target="_blank" rel="noopener">料金計算ツール</a></li>
+        </ul>
+        <div class="highlight-box">
+            💡 なお、Dpsv7 / Epsv7 / Mpsv4 はローカルディスクなしの構成であり、ディスクストレージは VM と別課金です (<a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank" rel="noopener" style="color: var(--azure-blue);">Managed Disks の料金</a>)。
+        </div>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <p>GA 時点で以下の <strong>14 リージョン</strong>で利用可能です (<strong>2026 年末までに 23 リージョンへ拡大予定</strong>)。</p>
+        <div class="region-tags">
+            <span class="region-tag">Australia East</span>
+            <span class="region-tag">Canada Central</span>
+            <span class="region-tag">Central US</span>
+            <span class="region-tag">East US</span>
+            <span class="region-tag">East US 2</span>
+            <span class="region-tag">Indonesia Central</span>
+            <span class="region-tag">Italy North</span>
+            <span class="region-tag">Korea Central</span>
+            <span class="region-tag">South Central US</span>
+            <span class="region-tag">Spain Central</span>
+            <span class="region-tag">Sweden Central</span>
+            <span class="region-tag">UK South</span>
+            <span class="region-tag">West US 2</span>
+            <span class="region-tag">West US 3</span>
+        </div>
+        <div class="caution-box">
+            <h4>🇯🇵 日本リージョン</h4>
+            <p style="font-size: 14px;">GA 時点では日本リージョンは含まれていません。リージョン拡大のロードマップを注視してください。</p>
+        </div>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <strong>☸️ Azure Kubernetes Service (AKS)</strong>
+                Cobalt 200 VM をノードプールとして利用可能。Arm ノードによるコンテナワークロードのコスト最適化に有効
+            </div>
+            <div class="related-card">
+                <strong>📈 Virtual Machine Scale Sets</strong>
+                Flexible / Uniform 両オーケストレーションモードに対応し、スケールアウト構成を構築可能
+            </div>
+            <div class="related-card">
+                <strong>🚀 Azure Boost</strong>
+                全 Cobalt 200 VM に搭載。ネットワーク / ストレージ処理をホストからオフロードし、最大 85 Gbps ネットワーク・320,000 IOPS を実現
+            </div>
+            <div class="related-card">
+                <strong>💽 Azure Managed Disks (Premium SSD v2 / Ultra Disk)</strong>
+                ローカルディスクなし構成のため、リモートディスクの選定が性能設計の要点になる
+            </div>
+            <div class="related-card">
+                <strong>🖥️ Cobalt 100 VM (Dpsv6 / Dplsv6 / Epsv6 など)</strong>
+                前世代シリーズ。Arm64 対応済みワークロードはそのまま Cobalt 200 へ移行可能
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <p>Azure の第 2 世代 Arm プロセッサ Cobalt 200 を搭載した 5 系統の VM シリーズが GA になりました。CPU 性能最大 50% 向上という世代間の伸びに加え、高メモリの Mpsv4 と高密度ストレージの Lpsv5 が新設されたことで、<strong>Arm VM の適用範囲が汎用ワークロードからインメモリ DB・ストレージ集約型まで大きく広がった</strong>点が重要です。OpenAI や Databricks など大規模顧客での実績も公表されており、Arm 採用のリスクは世代を追うごとに下がっています。</p>
+        <div class="summary-box">
+            <strong>🎯 Solutions Architect への推奨アクション</strong>
+            <ol>
+                <li>Arm64 対応済みワークロード (コンテナ、Java、OSS DB など) のコスト最適化候補として Cobalt 200 を評価する</li>
+                <li>NVMe 対応イメージ・ローカルディスクなし構成・ADE 非対応などの制約を移行アセスメントに織り込む</li>
+                <li>日本リージョンは GA 時点で未提供のため、リージョン拡大 (2026 年末までに 23 リージョン) のロードマップを注視する</li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=581298" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/en-us/blog/azure-cobalt-200-vms-now-available-proven-on-real-workloads-and-built-for-the-agentic-era/" target="_blank" rel="noopener">Azure Blog: Azure Cobalt 200 VMs now available</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dpsv7-series" target="_blank" rel="noopener">Microsoft Learn: Dpsv7 シリーズ</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/epsv7-series" target="_blank" rel="noopener">Microsoft Learn: Epsv7 シリーズ</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/azure/virtual-machines/sizes/memory-optimized/mpsv4-series" target="_blank" rel="noopener">Microsoft Learn: Mpsv4 シリーズ</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/virtual-machines/linux/" target="_blank" rel="noopener">料金ページ (Linux VM)</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <div class="tag-list">
+            <span class="tag">Compute</span>
+            <span class="tag">Virtual Machines</span>
+            <span class="tag">Arm</span>
+            <span class="tag">Cobalt 200</span>
+            <span class="tag">Microsoft Ignite</span>
+            <span class="tag">GA</span>
+        </div>
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=581298" target="_blank" rel="noopener">Azure Updates (ID: 581298)</a> / <a href="https://azure.microsoft.com/en-us/blog/azure-cobalt-200-vms-now-available-proven-on-real-workloads-and-built-for-the-agentic-era/" target="_blank" rel="noopener">Azure Blog</a> / <a href="https://learn.microsoft.com/azure/virtual-machines/sizes/general-purpose/dpsv7-series" target="_blank" rel="noopener">Microsoft Learn</a></p>
+        <p>このインフォグラフィックは Azure News Summary レポート (2026-11-17) をもとに生成されました。リリース日: 2026-11-17 / 生成日: 2026-11-18</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

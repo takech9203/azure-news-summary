@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Database Hub in Microsoft Fabric GA / Database Agent for SQL プレビュー | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--ms-blue-900), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "🗄️";
+    position: absolute;
+    right: 24px;
+    bottom: -10px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+.hero .date {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-bottom: 8px;
+}
+.hero h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 16px;
+}
+.hero .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+    margin-bottom: 16px;
+}
+.badge-row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+.section p { margin-bottom: 12px; }
+.section ul { margin: 8px 0 12px 22px; }
+.section li { margin-bottom: 6px; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+strong { color: var(--azure-dark-blue); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 8px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; }
+.before ul, .after ul { margin-left: 20px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { margin-left: 20px; }
+.feature-content p, .feature-content li { font-size: 14px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--ms-blue-800);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+td:first-child { font-weight: 500; white-space: nowrap; color: var(--ms-blue-900); }
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; list-style: none; margin: 16px 0 !important; }
+.steps li {
+    counter-increment: step;
+    position: relative;
+    padding: 10px 12px 10px 52px;
+    margin-bottom: 10px;
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+}
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: white;
+    font-weight: 700;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 18px;
+    border: 2px solid var(--ms-blue-300);
+    background: var(--ms-blue-100);
+}
+.merit-card h4 { color: var(--ms-blue-800); margin-bottom: 8px; font-size: 15px; }
+.merit-card ul { margin-left: 20px; }
+.merit-card li { font-size: 14px; }
+
+.caution-box {
+    background: #FFF8E6;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 18px;
+}
+.caution-box ul { margin-left: 20px; }
+.caution-box li { font-size: 14px; margin-bottom: 8px; }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 18px;
+    margin: 14px 0;
+}
+.usecase-card h4 { color: var(--ms-purple); font-size: 16px; margin-bottom: 10px; }
+.usecase-card p { font-size: 14px; margin-bottom: 8px; }
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--ms-purple);
+    border-radius: 4px;
+    padding: 1px 8px;
+    margin-right: 6px;
+}
+
+/* ===== Pricing / Region ===== */
+.price-box {
+    background: var(--ms-surface-secondary);
+    border: 1px dashed var(--ms-blue-500);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+}
+.price-box ul { margin-left: 20px; }
+.price-box li { font-size: 14px; }
+
+/* ===== Related / links ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+}
+.related-item {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: 14px;
+}
+.related-item strong { display: block; color: var(--ms-blue-800); margin-bottom: 4px; }
+
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { list-style: none; margin: 0 !important; }
+.link-list li {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--ms-border);
+    font-size: 14px;
+}
+.link-list li:last-child { border-bottom: none; }
+
+/* ===== Summary ===== */
+.summary-section {
+    background: linear-gradient(135deg, var(--ms-blue-100), #FFFFFF);
+    border: 2px solid var(--azure-blue);
+}
+
+/* ===== Tags ===== */
+.tag-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ===== Code safety (Mermaid 競合防止) ===== */
+.code-block,
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Footer ===== */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 12px;
+}
+footer a { word-break: break-all; }
+footer p { margin-bottom: 6px; }
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+    .section { padding: 20px 16px; }
+    td:first-child { white-space: normal; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="hero">
+        <div class="date">📅 リリース日: 2026-11-17 (Microsoft Ignite 2026)</div>
+        <h1>Database Hub in Microsoft Fabric<br>Database Hub GA / リアルタイムパフォーマンスダッシュボード GA / Database Agent for SQL (contextual Copilot) プレビュー</h1>
+        <p class="subtitle">SQL Server・Azure SQL・PostgreSQL・Cosmos DB・Fabric SQL を横断する「検出・管理・監視・最適化」の単一コントロールプレーン。データ移動不要、Fabric 容量不要、既存の Entra ID / Azure RBAC 権限のまま利用可能。</p>
+        <div class="badge-row">
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="badge badge-preview">In Preview</span>
+            <span class="service-badge">Database Hub in Microsoft Fabric</span>
+            <span class="service-badge">Azure SQL Database / SQL MI / SQL Server on Azure VM</span>
+            <span class="service-badge">Azure Database for PostgreSQL</span>
+            <span class="service-badge">Azure Cosmos DB</span>
+            <span class="service-badge">Fabric SQL</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Microsoft Ignite 2026 に合わせて、Microsoft Fabric 内の統合データベース運用体験である <strong>Database Hub</strong> が一般提供 (GA) となりました。Database Hub は、SQL Server、Azure SQL、PostgreSQL、Azure Cosmos DB、Fabric SQL といった複数のデータベースエンジンを横断して「検出 (Discover)・管理 (Manage)・監視 (Monitor)・最適化 (Optimize)」を行うための単一のコントロールプレーンです。データベースは Azure・オンプレミスなど既存の場所に置いたまま利用でき、データ移動やミラーリング、監視インフラの追加構築は不要です。</p>
+        <p>同時に、Database Hub の <strong>リアルタイムパフォーマンスダッシュボード</strong> も GA となりました。Performance ページから、Microsoft SQL、Azure Database for PostgreSQL フレキシブルサーバー、Azure Cosmos DB の CPU・メモリ・ストレージ・IO・接続数などの主要シグナルを 1 か所で追跡し、問題のあるサーバーやアカウントへドリルダウンできます。アクセスには Fabric 容量 (capacity) が不要で、既存の Microsoft Entra ID と Azure RBAC の権限がそのまま適用されます。</p>
+        <p>さらに、<strong>Database Agent for SQL with contextual Copilot</strong> がパブリックプレビューとして発表されました。Database Agent は、検出されたデータベースの問題に対して、「なぜその問題が重要か」「考えられる原因」「推奨される次のステップ」を含む、AI 生成かつ証拠 (エビデンス) に基づいた推奨事項を提供します。推奨事項は、観測された証拠と AI が生成した結論を区別して提示され、状態を変更するアクションの前に必ずユーザーのレビューに供されます。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">6+ エンジン</div>
+                <div class="stat-label">横断管理対応 (SQL / PG / Cosmos / Fabric SQL ほか)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">Fabric Free</div>
+                <div class="stat-label">容量・個別ライセンス不要で開始</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">データ移動 0</div>
+                <div class="stat-label">既存の場所のまま監視</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8 シナリオ</div>
+                <div class="stat-label">Database Agent の SQL 問題検出対象</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>複数のデータベースエンジン (SQL Server、Azure SQL、PostgreSQL、Cosmos DB など) を監視するには、Azure ポータルや各サービスの管理ツールを行き来して情報を手動で突き合わせる必要があった</li>
+                    <li>データベース資産全体 (エステート) を横断したインベントリや、パフォーマンス・セキュリティ・ベストプラクティスの所見を一元的に把握する手段がなかった</li>
+                    <li>パフォーマンス問題の検出後、原因分析や対処方針の判断は担当者の経験と手作業の調査に依存していた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Database Hub の Estate / Performance ページで、Azure・Fabric・オンプレミスのデータベースをデータ移動なしに 1 か所で監視・調査できるようになった (GA)</li>
+                    <li>CPU、メモリ、ストレージ、IO、接続数などのリアルタイム・履歴メトリクスをエンジン横断で比較し、ドリルダウンできるようになった (GA)</li>
+                    <li>Database Agent が問題の検出・調査・証拠収集を自動化し、contextual Copilot による AI 支援で原因と次のステップの推奨を提示するようになった (プレビュー)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Estate["🗄️ データベース資産 (移動不要・既存の場所のまま)"]
+        SQL[("Azure SQL / SQL Server / Fabric SQL")]
+        PG[("Azure Database for PostgreSQL")]
+        COSMOS[("Azure Cosmos DB")]
+    end
+    subgraph Hub["☁️ Microsoft Fabric - Database Hub (GA)"]
+        OVERVIEW["📋 Overview / Estate&lt;br/&gt;横断インベントリと所見"]
+        PERF["📈 Performance&lt;br/&gt;リアルタイムダッシュボード (GA)"]
+        AGENT["🤖 Database Agent (Preview)&lt;br/&gt;問題の検出・調査・証拠収集"]
+        COPILOT["💬 Contextual Copilot&lt;br/&gt;AI による推奨事項生成"]
+    end
+    USER(["👤 DBA / アプリケーション所有者"])
+
+    SQL -->|"メタデータ・テレメトリ"| OVERVIEW
+    PG -->|"Azure Monitor メトリクス"| PERF
+    COSMOS --> PERF
+    OVERVIEW --> PERF
+    PERF --> AGENT
+    AGENT -->|"証拠 + シナリオ知識"| COPILOT
+    COPILOT -->|"推奨事項 (レビュー必須)"| USER
+    USER -->|"承認済みワークフローで手動対応"| Estate
+            </pre>
+        </div>
+        <div class="highlight-box">
+            データベースは既存の環境に置いたまま、Database Hub がメタデータとテレメトリを集約します。Database Agent が問題を検出・調査し、contextual Copilot が証拠に基づく推奨事項を生成しますが、変更の実行は必ず人間のレビューと承認済みワークフローを経由します。
+        </div>
+    </section>
+
+    <!-- ===== サービスアップデートの詳細 ===== -->
+    <section class="section">
+        <h2>🚀 サービスアップデートの詳細</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗄️</div>
+            <div class="feature-content">
+                <h4>1. Database Hub in Microsoft Fabric <span class="badge badge-ga">GA</span></h4>
+                <p>Microsoft Fabric 内の統合データベース運用体験が一般提供となりました。</p>
+                <ul>
+                    <li><strong>Estate ページ</strong>: Azure・Fabric・オンプレミス・サポート対象マルチクラウド環境のデータベースを横断するインベントリ。特性・所有者・環境・所見によるフィルタリング、ビューの保存・共有、リソース作成が可能</li>
+                    <li><strong>Overview ページ</strong>: データベース資産全体の Issues (早急な対応が必要な問題) と Suggestions (セキュリティ・パフォーマンス・使用率・コスト効率の改善機会) を優先度付きで表示</li>
+                    <li><strong>権限モデル</strong>: 既存の Microsoft Entra ID と Azure RBAC をそのまま使用。Database Hub がリソースを検出しても追加のアクセス権は付与されない。共有ビューは構成のみを共有し、各ユーザーは自身の権限で見えるリソースのみ閲覧可能</li>
+                    <li><strong>拡張性</strong>: テレメトリを Power BI、OneLake、Fabric Real-Time Dashboards、アラート、カスタムアプリケーションへ拡張可能。SSMS、VS Code の MSSQL 拡張機能、GitHub Copilot CLI / Claude Code などのエージェントから利用できるスキルも提供</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <div class="feature-content">
+                <h4>2. Database Hub リアルタイムパフォーマンスダッシュボード <span class="badge badge-ga">GA</span></h4>
+                <ul>
+                    <li>Performance ページで Microsoft SQL、Azure Database for PostgreSQL フレキシブルサーバー、Azure Cosmos DB の CPU・メモリ・ストレージ・IO・接続数などの主要シグナルを一元的に追跡</li>
+                    <li>問題のあるサーバー・アカウントへのドリルダウンが可能</li>
+                    <li>データベースは Azure でもオンプレミスでもそのままの場所で監視でき、データ移動・ミラーリング・監視インフラの構築は不要</li>
+                    <li>Microsoft SQL では、テンプレートから Fabric Real-Time Dashboards としてカスタムモニターを作成しチームと共有可能</li>
+                    <li>サポート対象リソースでは、Azure Data Explorer 互換エンドポイント経由でクエリパフォーマンス監視テレメトリにアクセスし、KQL によるアドホック分析が可能 (現時点では Microsoft SQL のみ)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>3. Database Agent for SQL with contextual Copilot <span class="badge badge-preview">Public Preview</span></h4>
+                <ul>
+                    <li>検出されたデータベースの問題に対して、「なぜ重要か」「考えられる原因」「推奨される次のステップ」を含む AI 生成・証拠ベースの推奨事項を提供</li>
+                    <li>推奨事項は、利用可能な問題の証拠と Microsoft 作成のシナリオ知識に基づいて生成される</li>
+                    <li>観測された証拠と AI が生成した結論を区別して提示し、証拠が不完全・古い・矛盾している場合は不確実性を明示</li>
+                    <li>状態を変更するアクションの前に、推奨事項が必ずユーザーのレビュー用として提示される</li>
+                    <li>Azure SQL Database の検出・調査のコアロジックは LLM を使わずに動作し、Copilot 容量を消費しない。高 CPU および長時間実行クエリの問題に対してのみ、オプションの contextual AI 支援 (「Explain why」「Analyze slow query」などのプロンプト) が LLM と管理者が割り当てた Copilot 容量を使用する</li>
+                    <li><strong>Azure SQL Database でサポートされる問題シナリオ</strong>: 高 CPU、高メモリ、高 I/O、長時間実行クエリ、ブロッキングクエリ、欠落インデックス、未使用/重複インデックスの削除、クエリプランのリグレッション</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2>⚙️ 技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>提供形態</td><td>Microsoft Fabric 内の統合エクスペリエンス (Fabric ポータル、Power BI、Azure、直接 URL からアクセス可能)</td></tr>
+            <tr><td>対応データベース (Estate)</td><td>Azure SQL Database、Azure SQL Elastic Pools、Azure SQL Managed Instance、SQL database in Fabric、SQL Server enabled by Azure Arc、SQL Server on Azure VM、Azure Database for PostgreSQL フレキシブルサーバー、Azure Cosmos DB</td></tr>
+            <tr><td>Performance ダッシュボード対象</td><td>Microsoft SQL、Azure Database for PostgreSQL フレキシブルサーバー、Azure Cosmos DB (Elastic Pools / SQL MI / Fabric SQL は Estate のみで Performance 未対応)</td></tr>
+            <tr><td>監視メトリクス</td><td>CPU、メモリ、ストレージ、IO、接続数ほか</td></tr>
+            <tr><td>認証・認可</td><td>Microsoft Entra ID + Azure RBAC (既存権限をそのまま使用、追加権限の付与なし)</td></tr>
+            <tr><td>ライセンス</td><td>Fabric Free ライセンスで利用可能。Fabric 容量や個別の Database Hub ライセンスは不要</td></tr>
+            <tr><td>Database Agent 対応 DB (プレビュー)</td><td>Azure SQL Database (serverless、Hyperscale 含む)。Elastic Pools、1 vCore serverless、SQL MI、SQL Server on Azure VM / Arc は未対応</td></tr>
+            <tr><td>Database Agent (PostgreSQL)</td><td>VS Code での限定プレビュー (PostgreSQL 16 以降、South Central US / West US 3 / Sweden Central)。Database Hub での対応は今後提供予定</td></tr>
+            <tr><td>AI の利用</td><td>SQL のコア調査は LLM 不使用。contextual AI 支援 (高 CPU・長時間実行クエリ) のみ LLM + Copilot 容量を使用</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>前提条件</h3>
+        <ol class="steps">
+            <li>Microsoft Entra ID アカウントで Fabric にサインインできること (Fabric Free でも可)</li>
+            <li>監視対象の Azure サブスクリプションに対して少なくとも <strong>Reader</strong> ロール (または同等以上) を保有していること</li>
+            <li>対象サブスクリプションで必要な Azure リソースプロバイダーが登録されていること (Microsoft SQL リソースを Overview / Estate に表示するために必要)</li>
+            <li>Azure SQL Database のパフォーマンス監視には、Estate ページの「Enable Performance Monitoring」または T-SQL スクリプトで拡張プロパティを追加すること</li>
+            <li>Database Agent (SQL) の利用には、データベースが Fabric テナントのホームリージョンに対応するサポート対象リージョンにあること、対象データベースへの読み取り権限、およびエージェント保存時に選択した各データベースの Azure リソースに対する RBAC 書き込み権限が必要</li>
+        </ol>
+
+        <h3>利用手順 (ポータル)</h3>
+        <ol class="steps">
+            <li>Microsoft Fabric (または Power BI) を開き、ナビゲーションから <strong>Database Hub</strong> を選択 (直接 URL: <a href="https://powerbi.com/workloads/fdh/databaseHub" target="_blank" rel="noopener">https://powerbi.com/workloads/fdh/databaseHub</a>)</li>
+            <li><strong>Overview</strong> / <strong>Estate</strong> ページでアクセス可能なデータベース資産と Issues / Suggestions を確認</li>
+            <li><strong>Performance</strong> ページでリアルタイム・履歴メトリクスを確認し、問題のあるリソースへドリルダウン</li>
+            <li>Database Agent を使う場合は <strong>Manage agents</strong> → <strong>Database agent settings</strong> から対象の Azure SQL データベースを選択し、エージェントポリシーを確認して保存 (有効化後、新しい Issue の生成まで約 15 分かかる場合がある)</li>
+        </ol>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2>💡 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>監視インフラの追加構築・データ移動・個別ライセンスが不要で、Fabric Free から無償で開始できるため導入コストが低い</li>
+                    <li>データベース・アプリケーション・プラットフォーム・セキュリティの各チームが共通の運用ビューを持てるため、障害対応や最適化の意思決定が迅速になる</li>
+                    <li>AI による証拠ベースの推奨事項で、問題のトリアージと一次調査にかかる時間を削減できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>複数のデータベースエンジンを横断したリアルタイム・履歴パフォーマンス監視を、ポータルを行き来せずに実施できる</li>
+                    <li>既存の Entra ID / Azure RBAC 権限をそのまま使用するため、新たな権限管理の仕組みが不要</li>
+                    <li>ADX 互換エンドポイントによる KQL でのアドホック分析、Fabric Real-Time Dashboards によるカスタムモニター作成、Power BI / OneLake への拡張など、段階的に高度化できる</li>
+                    <li>Database Agent のコア調査は LLM を使用しないため、Copilot 容量を消費せずに問題検出・調査を自動化できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>Database Hub 本体は GA だが、Database Agent はプレビューであり、サポートされる問題・構成・リージョンは変更される可能性がある</li>
+                <li>Database Agent は Issue から直接データベース変更を適用できない。すべてのシナリオで、承認済みのデータベースワークフローを通じた手動対応が必要</li>
+                <li>Cosmos DB in Fabric、Fabric のミラーリングされたデータベース、Fabric Data Warehouse は現時点で Database Hub 未対応</li>
+                <li>Azure SQL Elastic Pools、Azure SQL Managed Instance、SQL database in Fabric は Estate には表示されるが Performance ページには未対応</li>
+                <li>PostgreSQL フレキシブルサーバーの Performance 監視は既存の Azure Monitor メトリクスを使用し、Database Hub 内での対話的なクエリレベル診断は提供されない</li>
+                <li>Database Agent (SQL) はデータベースが Fabric テナントホームリージョンに対応するリージョンにある必要があり、クロスリージョンの登録は不可</li>
+                <li>生成された所見・推奨事項はオペレーターによるレビューが必須。既存の承認プロセス・変更管理・本番検証を代替するものではない</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2>🎯 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>1️⃣ マルチエンジン環境の一元パフォーマンス監視</h4>
+            <p><span class="usecase-label">シナリオ</span>Azure SQL Database、PostgreSQL フレキシブルサーバー、Cosmos DB を併用するアプリケーションで、パフォーマンス劣化時に複数ポータルを行き来して原因を特定している。</p>
+            <p><span class="usecase-label">実装例</span>Database Hub の Performance ページで全エンジンの CPU / メモリ / IO / 接続数を比較し、異常のあるリソースにドリルダウン。Microsoft SQL についてはテンプレートからカスタムモニターを作成してチームと共有する。</p>
+            <p><span class="usecase-label">効果</span>ツールの切り替えと手動相関作業が不要になり、障害の初動調査時間を短縮できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>2️⃣ Database Agent による Azure SQL の問題トリアージ自動化</h4>
+            <p><span class="usecase-label">シナリオ</span>DBA が不足しており、高 CPU やブロッキングクエリ、欠落インデックスといった典型的な問題の検出と一次分析を自動化したい。</p>
+            <p><span class="usecase-label">実装例</span>Database Hub の Manage agents から対象 Azure SQL データベースを登録し、エージェントポリシーを有効化。検出された Issue で証拠と推奨事項をレビューし、高 CPU / 長時間実行クエリでは contextual Copilot の「Explain why」「Analyze slow query」で分析を深め、承認済みワークフローで対処する。</p>
+            <p><span class="usecase-label">効果</span>問題の検出から証拠収集・推奨事項の提示までが自動化され、DBA はレビューと対処判断に集中できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>3️⃣ データベース資産全体の棚卸しと最適化機会の発見</h4>
+            <p><span class="usecase-label">シナリオ</span>複数サブスクリプションに散在するデータベースのインベントリが整備されておらず、セキュリティ所見や低使用率リソースを把握できていない。</p>
+            <p><span class="usecase-label">実装例</span>Estate ページで環境・所有チーム・所見でフィルタした保存ビュー (例: 「パフォーマンス所見のある本番 DB」「低使用率リソース」) を作成し、チームと共有する。</p>
+            <p><span class="usecase-label">効果</span>データ資産の可視化とコスト最適化・セキュリティ改善の機会発見を、追加インフラなしで実現できる。</p>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <div class="price-box">
+            <ul>
+                <li>Database Hub は <strong>Fabric Free ライセンスで利用可能</strong>。アクセスに Fabric 容量 (capacity) や個別の Database Hub ライセンスは不要</li>
+                <li>Database Agent (Azure SQL) のコアの検出・調査は LLM を使用せず、Copilot 容量を消費しない。オプションの contextual AI 支援は、管理者が割り当てた <strong>Copilot 容量</strong> を使用する</li>
+                <li>Database Agent (PostgreSQL、限定プレビュー) は現時点で無償。課金は GA 前に開始され、事前に登録顧客へ通知される</li>
+                <li>Database Hub から開いたり作成したりするデータベースリソース自体には、それぞれのライセンス・容量・サブスクリプション要件が適用される</li>
+            </ul>
+        </div>
+        <p>詳細は <a href="https://azure.microsoft.com/pricing/details/microsoft-fabric/" target="_blank" rel="noopener">Microsoft Fabric の料金ページ</a> を参照。</p>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2>🌍 利用可能リージョン</h2>
+        <ul>
+            <li>Database Hub のテナント・リージョン別の提供状況は <a href="https://learn.microsoft.com/fabric/admin/region-availability" target="_blank" rel="noopener">Fabric のリージョン可用性ドキュメント</a> を参照</li>
+            <li><strong>Database Agent (Azure SQL、プレビュー)</strong>: データベースが Fabric テナントホームリージョンに対応するサポート対象リージョンにある必要がある</li>
+            <li><strong>Database Agent (PostgreSQL、限定プレビュー)</strong>: South Central US、West US 3、Sweden Central (AI 処理は US Data Zone / EU Data Zone で実行)</li>
+        </ul>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-item"><strong>Microsoft Fabric / Power BI</strong>Database Hub の提供基盤。テレメトリを Real-Time Dashboards、Power BI レポート、OneLake に拡張可能</div>
+            <div class="related-item"><strong>Azure SQL Database / SQL Managed Instance / SQL Server on Azure VM</strong>Database Hub の主要な監視対象。Azure Arc 対応 SQL Server も Estate に表示可能</div>
+            <div class="related-item"><strong>Azure Database for PostgreSQL フレキシブルサーバー</strong>Performance ページで Azure Monitor メトリクスによる監視に対応。Database Agent は VS Code の限定プレビューで提供</div>
+            <div class="related-item"><strong>Azure Cosmos DB</strong>Performance ダッシュボードの監視対象。Database Hub からのアカウント作成にも対応</div>
+            <div class="related-item"><strong>Azure Monitor</strong>PostgreSQL の Performance 監視は既存の Azure Monitor メトリクスを利用</div>
+            <div class="related-item"><strong>Azure Data Explorer (KQL)</strong>ADX 互換エンドポイント経由で Microsoft SQL のクエリパフォーマンステレメトリをアドホック分析可能</div>
+            <div class="related-item"><strong>GitHub Copilot CLI / VS Code / SSMS</strong>Database Hub スキルや拡張機能経由で自然言語によるエステート調査が可能</div>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2>📚 参考リンク</h2>
+        <ul class="link-list">
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=579216" target="_blank" rel="noopener">公式アップデート情報: Generally Available: Database Hub in Microsoft Fabric</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=579644" target="_blank" rel="noopener">公式アップデート情報: Generally Available: Database Hub real-time performance dashboards</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=580091" target="_blank" rel="noopener">公式アップデート情報: Public Preview: Database Agent for SQL with contextual Copilot</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/fabric/database/hub/overview" target="_blank" rel="noopener">Microsoft Learn: Database Hub in Microsoft Fabric</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/fabric/database/hub/database-agents" target="_blank" rel="noopener">Microsoft Learn: Database Agents (Preview)</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/microsoft-fabric/" target="_blank" rel="noopener">料金ページ: Microsoft Fabric</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section summary-section">
+        <h2>📝 まとめ</h2>
+        <p>Database Hub の GA により、SQL Server、Azure SQL、PostgreSQL、Cosmos DB、Fabric SQL を横断するデータベース運用の単一コントロールプレーンが、<strong>Fabric Free ライセンス・Fabric 容量不要・データ移動不要</strong>で利用可能になりました。リアルタイムパフォーマンスダッシュボードの GA と Database Agent for SQL (contextual Copilot) のプレビューにより、「検出 → 調査 → 推奨 → 人間によるレビューと対応」という AI 支援の運用ワークフローが実用段階に入っています。</p>
+        <p>複数のデータベースエンジンを運用している組織は、既存の Entra ID / Azure RBAC 権限のまま無償で開始できるため、まず Estate / Performance ページでの可視化から試すことを推奨します。Database Agent はプレビューであり変更の自動適用はできないため、本番への適用は検出・調査・証拠収集の自動化から段階的に進め、推奨事項には必ずオペレーターのレビューと既存の変更管理プロセスを組み合わせてください。</p>
+        <div class="tag-row">
+            <span class="tag">Microsoft Fabric</span>
+            <span class="tag">Database Hub</span>
+            <span class="tag">Database Agent</span>
+            <span class="tag">Copilot</span>
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">Azure Database for PostgreSQL</span>
+            <span class="tag">Azure Cosmos DB</span>
+            <span class="tag">Monitoring</span>
+            <span class="tag">AI</span>
+            <span class="tag">GA</span>
+            <span class="tag">Preview</span>
+            <span class="tag">Microsoft Ignite</span>
+        </div>
+    </section>
+
+    <!-- ===== フッター ===== -->
+    <footer>
+        <p><strong>出典</strong></p>
+        <p>Azure Updates: <a href="https://azure.microsoft.com/updates?id=579216" target="_blank" rel="noopener">Generally Available: Database Hub in Microsoft Fabric (id=579216)</a></p>
+        <p>Azure Updates: <a href="https://azure.microsoft.com/updates?id=579644" target="_blank" rel="noopener">Generally Available: Database Hub real-time performance dashboards (id=579644)</a></p>
+        <p>Azure Updates: <a href="https://azure.microsoft.com/updates?id=580091" target="_blank" rel="noopener">Public Preview: Database Agent for SQL with contextual Copilot (id=580091)</a></p>
+        <p>Microsoft Learn: <a href="https://learn.microsoft.com/fabric/database/hub/overview" target="_blank" rel="noopener">Database Hub in Microsoft Fabric</a> / <a href="https://learn.microsoft.com/fabric/database/hub/database-agents" target="_blank" rel="noopener">Database Agents (Preview)</a></p>
+        <p>ソースレポート: reports/2026/2026-11-17-database-hub-copilot-agent.md (Azure News Summary プロジェクト)</p>
+        <p>生成日: 2026-11-18 | このインフォグラフィックは Azure ニュースレポートを基に自動生成されています</p>
+    </footer>
+
+</div>
+</body>
+</html>

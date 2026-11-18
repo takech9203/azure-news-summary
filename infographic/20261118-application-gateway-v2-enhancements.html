@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Application Gateway: v2 強化アップデート群</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+}
+
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+.badge-ignite { background: var(--ms-purple); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.header .date {
+    margin-top: 14px;
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+/* Sections */
+.section { margin-bottom: 32px; }
+
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Summary numbered list */
+.update-list { counter-reset: upd; list-style: none; margin: 16px 0; }
+.update-list li {
+    counter-increment: upd;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px 14px 56px;
+    margin: 10px 0;
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.update-list li::before {
+    content: counter(upd);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+.update-list strong { color: var(--azure-dark-blue); }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 32px; font-weight: bold; }
+.stat-label { font-size: 14px; opacity: 0.9; }
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { margin-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 6px 0; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { color: var(--azure-dark-blue); margin-bottom: 6px; font-size: 16px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { margin: 6px 0 0 20px; }
+.feature-content li { margin: 4px 0; }
+.feature-content strong { color: var(--ms-text-primary); }
+
+.note-box {
+    background: #FFF4CE;
+    border-left: 4px solid var(--ms-yellow);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.warn-box {
+    background: #FDE7E9;
+    border-left: 4px solid var(--ms-red);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+/* Tables */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--ms-surface);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    font-size: 14px;
+}
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--ms-border);
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+    background: #1E1E1E;
+}
+
+code.inline {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+}
+
+/* Merit / demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    background: var(--ms-surface);
+    border-top: 4px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 18px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.merit-card.biz { border-top-color: var(--azure-blue); }
+.merit-card h4 { margin-bottom: 10px; color: var(--azure-dark-blue); }
+.merit-card ul { margin-left: 20px; font-size: 14px; }
+.merit-card li { margin: 6px 0; }
+
+.limitation-card {
+    background: var(--ms-surface);
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 14px 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+.usecase-card h4 { color: var(--ms-purple); margin-bottom: 10px; font-size: 16px; }
+.usecase-card p { font-size: 14px; margin: 6px 0; }
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    background: var(--ms-blue-500);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-right: 6px;
+}
+.usecase-label.effect { background: var(--ms-green); }
+
+/* Region chips */
+.region-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.region-chip {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+.region-chip.jp { background: var(--ms-green); color: white; }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.related-card h4 { color: var(--azure-blue); font-size: 15px; margin-bottom: 6px; }
+.related-card p { color: var(--ms-text-secondary); }
+
+/* Setup steps */
+.step-list { list-style: none; margin: 14px 0; }
+.step-list li {
+    position: relative;
+    padding: 12px 16px 12px 48px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    margin: 8px 0;
+    font-size: 14px;
+}
+.step-list li .step-icon {
+    position: absolute;
+    left: 12px;
+    top: 12px;
+    font-size: 20px;
+}
+.step-list strong { color: var(--azure-dark-blue); }
+
+/* Pricing */
+.pricing-card {
+    background: var(--ms-surface);
+    border-left: 4px solid var(--ms-yellow);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+}
+.pricing-card strong { color: var(--azure-dark-blue); }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+}
+.summary-box p { margin: 10px 0; font-size: 15px; }
+.axis-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+.axis-card {
+    background: white;
+    border-radius: 8px;
+    padding: 14px;
+    text-align: center;
+    border: 1px solid var(--ms-blue-300);
+    font-size: 14px;
+}
+.axis-card .axis-icon { font-size: 28px; margin-bottom: 6px; }
+.axis-card strong { display: block; color: var(--azure-dark-blue); margin-bottom: 4px; }
+
+/* Links */
+.link-list { list-style: none; margin: 10px 0; }
+.link-list li { margin: 8px 0; font-size: 14px; padding-left: 24px; position: relative; }
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+/* Tags */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    background: var(--azure-dark-blue);
+    color: white;
+    border-radius: 12px;
+    padding: 24px;
+    margin-top: 32px;
+    font-size: 13px;
+}
+.footer a { color: var(--azure-light-blue); }
+.footer h4 { margin-bottom: 10px; font-size: 15px; }
+.footer ul { list-style: none; }
+.footer li { margin: 5px 0; }
+.footer .meta { margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.2); opacity: 0.85; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Application Gateway</span>
+            <span class="badge badge-preview">In Preview</span>
+            <span class="badge badge-ignite">Microsoft Ignite 2026</span>
+        </div>
+        <h1>Application Gateway v2 強化アップデート群</h1>
+        <div class="subtitle">次世代エラスティックアーキテクチャ / 高度なロードバランシング / 集中型ユーザー認証 + JWT 検証 / Confidential Compute / 高度なルーティングルール (いずれもパブリックプレビュー)</div>
+        <div class="date">📅 リリース日: 2026-11-17</div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title">📋 概要</h2>
+        <div class="highlight-box">
+            Microsoft Ignite 2026 に合わせて、Azure Application Gateway v2 に関する <strong>5 つの大型アップデート</strong>がパブリックプレビューとして一斉に発表されました。基盤アーキテクチャの刷新からトラフィック制御、認証、機密データ保護まで、アプリケーションデリバリー層を包括的に強化する内容です。
+        </div>
+
+        <ol class="update-list">
+            <li><strong>次世代エラスティックアーキテクチャ</strong>: プロビジョニング時間を最大 50%、オートスケール時間を最大 70% 短縮する新しいデプロイメントティア「Accelerated (Preview)」</li>
+            <li><strong>高度なロードバランシング</strong>: バックエンドプールの優先度・重み付け、サーバーレベルの Least Connections / Weighted Round Robin アルゴリズム</li>
+            <li><strong>集中型ユーザー認証 + JWT 検証</strong>: OpenID Connect によるユーザーサインインと、集中管理ポリシーによる JWT 検証</li>
+            <li><strong>Confidential Compute サポート</strong>: データプレーンを機密コンピューティング環境で実行し、処理中のデータ (data-in-use) をハードウェアベースで保護</li>
+            <li><strong>高度なルーティングルール</strong>: HTTP ヘッダー、クエリ文字列、クライアント IP、HTTP メソッド、パスに基づく条件ベースルーティング</li>
+        </ol>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">5</div>
+                <div class="stat-label">同時発表のパブリックプレビュー</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">-50%</div>
+                <div class="stat-label">プロビジョニング時間 (最大)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">-70%</div>
+                <div class="stat-label">オートスケール時間 (最大)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">¥0</div>
+                <div class="stat-label">新ティアの追加コスト</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>従来のデプロイメントティアでは、プロビジョニングやオートスケールに時間がかかり、急激なトラフィック変動への追従に課題</li>
+                    <li>ロードバランシングはプール内の均等分散が基本で、プール間の優先度やサーバーごとの重み付けといった細かな制御ができない</li>
+                    <li>ユーザー認証やトークン検証はバックエンドアプリ側で実装が必要。複数のゲートウェイ・アプリに同じ認証設定を個別構成 (既存の JWT 検証プレビューはゲートウェイごとの構成)</li>
+                    <li>TLS 終端後の復号データは標準的なプラットフォーム保護のみで、処理中データへのハードウェアベース保護なし</li>
+                    <li>パスベースルーティング中心で、ヘッダーやクエリ文字列など他の HTTP 属性に基づく柔軟なルーティングができない</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>新ティアでプロビジョニング最大 50% 短縮・オートスケール最大 70% 高速化。スケールイン/アウト時も接続を維持し、将来のスケール上限引き上げの基盤に (追加コストなし)</li>
+                    <li>プール単位の Priority / Weights、サーバー単位の Least Connections / Weighted Round Robin で、AI ワークロード (優先 LLM への振り分け) などポリシー駆動のトラフィック管理が可能に</li>
+                    <li>Application Gateway が OpenID Connect でサインイン。認証ポリシーを一度構成すれば複数のルーティングルール・ゲートウェイに一貫適用。バックエンドの認証コードを削減</li>
+                    <li>Confidential Compute アドオンで、TLS 終端・WAF 検査・ルーティング評価中の復号済みデータをハードウェアベースのメモリ暗号化と分離で保護</li>
+                    <li>高度なルーティングルールで A/B テスト、カナリアデプロイ、API バージョニング、マルチテナント、トラフィックセグメンテーションをゲートウェイ層で実現</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title">🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    User([👤 クライアント / API 呼び出し元]) -->|HTTPS| AGW
+
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph AGW["🛡️ Application Gateway v2 (Accelerated ティア: Preview)"]
+            Auth["🔐 集中型認証ポリシー<br/>OIDC サインイン / JWT 検証"]
+            Routing{"🔀 高度なルーティングルール<br/>ヘッダー / クエリ / IP / メソッド / パス"}
+            LB["⚖️ 高度なロードバランシング<br/>プール優先度・重み / Least Connections"]
+            CC["🔒 Confidential Compute<br/>TEE でデータ処理を保護"]
+        end
+        Entra["🆔 Microsoft Entra ID"]
+        PoolA[("🖥️ バックエンドプール A<br/>(例: 優先 LLM)")]
+        PoolB[("🖥️ バックエンドプール B<br/>(例: カナリア版)")]
+    end
+
+    Auth <-->|トークン検証| Entra
+    Auth --> Routing
+    Routing --> LB
+    LB --> PoolA
+    LB --> PoolB
+    CC -.->|データプレーン全体を保護| AGW
+            </pre>
+        </div>
+        <div class="highlight-box">
+            リクエストは<strong>集中型認証ポリシー</strong>で検証された後、<strong>高度なルーティングルール</strong>で条件評価され、<strong>高度なロードバランシング</strong>でバックエンドプールへ分散されます。データプレーン全体を <strong>Confidential Compute</strong> 環境で実行でき、処理中の復号データも保護されます。
+        </div>
+    </section>
+
+    <!-- ===== 詳細 ===== -->
+    <section class="section">
+        <h2 class="section-title">⚙️ サービスアップデートの詳細</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>1. 次世代エラスティックアーキテクチャ (Public Preview)</h4>
+                <ul>
+                    <li>要求の厳しいワークロードと動的なトラフィックパターン向けに構築された新しいプラットフォーム</li>
+                    <li>現行のデプロイメントティア比で、<strong>プロビジョニング時間を最大 50%、オートスケール時間を最大 70% 短縮</strong></li>
+                    <li>より高い構成・データプレーンのスケール上限への基盤を提供し、スケールアウト/スケールイン時もアプリケーション接続をシームレスに維持</li>
+                    <li><strong>追加コストなし</strong>。新規 Application Gateway 作成時に Deployment tier で「Accelerated (Preview)」を選択してオプトイン</li>
+                    <li>プレビュー期間中は一部リージョンで利用可能 (順次拡大)。既存ゲートウェイには影響なし</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚖️</div>
+            <div class="feature-content">
+                <h4>2. 高度なロードバランシング (Public Preview)</h4>
+                <ul>
+                    <li><strong>バックエンドプールレベル</strong>:
+                        <ul>
+                            <li><strong>Priority (優先度)</strong>: 優先プールを指定可能。AI アプリケーションでは優先する LLM デプロイメントをホストするプールを優先できる</li>
+                            <li><strong>Weights (重み)</strong>: 対象プール間の相対的なトラフィック配分を構成可能。バックエンド容量やデプロイ要件の差異を反映できる</li>
+                        </ul>
+                    </li>
+                    <li><strong>サーバーレベル (プール内)</strong>:
+                        <ul>
+                            <li><strong>Least Connections</strong>: アクティブ接続数が少ないサーバーへ振り分け</li>
+                            <li><strong>Weighted Round Robin</strong>: 構成したサーバー重みに応じてトラフィックを分散</li>
+                        </ul>
+                    </li>
+                    <li>AI アプリケーションと Web トラフィックの両方に対応する、柔軟でポリシー駆動のトラフィック管理を実現</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>3. 集中型ユーザー認証 + JWT 検証 (Public Preview)</h4>
+                <ul>
+                    <li><strong>ユーザー認証</strong>: トラフィックが Web アプリケーションに到達する前に、Application Gateway が OpenID Connect でユーザーをサインイン。認証を一度構成すれば複数のルーティングルール・複数の Application Gateway に一貫して適用可能。バックエンドの認証コード削減と一貫したサインイン体験を実現</li>
+                    <li><strong>JWT 検証 (刷新版)</strong>: API やサービス間トラフィック向けに、Microsoft Entra ID が発行したベアラートークンをゲートウェイで検証。署名・発行者 (iss)・対象者 (aud)・有効期間を検証し、検証済みリクエストには <code class="inline">x-msft-entra-identity</code> ヘッダー (<code class="inline">tenantId:oid</code>) をバックエンドへ転送</li>
+                    <li>認証ポリシーはリージョナルリソースで、利用する Application Gateway と<strong>同一リージョン</strong>に配置する必要がある</li>
+                </ul>
+                <div class="warn-box">⚠️ <strong>注意</strong>: 既存の JWT 検証プレビューは GA に移行せず、廃止が予定されている (正式な廃止通知は別途公開予定。今回の発表は正式な廃止通知ではない)。新規デプロイでは集中型 JWT 検証ポリシーの利用が推奨される</div>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>4. Confidential Compute サポート (Public Preview)</h4>
+                <ul>
+                    <li>Application Gateway のデータプレーンを機密コンピューティング環境 (Trusted Execution Environment: TEE) で実行するマネージドアドオン</li>
+                    <li><strong>ハードウェアベースのメモリ保護</strong>: データプレーンが使用するメモリをハードウェアで暗号化</li>
+                    <li><strong>ハードウェア強制の分離</strong>: ハイパーバイザー、ホスト管理コード、他の VM からワークロードを分離</li>
+                    <li><strong>データ使用中 (data-in-use) の保護</strong>: TLS 終端、WAF 検査、ルーティングポリシー評価の間も機密データを保護</li>
+                    <li>TLS 終端、WAF、L7 ルーティング、L4 プロキシ、ロードバランシング、可観測性などのマネージド機能はそのまま利用可能</li>
+                    <li>Azure Key Vault (Standard/Premium) 連携では秘密鍵と処理データを機密環境内で保護。Managed HSM 連携では秘密鍵を HSM 外に出さない構成も可能</li>
+                    <li>機密 Web アプリケーション、API、AI アプリケーション、規制対象ワークロードに特に有用 (Confidential VM バックエンドと組み合わせた一貫した機密アーキテクチャの構築など)</li>
+                </ul>
+                <div class="warn-box">⚠️ <strong>注意</strong>: アプリケーションコード自体の脆弱性や、侵害されたバックエンドサーバーに対する保護は提供しない</div>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>5. 高度なルーティングルール (Public Preview)</h4>
+                <ul>
+                    <li>HTTP リクエスト属性を使った条件ベースのルーティングロジックを定義可能。従来のパスベースルーティングを超える柔軟性を提供</li>
+                    <li><strong>サポートされる条件タイプ</strong>: Header、QueryString、ClientIP (CIDR 形式)、Method (GET/HEAD/POST/PUT/DELETE/CONNECT/OPTIONS/PATCH、完全一致のみ)、Path</li>
+                    <li>完全一致とパターンマッチ (RE2 互換の正規表現) をサポート。条件セット内は <strong>AND 評価</strong>、条件値の配列は <strong>OR 評価</strong></li>
+                    <li>ルールは優先度 (小さい値が先) で評価され、最初に一致したルールで振り分け先が決定。どのルールにも一致しない場合は既定のバックエンドプール (またはリダイレクト) へ</li>
+                    <li>Rewrite ルールセットやリダイレクト構成との組み合わせも可能。WAF ポリシーはルーティング判定の前に評価される (ルール単位の WAF ポリシー関連付けは非対応)</li>
+                    <li><strong>ユースケース</strong>: A/B テスト・カナリアデプロイ、API バージョニング、マルチテナントアプリ、フィーチャーフラグ、パートナー統合、モバイル/デスクトップのトラフィック分離</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title">📐 技術仕様</h2>
+
+        <div class="card">
+            <h4 style="color: var(--azure-dark-blue); margin-bottom: 8px;">高度なルーティングルールの上限 (プレビュー時点)</h4>
+            <div class="table-wrap">
+                <table>
+                    <tr><th>項目</th><th>上限</th></tr>
+                    <tr><td>Advanced Routing Map (ゲートウェイあたり)</td><td>100</td></tr>
+                    <tr><td>Map あたりのルール数</td><td>100</td></tr>
+                    <tr><td>条件セット (ゲートウェイあたり)</td><td>10,000</td></tr>
+                    <tr><td>条件セットあたりの条件数</td><td>5</td></tr>
+                    <tr><td>条件あたりのプロパティ値数</td><td>5</td></tr>
+                    <tr><td>プロパティ値 / 正規表現の長さ</td><td>128 文字</td></tr>
+                </table>
+            </div>
+            <div class="note-box">関連付けできるのは <strong>Basic フロントエンドリスナーのみ</strong> (Multisite リスナー、L4 TCP/TLS プロキシは非対応)</div>
+        </div>
+
+        <div class="card">
+            <h4 style="color: var(--azure-dark-blue); margin-bottom: 8px;">Confidential Compute</h4>
+            <div class="table-wrap">
+                <table>
+                    <tr><th>項目</th><th>詳細</th></tr>
+                    <tr><td>対象 SKU</td><td>Standard_v2、WAF_v2 (アドオンとして提供)</td></tr>
+                    <tr><td>有効化タイミング</td><td>ゲートウェイの新規作成時のみ (既存ゲートウェイでは有効化不可)</td></tr>
+                    <tr><td>API バージョン</td><td>2026-05-01 以降を使用</td></tr>
+                    <tr><td>Key Vault 連携</td><td>Standard / Premium / Managed HSM に対応</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h4 style="color: var(--azure-dark-blue); margin-bottom: 8px;">集中型認証ポリシー (JWT 検証)</h4>
+            <div class="table-wrap">
+                <table>
+                    <tr><th>構成</th><th>サポート</th></tr>
+                    <tr><td>Basic ルーティングルール</td><td>✅ 対応</td></tr>
+                    <tr><td>Advanced ルーティングルール (パス条件含む)</td><td>✅ 対応</td></tr>
+                    <tr><td>パスベースルーティングルールタイプ</td><td>❌ 非対応 (プレビュー期間中)</td></tr>
+                    <tr><td>HTTPS リスナー</td><td>✅ 必須 (HTTP リスナーは非対応)</td></tr>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title">🛠️ 設定方法</h2>
+
+        <div class="card">
+            <h4 style="color: var(--azure-dark-blue); margin-bottom: 8px;">前提条件</h4>
+            <ol class="step-list">
+                <li><span class="step-icon">1️⃣</span>Application Gateway v2 (<strong>Standard_v2</strong> または <strong>WAF_v2</strong>)</li>
+                <li><span class="step-icon">2️⃣</span>(認証ポリシーの場合) HTTPS リスナー、バックエンドターゲット、Microsoft Entra ID への API 登録、Entra メタデータエンドポイントへの TCP 443 疎通</li>
+                <li><span class="step-icon">3️⃣</span>(Confidential Compute の場合) 必要な Confidential VM SKU をサポートするリージョン</li>
+            </ol>
+        </div>
+
+        <div class="card">
+            <h4 style="color: var(--azure-dark-blue); margin-bottom: 8px;">Azure Portal</h4>
+            <ul class="step-list">
+                <li><span class="step-icon">⚡</span><strong>次世代エラスティックアーキテクチャ</strong>: 新規 Application Gateway 作成時に Deployment tier で「Accelerated (Preview)」を選択</li>
+                <li><span class="step-icon">🔒</span><strong>Confidential Compute</strong>: 新規作成時に「Confidential Compute」チェックボックスを選択</li>
+                <li><span class="step-icon">🔐</span><strong>JWT 検証</strong>: Application Gateway の [Settings] &gt; [Authentication policies (Preview)] から [Create] &gt; [JWT validation] を選択し、発行者 (Issuer)・対象者 (Audience)・クライアント ID・未認証リクエストの動作 (Deny/Allow) を構成した上で、ゲートウェイと HTTPS ルーティングルールに関連付け</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h4 style="color: var(--azure-dark-blue); margin-bottom: 8px;">REST API (Confidential Compute)</h4>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">JSON</span><span style="color:#808080;">REST API</span></div>
+                <pre><code class="language-json">"enableConfidentialCompute": true</code></pre>
+            </div>
+            <p style="font-size: 14px;">API バージョン <strong>2026-05-01 以降</strong>を使用します。</p>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title">💡 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card biz">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>Microsoft Ignite 2026 で発表された一連の機能強化により、ロードバランサーのリプレイスや WAF 製品の追加なしに、AI 時代のアプリケーションデリバリー要件 (LLM ルーティング、ゼロトラスト、機密データ保護) に対応できる</li>
+                    <li>認証をゲートウェイ層に集約することで、バックエンドの認証実装・運用コストを削減し、アプリ間で一貫したセキュリティポスチャを実現</li>
+                    <li>金融・医療など規制対象ワークロードで、data-in-use 保護までカバーするコンプライアンス対応を強化</li>
+                    <li>エラスティックアーキテクチャは追加コストなしで性能向上を享受できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>プロビジョニング最大 50% / オートスケール最大 70% 高速化により、急激なトラフィックスパイクへの追従性が向上</li>
+                    <li>プール優先度・重み・サーバーレベルアルゴリズムによるきめ細かなトラフィック制御</li>
+                    <li>条件ベースルーティングでカナリアデプロイや A/B テストをインフラ層で宣言的に実現</li>
+                    <li>1 つの認証ポリシーを複数ゲートウェイに適用でき、構成ドリフトを防止</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title">⚠️ デメリット・制約事項</h2>
+        <div class="limitation-card">いずれも<strong>パブリックプレビュー</strong>であり、SLA は提供されない。本番ワークロードでの利用は非推奨 (プレビューの補足利用条件が適用される)</div>
+        <div class="limitation-card"><strong>次世代エラスティックアーキテクチャ</strong>は新規ゲートウェイ作成時のオプトインのみで、プレビュー期間中は一部リージョン限定</div>
+        <div class="limitation-card"><strong>Confidential Compute</strong> は既存ゲートウェイでは有効化できず、新規作成時のみ。対応リージョンも限定的。追加のアドオン料金が発生する。アプリケーションコードの脆弱性やバックエンド侵害は保護対象外</div>
+        <div class="limitation-card"><strong>高度なルーティングルール</strong>は Multisite リスナー・L4 TCP/TLS プロキシ非対応。ルール単位の WAF ポリシー関連付けは不可</div>
+        <div class="limitation-card"><strong>集中型認証ポリシー</strong>は HTTPS リスナー必須。パスベースルーティングルールタイプは非対応。認証ポリシーはゲートウェイと同一リージョンに配置する必要がある</div>
+        <div class="limitation-card"><strong>既存の JWT 検証プレビュー</strong>は GA へ移行せず廃止予定のため、既存利用者は移行計画が必要 (自動移行はされない)</div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title">🎯 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🤖 ユースケース 1: LLM バックエンドの優先ルーティング</h4>
+            <p><span class="usecase-label">シナリオ</span>複数リージョン・複数モデルの LLM デプロイメントを持つ AI アプリケーションで、優先モデルへトラフィックを集中させつつ、容量に応じてフォールバックさせたい。</p>
+            <p><span class="usecase-label">実装</span>高度なロードバランシングで優先 LLM デプロイメントをホストするプールに Priority を設定し、Weights で残りのプールへの配分を調整する。</p>
+            <p><span class="usecase-label effect">効果</span>アプリケーション側のロジック変更なしに、推論バックエンドのトラフィック配分をゲートウェイ層で制御できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🧪 ユースケース 2: ヘッダーベースのカナリアデプロイ</h4>
+            <p><span class="usecase-label">シナリオ</span>特定の HTTP ヘッダーを持つリクエストだけを新バージョンのバックエンドに振り向けたい。</p>
+            <p><span class="usecase-label">実装例</span>高度なルーティングルールの Header 条件:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">JSON</span><span style="color:#808080;">Header 条件</span></div>
+                <pre><code class="language-json">{
+  "conditionType": "Header",
+  "propertyName": "X-Canary",
+  "propertyValues": ["true"]
+}</code></pre>
+            </div>
+            <p><span class="usecase-label effect">効果</span>対象リクエストのみ新バージョンへルーティングし、問題発生時はルールを削除するだけでロールバックできる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🏥 ユースケース 3: 規制対象 API のエンドツーエンド機密化</h4>
+            <p><span class="usecase-label">シナリオ</span>医療情報を扱う API で、バックエンドを Confidential VM で運用しており、ゲートウェイでの TLS 終端・WAF 検査中のデータも保護したい。</p>
+            <p><span class="usecase-label">実装</span>新規 Application Gateway (WAF_v2) 作成時に Confidential Compute を有効化し、Managed HSM で TLS 秘密鍵を保護。集中型 JWT 検証ポリシーで API への全リクエストのトークンを検証する。</p>
+            <p><span class="usecase-label effect">効果</span>転送中・保存中に加え、ゲートウェイ処理中 (data-in-use) のデータまでハードウェアベースで保護され、認証もゲートウェイ層で強制される。</p>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title">💰 料金</h2>
+        <div class="pricing-card"><strong>次世代エラスティックアーキテクチャ</strong>: 追加コストなし (公式アップデートに明記)</div>
+        <div class="pricing-card"><strong>Confidential Compute</strong>: Standard_v2 / WAF_v2 SKU への時間課金アドオン。固定料金 + キャパシティユニット料金に加え、Confidential Compute アドオンの時間料金が発生</div>
+        <div class="pricing-card"><strong>その他の機能</strong> (高度なロードバランシング、認証ポリシー、高度なルーティングルール) の個別料金は公式アップデートに記載なし</div>
+        <p style="font-size: 14px; margin-top: 10px;">リージョン別の料金は <a href="https://azure.microsoft.com/pricing/details/application-gateway/" target="_blank">Application Gateway 料金ページ</a>を参照してください。</p>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title">🌏 利用可能リージョン</h2>
+        <div class="card">
+            <h4 style="color: var(--azure-dark-blue); margin-bottom: 6px;">次世代エラスティックアーキテクチャ</h4>
+            <p style="font-size: 14px;">プレビュー期間中は一部リージョンのみ (順次追加予定。具体的なリージョンリストは公式アップデートに記載なし)</p>
+        </div>
+        <div class="card">
+            <h4 style="color: var(--azure-dark-blue); margin-bottom: 6px;">Confidential Compute (17 リージョン)</h4>
+            <div class="region-chips">
+                <span class="region-chip">Australia East</span>
+                <span class="region-chip">Canada Central</span>
+                <span class="region-chip">Central India</span>
+                <span class="region-chip">Central US</span>
+                <span class="region-chip">East US</span>
+                <span class="region-chip">East US 2</span>
+                <span class="region-chip">France Central</span>
+                <span class="region-chip">Germany West Central</span>
+                <span class="region-chip jp">Japan East</span>
+                <span class="region-chip">North Central US</span>
+                <span class="region-chip">South Central US</span>
+                <span class="region-chip">Sweden Central</span>
+                <span class="region-chip">UAE North</span>
+                <span class="region-chip">UK South</span>
+                <span class="region-chip">West US</span>
+                <span class="region-chip">West US 2</span>
+                <span class="region-chip">West US 3</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title">🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🆔 Microsoft Entra ID</h4>
+                <p>集中型ユーザー認証 (OpenID Connect) と JWT 検証のトークン発行・検証基盤</p>
+            </div>
+            <div class="related-card">
+                <h4>🔑 Azure Key Vault / Managed HSM</h4>
+                <p>TLS 証明書・秘密鍵の管理。Managed HSM 利用時は秘密鍵をゲートウェイ環境外で保護可能</p>
+            </div>
+            <div class="related-card">
+                <h4>🖥️ Azure Confidential VM</h4>
+                <p>Confidential Compute バックエンドと組み合わせることで、アプリケーション層からデリバリー層まで一貫した機密コンピューティングアーキテクチャを構築可能</p>
+            </div>
+            <div class="related-card">
+                <h4>🛡️ Azure Web Application Firewall (WAF)</h4>
+                <p>WAF_v2 SKU で Confidential Compute・高度なルーティングルールと併用可能。WAF 評価はルーティング判定より先に実行される</p>
+            </div>
+            <div class="related-card">
+                <h4>📊 Azure Monitor</h4>
+                <p>Confidential Compute 有効時もアクセスログ・ファイアウォールログ・アクティビティログなどの診断を継続利用可能</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title">📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Microsoft Ignite 2026 で発表された今回の 5 つのパブリックプレビューは、Application Gateway v2 を次の <strong>4 つの軸</strong>で大幅に強化するものです。</p>
+            <div class="axis-grid">
+                <div class="axis-card">
+                    <div class="axis-icon">⚡</div>
+                    <strong>高速にスケールする基盤</strong>
+                    エラスティックアーキテクチャ
+                </div>
+                <div class="axis-card">
+                    <div class="axis-icon">⚖️</div>
+                    <strong>賢いトラフィック制御</strong>
+                    高度なロードバランシング・ルーティング
+                </div>
+                <div class="axis-card">
+                    <div class="axis-icon">🔐</div>
+                    <strong>ゲートウェイ層での認証</strong>
+                    OIDC + JWT
+                </div>
+                <div class="axis-card">
+                    <div class="axis-icon">🔒</div>
+                    <strong>処理中データの保護</strong>
+                    Confidential Compute
+                </div>
+            </div>
+            <p>特に AI アプリケーションの LLM バックエンド制御や、規制対象ワークロードの data-in-use 保護は、<strong>Solutions Architect にとって設計の選択肢を広げる重要なアップデート</strong>です。</p>
+            <p>いずれもプレビューのため本番適用は時期尚早ですが、<strong>新規ゲートウェイ作成時のみ有効化できる機能</strong> (Accelerated ティア、Confidential Compute) があるため、将来の採用を見据えた検証環境での評価を早めに始めることを推奨します。また、既存の JWT 検証プレビューを利用中の場合は、廃止が予定されているため集中型認証ポリシーへの移行を計画してください。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Application Gateway</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">In preview</span>
+            <span class="tag">Microsoft Ignite</span>
+            <span class="tag">Load Balancing</span>
+            <span class="tag">Authentication</span>
+            <span class="tag">JWT</span>
+            <span class="tag">Confidential Computing</span>
+            <span class="tag">Routing</span>
+        </div>
+    </section>
+
+    <!-- ===== フッター ===== -->
+    <footer class="footer">
+        <h4>📚 出典・参考リンク</h4>
+        <ul>
+            <li><a href="https://azure.microsoft.com/updates?id=580428" target="_blank">公式アップデート: Next-generation elastic architecture for Azure Application Gateway v2</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=580423" target="_blank">公式アップデート: Advanced load balancing in Azure Application Gateway</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=580418" target="_blank">公式アップデート: Centralized user authentication + JWT validation for Azure Application Gateway</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=579649" target="_blank">公式アップデート: Azure Application Gateway confidential compute support</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=579324" target="_blank">公式アップデート: Azure Application Gateway advanced routing rules</a></li>
+            <li><a href="https://learn.microsoft.com/azure/application-gateway/confidential-compute-overview" target="_blank">Microsoft Learn: Application Gateway Confidential Compute Overview</a></li>
+            <li><a href="https://learn.microsoft.com/azure/application-gateway/advanced-rules" target="_blank">Microsoft Learn: Advanced routing rules on Azure Application Gateway</a></li>
+            <li><a href="https://learn.microsoft.com/azure/application-gateway/json-web-token-overview" target="_blank">Microsoft Learn: JSON Web Token (JWT) validation in Azure Application Gateway</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/application-gateway/" target="_blank">Application Gateway 料金ページ</a></li>
+        </ul>
+        <div class="meta">
+            ソースレポート: reports/2026/2026-11-17-application-gateway-v2-enhancements.md | Azure News Summary プロジェクト | 生成日: 2026-11-18
+        </div>
+    </footer>
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

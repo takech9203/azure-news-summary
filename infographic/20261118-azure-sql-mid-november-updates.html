@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure SQL: 2026 年 11 月中旬アップデートまとめ</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+}
+
+.hero .date-badge {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 16px;
+}
+
+.hero .subtitle {
+    font-size: 16px;
+    opacity: 0.95;
+    margin-bottom: 20px;
+}
+
+.service-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--azure-dark-blue);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 12px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+.sub-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    white-space: nowrap;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* Highlight */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 30px; font-weight: 900; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid { display: flex; justify-content: center; }
+
+.diagram-caption {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-card.preview { border-left-color: var(--ms-yellow); }
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 {
+    font-size: 15px;
+    margin-bottom: 6px;
+    color: var(--ms-blue-900);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.feature-content ul {
+    padding-left: 18px;
+    font-size: 13.5px;
+    color: var(--ms-text-secondary);
+}
+
+.feature-content li { margin-bottom: 4px; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: var(--ms-blue-800);
+}
+
+/* Merit grid */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.merit-col {
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.merit-col h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.merit-col ul { padding-left: 18px; font-size: 13.5px; }
+.merit-col li { margin-bottom: 8px; }
+
+/* Caution */
+.caution-list { list-style: none; }
+
+.caution-list li {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 16px;
+    margin-bottom: 10px;
+    font-size: 13.5px;
+}
+
+/* Use cases */
+.usecase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 18px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.usecase-card h4 {
+    font-size: 15px;
+    color: var(--ms-purple);
+    margin-bottom: 10px;
+}
+
+.usecase-card p { font-size: 13px; margin-bottom: 8px; }
+
+.usecase-card .label {
+    display: inline-block;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    background: var(--ms-blue-200);
+    border-radius: 4px;
+    padding: 0 6px;
+    margin-right: 4px;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+}
+
+.related-item {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 13.5px;
+}
+
+.related-item strong { color: var(--ms-blue-800); }
+
+/* Links */
+a { color: var(--azure-blue); word-break: break-all; }
+
+.link-list { padding-left: 20px; font-size: 13.5px; }
+.link-list li { margin-bottom: 6px; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 14.5px;
+}
+
+/* Tags */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+.tag {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-blue-400);
+    color: var(--ms-blue-800);
+    border-radius: 14px;
+    padding: 2px 12px;
+    font-size: 12px;
+}
+
+/* Footer */
+footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    font-size: 12.5px;
+    margin-bottom: 24px;
+}
+
+footer h3 { font-size: 14px; margin-bottom: 10px; }
+footer a { color: var(--azure-light-blue); }
+footer ul { padding-left: 18px; }
+footer li { margin-bottom: 4px; }
+footer .copyright {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    opacity: 0.85;
+}
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <div class="hero">
+        <span class="date-badge">📅 リリース日: 2026-11-17 (Microsoft Ignite)</span>
+        <h1>Azure SQL: 2026 年 11 月中旬アップデートまとめ</h1>
+        <p class="subtitle">Ignite に合わせて 10 件のアナウンスが一斉発表 — 移行・セキュリティ・回復性・パフォーマンスを全方位カバー</p>
+        <div class="service-badges">
+            <span class="service-badge">Azure SQL Database</span>
+            <span class="service-badge">Azure SQL Managed Instance</span>
+            <span class="service-badge">SQL Server (Azure VM 含む)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+    </div>
+
+    <!-- 概要 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Microsoft Ignite に合わせて、Azure SQL ファミリー (Azure SQL Database、Azure SQL Managed Instance、SQL Server) に関する多数のアップデートが 2026 年 11 月 17 日に一斉に発表された。関連する <strong>10 件のアナウンス</strong>をまとめて解説する。</p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">10 件</div>
+                <div class="stat-label">まとめたアナウンス数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">220 MiB/s</div>
+                <div class="stat-label">Next-gen GP 最大ログレート</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">AES-256</div>
+                <div class="stat-label">TDE キーサポート (GA)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最大 12 DB</div>
+                <div class="stat-label">1 回のスナップショット操作</div>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            <p><strong>GA (一般提供)</strong>: SQL Server in Azure VMs 向けスナップショットバックアップ、TDE での AES-256 キーサポート、Microsoft SQL 製品群横断のあいまい文字列マッチング (Fuzzy string match)、SQL MI Next-gen General Purpose ティアのゾーン冗長対応、Managed Instance link の複数データベース可用性グループ対応など。</p>
+            <p style="margin-top:8px;"><strong>パブリックプレビュー</strong>: Azure SQL Database Hyperscale のクロスデータベースクエリ、SQL Server 2025 の Ubuntu 26.04 LTS サポート、SSMS 新機能群 (AI 支援チューニング、BYOM など)。</p>
+            <p style="margin-top:8px;">移行 (MI link、Hyperscale クロスデータベースクエリ)、セキュリティ (AES TDE、Regex DDM、LTR バックアップの不変性)、回復性 (スナップショットバックアップ、ゾーン冗長)、パフォーマンス (Next-gen GP のログレート向上) と、<strong>Solutions Architect が押さえるべき領域を広くカバー</strong>するアップデート群である。</p>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Azure SQL Database (Hyperscale 含む) ではネイティブなクロスデータベースクエリができず、SQL Server からの移行時にクエリ書き換え・データ統合・外部テーブル設定が必要だった</li>
+                    <li>Azure VM 上の大規模 SQL Server のフルバックアップはストリーミング方式のため時間がかかり、本番ワークロードへの負荷も大きかった</li>
+                    <li>TDE のカスタマーマネージドキーは RSA キーが前提で、量子コンピューティング時代を見据えた暗号アジリティに課題があった</li>
+                    <li>MI link は複数データベースを含む Always On 可用性グループをまとめて拡張できず、エンタープライズアプリの移行が複雑だった</li>
+                    <li>Next-gen General Purpose ティアはゾーン冗長に未対応で、ゾーン障害への耐性に制約があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Hyperscale エラスティックプール内で <code class="inline">database.schema.object</code> の 3 部構成名によるクロスデータベースクエリが可能に (プレビュー)</li>
+                    <li>Azure ディスクスナップショット + ネイティブログバックアップで、大規模 DB でもほぼ瞬時・低負荷のフルバックアップと PITR が可能に (GA)</li>
+                    <li>Key Vault Premium / Managed HSM の AES-256 キーを TDE プロテクターとして利用でき、ポスト量子時代への備えが可能に (GA)</li>
+                    <li>単一の MI link で複数 DB の可用性グループを Azure に拡張でき、双方向フェールオーバーによる最小ダウンタイム移行・DR を実現 (GA)</li>
+                    <li>Next-gen GP ティアがゾーン冗長に対応し、価格性能比を維持したままゾーン障害耐性を確保 (GA)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- アーキテクチャ図 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🗺️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph OnPrem["🏢 オンプレミス"]
+        AG["🗄️ SQL Server Always On AG<br>(複数データベース)"]
+    end
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph SQLDB["Azure SQL Database"]
+            HS["⚡ Hyperscale エラスティックプール<br>クロスデータベースクエリ (Preview)"]
+            TDE["🔐 TDE AES-256 キー (GA)"]
+        end
+        subgraph MI["Azure SQL Managed Instance"]
+            NGGP["🚀 Next-gen GP ティア<br>ゾーン冗長 (GA) / ログレート 220 MiB/s"]
+        end
+        subgraph VM["SQL Server in Azure VMs"]
+            SNAP["📸 スナップショットバックアップ (GA)"]
+        end
+        KV["🔑 Azure Key Vault Premium / Managed HSM"]
+        RSV["💾 Recovery Services Vault"]
+    end
+    AG -- "MI link (複数 DB AG 対応・双方向フェールオーバー)" --> MI
+    TDE --> KV
+    SNAP --> RSV
+            </pre>
+        </div>
+        <p class="diagram-caption">オンプレミス SQL Server から Managed Instance への移行経路 (MI link)、Hyperscale のクロスデータベースクエリ、AES キーによる TDE、スナップショットバックアップという主要アップデートの位置付けを示す。</p>
+    </div>
+
+    <!-- 主要機能 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">⭐</span>サービスアップデートの詳細 (主要機能)</h2>
+
+        <h3 class="sub-title">🟢 GA (一般提供) になったもの</h3>
+
+        <div class="feature-card">
+            <div class="feature-icon">📸</div>
+            <div class="feature-content">
+                <h4>1. Snapshot backup for SQL Server in Azure VMs (Azure Backup) <span class="badge badge-ga">GA</span></h4>
+                <ul>
+                    <li>Azure マネージドディスクの増分スナップショットと SQL ネイティブのトランザクションログバックアップを組み合わせ、大規模データベースでもほぼ瞬時・低負荷のフルバックアップを実現</li>
+                    <li>SQL インスタンスレベルでスナップショットを取得し、1 回の操作で最大 12 データベースを選択可能。インスタンス全体または個別データベースの復元に対応</li>
+                    <li>スナップショットは 6 時間間隔以上、ログバックアップは 15 分間隔以上で構成可能。スナップショットはサブスクリプション内に最大 7 日間保持後、Recovery Services Vault に長期保存</li>
+                    <li>アプリケーション整合性スナップショット取得時のデータベース静止 (quiesce) は数秒程度で、ストリーミングバックアップのように長時間リソースを消費しない</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>2. TDE での AES-256 キーのサポート (Azure SQL Database) <span class="badge badge-ga">GA</span></h4>
+                <ul>
+                    <li>Azure Key Vault Premium または Managed HSM に保管した AES-256 キーを TDE プロテクターとして利用可能に。従来の RSA キーの代替となる</li>
+                    <li>AES-256 は RSA などの非対称アルゴリズムと比較して既知の量子コンピューティング脅威への耐性が高く、暗号アジリティとポスト量子時代への準備 (post-quantum readiness) に向けた実践的な選択肢となる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔎</div>
+            <div class="feature-content">
+                <h4>3. Fuzzy string match (あいまい文字列マッチング) <span class="badge badge-ga">GA</span></h4>
+                <ul>
+                    <li>対象: Azure SQL Database / SQL Managed Instance / SQL database in Microsoft Fabric / SQL Server 2025</li>
+                    <li>完全一致ではなく類似度に基づく文字列比較を組み込み関数で実行可能。2 つの文字列を同一にするために必要な変更回数 (編集距離) の測定に対応</li>
+                    <li>GA ロールアップのアナウンスでは Damerau-Levenshtein (OSA) や Jaro-Winkler といったアルゴリズムが言及されている</li>
+                    <li>データマッチング、クレンジング、重複排除、ファジー検索などのシナリオで活用できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>4. Zone-redundant Next-gen General Purpose ティア (SQL Managed Instance) <span class="badge badge-ga">GA</span></h4>
+                <ul>
+                    <li>重要なサービスコンポーネントを複数の可用性ゾーンに分散配置し、ゾーン障害からアプリケーションを保護</li>
+                    <li>Next-gen GP ティアのパフォーマンス・スケーラビリティ・価格性能比の利点を維持したまま冗長性を追加できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>5. MI link の複数データベース可用性グループ対応 (SQL Managed Instance) <span class="badge badge-ga">GA</span></h4>
+                <ul>
+                    <li>単一の Managed Instance link で、複数データベースを含む SQL Server Always On 可用性グループを Azure SQL Managed Instance に拡張可能に</li>
+                    <li>既存 AG の拡張、複数データベースでの新規 AG 作成の両方に対応し、サポートされる SQL Server バージョンとの間で双方向フェールオーバーが可能</li>
+                    <li>最小ダウンタイム移行、リバース移行 (Azure からオンプレミスへ)、Azure を DR サイトとする構成に対応</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <div class="feature-content">
+                <h4>6. Azure SQL / SQL Managed Instance の mid-November GA ロールアップ <span class="badge badge-ga">GA</span></h4>
+                <ul>
+                    <li><strong>正規表現ベースの動的データマスキング (Regex-based DDM)</strong>: 既存の DDM を拡張し、パターンベースの柔軟なマスキングをデータベース層で一元適用</li>
+                    <li><strong>SSMS 結果グリッドの数値表示カスタマイズ</strong>: クエリや Windows の地域設定を変更せずに桁区切り・小数点記号を設定可能</li>
+                    <li><strong>Next-gen GP のトランザクションスループット向上</strong>: ログレートが最大 220 MiB/s に引き上げ、vCore あたりのスループットも向上</li>
+                    <li><strong>ストレージとコンピュートの効率的なサイジング</strong>: ストレージと vCore の比率が改善され、より細かい単位でのストレージスケーリングが可能に</li>
+                    <li><strong>vCore から独立したメモリ調整</strong>: ゾーン冗長構成の Next-gen GP インスタンスで、vCore 数とは独立してメモリをサイジング可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3 class="sub-title">🟡 パブリックプレビューになったもの</h3>
+
+        <div class="feature-card preview">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>7. Azure SQL DB Hyperscale クロスデータベースクエリ <span class="badge badge-preview">Preview</span></h4>
+                <ul>
+                    <li>同一論理サーバー上の同じ Hyperscale エラスティックプール内のデータベース間で、T-SQL の 3 部構成名 (<code class="inline">database.schema.object</code>) によるネイティブなクロスデータベースクエリが可能に</li>
+                    <li>データコピー、データベース統合、外部テーブルの設定が不要。クロスデータベースレポーティング、共有参照データ、リモートストアドプロシージャ呼び出し、SQL Server からの移行に有効</li>
+                    <li>限定プレビューとして提供され、参加にはサインアップが必要</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card preview">
+            <div class="feature-icon">🐧</div>
+            <div class="feature-content">
+                <h4>8. SQL Server 2025 の Ubuntu 26.04 LTS サポート <span class="badge badge-preview">Preview</span></h4>
+                <ul>
+                    <li>Canonical の最新 LTS プラットフォーム上で SQL Server 2025 の評価・テスト・デプロイが可能に (GA 日は未定)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card preview">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>9. Azure SQL mid-November プレビューロールアップ (SSMS / セキュリティ / AI) <span class="badge badge-preview">Preview</span></h4>
+                <ul>
+                    <li><strong>SSMS の新しい Create / Apply ウィザード</strong>: .dacpac / .bacpac の作成・適用を統合したモダンなガイド付き体験に刷新</li>
+                    <li><strong>TDE 暗号化スキャンの一時停止・再開</strong>: 高負荷時にスキャンを一時停止し、停止地点から再開可能</li>
+                    <li><strong>SQL Managed Instance LTR バックアップの不変性 (Immutability)</strong>: 時間ベースの不変性の設定・ロック、リーガルホールドの有効化・解除に対応</li>
+                    <li><strong>AI 支援クエリパフォーマンスチューニング</strong>: エージェントがクエリプランを分析し、書き換え・ヒント・不足インデックスを根拠と検証付きで推奨</li>
+                    <li><strong>SSMS の GitHub Copilot で BYOM (独自モデルの持ち込み)</strong>: Microsoft Foundry デプロイメントなどに接続可能</li>
+                    <li><strong>SSMS 22.12.1</strong>: 新チャット体験、クエリタブと未保存編集の保持</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 技術仕様 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>アップデート</th><th>対象</th><th>ステータス</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Hyperscale クロスデータベースクエリ</td><td>Azure SQL Database (Hyperscale エラスティックプール)</td><td><span class="badge badge-preview">In preview</span> 限定プレビュー・サインアップ制</td></tr>
+                    <tr><td>スナップショットバックアップ</td><td>SQL Server in Azure VMs (Azure Backup)</td><td><span class="badge badge-ga">Launched (GA)</span></td></tr>
+                    <tr><td>TDE AES-256 キー</td><td>Azure SQL Database + Key Vault Premium / Managed HSM</td><td><span class="badge badge-ga">Launched (GA)</span></td></tr>
+                    <tr><td>Fuzzy string match</td><td>SQL DB / SQL MI / Fabric SQL / SQL Server 2025</td><td><span class="badge badge-ga">Launched (GA)</span></td></tr>
+                    <tr><td>Regex-based Dynamic Data Masking</td><td>Azure SQL Database</td><td><span class="badge badge-ga">Launched (GA)</span></td></tr>
+                    <tr><td>Zone-redundant Next-gen GP</td><td>Azure SQL Managed Instance</td><td><span class="badge badge-ga">Launched (GA)</span></td></tr>
+                    <tr><td>Next-gen GP ログレート向上 (最大 220 MiB/s)</td><td>Azure SQL Managed Instance</td><td><span class="badge badge-ga">Launched (GA)</span></td></tr>
+                    <tr><td>MI link 複数 DB 可用性グループ</td><td>SQL Server ⇔ Azure SQL Managed Instance</td><td><span class="badge badge-ga">Launched (GA)</span></td></tr>
+                    <tr><td>SQL Server 2025 on Ubuntu 26.04 LTS</td><td>SQL Server 2025</td><td><span class="badge badge-preview">In preview</span></td></tr>
+                    <tr><td>SSMS 新ウィザード / AI チューニング / BYOM / LTR 不変性 / TDE スキャン制御</td><td>SSMS / SQL DB / SQL MI</td><td><span class="badge badge-preview">In preview</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="sub-title">📸 スナップショットバックアップの主な仕様 (Microsoft Learn より)</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>詳細</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>スナップショット頻度</td><td>6 時間間隔以上</td></tr>
+                    <tr><td>ログバックアップ頻度</td><td>15 分間隔以上</td></tr>
+                    <tr><td>1 回のスナップショット操作あたりのデータベース数</td><td>最大 12</td></tr>
+                    <tr><td>運用層 (サブスクリプション内) での保持</td><td>最大 7 日間 (その後 Vault に長期保存)</td></tr>
+                    <tr><td>整合性</td><td>アプリケーション整合性 (静止は数秒程度)</td></tr>
+                    <tr><td>前提権限</td><td><code class="inline">NT SERVICE\AzureWLBackupPluginSvc</code> に SQL sysadmin 権限が必要</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- メリット -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-col">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li><strong>移行の加速</strong>: Hyperscale クロスデータベースクエリと MI link の複数 DB AG 対応により、クロスデータベース依存を持つエンタープライズアプリの Azure 移行時のクエリ書き換え・再設計コストを削減できる</li>
+                    <li><strong>コンプライアンス強化</strong>: AES-256 TDE によるポスト量子対応、LTR バックアップの不変性・リーガルホールド、Regex DDM により、規制要件への対応力が向上する</li>
+                    <li><strong>RTO/RPO の改善</strong>: スナップショットバックアップにより大規模データベースの復旧時間を短縮し、ランサムウェア等の災害に対する保護を強化できる</li>
+                </ul>
+            </div>
+            <div class="merit-col">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li><strong>低負荷バックアップ</strong>: ストリーミング方式と異なり本番ワークロードへの影響が最小限で、増分スナップショットによりストレージコストも最適化される</li>
+                    <li><strong>ゾーン冗長 + 高スループット</strong>: Next-gen GP ティアでゾーン冗長とログレート最大 220 MiB/s、独立したメモリ・ストレージサイジングを両立できる</li>
+                    <li><strong>T-SQL の表現力向上</strong>: Fuzzy string match の組み込み関数により、外部ツールなしでデータクレンジング・重複排除が可能になる</li>
+                    <li><strong>双方向フェールオーバー</strong>: MI link により Azure を DR サイトとして使い、必要に応じてオンプレミスへ戻すリバース移行も可能</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- デメリット・制約事項 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li><strong>Hyperscale クロスデータベースクエリ</strong>: 同一論理サーバー上の同じ Hyperscale エラスティックプール内のデータベースに限定。読み取りは複数データベース可能だが、書き込みは 1 トランザクションにつき 1 データベースのみ。限定プレビューのためサインアップが必要</li>
+            <li><strong>TDE AES キー</strong>: キーの保管場所は Azure Key Vault Premium または Managed HSM が必要</li>
+            <li><strong>スナップショットバックアップ</strong>: スナップショット頻度は 6 時間以上、1 操作あたり 12 データベースまで。Protected Instance 料金・Vault ストレージに加え、運用層のスナップショットストレージ (マネージドディスクスナップショット料金) が別途発生する</li>
+            <li><strong>MI link 複数 DB AG</strong>: 双方向フェールオーバーは「サポートされる SQL Server バージョン」に限定される (詳細はドキュメント参照)</li>
+            <li><strong>SQL Server 2025 on Ubuntu 26.04</strong>: パブリックプレビューであり GA 日は未定</li>
+            <li><strong>プレビュー機能全般</strong>: SLA の対象外であり、本番環境への適用前に検証が必要</li>
+        </ul>
+    </div>
+
+    <!-- ユースケース -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+        <div class="usecase-grid">
+            <div class="usecase-card">
+                <h4>1️⃣ クロスデータベース依存を持つ SQL Server ワークロードの Hyperscale 移行</h4>
+                <p><span class="label">シナリオ</span>複数データベースを 3 部構成名で参照するレガシーアプリケーションを Azure SQL Database へ移行したいが、クエリ書き換えのコストが障壁になっている。</p>
+                <p><span class="label">実装</span>対象データベース群を同一論理サーバー上の Hyperscale エラスティックプールに配置し、クロスデータベースクエリのプレビューにサインアップする。</p>
+                <p><span class="label">効果</span>クエリの書き換えやアプリ再設計を最小限に抑えて移行できる。権限は各データベースで個別に適用されるため、分離も維持される。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>2️⃣ 複数データベースの可用性グループを使った最小ダウンタイム移行 / DR</h4>
+                <p><span class="label">シナリオ</span>連携して動作する複数の関連データベースを持つエンタープライズアプリケーションを、最小ダウンタイムで Azure SQL Managed Instance に移行したい。</p>
+                <p><span class="label">実装</span>単一の MI link で既存の Always On 可用性グループ (複数 DB) を Managed Instance に拡張し、継続的レプリケーションを構成。カットオーバー時にフェールオーバーする。</p>
+                <p><span class="label">効果</span>複数データベースをまとめて移行でき、双方向フェールオーバーにより Azure を DR サイトとして利用したり、オンプレミスへのリバース移行も可能。</p>
+            </div>
+            <div class="usecase-card">
+                <h4>3️⃣ 大規模 SQL Server データベースの高速バックアップ</h4>
+                <p><span class="label">シナリオ</span>Azure VM 上の数 TB 級 SQL Server データベースで、ストリーミングバックアップの所要時間と本番負荷が課題になっている。</p>
+                <p><span class="label">実装</span>Azure Backup でスナップショットベースのバックアップポリシーを構成し、6 時間ごとのスナップショット + 15 分ごとのログバックアップを設定する。</p>
+                <p><span class="label">効果</span>ほぼ瞬時のフルバックアップと秒単位のポイントインタイムリカバリを低負荷で実現し、RTO/RPO を改善できる。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 料金 -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <ul style="padding-left: 20px; font-size: 14px;">
+            <li style="margin-bottom: 8px;"><strong>スナップショットバックアップ</strong>: Recovery Services Vault に保存されるバックアップは Azure Backup の料金 (Protected Instance 料金 + Vault ストレージ) に基づく。加えて、運用層に保持されるマネージドディスクスナップショットの保管料金が保持期間分発生する</li>
+            <li>その他のアップデート (TDE AES キー、Fuzzy string match、MI link など) は各サービスの既存料金体系の範囲で利用できる。Key Vault Premium / Managed HSM、ゾーン冗長構成は各サービスの料金に従う</li>
+        </ul>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>料金ページ</th><th>URL</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Azure Backup</td><td><a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank" rel="noopener">https://azure.microsoft.com/pricing/details/backup/</a></td></tr>
+                    <tr><td>Managed Disks (スナップショット)</td><td><a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank" rel="noopener">https://azure.microsoft.com/pricing/details/managed-disks/</a></td></tr>
+                    <tr><td>Azure SQL Database</td><td><a href="https://azure.microsoft.com/pricing/details/azure-sql-database/single/" target="_blank" rel="noopener">https://azure.microsoft.com/pricing/details/azure-sql-database/single/</a></td></tr>
+                    <tr><td>Azure SQL Managed Instance</td><td><a href="https://azure.microsoft.com/pricing/details/azure-sql-managed-instance/single/" target="_blank" rel="noopener">https://azure.microsoft.com/pricing/details/azure-sql-managed-instance/single/</a></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 関連サービス -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-item"><strong>Azure Backup / Recovery Services Vault</strong>: スナップショットバックアップの復元ポイント保管と長期保持を担う</div>
+            <div class="related-item"><strong>Azure Key Vault Premium / Managed HSM</strong>: TDE の AES-256 カスタマーマネージドキーの保管場所</div>
+            <div class="related-item"><strong>可用性ゾーン (Availability Zones)</strong>: Next-gen GP ティアのゾーン冗長構成の基盤</div>
+            <div class="related-item"><strong>SQL Server Always On 可用性グループ</strong>: MI link が拡張するオンプレミス側の高可用性構成</div>
+            <div class="related-item"><strong>SSMS / GitHub Copilot</strong>: 新ウィザード、AI 支援チューニング、BYOM などプレビュー機能の提供先</div>
+            <div class="related-item"><strong>Microsoft Fabric (SQL database)</strong>: Fuzzy string match が利用可能な SQL 製品群の 1 つ</div>
+        </div>
+    </div>
+
+    <!-- まとめ -->
+    <div class="section">
+        <h2 class="section-title"><span class="icon">📌</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Microsoft Ignite に合わせた Azure SQL の 11 月中旬アップデートは、<strong>移行</strong> (MI link 複数 DB AG、Hyperscale クロスデータベースクエリ)、<strong>セキュリティ</strong> (AES TDE、Regex DDM、LTR 不変性)、<strong>回復性</strong> (スナップショットバックアップ、ゾーン冗長 Next-gen GP)、<strong>パフォーマンス</strong> (ログレート 220 MiB/s) の全方位にわたる大型リリースである。</p>
+            <p style="margin-top: 10px;">特に SQL Server からの移行を検討しているチームは、MI link の複数 DB 対応と Hyperscale クロスデータベースクエリにより移行の選択肢が大きく広がったため、<strong>移行計画の再評価を推奨</strong>する。Azure VM 上で大規模 SQL Server を運用している場合は、GA したスナップショットバックアップへの切り替え検証を早期に実施したい。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure SQL Database</span>
+            <span class="tag">Azure SQL Managed Instance</span>
+            <span class="tag">SQL Server</span>
+            <span class="tag">Hyperscale</span>
+            <span class="tag">Azure Backup</span>
+            <span class="tag">TDE</span>
+            <span class="tag">Key Vault</span>
+            <span class="tag">Managed HSM</span>
+            <span class="tag">Availability Zones</span>
+            <span class="tag">MI link</span>
+            <span class="tag">SSMS</span>
+            <span class="tag">GA</span>
+            <span class="tag">Preview</span>
+            <span class="tag">Microsoft Ignite</span>
+        </div>
+    </div>
+
+    <!-- フッター -->
+    <footer>
+        <h3>📚 出典・参考リンク</h3>
+        <ul>
+            <li><a href="https://azure.microsoft.com/updates?id=579221" target="_blank" rel="noopener">公式アップデート情報: Hyperscale Cross Database Querying (Preview)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=564668" target="_blank" rel="noopener">公式アップデート情報: Snapshot backup for SQL Server in Azure VMs (GA)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=579531" target="_blank" rel="noopener">公式アップデート情報: TDE AES keys (GA)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=579359" target="_blank" rel="noopener">公式アップデート情報: Azure SQL updates for mid-November 2026 (Preview)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=578998" target="_blank" rel="noopener">公式アップデート情報: Fuzzy string match (GA)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=578579" target="_blank" rel="noopener">公式アップデート情報: SQL Server 2025 on Ubuntu 26.04 LTS (Preview)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=578471" target="_blank" rel="noopener">公式アップデート情報: Azure SQL updates for mid-November 2026 (GA)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=578465" target="_blank" rel="noopener">公式アップデート情報: Azure SQL Managed Instance updates for mid-November 2026 (GA)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=578033" target="_blank" rel="noopener">公式アップデート情報: Zone-redundant Next-gen GP tier (GA)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=578028" target="_blank" rel="noopener">公式アップデート情報: MI link support for AGs with multiple databases (GA)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/backup/backup-azure-sql-database" target="_blank" rel="noopener">Microsoft Learn: Back up SQL Server databases to Azure</a></li>
+            <li><a href="https://learn.microsoft.com/azure/azure-sql/database/transparent-data-encryption-byok-overview" target="_blank" rel="noopener">Microsoft Learn: Customer-managed TDE (BYOK)</a></li>
+        </ul>
+        <p class="copyright">本インフォグラフィックは Azure News Summary レポート (2026-11-17 / Azure SQL: 2026 年 11 月中旬アップデートまとめ) を基に生成されました。記載内容は発表時点の情報です。最新情報は公式ドキュメントをご確認ください。</p>
+    </footer>
+
+</div>
+</body>
+</html>

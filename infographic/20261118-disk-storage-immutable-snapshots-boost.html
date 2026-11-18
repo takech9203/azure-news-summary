@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Disk Storage: 不変スナップショット (Preview) と Azure Boost NVMe 可観測性ツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+    /* Category: Storage */
+    --storage-cyan: #00BCF2;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--storage-cyan) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+.badge-announce { background: var(--ms-purple); }
+
+.header h1 {
+    font-size: 27px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle { font-size: 15px; opacity: 0.92; }
+.header .date { margin-top: 14px; font-size: 14px; opacity: 0.85; }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.section h3:first-of-type { margin-top: 8px; }
+
+.section p { margin: 10px 0; font-size: 15px; }
+
+/* Highlight */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+.note-box {
+    background: #FFF8E6;
+    border-left: 4px solid var(--ms-yellow);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { font-size: 14px; margin: 8px 0; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-card.cyan { border-left-color: var(--storage-cyan); }
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p, .feature-content li { font-size: 14px; color: var(--ms-text-primary); }
+.feature-content ul { padding-left: 18px; margin-top: 6px; }
+.feature-content li { margin: 4px 0; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 12px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Tables */
+.spec-table-wrapper { overflow-x: auto; margin: 16px 0; }
+
+table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+table.spec-table th {
+    background: var(--ms-blue-800);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+table.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    background: var(--ms-surface);
+    vertical-align: top;
+}
+
+table.spec-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+table.spec-table td:first-child { font-weight: 500; white-space: nowrap; color: var(--ms-blue-800); }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid { display: flex; justify-content: center; background: #FFFFFF; }
+
+.diagram-caption {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: -8px;
+    margin-bottom: 16px;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* Merit / demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-box {
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.merit-box.business { background: var(--ms-blue-100); border: 2px solid var(--azure-blue); }
+.merit-box.tech { background: #F3EDF9; border: 2px solid var(--ms-purple); }
+.merit-box h4 { font-size: 16px; margin-bottom: 10px; }
+.merit-box.business h4 { color: var(--azure-blue); }
+.merit-box.tech h4 { color: var(--ms-purple); }
+.merit-box ul { padding-left: 20px; }
+.merit-box li { font-size: 14px; margin: 8px 0; }
+
+.caution-box {
+    background: #FFF4F0;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 18px;
+    margin: 16px 0;
+}
+
+.caution-box h4 { color: var(--ms-orange); font-size: 16px; margin-bottom: 10px; }
+.caution-box ul { padding-left: 20px; }
+.caution-box li { font-size: 14px; margin: 8px 0; }
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.usecase-card h4 {
+    font-size: 17px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--azure-blue);
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-right: 6px;
+}
+
+.usecase-card p { font-size: 14px; margin: 8px 0; }
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 6px 6px 0;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+/* Region tags */
+.region-tags { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+
+.region-tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 14px;
+    padding: 4px 12px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+.related-card h5 { font-size: 14px; color: var(--azure-blue); margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* Links */
+.link-list { list-style: none; padding: 0; }
+.link-list li {
+    margin: 8px 0;
+    padding-left: 24px;
+    position: relative;
+    font-size: 14px;
+    overflow-wrap: anywhere;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), #FFFFFF);
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px;
+    margin: 16px 0;
+}
+.summary-box p { font-size: 14.5px; margin: 10px 0; }
+
+/* Footer */
+.footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    font-size: 13px;
+}
+
+.footer h3 { color: var(--azure-light-blue); font-size: 15px; margin-bottom: 10px; }
+.footer ul { list-style: none; }
+.footer li { margin: 6px 0; overflow-wrap: anywhere; }
+.footer a { color: #C7E0F4; }
+.footer .copyright {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+    opacity: 0.8;
+}
+
+ul.plain { padding-left: 22px; }
+ul.plain li { font-size: 14px; margin: 6px 0; }
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 21px; }
+    .container { padding: 12px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">💾 Azure Disk Storage</span>
+            <span class="service-badge">🖥️ Virtual Machines</span>
+            <span class="badge badge-preview">In Preview</span>
+            <span class="badge badge-announce">Announcement</span>
+        </div>
+        <h1>不変スナップショット (Public Preview)<br>&amp; Azure Boost NVMe ディスク可観測性ツール</h1>
+        <div class="subtitle">Immutable snapshots: 最大 90 日間「誰も削除できない」スナップショット保護 / Azure Boost observability: VM 内から NVMe ディスクのメトリクス取得と Portal ディスクへのマッピング</div>
+        <div class="date">📅 リリース日: 2026-11-18</div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Azure Disk Storage に関連する 2 つのアップデートが発表された。</p>
+        <div class="highlight-box">
+            <strong>① 不変スナップショット (Immutable snapshots) — Public Preview</strong><br>
+            スナップショットは作成後は読み取り専用 (WORM: Write Once, Read Many) だが、新たに任意のディスクタイプの既存スナップショットに「不変ポリシー (immutability policy)」を適用し、<strong>最大 90 日間の削除を禁止</strong>できるようになった。ポリシーが有効な間は、ロールや権限にかかわらず誰もスナップショットを削除できない。誤削除やランサムウェアなどの悪意ある削除からバックアップを保護し、規制上のデータ保持要件 (SEC 17a-4、CFTC 1.31、FINRA 4511) への準拠を支援する。Azure Backup の不変コンテナー (Immutable Vault) を補完する位置付けで、長期保持にはコスト効率の良い Vault を、高速リストアが必要な短期バックアップには不変スナップショットを使い分ける。
+        </div>
+        <div class="highlight-box">
+            <strong>② Azure Boost observability for NVMe disks — 発表</strong><br>
+            互換性のある Azure VM 内で実行する<strong>オープンソースのコマンドラインツール</strong>。Azure Boost を基盤として、リモートディスクの I/O・レイテンシメトリクスを取得し、VM 内の各ディスクを Azure Portal に表示されるディスクにマッピングできる。リモートディスクのパフォーマンス調査と、メトリクスと正しいディスクの対応付けに役立つ。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">最大 90 日</div>
+                <div class="stat-label">不変ポリシーの保持期間</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">追加料金なし</div>
+                <div class="stat-label">不変ポリシーの利用コスト</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3 規制</div>
+                <div class="stat-label">SEC 17a-4 / CFTC 1.31 / FINRA 4511 検証済み</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">最大 32</div>
+                <div class="stat-label">Boost ツールの自動スキャン対象ディスク数</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>スナップショットはデータ変更こそ不可能だったが、<strong>削除は権限を持つユーザーなら可能</strong>。誤操作・ランサムウェア・悪意ある管理者による削除から保護する仕組みがスナップショット単位では存在しなかった</li>
+                    <li>高速リストアが必要な短期バックアップに対して、金融規制 (SEC 17a-4 など) に準拠する不変ストレージの選択肢が限られていた</li>
+                    <li>ゲスト OS 内の NVMe ディスク (例: Linux の <code>/dev/nvme0n1</code>、Windows のディスク番号) と Azure Portal 上のディスクリソースの対応付けが難しく、リモートディスクのパフォーマンス問題を正しいディスクに紐付けて調査しにくかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>既存スナップショットに <strong>Unlocked / Locked の 2 種類の不変ポリシー</strong>を適用でき、保持期間中 (最大 90 日) は誰も削除できない。Locked ポリシーは Azure 自身を含め誰も短縮・解除できず、コンプライアンスグレードの保護を提供</li>
+                    <li>不変ポリシーは<strong>追加料金なし</strong>。ポリシー有効中もディスクのリストア、他リージョンへのコピーなど他のスナップショット操作はすべて実行可能</li>
+                    <li>VM 内から <strong>CLI ツール 1 つ</strong>でリモートディスクの累積 IOPs・転送バイト数・レイテンシ (平均/最大) を取得でき、NGUID やディスク名により VM 内のディスクと Portal 上のディスクを正確にマッピング可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        Disk["💾 マネージドディスク&lt;br&gt;(全ディスクタイプ)"]
+        Snap["📸 スナップショット&lt;br&gt;(読み取り専用 / WORM)"]
+        subgraph Policy["🔒 不変ポリシー (最大 90 日)"]
+            Unlocked["🔓 Unlocked&lt;br&gt;延長・短縮・削除可&lt;br&gt;(テスト・ガバナンス向け)"]
+            Locked["🔐 Locked&lt;br&gt;延長のみ可&lt;br&gt;(規制コンプライアンス向け)"]
+        end
+        Restore["✅ 許可: ディスク復元・コピー・読み取り"]
+        Delete["⛔ ブロック: 削除&lt;br&gt;(管理者・Azure 含む全ユーザー)"]
+    end
+    Disk --&gt;|スナップショット作成| Snap
+    Snap --&gt;|作成後にポリシー適用| Policy
+    Unlocked --&gt;|ロックへ変更可| Locked
+    Policy --&gt; Restore
+    Policy --&gt; Delete
+            </pre>
+        </div>
+        <p class="diagram-caption">不変ポリシーを適用したスナップショットは、保持期間中の削除がすべてのユーザーに対してブロックされる一方、リストアやコピーなどの操作は通常どおり実行できる。</p>
+
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph VM["🖥️ Azure VM (Azure Boost 対応)"]
+        Tool(["👤 Azure-Boost-Observability&lt;br&gt;CLI ツール"])
+        NVMe["💽 NVMe ディスク&lt;br&gt;(ログページ)"]
+    end
+    Portal["🌐 Azure Portal 上のディスク"]
+    Tool --&gt;|"/perf · --perf"| NVMe
+    NVMe --&gt;|"I/O・レイテンシメトリクス&lt;br&gt;(テキスト / JSON)"| Tool
+    Tool --&gt;|"/identify · --identify&lt;br&gt;NGUID・name でマッピング"| Portal
+            </pre>
+        </div>
+        <p class="diagram-caption">Azure Boost observability ツールは VM 内の NVMe デバイスからメトリクスを読み取り、Identify Namespace コマンドで VM 内のディスクと Azure Portal 上のディスクを対応付ける。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2>⭐ サービスアップデートの詳細 (主要機能)</h2>
+
+        <h3>1. Azure Disk Storage の不変スナップショット (Public Preview)</h3>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔓</div>
+            <div class="feature-content">
+                <h4>Unlocked ポリシー</h4>
+                <ul>
+                    <li>権限を持つユーザーがポリシーの延長・短縮・削除を実行できる。ロック前のテストやデータガバナンス、ランサムウェア対策に使用する</li>
+                    <li>保持期間を 0 日に設定すると即時に期限切れとなり、スナップショットを通常状態に戻せる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔐</div>
+            <div class="feature-content">
+                <h4>Locked ポリシー</h4>
+                <ul>
+                    <li>コンプライアンスグレードの保護。延長のみ可能で、管理者や Azure 自身を含め誰も短縮・削除できない</li>
+                    <li>保持期間が終了するまでスナップショットは削除不可。ランサムウェア対策、金融規制対応、不正な AI エージェントの挙動からの保護に使用する</li>
+                    <li>Unlocked から Locked への変更は可能 (逆は不可)。ロックしても保持期間の起点 (<code>policyStartTime</code>) はリセットされない</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">✅</div>
+            <div class="feature-content">
+                <h4>ポリシー有効中も通常のスナップショット操作が可能</h4>
+                <ul>
+                    <li>スナップショットからのディスク作成 (リストア)、他リージョン・他サブスクリプションへのコピー、プロパティ読み取りはすべて許可。削除のみブロック</li>
+                    <li>コピー先のスナップショットは元の不変ポリシーを継承しない (必要なら個別にポリシーを適用する)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">👥</div>
+            <div class="feature-content">
+                <h4>専用 RBAC ロール</h4>
+                <ul>
+                    <li><code>Disk Snapshot Immutability Operator</code>: Unlocked ポリシーの作成・延長・短縮・削除 (<code>Microsoft.Compute/snapshots/updateImmutabilityPolicy/action</code>)</li>
+                    <li><code>Disk Snapshot Immutability Admin</code>: Locked ポリシーの作成・延長など (<code>Microsoft.Compute/snapshots/updateImmutabilityPolicyLock/action</code>)</li>
+                    <li>Contributor / Owner はこれらの権限を既定で保有</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🏛️</div>
+            <div class="feature-content">
+                <h4>規制コンプライアンス認定</h4>
+                <ul>
+                    <li>第三者評価機関 Cohasset Associates が、Locked ポリシー適用済みスナップショットが CFTC Rule 1.31(c)-(d)、FINRA Rule 4511、SEC Rule 17a-4(f) のストレージ要件を満たすことを検証。認定書は Microsoft Service Trust Portal で確認可能</li>
+                    <li>ポリシー操作・アクセス操作は Azure Activity Log に記録される (既定で 90 日間保持)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>2. Azure Boost observability for NVMe disks</h3>
+
+        <div class="feature-card cyan">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>パフォーマンスメトリクスの取得</h4>
+                <ul>
+                    <li>ディスクのライフタイム累積値: 読み取り/書き込み Ops 数、読み取り/書き込みバイト数</li>
+                    <li>5 秒サンプリング間隔の値: 未処理 I/O 数、読み取り/書き込みレイテンシ (最大/平均、マイクロ秒)、ディスパッチレイテンシ (最大/平均)</li>
+                    <li><code>is degraded</code>: ハードウェアアクセラレーションモードで動作していないかを示すフラグ</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card cyan">
+            <div class="feature-icon">🔎</div>
+            <div class="feature-content">
+                <h4>ディスク識別 (Identify Namespace)</h4>
+                <ul>
+                    <li>NGUID (128 ビットの Namespace Globally Unique Identifier)、ディスクサイズ (GiB)、ディスクの役割 (<code>os</code> / <code>data</code> / <code>local</code> / <code>unknown</code>) とディスク名を取得</li>
+                    <li>ゲスト OS 内のディスク (Windows のディスク番号/ドライブレター、Linux のデバイスパス) を Azure Portal 上のディスクに対応付けられる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card cyan">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-content">
+                <h4>バッチ処理・出力形式</h4>
+                <ul>
+                    <li>対象を指定しない場合は全 NVMe ドライブを自動的にスキャン (最大 32 ディスク)</li>
+                    <li>テキスト出力と JSON 出力 (<code>/json</code> / <code>--json</code>) に対応。トラブルシューティング用の詳細ログ (<code>/verbose</code>) も利用可能</li>
+                    <li>Windows / Linux の両ゲスト OS をサポート。オープンソースとして GitHub で公開</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2>🔧 技術仕様</h2>
+
+        <h3>🔒 不変スナップショット</h3>
+        <div class="spec-table-wrapper">
+            <table class="spec-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>最大保持期間</td><td>90 日</td></tr>
+                <tr><td>ポリシータイプ</td><td><code>Unlocked</code> (延長・短縮・削除可) / <code>Locked</code> (延長のみ可)</td></tr>
+                <tr><td>適用タイミング</td><td>スナップショット作成後のみ (作成時には設定不可)</td></tr>
+                <tr><td>適用可能な状態</td><td><code>snapshotAccessState</code> が <code>Available</code> または <code>AvailableWithInstantAccess</code> のスナップショット</td></tr>
+                <tr><td>適用不可の状態</td><td><code>Pending</code> (バックグラウンドコピー中・リージョン間コピー中)、<code>InstantAccess</code> (コピー進行中)</td></tr>
+                <tr><td>対象ディスクタイプ</td><td>任意の Azure ディスクタイプ (Premium SSD、Standard SSD、Standard HDD、Ultra Disk / Premium SSD v2 の増分スナップショット)</td></tr>
+                <tr><td>設定手段 (プレビュー時点)</td><td>Azure PowerShell / REST API のみ (Portal・Azure CLI は GA で対応予定)</td></tr>
+                <tr><td>主なプロパティ</td><td><code>immutabilityDurationDays</code> (保持日数)、<code>type</code>、<code>policyStartTime</code>、<code>policyExpirationTime</code>、<code>isPolicyExpired</code></td></tr>
+                <tr><td>コピーのポリシー継承</td><td>なし (コピー先には個別に適用が必要)</td></tr>
+                <tr><td>追加料金</td><td>なし (スナップショットは標準のマネージドディスクスナップショット料金)</td></tr>
+            </table>
+        </div>
+
+        <h3>📈 Azure Boost observability for NVMe disks</h3>
+        <div class="spec-table-wrapper">
+            <table class="spec-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>提供形態</td><td>オープンソースの CLI ツール (GitHub: microsoft/Azure-Boost-Observability)</td></tr>
+                <tr><td>対応ゲスト OS</td><td>Windows (C++ 実行ファイル、MSVC v143 でビルド) / Linux (Python 3 スクリプト、<code>nvme-cli</code> が必要)</td></tr>
+                <tr><td>対応 VM サイズ (Intel)</td><td>Dlsv7、Dldsv7、Dsv7、Ddsv7、Esv7、Edsv7</td></tr>
+                <tr><td>対応 VM サイズ (Cobalt 200)</td><td>Dplsv7、Dpldsv7、Dpsv7、Dpdsv7、Epsv7、Epdsv7、Mpsv4、Mpdsv4、Lpsv5</td></tr>
+                <tr><td>パフォーマンスメトリクス</td><td>互換 VM サイズの全 Azure リージョンでリモートディスクに対して利用可能</td></tr>
+                <tr><td>ディスク識別</td><td>リモート・ローカル NVMe ディスクが対象。現在は EUAP リージョンで提供、他リージョンへの拡大は 2027 年を予定</td></tr>
+                <tr><td>実行権限</td><td>NVMe デバイスへの直接アクセスに管理者権限が必要な場合がある (Linux は <code>sudo</code>)</td></tr>
+                <tr><td>スキャン動作</td><td>ディスク未指定時は最大 32 ディスクを順にスキャンし、クエリ不能なデバイスで停止</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>不変スナップショットのポリシー設定 (Azure PowerShell)</h3>
+        <p><strong>前提条件:</strong></p>
+        <ul class="plain">
+            <li>対象スナップショットが作成済みで、<code>snapshotAccessState</code> が <code>Available</code> または <code>AvailableWithInstantAccess</code> であること</li>
+            <li>パブリックプレビュー対応リージョンのスナップショットであること</li>
+            <li><code>Disk Snapshot Immutability Operator</code> / <code>Disk Snapshot Immutability Admin</code> ロール、または Contributor / Owner 相当の権限</li>
+        </ul>
+
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">PowerShell</span><span class="code-desc">不変ポリシーの設定・削除</span></div>
+            <pre><code class="language-powershell"># Unlocked ポリシーを 30 日で設定 (テスト・ガバナンス向け)
+$snapshot = Set-AzSnapshotImmutabilityPolicy `
+    -ResourceGroupName "myResourceGroup" `
+    -Name "mySnapshot" `
+    -PolicyType Unlocked `
+    -DurationInDays 30
+
+# Locked ポリシーを 30 日で設定 (コンプライアンス向け・解除不可)
+$snapshot = Set-AzSnapshotImmutabilityPolicy `
+    -ResourceGroupName "myResourceGroup" `
+    -Name "mySnapshot" `
+    -PolicyType Locked `
+    -DurationInDays 30
+
+# Unlocked ポリシーの削除
+Remove-AzSnapshotImmutabilityPolicy `
+    -ResourceGroupName "myResourceGroup" `
+    -Name "mySnapshot"</code></pre>
+        </div>
+
+        <div class="note-box">
+            💡 REST API では <code>updateImmutabilityPolicy</code> (Unlocked) / <code>updateImmutabilityPolicyLock</code> (Locked) アクション (api-version <code>2026-03-02</code>) を使用する。ポリシー更新時に指定する日数は「<strong>元の開始時刻からの合計保持日数</strong>」であり、追加日数ではない点に注意。
+        </div>
+
+        <h3>Azure Boost observability ツールの使用 (Linux)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">Bash</span><span class="code-desc">Linux での実行例</span></div>
+            <pre><code class="language-bash"># セットアップ: スクリプトを VM にコピーし、Python 3 と nvme-cli をインストール後
+chmod +x ./azure-boost-observability
+
+# パフォーマンスメトリクスの取得 (JSON 出力)
+sudo ./azure-boost-observability --json --perf /dev/nvme0n1
+
+# ディスク識別 (Portal 上のディスクとのマッピング)
+sudo ./azure-boost-observability --identify /dev/nvme0n1</code></pre>
+        </div>
+
+        <h3>Azure Boost observability ツールの使用 (Windows)</h3>
+        <p>GitHub リポジトリのソースから <code>AzureBoostObservability.sln</code> を MSVC v143 でビルドし、管理者権限の PowerShell で実行する。</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">PowerShell</span><span class="code-desc">Windows での実行例</span></div>
+            <pre><code class="language-powershell"># ディスク 0 のパフォーマンスメトリクスを取得
+.\Azure-Boost-Observability.exe /perf 0
+
+# JSON 出力でディスク識別
+.\Azure-Boost-Observability.exe /json /identify 0</code></pre>
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2>💪 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-box business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>Locked ポリシーは Cohasset Associates により SEC 17a-4(f)、CFTC 1.31(c)-(d)、FINRA 4511 への準拠が検証済みで、金融・法務・医療分野の記録保持規制に対応できる</li>
+                    <li>不変ポリシー自体は追加料金なしで、ランサムウェアや内部不正による「バックアップの削除」リスクを低減できる</li>
+                    <li>Azure Backup Immutable Vault (長期・低コスト) と不変スナップショット (短期・高速リストア) の使い分けにより、保護レベルとコストを最適化できる</li>
+                </ul>
+            </div>
+            <div class="merit-box tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>ポリシー有効中もリストア・コピーなどの運用操作は妨げられず、保護と運用性を両立できる</li>
+                    <li>専用 RBAC ロールにより、Unlocked ポリシーの運用者と Locked ポリシーの管理者で職務分掌を実現できる</li>
+                    <li>Azure Boost observability により、ゲスト OS 内から追加エージェントなしでリモートディスクのレイテンシ内訳 (I/O レイテンシとディスパッチレイテンシ) を確認でき、パフォーマンス問題の切り分けが容易になる</li>
+                    <li>NGUID とディスク名により、マルチディスク構成の VM でも Portal 上のディスクリソースと確実に対応付けられる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約 -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="caution-box">
+            <h4>🔒 不変スナップショット (Public Preview)</h4>
+            <ul>
+                <li>プレビュー対応リージョンは Australia East、East Asia、East US、East US 2、France Central、India Central、North Europe、South Central US、West Central US、West Europe に限定される</li>
+                <li>プレビュー期間中は PowerShell / REST API のみ対応 (Portal・Azure CLI は GA で対応予定)</li>
+                <li>最大保持期間は 90 日。長期の不変保持には Azure Backup Immutable Vault を使用する必要がある</li>
+                <li>Locked ポリシーは有効期間中、Azure を含め誰も解除・短縮できないため、保持期間満了までスナップショット課金が継続する。適用前にポリシータイプと期間の確認が必須</li>
+                <li>ポリシーは作成済みスナップショットにのみ適用可能 (作成時の指定は不可)。<code>Pending</code> / <code>InstantAccess</code> 状態のスナップショットには適用できない</li>
+                <li>プレビュー期間中は、サポート外の状態のスナップショットへのポリシー適用リクエストが、保存されないまま成功として報告される場合がある (GA でエラー返却に変更予定)</li>
+            </ul>
+        </div>
+        <div class="caution-box">
+            <h4>📈 Azure Boost observability for NVMe disks</h4>
+            <ul>
+                <li>対応 VM サイズは Intel v7 系および Cobalt 200 系の特定シリーズに限定される</li>
+                <li>ディスク識別機能は現在 EUAP リージョンのみで提供 (他リージョンは 2027 年に拡大予定)</li>
+                <li>Windows 版はビルド済みバイナリではなくソースからのビルドが必要</li>
+                <li>Linux でディスク未指定実行時は <code>lsblk</code> で NVMe 以外も列挙され、クエリ失敗デバイスでコマンドが途中終了する場合がある (個別デバイス指定を推奨)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🛡️ ユースケース 1: ランサムウェア対策としての短期不変バックアップ</h4>
+            <p><span class="usecase-label">シナリオ</span>基幹システムの VM ディスクについて、日次スナップショットを 30 日間保持しているが、攻撃者や誤操作によるスナップショット削除を防ぎたい。復旧時には高速なリストアが必要。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">PowerShell</span><span class="code-desc">実装例</span></div>
+                <pre><code class="language-powershell"># 日次スナップショット作成後に Locked ポリシーを 30 日で適用
+Set-AzSnapshotImmutabilityPolicy `
+    -ResourceGroupName "prod-rg" `
+    -Name "daily-snapshot-20261118" `
+    -PolicyType Locked `
+    -DurationInDays 30</code></pre>
+            </div>
+            <div class="effect-box"><strong>効果</strong>: 保持期間中は管理者権限が侵害されてもスナップショットを削除できず、スナップショットからのディスク作成による高速リストアは通常どおり実行できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🏦 ユースケース 2: 金融規制 (SEC 17a-4) 対応の記録保持</h4>
+            <p><span class="usecase-label">シナリオ</span>金融機関が、短期保持が求められる記録データのディスクスナップショットについて、非書き換え・非消去ストレージ要件への準拠を証明する必要がある。</p>
+            <p><span class="usecase-label">実装</span>Locked ポリシーを適用し、Microsoft Service Trust Portal の Cohasset Associates 認定書を監査証跡として利用。ポリシー操作は Azure Activity Log で追跡する。</p>
+            <div class="effect-box"><strong>効果</strong>: SEC 17a-4(f) / CFTC 1.31 / FINRA 4511 のストレージ要件を満たしつつ、必要時には即座にディスクへ復元できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🔬 ユースケース 3: リモートディスクのレイテンシ問題の切り分け</h4>
+            <p><span class="usecase-label">シナリオ</span>複数のデータディスクを接続した DB サーバー VM で I/O レイテンシの悪化が報告されたが、どの Azure ディスクが原因か特定できない。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">Bash</span><span class="code-desc">実装例</span></div>
+                <pre><code class="language-bash"># 各 NVMe デバイスのレイテンシを確認
+sudo ./azure-boost-observability --json --perf /dev/nvme1n1
+
+# 問題のデバイスを Portal 上のディスク名にマッピング
+sudo ./azure-boost-observability --identify /dev/nvme1n1</code></pre>
+            </div>
+            <div class="effect-box"><strong>効果</strong>: I/O レイテンシとディスパッチレイテンシの内訳から、問題がディスク側かスケジューラ側かを切り分け、<code>is degraded</code> フラグでハードウェアアクセラレーション状態も確認できる。NGUID / ディスク名により正しい Azure ディスクに対して対処できる。</div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <ul class="plain">
+            <li><strong>不変ポリシー</strong>: 追加料金なし。スナップショット自体は標準のマネージドディスクスナップショット料金で課金される。Locked ポリシー有効中はスナップショットを削除できないため、保持期間満了まで課金が継続する点に注意。ポリシー期限切れや削除後も、スナップショットを削除するまで通常の課金は続く</li>
+            <li><strong>Azure Boost observability</strong>: オープンソースツールであり、ツール自体の料金に関する記載はない</li>
+        </ul>
+        <p>詳細は <a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank" rel="noopener">Managed Disks の料金ページ</a> を参照。</p>
+    </section>
+
+    <!-- リージョン -->
+    <section class="section">
+        <h2>🌍 利用可能リージョン</h2>
+        <h3>不変スナップショット (Public Preview)</h3>
+        <div class="region-tags">
+            <span class="region-tag">Australia East</span>
+            <span class="region-tag">East Asia</span>
+            <span class="region-tag">East US</span>
+            <span class="region-tag">East US 2</span>
+            <span class="region-tag">France Central</span>
+            <span class="region-tag">India Central</span>
+            <span class="region-tag">North Europe</span>
+            <span class="region-tag">South Central US</span>
+            <span class="region-tag">West Central US</span>
+            <span class="region-tag">West Europe</span>
+        </div>
+        <p style="font-size: 14px;">他リージョンへのアクセスはフィードバックフォーム (<a href="https://aka.ms/DiskImmutableSnapshotsFeedback" target="_blank" rel="noopener">https://aka.ms/DiskImmutableSnapshotsFeedback</a>) から申請可能。</p>
+        <h3>Azure Boost observability</h3>
+        <p style="font-size: 14px;">パフォーマンスメトリクスは<strong>互換 VM サイズの全 Azure リージョン</strong>で利用可能。ディスク識別機能は現在 <strong>EUAP リージョンのみ</strong> (2027 年に他リージョンへ拡大予定)。</p>
+    </section>
+
+    <!-- 関連サービス -->
+    <section class="section">
+        <h2>🧩 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>Azure Backup (Immutable Vault)</h5>
+                <p>長期保持向けのコスト効率の良い不変バックアップ。不変スナップショットは高速リストアが必要な短期バックアップとしてこれを補完する。</p>
+            </div>
+            <div class="related-card">
+                <h5>Azure RBAC</h5>
+                <p>新しい組み込みロール <code>Disk Snapshot Immutability Operator</code> / <code>Disk Snapshot Immutability Admin</code> によりポリシー操作の職務分掌を実現。</p>
+            </div>
+            <div class="related-card">
+                <h5>Azure Activity Log</h5>
+                <p>不変ポリシーの設定・変更などの操作を監査証跡として記録 (既定 90 日保持)。</p>
+            </div>
+            <div class="related-card">
+                <h5>Azure Boost</h5>
+                <p>Azure のホストインフラをオフロードするハードウェアプラットフォーム。NVMe 可観測性ツールのメトリクス提供基盤。</p>
+            </div>
+            <div class="related-card">
+                <h5>Azure Virtual Machines (NVMe インターフェイス)</h5>
+                <p>v7 系 Intel / Cobalt 200 系 VM で NVMe ディスクを利用する際の可観測性を強化。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2>📝 まとめ (Solutions Architect 視点)</h2>
+        <div class="summary-box">
+            <p><strong>不変スナップショット</strong>は、スナップショットレベルで「削除不能」な保護を最大 90 日間提供するもので、ランサムウェア対策と金融規制対応 (SEC 17a-4 / CFTC 1.31 / FINRA 4511、Cohasset Associates 検証済み) の両面で重要なアップデート。追加料金なしで利用でき、ポリシー有効中もリストア・コピーは可能なため、運用への影響が小さい。Solutions Architect としては、<strong>Azure Backup Immutable Vault (長期) と不変スナップショット (短期・高速リストア) の使い分け設計</strong>と、<strong>Locked ポリシー適用前の期間確認プロセス (解除不能のため) の整備</strong>を推奨する。現時点では対応リージョンと設定手段 (PowerShell / REST API のみ) が限定されるため、本番適用は対応リージョンの確認後に検討したい。</p>
+            <p><strong>Azure Boost observability for NVMe disks</strong> は、v7 系 VM でのリモートディスクのパフォーマンス調査とディスクマッピングを支援する実用的なツール。NVMe ベースの VM への移行が進む中、レイテンシ問題の切り分けやディスク特定の標準手順に組み込む価値がある。</p>
+        </div>
+        <p style="font-size: 13px; color: var(--ms-text-secondary);"><strong>タグ</strong>: Azure Disk Storage, Virtual Machines, Storage, Compute, Immutable Snapshots, Azure Boost, NVMe, Security, Compliance, Ransomware Protection, Public Preview, Microsoft Ignite</p>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <h3>📚 出典・参考リンク</h3>
+        <ul>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=581503" target="_blank" rel="noopener">公式アップデート情報: Immutable snapshots for Azure Disk Storage (Public Preview)</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=581227" target="_blank" rel="noopener">公式アップデート情報: Azure Boost observability for NVMe disks</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/snapshot-configure-immutability" target="_blank" rel="noopener">Microsoft Learn: Configure immutability for managed disk snapshots (Preview)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/virtual-machines/azure-boost-observability" target="_blank" rel="noopener">Microsoft Learn: Azure Boost observability for NVMe disks</a></li>
+            <li>🔗 <a href="https://github.com/microsoft/Azure-Boost-Observability" target="_blank" rel="noopener">GitHub: microsoft/Azure-Boost-Observability</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank" rel="noopener">料金ページ: Managed Disks</a></li>
+        </ul>
+        <div class="copyright">
+            ソース: Azure News Summary レポート (reports/2026/2026-11-18-disk-storage-immutable-snapshots-boost.md) | 生成日: 2026-11-18
+        </div>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

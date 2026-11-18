@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Database for MySQL: Rename Server GA & Premium SSD v2 Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Database Category Color */
+    --db-yellow: #FFB900;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 14px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+.release-date {
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.12);
+    padding: 4px 12px;
+    border-radius: 16px;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 24px; }
+
+.section h3 {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+}
+
+.section p { margin-bottom: 12px; }
+
+/* ===== Highlight ===== */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong { color: var(--ms-blue-800); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+.stat-note { font-size: 11px; opacity: 0.75; margin-top: 4px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+.diagram-caption {
+    text-align: center;
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { padding-left: 20px; font-size: 14px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+/* ===== Benefit / Caution ===== */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.benefit-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.benefit-card.tech { border-top-color: var(--azure-blue); }
+.benefit-card h4 { margin-bottom: 10px; color: var(--ms-blue-800); }
+.benefit-card ul { padding-left: 20px; font-size: 14px; }
+.benefit-card li { margin-bottom: 8px; }
+
+.caution-box {
+    background: #FFF8E7;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+
+.caution-box ul { padding-left: 20px; font-size: 14px; }
+.caution-box li { margin-bottom: 10px; }
+
+/* ===== Use Cases ===== */
+.usecase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.usecase-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 18px;
+}
+
+.usecase-card .uc-icon { font-size: 28px; margin-bottom: 8px; }
+.usecase-card h4 { font-size: 15px; color: var(--azure-dark-blue); margin-bottom: 10px; }
+.usecase-card p { font-size: 13.5px; margin-bottom: 8px; }
+.usecase-card .label {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--ms-blue-700);
+    border-radius: 10px;
+    padding: 1px 10px;
+    margin-bottom: 4px;
+}
+.usecase-card .label.effect { background: var(--ms-green); }
+
+/* ===== Links / Related ===== */
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 0 8px 28px;
+    border-bottom: 1px dashed var(--ms-border);
+    position: relative;
+    font-size: 14px;
+}
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+.link-list a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+.link-list a:hover { text-decoration: underline; }
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--ms-purple);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.related-card strong { color: var(--ms-blue-800); }
+
+/* ===== Region ===== */
+.region-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+.region-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px;
+    font-size: 14px;
+}
+.region-card h4 { margin-bottom: 8px; color: var(--ms-blue-800); }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px 24px;
+}
+.summary-box p { margin-bottom: 12px; font-size: 14.5px; }
+.summary-box p:last-child { margin-bottom: 0; }
+
+/* ===== Tags ===== */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12.5px;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+/* ===== Code blocks (Mermaid 競合防止) ===== */
+.code-block,
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 16px 0;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px;
+    display: block;
+    color: #E8E8E8;
+}
+
+/* ===== Footer ===== */
+.footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    font-size: 13px;
+}
+.footer h4 { margin-bottom: 10px; font-size: 14px; }
+.footer ul { list-style: none; }
+.footer li { margin-bottom: 6px; }
+.footer a { color: var(--azure-light-blue); text-decoration: none; word-break: break-all; }
+.footer a:hover { text-decoration: underline; }
+.footer .credit { margin-top: 14px; opacity: 0.8; border-top: 1px solid rgba(255,255,255,0.25); padding-top: 12px; }
+
+@media (max-width: 700px) {
+    .before-after, .two-col, .region-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">🐬 Azure Database for MySQL</span>
+            <span class="release-date">📅 リリース日: 2026-11-17</span>
+        </div>
+        <h1>サーバー名変更 (Rename Server) の GA と<br>Premium SSD v2 サポート (Preview)</h1>
+        <div class="subtitle">Microsoft Ignite に合わせて発表された、フレキシブルサーバーの 2 つの重要アップデート</div>
+        <div class="meta-row" style="margin-top: 16px; margin-bottom: 0;">
+            <span class="badge badge-ga">Rename Server: Launched (GA)</span>
+            <span class="badge badge-preview">Premium SSD v2: In Preview</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <div class="highlight-box">
+            <strong>1. サーバー名変更 (Rename Server) 機能の一般提供 (GA)</strong><br>
+            既存のサーバーインスタンスの名前を、サーバーの再作成・データ移行・アプリケーションの中断なしに変更可能に。新しいホスト名への移行は「ほぼゼロダウンタイム (near zero-downtime)」のパスとして提供され、組織の命名規則に沿った明確で一貫性のあるサーバー名を後からでも採用できる。
+        </div>
+        <div class="highlight-box">
+            <strong>2. Premium SSD v2 (マネージドディスク) ストレージのパブリックプレビュー</strong><br>
+            従来のデフォルトストレージである Premium File Share と比較して、より高いパフォーマンスと優れた価格性能比を提供。ストレージ容量・IOPS・スループットをそれぞれ独立してスケーリング可能。マネージドディスクベースの新アーキテクチャにより、最新の General Purpose / Memory Optimized <strong>v6 シリーズのコンピューティング SKU</strong> もサポート。2026 年 7 月のプライベートプレビューからパブリックプレビューに昇格した。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">64 TiB</div>
+                <div class="stat-label">最大ディスク容量</div>
+                <div class="stat-note">Premium SSD v2</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">80,000</div>
+                <div class="stat-label">最大 IOPS</div>
+                <div class="stat-note">独立スケーリング可能</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">2,000 MB/s</div>
+                <div class="stat-label">最大スループット</div>
+                <div class="stat-note">独立スケーリング可能</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">≈ 0</div>
+                <div class="stat-label">名前変更のダウンタイム</div>
+                <div class="stat-note">near zero-downtime</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>サーバー名を変更するには、サーバーを再作成してデータを移行する必要があり、アプリケーションの接続先変更やダウンタイムが発生していた</li>
+                    <li>Premium File Share ストレージでは最大 IOPS がコンピューティングサイズに紐づいており、IOPS を上げるためだけにストレージやコンピューティングを過剰にプロビジョニングするケースがあった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>サーバーの再作成やデータ移行なしに、ほぼゼロダウンタイムでサーバー名を変更可能になった (GA)</li>
+                    <li>Premium SSD v2 により容量 (最大 64 TiB)・IOPS (最大 80,000)・スループット (最大 2,000 MB/s) を独立して調整でき、必要な性能にだけ支払うコスト最適化が可能になった (Preview)</li>
+                    <li>v6 シリーズのコンピューティング SKU に対応し、より大規模で要求の厳しいワークロードを優れた価格性能比で実行可能になった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph Rename["🏷️ Rename Server (GA)"]
+            OLD["🖥️ mysql-old-name"] -->|"再作成・移行不要&lt;br&gt;ほぼゼロダウンタイム"| NEW["🖥️ mysql-new-name"]
+        end
+        subgraph Storage["💾 ストレージオプション"]
+            PFS[("📁 Premium File Share&lt;br&gt;(デフォルト)")]
+            SSDV2[("⚡ Premium SSD v2 (Preview)&lt;br&gt;容量 / IOPS / スループット&lt;br&gt;を独立スケール")]
+        end
+        MYSQL["🐬 Azure Database for MySQL&lt;br&gt;フレキシブルサーバー"] --> PFS
+        MYSQL --> SSDV2
+        SSDV2 -.->|サポート追加| V6["🚀 v6 シリーズ SKU&lt;br&gt;(General Purpose / Memory Optimized)"]
+    end
+    APP(["👤 アプリケーション"]) --> MYSQL
+            </pre>
+        </div>
+        <p class="diagram-caption">サーバー名変更は再作成なしで新ホスト名へ移行でき、ストレージは従来の Premium File Share に加えて Premium SSD v2 を選択できるようになった。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⭐</span>サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🏷️</div>
+            <div class="feature-content">
+                <h4>1. サーバー名変更 (Rename Server) の一般提供 <span class="badge badge-ga">GA</span></h4>
+                <ul>
+                    <li>既存のサーバーインスタンスの名前を、サーバーの再作成なしに更新できる</li>
+                    <li>データ移行が不要で、アプリケーションを中断せずに名前を変更可能</li>
+                    <li>新しいホスト名への移行をほぼゼロダウンタイムで実現</li>
+                    <li>組織の命名規則に沿った、明確で一貫性のあるサーバー名を後から採用できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>2. Premium SSD v2 ストレージのパブリックプレビュー <span class="badge badge-preview">Preview</span></h4>
+                <ul>
+                    <li>Azure マネージドディスクをベースとした新しいストレージオプション</li>
+                    <li>Premium File Share と比較して高いパフォーマンスと優れた価格性能比を提供</li>
+                    <li>ストレージ容量・IOPS・スループットを互いに独立してスケーリング可能</li>
+                    <li>定常状態のアプリケーションからバースト性のあるトランザクション集約型ワークロードまで、コストとパフォーマンスを最適化できる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>3. v6 シリーズ コンピューティング SKU のサポート (Premium SSD v2 利用時)</h4>
+                <ul>
+                    <li>マネージドディスクベースのアーキテクチャにより、最新の General Purpose / Memory Optimized v6 SKU ファミリーをサポート</li>
+                    <li>より大規模で要求の厳しいワークロードを優れた価格性能比で実行可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+
+        <h3>Premium SSD v2 のパフォーマンスモデル</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>範囲</th><th>備考</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>ディスクサイズ</strong></td>
+                        <td>1 GiB 〜 64 TiB</td>
+                        <td>1 GiB 単位で設定</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IOPS</strong></td>
+                        <td>3,000 〜 80,000</td>
+                        <td>ディスクサイズと独立して調整可能。実効 IOPS はコンピューティングサイズの上限にも依存</td>
+                    </tr>
+                    <tr>
+                        <td><strong>スループット (MB/s)</strong></td>
+                        <td>125 〜 2,000</td>
+                        <td>ディスクサイズ・IOPS と独立して調整可能</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3>ストレージオプションの比較</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>項目</th><th>Premium File Share (デフォルト)</th><th>Premium SSD v2 (Preview)</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>アーキテクチャ</strong></td>
+                        <td>Premium ファイル共有</td>
+                        <td>Azure マネージドディスク</td>
+                    </tr>
+                    <tr>
+                        <td><strong>最大容量</strong></td>
+                        <td>16 TiB (Burstable / General Purpose)、32 TiB (Memory Optimized)</td>
+                        <td>64 TiB</td>
+                    </tr>
+                    <tr>
+                        <td><strong>IOPS</strong></td>
+                        <td>最小 360、最大はコンピューティングサイズに依存 (事前プロビジョニング / 自動スケール IOPS)</td>
+                        <td>3,000 〜 80,000 (独立調整可能)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>独立スケーリング</strong></td>
+                        <td>容量のみ (IOPS はコンピューティングサイズに連動)</td>
+                        <td>容量・IOPS・スループットを独立調整</td>
+                    </tr>
+                    <tr>
+                        <td><strong>提供状況</strong></td>
+                        <td>全サービスレベル・全リージョン</td>
+                        <td>サポート対象のコンピューティング SKU とリージョンでプレビュー提供</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="two-col">
+            <div class="benefit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>サーバー名変更のためにこれまで必要だった再作成・移行プロジェクトが不要になり、運用コストとリスクを削減できる</li>
+                    <li>Premium SSD v2 では必要な容量と性能だけをプロビジョニングできるため、IOPS 確保のための過剰プロビジョニングを避けてコストを最適化できる</li>
+                    <li>月末処理やセールイベントなど、短期間だけ高い IOPS が必要なワークロードに対して柔軟に対応できる</li>
+                </ul>
+            </div>
+            <div class="benefit-card tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>ほぼゼロダウンタイムでの名前変更により、環境の標準化 (命名規則の統一) をアプリケーション影響なしに実施できる</li>
+                    <li>容量・IOPS・スループットの独立スケーリングにより、ワークロード特性 (トランザクション集約型、スループット重視型) に応じたチューニングが可能</li>
+                    <li>v6 シリーズ SKU との組み合わせで、より高い性能上限を持つ構成を実現できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>Premium SSD v2 サポートは<strong>パブリックプレビュー</strong>であり、サポート対象のコンピューティング SKU とリージョンに限定される (GA 時期は未発表)</li>
+                <li>ストレージをコンピューティングと独立して構成できるものの、実効 IOPS / スループットはコンピューティングサイズの上限に制限されるため、vCore 数が少ないサーバーではプロビジョニングした性能を使い切れない場合がある</li>
+                <li>Premium File Share は高可用性、読み取りレプリカ、Accelerated Logs などフレキシブルサーバーの全機能をサポートすると明記されているが、Premium SSD v2 (プレビュー) の機能サポート範囲は公式ドキュメントで確認が必要</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+        <div class="usecase-grid">
+            <div class="usecase-card">
+                <div class="uc-icon">🏷️</div>
+                <h4>1. 命名規則の統一とリブランディング</h4>
+                <p><span class="label">シナリオ</span><br>組織再編やプロジェクト名の変更に伴い、既存の MySQL サーバー名を新しい命名規則に合わせたい。</p>
+                <p><span class="label effect">効果</span><br>サーバーの再作成やデータ移行なしに、ほぼゼロダウンタイムで新しいホスト名へ移行でき、環境全体の命名を一貫させられる。</p>
+            </div>
+            <div class="usecase-card">
+                <div class="uc-icon">🛒</div>
+                <h4>2. バースト性の高いトランザクション集約型ワークロード</h4>
+                <p><span class="label">シナリオ</span><br>月末処理やセールイベントなど、短期間だけ大量の IOPS が必要になる EC サイトや業務システム。</p>
+                <p><span class="label effect">効果</span><br>Premium SSD v2 でコンピューティングサイズに縛られずに IOPS を独立して引き上げられるため、ピーク性能を確保しつつ平常時のコストを抑えられる。</p>
+            </div>
+            <div class="usecase-card">
+                <div class="uc-icon">📊</div>
+                <h4>3. スループット重視の大規模ワークロード</h4>
+                <p><span class="label">シナリオ</span><br>レポーティング、バルクロード、ゲームアプリケーションなど、ピーク時間帯のみ高いスループットが必要なワークロードや、Premium File Share の上限を超える大規模データベース。</p>
+                <p><span class="label effect">効果</span><br>スループット (最大 2,000 MB/s) と容量 (最大 64 TiB) を必要な分だけ個別にプロビジョニングし、性能上限の高い構成を実現できる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>料金は、コンピューティングレベル・コンピューティングサイズ・ストレージオプション・ストレージサイズの選択に基づいて課金される。Premium SSD v2 を含む最新の料金情報は公式料金ページを参照。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/mysql/" target="_blank" rel="noopener">Azure Database for MySQL の料金</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/calculator/" target="_blank" rel="noopener">Azure 料金計算ツール</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <div class="region-grid">
+            <div class="region-card">
+                <h4>🏷️ Rename Server <span class="badge badge-ga">GA</span></h4>
+                <p>公式アップデート情報にリージョンの限定は記載されていない</p>
+            </div>
+            <div class="region-card">
+                <h4>⚡ Premium SSD v2 <span class="badge badge-preview">Preview</span></h4>
+                <p>サポート対象のコンピューティング SKU とリージョンで利用可能 (具体的なリージョン一覧は公式ドキュメントを参照)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card">
+            <strong>Azure Managed Disks (Premium SSD v2)</strong><br>
+            本アップデートの基盤となるストレージ技術。容量・IOPS・スループットの独立スケーリングはマネージドディスクの特性に由来する。
+        </div>
+        <div class="related-card">
+            <strong>General Purpose / Memory Optimized v6 シリーズ SKU</strong><br>
+            Premium SSD v2 のマネージドディスクベースアーキテクチャで新たにサポートされたコンピューティングファミリー。
+        </div>
+        <div class="related-card">
+            <strong>Premium File Share ストレージ</strong><br>
+            従来からのデフォルトストレージオプション。高可用性・読み取りレプリカ・Accelerated Logs を含む全機能をサポートし、引き続き多くの本番ワークロードに適合する。
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Database for MySQL のサーバー名変更機能が GA となり、これまで再作成と移行を伴っていたサーバー名の変更が、ほぼゼロダウンタイムで実施できるようになった。命名規則の統一を検討していた環境では、すぐに活用できる実用的なアップデートである。</p>
+            <p>また、Premium SSD v2 サポートのパブリックプレビューにより、容量・IOPS・スループットの独立スケーリングと v6 シリーズ SKU のサポートが追加され、高 IOPS・高スループットが必要なワークロードの選択肢が大きく広がった。プレビュー段階のため本番適用は慎重に判断すべきだが、Premium File Share の性能上限 (特にコンピューティングサイズに連動する IOPS 上限) がボトルネックになっているワークロードでは、サポート対象 SKU・リージョンを確認のうえ評価を開始することを推奨する。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Database for MySQL</span>
+            <span class="tag">Databases</span>
+            <span class="tag">Rename Server</span>
+            <span class="tag">Premium SSD v2</span>
+            <span class="tag">Managed Disks</span>
+            <span class="tag">GA</span>
+            <span class="tag">Public Preview</span>
+            <span class="tag">Microsoft Ignite</span>
+        </div>
+    </section>
+
+    <!-- ===== フッター (出典) ===== -->
+    <footer class="footer">
+        <h4>📚 出典・参考リンク</h4>
+        <ul>
+            <li>公式アップデート情報: Generally Available: Rename Server in Azure Database for MySQL — <a href="https://azure.microsoft.com/updates?id=581140" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=581140</a></li>
+            <li>公式アップデート情報: Public Preview: Azure Database for MySQL on Premium SSD v2 — <a href="https://azure.microsoft.com/updates?id=577515" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=577515</a></li>
+            <li>Microsoft Learn: Azure Database for MySQL の新機能 (What's new) — <a href="https://learn.microsoft.com/azure/mysql/flexible-server/whats-new" target="_blank" rel="noopener">https://learn.microsoft.com/azure/mysql/flexible-server/whats-new</a></li>
+            <li>Microsoft Learn: ストレージオプション (Premium SSD v2 を含む) — <a href="https://learn.microsoft.com/en-us/azure/mysql/flexible-server/concepts-storage" target="_blank" rel="noopener">https://learn.microsoft.com/en-us/azure/mysql/flexible-server/concepts-storage</a></li>
+            <li>料金ページ — <a href="https://azure.microsoft.com/pricing/details/mysql/" target="_blank" rel="noopener">https://azure.microsoft.com/pricing/details/mysql/</a></li>
+        </ul>
+        <div class="credit">
+            ソースレポート: reports/2026/2026-11-17-mysql-rename-premium-ssd-v2.md (リリース日: 2026-11-17) | Azure News Summary プロジェクトにより自動生成
+        </div>
+    </footer>
+
+</div>
+</body>
+</html>

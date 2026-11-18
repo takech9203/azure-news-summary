@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure DDoS Protection アップデート: Peacetime Telemetry / NAT Gateway v2 IP サポート / Custom Policy</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: white;
+    border-radius: 12px;
+    padding: 32px;
+    margin-bottom: 24px;
+}
+
+.header .date {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-bottom: 8px;
+}
+
+.header h1 {
+    font-size: 26px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 16px;
+}
+
+.header .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.section p { margin-bottom: 12px; }
+
+/* Update summary cards */
+.update-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.update-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-top: 4px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 18px;
+}
+
+.update-card .icon { font-size: 30px; margin-bottom: 8px; }
+.update-card h4 { font-size: 16px; color: var(--azure-dark-blue); margin-bottom: 8px; }
+.update-card p { font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 0; }
+.update-card .badge { margin-bottom: 8px; }
+
+/* Before/After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: 8px;
+}
+
+/* Feature card */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 15px; color: var(--azure-dark-blue); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 0; }
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+.note-box {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-yellow);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+/* Steps */
+.steps {
+    counter-reset: step;
+    list-style: none;
+    margin: 12px 0;
+}
+
+.steps li {
+    position: relative;
+    padding: 10px 0 10px 48px;
+    counter-increment: step;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--ms-border);
+}
+
+.steps li:last-child { border-bottom: none; }
+
+.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* Merit / Caution lists */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-col {
+    background: var(--ms-surface-secondary);
+    border-radius: 8px;
+    padding: 18px;
+    border-top: 4px solid var(--ms-green);
+}
+
+.merit-col h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 15px; }
+.merit-col ul { padding-left: 20px; font-size: 14px; }
+.merit-col li { margin-bottom: 8px; }
+
+.caution-list { list-style: none; margin: 12px 0; }
+.caution-list li {
+    background: #FFF4F0;
+    border-left: 4px solid var(--ms-red);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+
+/* Use cases */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 14px 0;
+}
+
+.usecase-card h4 {
+    font-size: 16px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.usecase-card .uc-row { margin-bottom: 8px; font-size: 14px; }
+.usecase-card .uc-label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 8px;
+}
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+
+.related-card strong { color: var(--azure-dark-blue); display: block; margin-bottom: 4px; }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.link-list { list-style: none; margin: 12px 0; }
+.link-list li {
+    padding: 8px 0 8px 28px;
+    position: relative;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--ms-border);
+}
+.link-list li:last-child { border-bottom: none; }
+.link-list li::before { content: "🔗"; position: absolute; left: 0; }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    border: 1px solid var(--ms-border);
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 0 8px;
+    border-top: 1px solid var(--ms-border);
+}
+.footer p { margin-bottom: 6px; }
+
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- Header -->
+    <header class="header">
+        <div class="date">📅 リリース日: 2026-11-17 (Microsoft Ignite 発表)</div>
+        <h1>🛡️ Azure DDoS Protection<br>Peacetime Telemetry (Preview) / NAT Gateway v2 IP サポート (Preview) / Custom Policy (GA)</h1>
+        <div class="badges">
+            <span class="service-badge">Azure DDoS Protection</span>
+            <span class="badge badge-preview">Peacetime Telemetry: In Preview</span>
+            <span class="badge badge-preview">NAT Gateway StandardV2 IP: In Preview</span>
+            <span class="badge badge-ga">Custom Policy: Launched (GA)</span>
+        </div>
+    </header>
+
+    <!-- Overview -->
+    <section class="section">
+        <h2>📰 概要</h2>
+        <p>Microsoft Ignite に合わせて、Azure DDoS Protection に関する 3 つのアップデートが発表された。いずれも Networking / Security カテゴリの機能強化で、DDoS Protection の<strong>可視性・保護範囲・チューニング性</strong>をそれぞれ拡張する内容となっている。</p>
+
+        <div class="update-grid">
+            <div class="update-card">
+                <div class="icon">📊</div>
+                <span class="badge badge-preview">パブリックプレビュー</span>
+                <h4>Peacetime Telemetry</h4>
+                <p>DDoS 緩和 (mitigation) がアクティブな間だけでなく、平常時にも保護対象のパブリック IP に到達するトラフィックのメトリックを確認可能に。既存のメトリック名・監視インターフェイスをそのまま使用し、登録作業や追加コストは不要。</p>
+            </div>
+            <div class="update-card">
+                <div class="icon">🌐</div>
+                <span class="badge badge-preview">パブリックプレビュー</span>
+                <h4>NAT Gateway StandardV2 IP サポート</h4>
+                <p>NAT Gateway StandardV2 の背後にあるパブリック IP (IPv4/IPv6) を、既存の DDoS Network Protection / IP Protection でネットワーク層 DDoS 攻撃から保護可能に。新しい API や機能登録、アプライアンスの管理は不要。</p>
+            </div>
+            <div class="update-card">
+                <div class="icon">⚙️</div>
+                <span class="badge badge-ga">GA</span>
+                <h4>Custom Policy</h4>
+                <p>最も要望の多かった機能の 1 つが一般提供開始。プロトコル (TCP / UDP / TCP SYN) ごとに固定の検知しきい値 (packets per second) を設定でき、機械学習による自動チューニングを特定プロトコルのみ上書きできる。</p>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>緩和がアクティブでない間は、保護対象パブリック IP のメトリックは緩和トリガーのメトリックしか表示されず、平常時のトラフィックパターンを把握できなかった。ダッシュボードやアラートの検証には攻撃シミュレーションが必要だった</li>
+                    <li>NAT Gateway のパブリック IP はインバウンド接続を受け付けないもののインターネットから到達可能で、パートナーや SaaS プロバイダーの許可リストに登録されることも多い。この IP へのフラッドにより、背後のすべての VM のアウトバウンド通信 (API 呼び出し、パートナー連携、更新、テレメトリ) が一度に遮断されるリスクがあったが、DDoS Protection の対象外だった。「すべてのパブリック IP に DDoS 保護を必須とする」ポリシーにも NAT Gateway の例外が必要だった</li>
+                    <li>検知しきい値は機械学習の自動チューニングのみで、レイテンシに敏感なアプリ、高スループットサービス、ゲームやイベントなど計画的なスパイクがあるワークロードでは固定しきい値を設定できなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>既存の受信 DDoS トラフィックメトリック (合計、TCP、SYN、UDP、その他) が平常時にもデータを表示。通常のトラフィックパターンの把握、緩和トリガーとの比較、ワークロード固有しきい値での Azure Monitor メトリックアラート作成、攻撃をシミュレートせずにダッシュボード・アラートをテスト可能に</li>
+                    <li>NAT Gateway StandardV2 のアウトバウンド用パブリック IP が自動的にネットワーク層の緩和対象となり、既存の DDoS メトリック・診断・アラートも利用可能に。コンプライアンスポリシーの例外も不要に</li>
+                    <li>カスタムポリシーでプロトコル単位の固定しきい値を自分で設定・管理可能に。1 つのポリシーを最大 1,000 リソースに関連付け可能。しきい値を設定したプロトコルのみ自動チューニングが無効化され、他のプロトコルは機械学習によるチューニングが継続。設定はリソースとともに永続化され、ワークロードの削除や VM シャットダウン後も維持される</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Internet(["🌐 インターネット"])
+    subgraph Azure["☁️ Azure Cloud"]
+        DDoS["🛡️ Azure DDoS Protection<br/>(Network Protection / IP Protection)"]
+        Policy["📋 Custom Policy (GA)<br/>TCP / UDP / SYN の固定しきい値"]
+        subgraph VNet["🔗 仮想ネットワーク"]
+            PIP["📍 パブリック IP<br/>(Load Balancer など)"]
+            NATPIP["📍 StandardV2 パブリック IP<br/>(NAT Gateway v2) ※新規対応"]
+            VM["💻 ワークロード (VM / サブネット)"]
+        end
+        Monitor["📊 Azure Monitor<br/>Peacetime Telemetry ※平常時も可視化"]
+    end
+    Internet -->|インバウンド| DDoS
+    DDoS --> PIP
+    DDoS --> NATPIP
+    PIP --> VM
+    VM -->|アウトバウンド| NATPIP
+    Policy -.->|しきい値を上書き| DDoS
+    DDoS -.->|平常時 + 攻撃時メトリック| Monitor
+            </pre>
+        </div>
+        <p class="diagram-caption">DDoS Protection の保護範囲が NAT Gateway StandardV2 のパブリック IP まで拡大し、カスタムポリシーで検知しきい値を制御、Peacetime Telemetry で平常時のトラフィックも Azure Monitor で可視化できる構成。</p>
+    </section>
+
+    <!-- Details -->
+    <section class="section">
+        <h2>🔍 サービスアップデートの詳細</h2>
+
+        <h3>1. Peacetime Telemetry (パブリックプレビュー)</h3>
+        <div class="feature-card">
+            <div class="feature-icon">👁️</div>
+            <div class="feature-content">
+                <h4>平常時のトラフィック可視化</h4>
+                <p>保護対象パブリック IP への受信・転送・ドロップトラフィック、緩和トリガー、攻撃ステータスを平常時にも確認できる。「Under DDoS attack or not」が 0 を示している間もトラフィックメトリックにデータが入る。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📈</div>
+            <div class="feature-content">
+                <h4>既存メトリック・インターフェイスをそのまま利用</h4>
+                <p>新しいメトリック名はなく、既存の監視インターフェイスを使用。メトリックの閲覧に Log Analytics や診断設定は不要。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>自動有効化</h4>
+                <p>DDoS Network Protection または DDoS IP Protection で保護されている対象リソースで自動的に有効。登録作業は不要。保護・緩和の動作自体は変更されない。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔔</div>
+            <div class="feature-content">
+                <h4>アラートとテスト</h4>
+                <p>ワークロード固有のしきい値による Azure Monitor メトリックアラートの作成や、攻撃シミュレーションなしでのダッシュボード・アラートの検証が可能。</p>
+            </div>
+        </div>
+
+        <h3>2. NAT Gateway StandardV2 IP サポート (パブリックプレビュー)</h3>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>アウトバウンド用パブリック IP の保護</h4>
+                <p>NAT Gateway StandardV2 が使用する StandardV2 パブリック IP (IPv4/IPv6) をネットワーク層 DDoS 攻撃から保護。保護の設定は NAT Gateway リソースではなく、関連付けられた仮想ネットワーク (Network Protection) または個々の StandardV2 パブリック IP (IP Protection) に対して行う。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>既存ワークフローで構成</h4>
+                <p>新しい API、機能登録、専用 CLI コマンド、アプライアンスは不要。既存の DDoS 構成・監視ワークフローをそのまま使用。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📦</div>
+            <div class="feature-content">
+                <h4>パブリック IP プレフィックス対応</h4>
+                <p>仮想ネットワークの DDoS Network Protection を有効化すると、パブリック IP プレフィックスは保護を自動的に継承 (プレフィックスへの直接の IP Protection は非サポート)。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>動作への影響なし</h4>
+                <p>保護を有効にしても、未承諾のインバウンド接続は開放されず、ルーティングや SNAT の動作も変更されない。レイヤー 7 保護は提供しないため、Web アプリにはアプリケーション層の保護アーキテクチャを併用する。</p>
+            </div>
+        </div>
+
+        <h3>3. Custom Policy (GA)</h3>
+        <div class="feature-card">
+            <div class="feature-icon">🎚️</div>
+            <div class="feature-content">
+                <h4>プロトコル単位の固定検知しきい値</h4>
+                <p>各ポリシーは 1 つ以上のルールで構成され、ルールはプロトコル (TCP / UDP / TCP SYN)、インバウンド方向、緩和をトリガーする packets per second のしきい値を定義する。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>柔軟な関連付け</h4>
+                <p>1 つのポリシーを最大 1,000 リソースに関連付け可能。ポリシーを先に作成して後から関連付けを追加することもできる。パブリック IP エンドポイントを持つ Azure リソースに対応し、Network Protection / IP Protection の両 SKU で利用可能。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>自動チューニングとの併用</h4>
+                <p>しきい値を設定したプロトコルのみ自動チューニングが無効化され、他のプロトコルは機械学習によるチューニングを維持。カスタムポリシーは自動チューニングの置き換えではなく補完。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💾</div>
+            <div class="feature-content">
+                <h4>設定の永続化とセルフサービス管理</h4>
+                <p>設定はリソースとともに永続化され、ワークロードの削除や VM シャットダウン後も維持される。オンコールサポートに頼らず自分で管理できる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Specs -->
+    <section class="section">
+        <h2>📋 技術仕様</h2>
+        <table>
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>Peacetime Telemetry の対象</td><td>DDoS Network Protection / IP Protection で保護された対象パブリック IP (DDoS Protection と同じリソースタイプをサポート)</td></tr>
+            <tr><td>Peacetime Telemetry のメトリック</td><td>既存の受信 DDoS トラフィックメトリック (Inbound packets/bytes DDoS、TCP、SYN、UDP、その他)、転送・ドロップメトリック、攻撃ステータス</td></tr>
+            <tr><td>NAT Gateway 対応 SKU</td><td>StandardV2 のみ (Standard SKU は非サポート)</td></tr>
+            <tr><td>NAT Gateway 用パブリック IP</td><td>StandardV2 パブリック IP (IPv4/IPv6)。Standard/Basic パブリック IP は StandardV2 NAT Gateway と非互換</td></tr>
+            <tr><td>NAT Gateway とカスタムポリシー</td><td>本プレビューでは NAT Gateway StandardV2 のパブリック IP へのカスタムポリシー関連付けは非サポート</td></tr>
+            <tr><td>Custom Policy のプロトコル</td><td>TCP、UDP、TCP SYN (インバウンド方向)</td></tr>
+            <tr><td>Custom Policy のしきい値範囲 (ドキュメント記載値)</td><td>TCP: 50,000〜2,000,000 pps / UDP: 20,000〜200,000 pps / TCP SYN: 1,000〜100,000 pps</td></tr>
+            <tr><td>Custom Policy の関連付け上限</td><td>1 ポリシーあたり最大 1,000 リソース</td></tr>
+            <tr><td>Custom Policy の管理手段</td><td>Azure Portal、Azure CLI、ARM テンプレート、REST API</td></tr>
+        </table>
+        <div class="note-box">
+            <strong>注</strong>: Custom Policy のしきい値範囲と Load Balancer フロントエンド IP 構成への言及は、プレビュー時点の Microsoft Learn ドキュメント (2026-10-08 時点) の記載に基づく。GA 発表ではパブリック IP エンドポイントを持つ Azure リソース全般への対応が明記されており、最新のドキュメントで対応リソースの範囲を確認することを推奨する。
+        </div>
+    </section>
+
+    <!-- Setup -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>Peacetime Telemetry の確認手順 (Azure Portal)</h3>
+        <ol class="steps">
+            <li>Azure Portal で <strong>Public IP addresses</strong> を開き、保護対象のパブリック IP を選択</li>
+            <li><strong>Monitoring</strong> &gt; <strong>Metrics</strong> を選択し、スコープが目的のパブリック IP であることを確認</li>
+            <li>直近の時間範囲 (例: 過去 1 時間) を選択し、<strong>Time granularity</strong> を <strong>1 minute</strong> に設定</li>
+            <li><strong>Inbound TCP packets DDoS</strong> を <strong>Max</strong> 集計で追加。同様に <strong>Inbound UDP packets DDoS</strong>、<strong>Inbound SYN packets DDoS</strong> も追加</li>
+            <li>別チャートで <strong>Under DDoS attack or not</strong> (Max 集計) を追加し、トラフィックと攻撃ステータスを比較。平常時はトラフィックメトリックにデータが入り、攻撃ステータスは 0 を示す</li>
+        </ol>
+        <div class="highlight-box">
+            データが表示されない場合は、保護状態と機能の対象可否、パブリック IP のスコープ、権限、時間範囲、レポート遅延を確認する (欠損はゼロと同義ではない)。
+        </div>
+
+        <h3>NAT Gateway StandardV2 の保護有効化</h3>
+        <p><strong>Network Protection (仮想ネットワーク単位)</strong></p>
+        <ol class="steps">
+            <li>StandardV2 NAT Gateway を StandardV2 パブリック IP またはパブリック IP プレフィックスで構成</li>
+            <li>ゲートウェイを仮想ネットワーク内のワークロードサブネットに関連付け</li>
+            <li>その仮想ネットワークで DDoS Network Protection を有効化</li>
+            <li>対象パブリック IP の保護状態とアウトバウンド接続を検証</li>
+        </ol>
+        <p><strong>IP Protection (パブリック IP 単位)</strong></p>
+        <ol class="steps">
+            <li>個々の StandardV2 パブリック IP を選択し、DDoS IP Protection を有効化</li>
+            <li>その IP を StandardV2 NAT Gateway にアタッチし、ゲートウェイをワークロードサブネットに関連付け</li>
+            <li>保護状態とアウトバウンド接続を検証</li>
+        </ol>
+        <div class="highlight-box">
+            NAT Gateway 専用の API バージョン、機能登録、CLI コマンド、PowerShell コマンドレットは不要で、既存の DDoS ワークフローをそのまま使用する。
+        </div>
+
+        <h3>Custom Policy</h3>
+        <p>Azure Portal、Azure CLI、ARM テンプレート、REST API から管理できる。ポリシーにプロトコル・方向・しきい値 (pps) を定義するルールを作成し、保護対象リソースに関連付ける。関連付けはポリシー作成後に <strong>Policy settings</strong> ページから追加・変更できる。カスタムしきい値は自動チューニングを置き換えるため、アプリケーションのトラフィックベースラインに基づいて値を設定し、非運用環境で検証のうえ、適用後は緩和テレメトリを監視することが推奨されている。</p>
+    </section>
+
+    <!-- Merits -->
+    <section class="section">
+        <h2>💡 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-col">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>攻撃をシミュレートせずにダッシュボード・アラート体制を検証でき、DDoS 対応の準備コストとリスクが低減する</li>
+                    <li>NAT Gateway のパブリック IP が保護対象になることで、「すべてのパブリック IP に DDoS 保護」を求めるコンプライアンスポリシーの例外管理が不要になる</li>
+                    <li>カスタムポリシーの設定をオンコールサポートに依頼せずセルフサービスで管理でき、運用の自律性が向上する</li>
+                </ul>
+            </div>
+            <div class="merit-col">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>平常時のトラフィックベースラインを把握し、緩和トリガーとの比較やワークロード固有しきい値のアラート設計が可能になる (Log Analytics や診断設定なしで閲覧可能)</li>
+                    <li>アウトバウンド経路の単一障害点だった NAT Gateway の IP にネットワーク層の自動緩和が適用され、既存の DDoS メトリック・診断・アラートも利用できる</li>
+                    <li>レイテンシ敏感・高スループット・計画スパイクのあるワークロードで、プロトコル単位の固定しきい値と機械学習チューニングを組み合わせた最適な検知設定を実現できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Constraints -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li><strong>Peacetime Telemetry (プレビュー)</strong>: プレビュー期間中は Azure パブリッククラウドで利用可能。保護されていることだけでは、すべてのリージョン・クラウド・IP バージョンでのプレビュー利用可否は保証されない</li>
+            <li><strong>NAT Gateway サポート (プレビュー)</strong>: Standard SKU の NAT Gateway は非サポート。StandardV2 NAT Gateway + StandardV2 パブリック IP が必須。カスタムポリシーの関連付けは非サポート (すべての管理インターフェイスに適用)。パブリック IP プレフィックスへの直接の IP Protection は非サポートで、プレフィックス内の個々の IP の保護を個別に有効/無効化できない。レイヤー 7 保護は提供されない。リージョン・クラウドの利用可否は必要なプラットフォームコンポーネントすべてのロールアウトに依存する</li>
+            <li><strong>Custom Policy</strong>: しきい値を設定したプロトコルは自動チューニングが無効になるため、不適切な値を設定すると検知が過敏または鈍感になるリスクがある。ベースラインに基づく設定と非運用環境での検証が推奨される。しきい値はインバウンドトラフィックのみに適用される</li>
+            <li>サブネットに関連付けられていない NAT Gateway は、仮想ネットワーク経由の Network Protection を継承しない</li>
+        </ul>
+    </section>
+
+    <!-- Use cases -->
+    <section class="section">
+        <h2>🎯 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🏦 ユースケース 1: 攻撃シミュレーションなしでのアラート検証</h4>
+            <div class="uc-row"><span class="uc-label">シナリオ</span>金融系ワークロードで DDoS アラート体制を整備したいが、本番環境での攻撃シミュレーションは実施しにくい。</div>
+            <div class="uc-row"><span class="uc-label">実装</span>Peacetime Telemetry で平常時の Inbound TCP/UDP/SYN packets DDoS メトリックを確認してベースラインを把握し、ワークロード固有のしきい値で Azure Monitor メトリックアラートを作成。通常トラフィックでアラートとダッシュボードの動作を検証する。</div>
+            <div class="uc-row"><span class="uc-label">効果</span>攻撃を待ったりシミュレートしたりすることなく、監視体制の有効性を事前に確認できる。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🤝 ユースケース 2: パートナー連携のアウトバウンド IP 保護</h4>
+            <div class="uc-row"><span class="uc-label">シナリオ</span>NAT Gateway StandardV2 のパブリック IP がパートナー企業や銀行の許可リストに登録されており、この IP へのフラッド攻撃でアウトバウンド通信全体が停止するリスクがある。</div>
+            <div class="uc-row"><span class="uc-label">実装</span>NAT Gateway StandardV2 が関連付けられた仮想ネットワークで DDoS Network Protection を有効化 (または個々の StandardV2 パブリック IP に IP Protection を適用) し、保護状態とアウトバウンド接続を検証する。</div>
+            <div class="uc-row"><span class="uc-label">効果</span>アウトバウンド IP にネットワーク層の自動緩和が適用され、API 呼び出し・パートナー連携・テレメトリ送信の経路が保護される。</div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🎮 ユースケース 3: ゲームイベントの計画スパイク対応</h4>
+            <div class="uc-row"><span class="uc-label">シナリオ</span>ゲームプラットフォームで新タイトルのローンチ時に UDP トラフィックの急増が計画されており、自動チューニングによる誤検知 (不要な緩和発動) を避けたい。</div>
+            <div class="uc-row"><span class="uc-label">実装</span>カスタムポリシーで UDP プロトコルに想定ピークを踏まえた固定しきい値 (pps) を設定し、対象リソースに関連付ける。TCP / TCP SYN は自動チューニングを維持する。</div>
+            <div class="uc-row"><span class="uc-label">効果</span>計画されたスパイクで不要な緩和がトリガーされることを防ぎつつ、他プロトコルは機械学習ベースの保護を継続できる。</div>
+        </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>Peacetime Telemetry</h4>
+                <p>既存の DDoS Protection の料金に追加コストなし。アラートルールには標準の Azure Monitor 料金が適用される。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>NAT Gateway サポート / Custom Policy</h4>
+                <p>既存の DDoS Network Protection / IP Protection の SKU で利用する。詳細は料金ページを参照。</p>
+            </div>
+        </div>
+        <p>料金の詳細: <a href="https://azure.microsoft.com/pricing/details/ddos-protection/" target="_blank" rel="noopener">Azure DDoS Protection の料金</a></p>
+    </section>
+
+    <!-- Regions -->
+    <section class="section">
+        <h2>🗺️ 利用可能リージョン</h2>
+        <ul class="caution-list">
+            <li><strong>Peacetime Telemetry</strong>: プレビュー期間中は Azure パブリッククラウドで利用可能 (すべてのリージョン・IP バージョンでの利用可否は個別に確認が必要)</li>
+            <li><strong>NAT Gateway StandardV2 サポート</strong>: 対象リージョン・クラウドは、NAT Gateway・パブリック IP・DDoS プラットフォームの必要なコンポーネントすべてのロールアウト状況に依存する。Government クラウドのポータル対応は別途ロールアウト</li>
+            <li><strong>Custom Policy</strong>: 公式情報でのリージョン明記は確認できなかったため、最新のドキュメントを参照</li>
+        </ul>
+    </section>
+
+    <!-- Related -->
+    <section class="section">
+        <h2>🧩 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>📊 Azure Monitor</strong>Peacetime Telemetry のメトリック閲覧、メトリックアラートの作成、ダッシュボード化に使用。Metrics Explorer で閲覧でき、診断設定で Log Analytics へのルーティングも可能。</div>
+            <div class="related-card"><strong>🌐 Azure NAT Gateway (StandardV2)</strong>今回保護対象に加わったアウトバウンド接続サービス。SNAT 動作の監視には引き続き NAT Gateway メトリックを使用。</div>
+            <div class="related-card"><strong>⚖️ Azure Load Balancer (Standard)</strong>カスタムポリシーのプレビュー時点での主な関連付け対象 (フロントエンド IP 構成)。</div>
+            <div class="related-card"><strong>🔭 Microsoft Sentinel</strong>DDoS Protection のログを診断設定経由で統合し、高度な分析が可能。</div>
+            <div class="related-card"><strong>📜 Azure Policy</strong>「すべてのパブリック IP に DDoS 保護を必須とする」ガバナンスの実装。NAT Gateway の例外が不要になる。</div>
+        </div>
+    </section>
+
+    <!-- Summary -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Azure DDoS Protection の 3 つのアップデートにより、<strong>可視性 (Peacetime Telemetry)、保護範囲 (NAT Gateway StandardV2)、チューニング性 (Custom Policy)</strong> が同時に強化された。特に Custom Policy の GA は長く要望されていた機能であり、レイテンシ敏感なワークロードや計画スパイクを持つサービスの運用者はしきい値設計の検討を始める価値がある。</p>
+            <p>Peacetime Telemetry は追加コスト・設定なしで自動有効化されるため、まず保護対象 IP のメトリックで平常時ベースラインを確認し、ワークロード固有のアラートを整備することを推奨する。NAT Gateway を利用中の場合、StandardV2 への移行計画と合わせて DDoS 保護の適用を検討したい。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure DDoS Protection</span>
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">NAT Gateway</span>
+            <span class="tag">Azure Monitor</span>
+            <span class="tag">Custom Policy</span>
+            <span class="tag">Peacetime Telemetry</span>
+            <span class="tag">Microsoft Ignite</span>
+            <span class="tag">Public Preview</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- References -->
+    <section class="section">
+        <h2>🔗 参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=581175" target="_blank" rel="noopener">公式アップデート情報: Peacetime Telemetry (Preview)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=580862" target="_blank" rel="noopener">公式アップデート情報: NAT Gateway v2 IP サポート (Preview)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=580852" target="_blank" rel="noopener">公式アップデート情報: Custom Policy (GA)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/ddos-protection/monitor-ddos-protection#peacetime-telemetry-availability-preview" target="_blank" rel="noopener">Microsoft Learn: Monitor Azure DDoS Protection (Peacetime Telemetry)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/ddos-protection/alerts#traffic-condition-alerts-during-peacetime-preview" target="_blank" rel="noopener">Microsoft Learn: 平常時のトラフィック条件アラート設定</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/ddos-protection/ddos-protection-nat-gateway-standardv2" target="_blank" rel="noopener">Microsoft Learn: Azure DDoS Protection for NAT Gateway StandardV2</a></li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/ddos-protection/ddos-custom-policy-overview" target="_blank" rel="noopener">Microsoft Learn: Azure DDoS Protection custom policy</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/ddos-protection/" target="_blank" rel="noopener">料金ページ: Azure DDoS Protection</a></li>
+        </ul>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p><strong>出典</strong>: Azure Updates (<a href="https://azure.microsoft.com/updates?id=581175" target="_blank" rel="noopener">581175</a> / <a href="https://azure.microsoft.com/updates?id=580862" target="_blank" rel="noopener">580862</a> / <a href="https://azure.microsoft.com/updates?id=580852" target="_blank" rel="noopener">580852</a>)、Microsoft Learn ドキュメント</p>
+        <p>ソースレポート: reports/2026/2026-11-17-ddos-protection-updates.md (Azure News Summary プロジェクト)</p>
+        <p>生成日: 2026-11-18</p>
+    </footer>
+
+</div>
+</body>
+</html>

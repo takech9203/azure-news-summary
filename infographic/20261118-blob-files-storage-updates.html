@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Blob Storage / Azure Files: ストレージアップデート群 (2026-11-17)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Storage category color */
+    --storage-cyan: #00BCF2;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--storage-cyan) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+}
+
+.hero .date {
+    font-size: 14px;
+    opacity: 0.9;
+    letter-spacing: 0.05em;
+}
+
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin: 10px 0 14px;
+}
+
+.hero .subtitle {
+    font-size: 16px;
+    opacity: 0.95;
+    margin-bottom: 16px;
+}
+
+.hero-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Section */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 22px 0 10px;
+}
+
+/* Badges */
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+    white-space: nowrap;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+
+/* Update summary cards */
+.update-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.update-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 18px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.update-card.cyan { border-top-color: var(--storage-cyan); }
+.update-card.green { border-top-color: var(--ms-green); }
+.update-card.purple { border-top-color: var(--ms-purple); }
+
+.update-card h4 {
+    font-size: 15px;
+    margin: 8px 0 6px;
+    color: var(--ms-text-primary);
+}
+
+.update-card p {
+    font-size: 13.5px;
+    color: var(--ms-text-secondary);
+}
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14.5px;
+}
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { font-size: 13.5px; margin: 8px 0; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 15px; margin-bottom: 4px; }
+.feature-content p { font-size: 13.5px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; margin-top: 6px; }
+.feature-content li { font-size: 13.5px; color: var(--ms-text-secondary); margin: 4px 0; }
+
+/* Detail blocks per update */
+.detail-block {
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 18px 0;
+    background: var(--ms-surface);
+}
+
+.detail-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.detail-header .num {
+    background: var(--azure-blue);
+    color: white;
+    font-weight: 700;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.detail-header h3 { font-size: 17px; color: var(--azure-dark-blue); flex: 1; min-width: 200px; }
+
+.detail-block > p { font-size: 14px; margin-bottom: 8px; }
+.detail-block ul { padding-left: 20px; }
+.detail-block li { font-size: 13.5px; margin: 6px 0; }
+
+/* Tier flow */
+.tier-flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.tier-step {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 14px;
+    text-align: center;
+    color: #fff;
+}
+.tier-hot { background: var(--ms-red); }
+.tier-cool { background: var(--azure-blue); }
+.tier-cold { background: var(--azure-dark-blue); }
+.tier-arrow {
+    color: var(--ms-text-secondary);
+    font-size: 12.5px;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Table */
+.spec-table-wrap { overflow-x: auto; }
+table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    margin: 12px 0;
+}
+table.spec-table th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+table.spec-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+table.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+table.spec-table td:first-child { font-weight: 500; white-space: normal; }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang { color: #9CDCFE; font-weight: bold; }
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+    background: #1E1E1E;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 18px;
+    border: 1px solid var(--ms-border);
+    background: var(--ms-blue-100);
+}
+
+.merit-card h4 {
+    font-size: 15px;
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+}
+
+.merit-card ul { padding-left: 18px; }
+.merit-card li { font-size: 13.5px; margin: 8px 0; }
+
+.caution-card {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin: 12px 0;
+}
+
+.caution-card h4 {
+    color: var(--ms-orange);
+    font-size: 15px;
+    margin-bottom: 8px;
+}
+
+.caution-card ul { padding-left: 18px; }
+.caution-card li { font-size: 13.5px; margin: 6px 0; }
+
+/* Use cases */
+.usecase-card {
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    margin: 16px 0;
+    overflow: hidden;
+    background: var(--ms-surface);
+}
+
+.usecase-header {
+    background: linear-gradient(90deg, var(--azure-blue), var(--storage-cyan));
+    color: white;
+    padding: 12px 18px;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.usecase-body { padding: 16px 18px; }
+.usecase-body p { font-size: 13.5px; margin: 8px 0; }
+.usecase-body .label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 10px;
+    margin-right: 6px;
+}
+
+/* Pricing & region lists */
+.info-list { padding-left: 20px; }
+.info-list li { font-size: 13.5px; margin: 8px 0; }
+
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+    margin: 14px 0;
+}
+
+.region-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px;
+    border-left: 4px solid var(--storage-cyan);
+}
+
+.region-card h5 { font-size: 13.5px; color: var(--azure-dark-blue); margin-bottom: 4px; }
+.region-card p { font-size: 12.5px; color: var(--ms-text-secondary); }
+
+/* Related services */
+.related-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+}
+
+.related-card h5 { font-size: 14px; color: var(--azure-blue); margin-bottom: 4px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px;
+    margin: 16px 0;
+}
+
+.summary-box p { font-size: 14px; margin: 8px 0; }
+.summary-box ol { padding-left: 22px; }
+.summary-box li { font-size: 14px; margin: 8px 0; }
+
+/* Links */
+a { color: var(--azure-blue); }
+
+.links-list { padding-left: 20px; }
+.links-list li { font-size: 13.5px; margin: 6px 0; word-break: break-all; }
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12.5px;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    padding: 24px 16px 36px;
+    font-size: 12.5px;
+    color: var(--ms-text-secondary);
+}
+.footer a { color: var(--azure-blue); }
+.footer .sources { margin-top: 8px; line-height: 1.9; }
+
+@media (max-width: 720px) {
+    .hero h1 { font-size: 22px; }
+    .update-grid, .before-after, .merit-grid, .related-grid { grid-template-columns: 1fr; }
+    .section { padding: 20px 16px; }
+    .tier-flow { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <header class="hero">
+        <div class="date">📅 リリース日: 2026-11-17 (Microsoft Ignite) | In preview ×3 / Launched (GA) ×1</div>
+        <h1>Azure Blob Storage / Azure Files<br>ストレージアップデート群</h1>
+        <div class="subtitle">セッションベース認証・NFS on HDD・Smart Tier (Gov/China GA)・Turbo Tier — AI 時代の「性能」と「コスト」を両立する 4 大アップデート</div>
+        <div class="hero-badges">
+            <span class="service-badge">📦 Azure Blob Storage</span>
+            <span class="service-badge">🗂️ Azure Data Lake Storage</span>
+            <span class="service-badge">📁 Azure Files</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要: 同日発表された 4 つのアップデート</h2>
+        <p style="font-size:14px;">Microsoft Ignite に合わせて、Azure Storage ファミリー (Blob Storage / Data Lake Storage / Azure Files) の 4 つのアップデートが同日に発表された。いずれもストレージの「性能」「コスト最適化」「セキュリティ」を強化するもので、特に <strong>AI ワークロード</strong>を意識した内容となっている。</p>
+
+        <div class="update-grid">
+            <div class="update-card">
+                <span class="badge badge-preview">In Preview</span>
+                <h4>🔐 1. セッションベース認証 (Blob / Data Lake Storage)</h4>
+                <p>Microsoft Entra ID による 1 回の認証で短命セッション (5 分) を確立し、以降の読み取りリクエストの認証・認可レイテンシを削減。AI エージェントや高頻度読み取りワークロード向け。</p>
+            </div>
+            <div class="update-card cyan">
+                <span class="badge badge-preview">In Preview</span>
+                <h4>📁 2. Azure Files NFS shares on HDD</h4>
+                <p>従来 SSD のみだった Azure Files の NFS 共有に、コスト効率を優先する Linux ワークロード向けの HDD オプションが追加。</p>
+            </div>
+            <div class="update-card green">
+                <span class="badge badge-ga">Launched (GA)</span>
+                <h4>🔄 3. Smart Tier の Azure Government / China リージョン GA</h4>
+                <p>アクセスパターンに基づき hot / cool / cold 層間でデータを自動移動するフルマネージド階層化機能が、Azure Government と 21Vianet 運営の Azure China リージョンで一般提供開始。</p>
+            </div>
+            <div class="update-card purple">
+                <span class="badge badge-preview">In Preview</span>
+                <h4>⚡ 4. Azure Blob Storage Turbo Tier</h4>
+                <p>対象の Blob Storage アカウントに SSD バックエンドの高性能層を提供。AI トレーニング・推論・分析向けに高スループット・低レイテンシを実現しつつ、低頻度データは HDD ベースの既存アクセス層に保持可能。</p>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Entra ID 認証では Get Blob リクエストごとに OAuth トークン検証と認可評価が発生し、高頻度読み取りでは認証・認可のレイテンシが積み上がっていた</li>
+                    <li>Azure Files の NFS 共有は SSD のみの提供で、バックアップや共有データセットなどコスト重視の Linux ワークロードには割高だった</li>
+                    <li>Smart Tier は Azure パブリッククラウドのみで、Azure Government / China では手動の層配置やライフサイクル管理ルールの作成が必要だった</li>
+                    <li>Blob の標準アクセス層は HDD ベースで、AI トレーニングなどで SSD 性能を得るには別のサービス・アカウント構成が必要だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>コンテナー単位の 5 分間セッションで認証・認可を再利用し、リクエストごとの認証レイテンシを削減 (SDK では設定 1 つで有効化)</li>
+                    <li>Azure Files NFS で HDD を選択でき、Provisioned v2 課金モデルで容量・IOPS・スループットを独立プロビジョニング可能に</li>
+                    <li>Gov / China リージョンでも hot → cool (30 日) → cold (90 日) の自動階層化が利用可能になり、コスト最適化が自動化</li>
+                    <li>単一のストレージアカウント・名前空間・Blob API のまま、アクティブデータに SSD 性能 (Turbo Tier)、非アクティブデータに HDD のコスト効率を両立</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    Agent([🤖 AI エージェント / アプリ]) -->|① Entra ID 認証 + Create Session| Auth["🔐 セッションベース認証&lt;br&gt;(Preview)"]
+    Auth -->|② 5 分間セッションで高速 Get Blob| Blob
+    Linux([🐧 Linux ワークロード]) -->|NFSv4.1 マウント| Files
+
+    subgraph Azure["☁️ Azure Storage"]
+        Blob[("📦 Blob / Data Lake Storage")]
+        Turbo["⚡ Turbo Tier (SSD)&lt;br&gt;Preview"]
+        Smart["🔄 Smart Tier (hot/cool/cold 自動階層化)&lt;br&gt;Gov/China で GA"]
+        Files[("📁 Azure Files NFS&lt;br&gt;SSD + HDD (Preview)")]
+        Blob --- Turbo
+        Blob --- Smart
+    end
+            </pre>
+        </div>
+        <div class="highlight-box">
+            💡 AI エージェントなどの高頻度読み取りは<strong>セッションベース認証と Turbo Tier で高速化</strong>し、アクセス頻度の低いデータは <strong>Smart Tier や Azure Files の HDD オプションでコスト最適化</strong>する、という「性能とコストの使い分け」が今回のアップデート群の軸である。
+        </div>
+    </section>
+
+    <!-- サービスアップデートの詳細 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔍</span>サービスアップデートの詳細</h2>
+
+        <div class="detail-block">
+            <div class="detail-header">
+                <div class="num">1</div>
+                <h3>セッションベース認証 (Azure Blob / Data Lake Storage)</h3>
+                <span class="badge badge-preview">Public Preview</span>
+            </div>
+            <p>クライアントが Microsoft Entra ID で一度認証して <strong>Create Session</strong> 操作を呼び出すと、Azure Storage が RBAC / ABAC を評価して <strong>5 分間のセッション資格情報</strong> (セッショントークン + 署名用セッションキー) を返す。以降の Get Blob リクエストは Entra ID アクセストークンの代わりにセッショントークンと署名で認可されるため、リクエストごとの認証・認可時間が削減される。</p>
+            <div class="feature-card">
+                <div class="feature-icon">🚀</div>
+                <div class="feature-content">
+                    <h4>性能向上</h4>
+                    <p>ID と権限の検証はセッション作成時の 1 回のみ。以降の読み取りはセッションを再利用。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <div class="feature-content">
+                    <h4>最小権限の維持</h4>
+                    <p>既存の Azure RBAC / ABAC の権限モデルをそのまま使用。セッションは 1 コンテナーにスコープされ、5 分で失効し、作成元クライアント (IP) にバインドされ、全リクエストに署名が必要。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📝</div>
+                <div class="feature-content">
+                    <h4>完全なトレーサビリティ</h4>
+                    <p>すべてのリクエストがセッションを作成した Entra ID の ID に紐づき、診断ログ (StorageRead カテゴリの CreateSession / GetBlob 操作) で監査可能。</p>
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🌐</div>
+                <div class="feature-content">
+                    <h4>対応範囲と利用開始</h4>
+                    <p>全パブリックリージョンで利用可能。対応操作は <strong>Get Blob のみ</strong>。REST API (バージョン 2026-02-06 以降) と Azure Storage SDK で利用可能。SDK ではクライアント設定 1 つで有効化でき、セッションのライフサイクル (作成・署名・期限前の更新) は SDK が自動管理。利用には <code>Microsoft.Storage</code> の <code>SessionRequest</code> フィーチャー登録 (プレビュー申請) が必要。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-block">
+            <div class="detail-header">
+                <div class="num">2</div>
+                <h3>Azure Files NFS shares on HDD</h3>
+                <span class="badge badge-preview">Public Preview</span>
+            </div>
+            <p>Azure Files の NFS 共有が、既存の SSD に加えて <strong>HDD</strong> でも利用可能になった。汎用アプリケーション、共有データセット、バックアップなど、コスト効率を優先する Linux ワークロード向けのフルマネージドオプション。</p>
+            <ul>
+                <li><strong>ストレージ支出のワークロード適合</strong>: コスト重視のデータは HDD、性能重視のアプリケーションデータは SSD と使い分け可能</li>
+                <li><strong>使い慣れた NFS アクセス</strong>: オンプレミスのファイルサーバーや NAS 環境の Linux ワークロードをフルマネージドサービスへ移行可能</li>
+                <li><strong>容量と性能の独立構成</strong>: Provisioned v2 課金モデルで容量・IOPS・スループットを個別にプロビジョニング</li>
+                <li><strong>利用開始</strong>: プレビュー参加には <a href="https://go.microsoft.com/fwlink/?LinkId=2387652" target="_blank" rel="noopener">サインアップ調査</a> による申請が必要</li>
+            </ul>
+        </div>
+
+        <div class="detail-block">
+            <div class="detail-header">
+                <div class="num">3</div>
+                <h3>Smart Tier の Azure Government / China リージョン GA</h3>
+                <span class="badge badge-ga">Launched (GA)</span>
+            </div>
+            <p>Azure Blob / Data Lake Storage (ADLS) の Smart Tier が <strong>Azure Government</strong> および <strong>Azure China (21Vianet 運営)</strong> リージョンで一般提供開始。これにより、ゾーン冗長を持つ Azure パブリッククラウド・Government・China の全リージョンで GA となった。</p>
+            <p>Smart Tier は標準オンライン層 (hot / cool / cold) における手動の層配置を不要にするフルマネージド・自動階層化ソリューション。</p>
+            <div class="tier-flow">
+                <div class="tier-step tier-hot">🔥 hot<br><span style="font-weight:400;font-size:12px;">新規データ</span></div>
+                <div class="tier-arrow">— 30 日間<br>非アクセス →</div>
+                <div class="tier-step tier-cool">❄️ cool</div>
+                <div class="tier-arrow">— さらに 60 日<br>(合計 90 日) →</div>
+                <div class="tier-step tier-cold">🧊 cold</div>
+                <div class="tier-arrow">— アクセス発生で<br>hot へ自動復帰 ↩</div>
+            </div>
+            <ul>
+                <li>Get Blob / Put Blob がアクセス操作として最終アクセス時刻を更新 (Get Blob Properties / Metadata / Tags は対象外)</li>
+                <li><strong>128 KiB 以下</strong>の小さいオブジェクトは効率のため hot 層に留まり階層移動しない</li>
+                <li><strong>Archive 層は対象外</strong>。データは常にオンライン層に保持される</li>
+            </ul>
+        </div>
+
+        <div class="detail-block">
+            <div class="detail-header">
+                <div class="num">4</div>
+                <h3>Azure Blob Storage Turbo Tier</h3>
+                <span class="badge badge-preview">Public Preview</span>
+            </div>
+            <p>対象となる Azure Blob Storage アカウントに、<strong>SSD バックエンド</strong>の性能を提供する新しい層。AI トレーニング、推論、分析などの要求の厳しいデータワークロード向けに設計されている。</p>
+            <ul>
+                <li>アクティブなデータには高スループット・低レイテンシを提供し、アクセス頻度の低いデータはコスト効率のよい HDD ベースのアクセス層に保持</li>
+                <li>アクセスパターンの変化に応じて <strong>Smart Placement</strong> がアクティブなワーキングセットを管理</li>
+                <li>データ、名前空間、Blob API サーフェスは単一のストレージアカウントのまま維持</li>
+                <li>プレビューは対象の <strong>LRS アカウント</strong>・<strong>一部リージョン</strong>で利用可能。アクセスはリージョンのキャパシティと適格性に依存</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>技術仕様</h2>
+        <div class="spec-table-wrap">
+            <table class="spec-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>セッションベース認証: スコープ</td><td>1 セッション = 1 コンテナー</td></tr>
+                <tr><td>セッションベース認証: 有効期限</td><td>5 分 (延長・更新不可、新規セッション作成が必要)</td></tr>
+                <tr><td>セッションベース認証: 対応操作</td><td>Get Blob のみ (他の操作は Entra ID アクセストークンが必要)</td></tr>
+                <tr><td>セッションベース認証: 必要 REST バージョン</td><td>2026-02-06 以降 (SDK: Python 12.31.1+、.NET 12.31.0-beta.1+ など)</td></tr>
+                <tr><td>セッションベース認証: 課金</td><td>セッション作成 = 書き込みトランザクション、セッション経由の読み取り = 標準トランザクションレート</td></tr>
+                <tr><td>Azure Files NFS: プロトコル</td><td>NFSv4.1 (Linux のみ、Windows 非対応)</td></tr>
+                <tr><td>Azure Files NFS on HDD: 課金モデル</td><td>Provisioned v2 (容量・IOPS・スループットを独立プロビジョニング)</td></tr>
+                <tr><td>Smart Tier: 対応アカウント</td><td>Standard 汎用 v2 (GPv2) + ゾーン冗長 (ZRS / GZRS / RA-GZRS)、ブロック BLOB のみ</td></tr>
+                <tr><td>Smart Tier: 階層化ルール</td><td>hot → (30 日非アクセス) → cool → (さらに 60 日) → cold、アクセスで hot に復帰</td></tr>
+                <tr><td>Smart Tier: 監視メトリック</td><td>SmartHot / SmartCool / SmartCold / SmartHot-small (Blob tier 分割で確認)</td></tr>
+                <tr><td>Turbo Tier: 対象アカウント</td><td>対象の Blob Storage LRS アカウント (プレビュー、一部リージョン)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 class="subsection-title">前提条件</h3>
+        <ul class="info-list">
+            <li><strong>セッションベース認証</strong>: プレビュー申請 (フィーチャー登録) の承認、Microsoft Entra ID 認証 + Azure RBAC/ABAC によるアクセス制御、最新の Blob クライアントライブラリ</li>
+            <li><strong>Azure Files NFS on HDD</strong>: サインアップ調査によるプレビューアクセス申請</li>
+            <li><strong>Smart Tier</strong>: Standard GPv2 アカウント + ゾーン冗長 (ZRS/GZRS/RA-GZRS)</li>
+        </ul>
+
+        <h3 class="subsection-title">Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI</span></div>
+            <pre><code class="language-bash"># セッションベース認証: プレビュー登録
+az feature register --namespace Microsoft.Storage --name SessionRequest
+
+# 登録状態の確認
+az feature show --namespace Microsoft.Storage --name SessionRequest
+
+# Smart Tier: 既存アカウントの既定アクセス層を Smart に変更 (Azure CLI 2.87.0 以降)
+az storage account update \
+  --resource-group &lt;resource-group&gt; \
+  --name &lt;storage-account-name&gt; \
+  --access-tier Smart</code></pre>
+        </div>
+
+        <h3 class="subsection-title">SDK でのセッションベース認証の有効化 (Python の例)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">python</span><span>Azure Storage SDK</span></div>
+            <pre><code class="language-python">from azure.identity import DefaultAzureCredential
+from azure.storage.blob import BlobServiceClient
+
+with DefaultAzureCredential() as credential:
+    with BlobServiceClient(
+        account_url="https://&lt;storage-account&gt;.blob.core.windows.net",
+        credential=credential,
+        use_session=True,  # これだけでセッションベース認証が有効化される
+    ) as service:
+        container = service.get_container_client("&lt;container-name&gt;")
+        content = container.download_blob("&lt;blob-name&gt;").readall()</code></pre>
+        </div>
+
+        <h3 class="subsection-title">Azure Portal</h3>
+        <div class="highlight-box">
+            <strong>Smart Tier</strong>: ストレージアカウントの「設定」&gt;「構成」で「Blob アクセス層 (既定)」を <em>Smart</em> に設定して保存する。新規作成時は「詳細」タブの「Blob Storage」でアクセス層に <em>Smart</em> を選択する。既定の層が明示的に設定されていない BLOB が Smart Tier の管理対象になる (明示的に層が設定された BLOB は移動しない)。
+        </div>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">✨</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>AI エージェント・AI トレーニング・分析などの読み取り集中型ワークロードで、認証オーバーヘッド削減 (セッションベース認証) と SSD 性能 (Turbo Tier) によりスループットとレイテンシの予測可能性が向上</li>
+                    <li>Azure Files NFS の HDD オプションと Smart Tier の自動階層化により、アクセス頻度に応じたストレージコストの最適化を手運用なしで実現</li>
+                    <li>規制要件で Azure Government / China リージョンを利用する組織も、パブリッククラウドと同じ自動階層化 (Smart Tier) を利用可能</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>セッションベース認証は既存の Entra ID + RBAC/ABAC の権限モデル・監査ログをそのまま維持し、SDK なら設定 1 つで有効化できる (アプリケーションロジックの変更不要)</li>
+                    <li>Turbo Tier は単一アカウント・単一名前空間・同一 Blob API のまま SSD 性能を得られるため、データ移行や二重管理が不要</li>
+                    <li>Smart Tier は階層間移動のトランザクション、早期削除料金、データ取得料金が課金されず、ライフサイクル管理ルールの作成・保守が不要</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-card">
+            <h4>🔐 セッションベース認証</h4>
+            <ul>
+                <li>Get Blob 操作のみ対応。SAS (ユーザー委任/サービス/アカウント) や Shared Key とは併用不可</li>
+                <li>認可はコンテナーレベルで評価されるため、コンテナーより細かい粒度の ABAC 条件は評価されず、セッション有効期間 (5 分) 中の権限変更は次のセッション作成まで反映されない</li>
+                <li>Blob インデックスタグの取得、セカンダリアカウントへの読み取り、Microsoft Purview は非対応</li>
+                <li>プレビュー参加の承認に数日かかる場合がある</li>
+            </ul>
+        </div>
+        <div class="caution-card">
+            <h4>📁 Azure Files NFS on HDD</h4>
+            <ul>
+                <li>プレビュー利用にはサインアップ調査による申請が必要</li>
+                <li>NFS 共有自体の制約 (Windows 非対応、ACL 非対応、GRS/GZRS 非対応、ユーザーベース認証なしでネットワーク制御必須、1 ユーザーあたり 16 GID 制限) は引き続き適用される</li>
+            </ul>
+        </div>
+        <div class="caution-card">
+            <h4>🔄 Smart Tier</h4>
+            <ul>
+                <li>Standard GPv2 + ゾーン冗長アカウントのみ対応 (GPv1、Premium、LRS/GRS は非対象)。ブロック BLOB のみ対応</li>
+                <li>Archive 層へは移動しない。128 KiB 超のオブジェクトごとに月次の監視オペレーション料金が発生</li>
+                <li>Smart Tier から明示的な層へ移動したオブジェクトは Smart Tier に戻せない。有効化後、最初の階層化イベントは 30 日後に発生</li>
+            </ul>
+        </div>
+        <div class="caution-card">
+            <h4>⚡ Turbo Tier</h4>
+            <ul>
+                <li>プレビューは対象の LRS アカウント・一部リージョンのみ。アクセスはリージョンのキャパシティと適格性に依存する</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🤖 ユースケース 1: AI エージェントによる大規模・高頻度のデータ読み取り</div>
+            <div class="usecase-body">
+                <p><span class="label">シナリオ</span>RAG やエージェントシステムが同一コンテナー内の大量の BLOB を同一 ID で高頻度に読み取る。リクエストごとの Entra ID トークン検証がレイテンシのボトルネックになっている。</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+                    <pre><code class="language-bash"># プレビュー登録後、SDK クライアントでセッションを有効化するだけ
+az feature register --namespace Microsoft.Storage --name SessionRequest
+# アプリ側: BlobServiceClient(..., use_session=True)  # Python の例</code></pre>
+                </div>
+                <p><span class="label">効果</span>認証・認可はセッション作成時の 1 回に集約され、読み取りレイテンシの削減と安定化が期待できる。監査ログでの ID 追跡性は維持される。</p>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🏛️ ユースケース 2: アクセスパターンが不明なデータのコスト自動最適化 (Gov/China)</div>
+            <div class="usecase-body">
+                <p><span class="label">シナリオ</span>Azure Government リージョンで運用する部門が、アクセスパターンの読めない大量のブロック BLOB をライフサイクルルールなしでコスト最適化したい。</p>
+                <div class="code-block">
+                    <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+                    <pre><code class="language-bash">az storage account update \
+  --resource-group rg-gov-data \
+  --name stgovdata001 \
+  --access-tier Smart</code></pre>
+                </div>
+                <p><span class="label">効果</span>30 日 / 90 日の非アクセスで cool / cold 層へ自動移動し、アクセス時は hot 層へ自動復帰。階層移動・取得・早期削除の追加料金なしでストレージコストを削減できる。</p>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🐧 ユースケース 3: コスト重視の Linux 共有ストレージ</div>
+            <div class="usecase-body">
+                <p><span class="label">シナリオ</span>オンプレミス NAS 上のバックアップ・共有データセットを Azure へ移行したいが、SSD ベースの NFS 共有ではコストが見合わない。</p>
+                <p><span class="label">効果</span>Azure Files NFS on HDD により、NFSv4.1 のまま低コストでフルマネージド化。Provisioned v2 で容量と性能を個別に調整し、性能が必要な共有のみ SSD を選択する使い分けができる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <ul class="info-list">
+            <li><strong>セッションベース認証</strong>: セッション作成は標準の書き込みトランザクションとして課金。セッション経由の Get Blob はアカウントタイプの標準トランザクションレートで課金</li>
+            <li><strong>Smart Tier</strong>: 容量は基盤となる層 (hot/cool/cold) の既存メーターで課金 (Smart Tier 専用の容量料金はなし)。128 KiB 超のオブジェクトに月次の監視オペレーション料金 (1 万オブジェクト単位)。Smart Tier 内の階層移動・早期削除・データ取得は無料。アクセス操作は hot 層レートで課金。Smart Tier から外部の層へ移動する際はオブジェクトごとに cool 書き込み操作が発生</li>
+            <li><strong>Azure Files NFS on HDD</strong>: Provisioned v2 課金モデル (容量・IOPS・スループットを独立プロビジョニング)</li>
+            <li><strong>Turbo Tier</strong>: プレビュー発表時点で個別の料金情報は未確認</li>
+        </ul>
+        <div class="highlight-box">
+            詳細は公式料金ページを参照: <a href="https://azure.microsoft.com/pricing/details/storage/blobs/" target="_blank" rel="noopener">Azure Blob Storage の料金</a> / <a href="https://azure.microsoft.com/pricing/details/storage/files/" target="_blank" rel="noopener">Azure Files の料金</a>
+        </div>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <div class="region-grid">
+            <div class="region-card">
+                <h5>🔐 セッションベース認証</h5>
+                <p>全パブリックリージョン (プレビュー)</p>
+            </div>
+            <div class="region-card">
+                <h5>📁 Azure Files NFS on HDD</h5>
+                <p>プレビュー (サインアップ制。対象リージョンの公式情報は発表内では未記載)</p>
+            </div>
+            <div class="region-card">
+                <h5>🔄 Smart Tier</h5>
+                <p>ゾーン冗長対応の全リージョン (Azure パブリッククラウド、Azure Government、Azure China (21Vianet)) で GA</p>
+            </div>
+            <div class="region-card">
+                <h5>⚡ Turbo Tier</h5>
+                <p>一部リージョンの対象 LRS アカウント (プレビュー)</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>Microsoft Entra ID / Azure RBAC / ABAC</h5>
+                <p>セッションベース認証の認証・認可基盤。セッションは既存の権限モデルを継承する。</p>
+            </div>
+            <div class="related-card">
+                <h5>Azure Monitor / Log Analytics</h5>
+                <p>セッションの監査 (StorageRead ログの CreateSession / GetBlob) や Smart Tier の層分布メトリック (SmartHot / SmartCool / SmartCold) の監視に使用。</p>
+            </div>
+            <div class="related-card">
+                <h5>Blob ライフサイクル管理</h5>
+                <p>Smart Tier 対象オブジェクトには階層化操作は作用しないが、削除操作は引き続き有効。明示的な層管理をしたい場合の代替手段。</p>
+            </div>
+            <div class="related-card">
+                <h5>Azure Data Lake Storage</h5>
+                <p>セッションベース認証、Smart Tier、Turbo Tier はいずれも ADLS (階層型名前空間) を含む発表。</p>
+            </div>
+            <div class="related-card">
+                <h5>Private Link / VNet サービスエンドポイント</h5>
+                <p>Azure Files NFS はユーザーベース認証がないため、プライベートエンドポイントまたはサービスエンドポイントによるネットワーク制御が必須。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>まとめ</h2>
+        <div class="summary-box">
+            <p>今回の 4 アップデートは、Azure Storage を <strong>AI 時代のデータ基盤</strong>として強化する一貫した方向性を示している。性能面では<strong>セッションベース認証と Turbo Tier</strong> が高頻度・低レイテンシの読み取り要件に応え、コスト面では <strong>Smart Tier のソブリンクラウド展開と Azure Files NFS の HDD オプション</strong>が自動化された・きめ細かなコスト最適化を可能にする。</p>
+            <p><strong>Solutions Architect としての推奨アクション:</strong></p>
+            <ol>
+                <li>読み取り集中型の AI / 分析ワークロードを持つ顧客には<strong>セッションベース認証と Turbo Tier のプレビュー評価</strong>を提案</li>
+                <li>ゾーン冗長の GPv2 アカウントでは<strong>既定アクセス層の Smart Tier 化</strong>を検討</li>
+                <li>コスト重視の Linux NFS ワークロードには <strong>HDD プレビューへのサインアップ</strong>を案内</li>
+            </ol>
+            <p>いずれのプレビューも本番利用前に制約事項 (対応操作、リージョン、アカウント要件) の確認が必要である。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Azure Blob Storage</span>
+            <span class="tag">Azure Data Lake Storage</span>
+            <span class="tag">Azure Files</span>
+            <span class="tag">Storage</span>
+            <span class="tag">Security</span>
+            <span class="tag">Microsoft Ignite</span>
+            <span class="tag">In preview</span>
+            <span class="tag">Launched</span>
+            <span class="tag">NFS</span>
+            <span class="tag">Smart Tier</span>
+            <span class="tag">Turbo Tier</span>
+            <span class="tag">セッションベース認証</span>
+        </div>
+    </section>
+
+    <!-- 参考リンク -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="links-list">
+            <li><a href="https://azure.microsoft.com/updates?id=580306" target="_blank" rel="noopener">公式アップデート情報: Session-based authentication for Azure Blob and Data Lake Storage (Public Preview)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=579369" target="_blank" rel="noopener">公式アップデート情報: Azure Files NFS shares on HDD (Public Preview)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=579040" target="_blank" rel="noopener">公式アップデート情報: Smart Tier in Azure Government and China regions (GA)</a></li>
+            <li><a href="https://azure.microsoft.com/updates?id=579031" target="_blank" rel="noopener">公式アップデート情報: Azure Blob Storage turbo tier (Public Preview)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage/blobs/session-based-authentication" target="_blank" rel="noopener">Microsoft Learn: Session-based authentication (preview)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage/blobs/access-tiers-smart" target="_blank" rel="noopener">Microsoft Learn: Optimize Azure Blob Storage costs with smart tier</a></li>
+            <li><a href="https://learn.microsoft.com/azure/storage/files/files-nfs-protocol" target="_blank" rel="noopener">Microsoft Learn: NFS file shares in Azure Files</a></li>
+            <li><a href="https://aka.ms/sessionauthblog" target="_blank" rel="noopener">Azure Blog: Session-based authentication</a></li>
+            <li><a href="https://aka.ms/TurboTierPreviewBlog" target="_blank" rel="noopener">Azure Blog: Turbo tier preview</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/storage/blobs/" target="_blank" rel="noopener">料金ページ: Azure Blob Storage</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/storage/files/" target="_blank" rel="noopener">料金ページ: Azure Files</a></li>
+        </ul>
+    </section>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <p><strong>出典</strong>: Azure Updates / Microsoft Learn / Azure Blog (2026-11-17 発表)</p>
+        <p class="sources">
+            <a href="https://azure.microsoft.com/updates?id=580306" target="_blank" rel="noopener">Session-based authentication (Preview)</a> |
+            <a href="https://azure.microsoft.com/updates?id=579369" target="_blank" rel="noopener">Azure Files NFS on HDD (Preview)</a> |
+            <a href="https://azure.microsoft.com/updates?id=579040" target="_blank" rel="noopener">Smart Tier Gov/China (GA)</a> |
+            <a href="https://azure.microsoft.com/updates?id=579031" target="_blank" rel="noopener">Blob Storage Turbo Tier (Preview)</a>
+        </p>
+        <p style="margin-top:10px;">このインフォグラフィックは Azure News レポート (2026-11-17-blob-files-storage-updates.md) を基に生成されました。</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+
+</body>
+</html>

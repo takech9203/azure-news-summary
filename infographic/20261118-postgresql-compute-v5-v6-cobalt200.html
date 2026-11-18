@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Database for PostgreSQL: 新コンピュートオプション (v6 / v5 diskless / Cobalt 200) GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .meta { font-size: 14px; opacity: 0.9; }
+.header .meta span { margin-right: 20px; display: inline-block; }
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.subsection-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* 3 updates grid */
+.updates-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.update-card {
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 18px;
+    background: var(--ms-surface);
+}
+.update-card .icon { font-size: 30px; margin-bottom: 8px; }
+.update-card h4 { font-size: 16px; color: var(--azure-dark-blue); margin-bottom: 8px; }
+.update-card p { font-size: 13.5px; color: var(--ms-text-secondary); }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* Stats */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--azure-dark-blue); margin-bottom: 6px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 20px; margin-top: 6px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+    background: #FFFFFF;
+}
+.diagram-caption {
+    font-size: 13.5px;
+    color: var(--ms-text-secondary);
+    text-align: center;
+    margin-top: -8px;
+    margin-bottom: 16px;
+}
+
+/* Tables */
+.table-wrap { overflow-x: auto; margin: 16px 0; }
+table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+    background: var(--ms-surface);
+}
+table.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 12px;
+    text-align: left;
+    white-space: nowrap;
+}
+table.spec-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--ms-border);
+    white-space: nowrap;
+}
+table.spec-table tr:nth-child(even) { background: var(--ms-blue-100); }
+table.spec-table td.em { font-weight: 700; color: var(--azure-dark-blue); }
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: var(--ms-blue-800);
+}
+
+/* Merit / Caution */
+.merit-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 18px;
+    border: 2px solid var(--ms-green);
+    background: #F2FBF2;
+}
+.merit-card.tech { border-color: var(--azure-blue); background: var(--ms-blue-100); }
+.merit-card h4 { margin-bottom: 10px; }
+.merit-card.biz h4 { color: var(--ms-green); }
+.merit-card.tech h4 { color: var(--azure-blue); }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin-bottom: 8px; }
+
+.caution-box {
+    background: #FFF8E6;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 18px;
+}
+.caution-box h4 { color: var(--ms-orange); margin-bottom: 10px; }
+.caution-box ul { padding-left: 20px; font-size: 14px; }
+.caution-box li { margin-bottom: 8px; }
+
+/* Use cases */
+.usecase-card {
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 18px;
+    margin: 14px 0;
+    background: var(--ms-surface);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.usecase-card h4 { color: var(--ms-purple); font-size: 16px; margin-bottom: 10px; }
+.usecase-card p { font-size: 14px; margin-bottom: 8px; }
+.usecase-card .label { font-weight: 700; color: var(--ms-text-primary); }
+
+/* Pricing / regions / related */
+.info-list { padding-left: 22px; font-size: 14.5px; }
+.info-list li { margin-bottom: 8px; }
+
+.related-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 10px 0;
+}
+.related-card .r-icon { font-size: 22px; }
+.related-card h5 { font-size: 15px; color: var(--azure-dark-blue); margin-bottom: 4px; }
+.related-card p { font-size: 13.5px; color: var(--ms-text-secondary); }
+
+/* Summary */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+.summary-box strong { color: var(--azure-dark-blue); }
+
+/* Links */
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+.link-list { padding-left: 22px; font-size: 14px; }
+.link-list li { margin-bottom: 6px; }
+
+/* Footer */
+.footer {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    padding: 24px 12px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+.footer .sources { text-align: left; max-width: 760px; margin: 12px auto 0; }
+
+@media (max-width: 680px) {
+    .before-after { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- タイトルエリア -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Database for PostgreSQL (Flexible Server)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>新コンピュートオプションが一般提供開始<br>Intel/AMD v6・v5 diskless・Cobalt 200 (ARM64)</h1>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-17</span>
+            <span>🎪 Microsoft Ignite 発表</span>
+            <span>🏷️ Compute / Databases</span>
+        </div>
+    </header>
+
+    <!-- 概要 -->
+    <section class="section">
+        <h2 class="section-title">📰 概要</h2>
+        <p>Microsoft Ignite に合わせて、Azure Database for PostgreSQL Flexible Server のコンピュートポートフォリオを大幅に拡充する <strong>3 つのアップデートが同時に一般提供 (GA)</strong> となりました。</p>
+
+        <div class="updates-grid">
+            <div class="update-card">
+                <div class="icon">🚀</div>
+                <h4>1. Intel/AMD v6<br>(ローカル一時ディスク付き)</h4>
+                <p>最新の v6 世代コンピュートティアが GA。従来世代より高い性能・より大きなスケール・価格性能比の向上を実現しつつ、ローカル一時ディスクを必要とするワークロード向けにローカル一時ディスクを維持。</p>
+            </div>
+            <div class="update-card">
+                <div class="icon">💡</div>
+                <h4>2. Intel/AMD v5 diskless</h4>
+                <p>ローカル一時 SSD を含まない General Purpose / Memory Optimized の v5 SKU が GA。ローカル一時ストレージを必要としないワークロードで diskless 構成を選択可能に。</p>
+            </div>
+            <div class="update-card">
+                <div class="icon">⚡</div>
+                <h4>3. Cobalt 200 (ARM64)</h4>
+                <p>Microsoft 設計の ARM64 ベースコンピュート「Cobalt 200」が GA。従来の Intel / AMD (x64) に加えて、アーキテクチャの選択肢が拡大。</p>
+            </div>
+        </div>
+
+        <div class="highlight-box">
+            いずれも Flexible Server の操作体験 (プロビジョニング、スケーリング、高可用性などの機能) はそのままに、ワークロードの要件に応じて最適なコンピュートを選択できるようにする拡張です。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">192</div>
+                <div class="stat-label">v6 最大 vCore 数<br>(v5 は 96 まで)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1,832 GiB</div>
+                <div class="stat-label">E192ds_v6 の最大メモリ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">33,333 IOPS</div>
+                <div class="stat-label">D16ds_v6 の最大 IOPS<br>(v5 は 25,600)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">992 MiB/s</div>
+                <div class="stat-label">D16ds_v6 の最大 I/O 帯域<br>(v5 は 600 MiB/s)</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>v5 世代ではローカル一時ディスク付き SKU (Ddsv5/Dadsv5 など) が中心で、ローカル一時ストレージを使わないワークロードでも一時ディスク付き構成を選ぶ必要があった</li>
+                    <li>コンピュートアーキテクチャは Intel / AMD の x64 のみで、ARM64 ベースの選択肢がなかった</li>
+                    <li>General Purpose / Memory Optimized の最大 vCore 数は 96 (v5) までだった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>v6 世代 (Ddsv6/Dadsv6/Edsv6/Eadsv6) により最大 192 vCore・1,832 GiB メモリまでスケール可能。同一 vCore 数でもサポート IOPS / I/O 帯域が向上 (例: D16ds_v6 は 33,333 IOPS / 992 MiB/sec、v5 の 25,600 IOPS / 600 MiB/sec から向上)</li>
+                    <li>ローカル一時ディスクが不要なワークロード向けに v5 diskless (General Purpose / Memory Optimized) を選択可能</li>
+                    <li>Microsoft 設計の ARM64 ベース Cobalt 200 により、ワークロードの互換性やインフラ要件に応じたアーキテクチャ選択 (x64 / ARM64) が可能に</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- アーキテクチャ図 -->
+    <section class="section">
+        <h2 class="section-title">🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    App([👤 アプリケーション / ワークロード])
+    App --> FS
+
+    subgraph Azure["☁️ Azure Database for PostgreSQL Flexible Server"]
+        FS{🔀 ワークロード要件に応じて&lt;br/&gt;コンピュートを選択}
+        FS -->|"高性能・大規模&lt;br/&gt;一時ディスク活用"| V6["🚀 Intel/AMD v6&lt;br/&gt;(temp disk 付き)&lt;br/&gt;Ddsv6 / Dadsv6 / Edsv6 / Eadsv6&lt;br/&gt;最大 192 vCore"]
+        FS -->|"一時ディスク不要"| V5["💡 Intel/AMD v5 diskless&lt;br/&gt;General Purpose /&lt;br/&gt;Memory Optimized"]
+        FS -->|"ARM64&lt;br/&gt;アーキテクチャ"| CB["⚡ Cobalt 200&lt;br/&gt;Microsoft 設計 ARM64"]
+        V6 --> DB[("🗄️ PostgreSQL&lt;br/&gt;データベース")]
+        V5 --> DB
+        CB --> DB
+    end
+            </pre>
+        </div>
+        <p class="diagram-caption">Flexible Server のコンピュートポートフォリオが x64 (v5 diskless / v6 temp disk 付き) と ARM64 (Cobalt 200) に広がり、ワークロード特性に応じた選択が可能になった構成を示しています。</p>
+    </section>
+
+    <!-- 主要機能 -->
+    <section class="section">
+        <h2 class="section-title">⭐ サービスアップデートの詳細 (主要機能)</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>1. Intel/AMD v6 コンピュートティア (ローカル一時ディスク付き) の GA</h4>
+                <ul>
+                    <li>v6 世代は「より高い性能・より大きなスケール・価格性能比の向上」を実現しつつ、ローカル一時ディスクを維持 (公式アナウンス原文: "higher performance, larger scale, and improved price/performance while retaining local temporary disk")</li>
+                    <li>General Purpose は Ddsv6 / Dadsv6 シリーズ、Memory Optimized は Edsv6 / Eadsv6 シリーズ</li>
+                    <li>v6 では新たに 128 vCore / 192 vCore の大規模 SKU が追加 (D128ds_v6、D192ds_v6、E128ds_v6、E192ds_v6)</li>
+                    <li>E192ds_v6 は最大 1,832 GiB メモリをサポート</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">💡</div>
+            <div class="feature-content">
+                <h4>2. Intel/AMD v5 diskless コンピュートの GA</h4>
+                <ul>
+                    <li>ローカル一時 SSD を含まない General Purpose / Memory Optimized SKU で v5 ポートフォリオを拡張</li>
+                    <li>ワークロードがローカル一時ストレージを必要としない場合に diskless 構成を選択可能</li>
+                    <li>Intel ベース・AMD ベースの両コンピュートファミリーで提供</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚡</div>
+            <div class="feature-content">
+                <h4>3. Cobalt 200 (ARM64) コンピュートの GA</h4>
+                <ul>
+                    <li>Microsoft 設計の ARM64 ベースコンピュートで Flexible Server のポートフォリオを拡張 (公式アナウンス原文: "Cobalt 200 expands the Flexible Server compute portfolio with Microsoft-designed ARM64-based compute")</li>
+                    <li>既存の Intel / AMD x64 コンピュートに加えて、ワークロードの互換性やインフラ要件に応じたアーキテクチャの選択肢を提供</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- 技術仕様 -->
+    <section class="section">
+        <h2 class="section-title">📊 技術仕様</h2>
+        <p>Microsoft Learn のコンピュートオプションのドキュメントで確認できた v6 世代の代表的な仕様は以下のとおりです (ストレージは最大 64 TiB、バックアップ保持は 7〜35 日 + 長期保持最大 10 年)。</p>
+
+        <h3 class="subsection-title">General Purpose (vCore あたり 4 GiB メモリ)</h3>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <thead>
+                    <tr><th>SKU</th><th>vCores</th><th>メモリ</th><th>最大 IOPS</th><th>最大 I/O 帯域</th><th>参考: v5 同クラス</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="em">D2ds_v6</td><td>2</td><td>8 GiB</td><td>4,167</td><td>124 MiB/sec</td><td>D2ds_v5: 3,750 IOPS / 85 MiB/sec</td></tr>
+                    <tr><td class="em">D4ds_v6</td><td>4</td><td>16 GiB</td><td>8,333</td><td>248 MiB/sec</td><td>D4ds_v5: 6,400 IOPS / 145 MiB/sec</td></tr>
+                    <tr><td class="em">D16ds_v6</td><td>16</td><td>64 GiB</td><td>33,333</td><td>992 MiB/sec</td><td>D16ds_v5: 25,600 IOPS / 600 MiB/sec</td></tr>
+                    <tr><td class="em">D64ds_v6</td><td>64</td><td>256 GiB</td><td>80,000</td><td>1,200 MiB/sec</td><td>D64ds_v5: 80,000 IOPS / 1,200 MiB/sec</td></tr>
+                    <tr><td class="em">D128ds_v6</td><td>128</td><td>512 GiB</td><td>80,000</td><td>1,200 MiB/sec</td><td>(v5 に該当 SKU なし)</td></tr>
+                    <tr><td class="em">D192ds_v6</td><td>192</td><td>768 GiB</td><td>80,000</td><td>1,200 MiB/sec</td><td>(v5 に該当 SKU なし)</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="subsection-title">Memory Optimized (vCore あたり 6.75〜9.5 GiB メモリ)</h3>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <thead>
+                    <tr><th>SKU</th><th>vCores</th><th>メモリ</th><th>最大 IOPS</th><th>最大 I/O 帯域</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td class="em">E2ds_v6</td><td>2</td><td>16 GiB</td><td>4,167</td><td>124 MiB/sec</td></tr>
+                    <tr><td class="em">E16ds_v6</td><td>16</td><td>128 GiB</td><td>33,333</td><td>992 MiB/sec</td></tr>
+                    <tr><td class="em">E64ds_v6</td><td>64</td><td>512 GiB</td><td>80,000</td><td>1,200 MiB/sec</td></tr>
+                    <tr><td class="em">E128ds_v6</td><td>128</td><td>1,024 GiB</td><td>80,000</td><td>1,200 MiB/sec</td></tr>
+                    <tr><td class="em">E192ds_v6</td><td>192</td><td>1,832 GiB</td><td>80,000</td><td>1,200 MiB/sec</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="highlight-box">
+            <ul class="info-list">
+                <li>AMD ベースは <code class="inline">ads</code> サフィックス (D2ads_v6、E2ads_v6 など)、Intel ベースは <code class="inline">ds</code> サフィックス</li>
+                <li>v5 diskless および Cobalt 200 の個別 SKU 名・仕様は公式アナウンスには記載されていないため、最新のドキュメント (<a href="https://learn.microsoft.com/azure/postgresql/flexible-server/concepts-compute" target="_blank" rel="noopener">Compute options</a>) および Azure ポータルで確認してください</li>
+                <li>実効 IOPS / スループットはストレージティアにも依存するため、ワークロード要件に応じてストレージとインスタンスタイプの両方を選定する必要があります</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- 設定方法 -->
+    <section class="section">
+        <h2 class="section-title">🛠️ 設定方法</h2>
+
+        <h3 class="subsection-title">前提条件</h3>
+        <ol class="info-list">
+            <li>Azure サブスクリプションと Azure Database for PostgreSQL Flexible Server のデプロイ権限</li>
+            <li>利用したいコンピュートティアが対象リージョンで提供されていること (<a href="https://learn.microsoft.com/azure/postgresql/overview#azure-regions" target="_blank" rel="noopener">リージョン一覧</a> を参照)</li>
+        </ol>
+
+        <h3 class="subsection-title">Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI</span></div>
+            <pre><code class="language-bash"># v6 コンピュート (例: D4ds_v6) で Flexible Server を作成
+az postgres flexible-server create \
+  --resource-group myResourceGroup \
+  --name mypgserver \
+  --tier GeneralPurpose \
+  --sku-name Standard_D4ds_v6
+
+# 既存サーバーのコンピュートを変更 (スケール)
+az postgres flexible-server update \
+  --resource-group myResourceGroup \
+  --name mypgserver \
+  --sku-name Standard_D4ds_v6</code></pre>
+        </div>
+
+        <h3 class="subsection-title">Azure Portal</h3>
+        <p>サーバー作成時、または既存サーバーの「設定」&gt;「コンピューティングとストレージ」から、ティア (General Purpose / Memory Optimized) とコンピュートサイズを選択できます。作成・変更画面には選択した構成に基づく月額コストの見積もりが表示されます。</p>
+    </section>
+
+    <!-- メリット -->
+    <section class="section">
+        <h2 class="section-title">👍 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card biz">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>v6 世代は価格性能比が向上しており、同等性能をより低コストで、または同コストでより高い性能を得られる可能性がある</li>
+                    <li>diskless v5 により、ローカル一時ディスクが不要なワークロードで構成の選択肢が増える</li>
+                    <li>Cobalt 200 により ARM64 を含めたアーキテクチャ選択が可能になり、組織のインフラ戦略 (x64 / ARM64) に合わせたデータベース基盤を構築できる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>v6 は同一 vCore 数でもサポート IOPS / I/O 帯域が向上 (例: 16 vCore で 25,600 → 33,333 IOPS、600 → 992 MiB/sec)</li>
+                    <li>v6 で最大 192 vCore / 1,832 GiB メモリまで垂直スケールが可能になり、大規模ワークロードの集約に対応</li>
+                    <li>ローカル一時ディスク付き SKU では、一時テーブルスペースをローカル SSD に配置する構成 (<code class="inline">azure.enable_temp_tablespaces_on_local_ssd</code> パラメーター) を引き続き利用可能</li>
+                    <li>いずれの新コンピュートも Flexible Server の既存の操作体験 (スケーリング、HA など) を維持</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- デメリット・制約事項 -->
+    <section class="section">
+        <h2 class="section-title">⚠️ デメリット・制約事項</h2>
+        <div class="caution-box">
+            <h4>知っておくべき制約・注意点</h4>
+            <ul>
+                <li>公式アナウンスには各オプションの対応リージョン一覧が記載されておらず、リージョンによっては利用できない場合がある (ドキュメントでの確認が必要)</li>
+                <li>Cobalt 200 の具体的な SKU 名・vCore 構成・性能値は公式アナウンスに記載がなく、Azure ポータルまたは最新ドキュメントでの確認が必要</li>
+                <li>実効 IOPS / スループットの上限はストレージティアにも依存するため、コンピュートだけでなくストレージの選定も必要</li>
+                <li>ARM64 (Cobalt 200) を選択する場合、拡張機能やワークロードの互換性要件を事前に確認することが推奨される (アナウンスでも「ワークロードの互換性に応じて選択」と言及)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ユースケース -->
+    <section class="section">
+        <h2 class="section-title">💼 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>ユースケース 1: 大規模 OLTP ワークロードの v6 への移行</h4>
+            <p><span class="label">シナリオ:</span> v5 世代の D64ds_v5 で稼働中のミッションクリティカルな OLTP データベースで、ピーク時の I/O とさらなる垂直スケール余地が必要。</p>
+            <p class="label">実装例:</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI</span></div>
+                <pre><code class="language-bash"># 既存サーバーを v6 の大規模 SKU にスケールアップ
+az postgres flexible-server update \
+  --resource-group myResourceGroup \
+  --name mypgserver \
+  --sku-name Standard_D128ds_v6</code></pre>
+            </div>
+            <p><span class="label">効果:</span> v5 では最大 96 vCore だったが、v6 では 128 / 192 vCore まで拡張可能。一時テーブルスペースにローカル一時ディスクを活用するワークロードもそのまま移行できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>ユースケース 2: 一時ディスク不要なワークロードでの v5 diskless 採用</h4>
+            <p><span class="label">シナリオ:</span> 一時テーブルや大規模ソートをほとんど発生させない Web アプリケーションのバックエンドデータベースで、ローカル一時ディスクを使っていない。</p>
+            <p><span class="label">効果:</span> ローカル一時 SSD を含まない diskless 構成を選択でき、ワークロード特性に合ったコンピュートを利用できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>ユースケース 3: ARM64 への標準化</h4>
+            <p><span class="label">シナリオ:</span> アプリケーション層を ARM64 ベース (Cobalt) の VM / コンテナーで運用しており、データベース層も含めて ARM64 に統一したい。</p>
+            <p><span class="label">効果:</span> Cobalt 200 により、PostgreSQL Flexible Server でも Microsoft 設計の ARM64 コンピュートを選択でき、アーキテクチャの統一とインフラ要件への適合が可能になる。</p>
+        </div>
+    </section>
+
+    <!-- 料金 -->
+    <section class="section">
+        <h2 class="section-title">💰 料金</h2>
+        <p>料金ページでは具体的な金額はリージョン・通貨選択により動的に表示されるため、料金体系の概要のみ記載します。</p>
+        <ul class="info-list" style="margin-top: 12px;">
+            <li><strong>課金モデル</strong>: vCore ベースの従量課金 (Pay as you go)、1 年 / 3 年の Savings Plan、1 年 / 3 年の予約 (Reserved Instances) に対応 (SKU により対応モデルが異なる)</li>
+            <li>料金ページ上では General Purpose に v6 シリーズ (Ddsv6 / Dsv6 / Dadsv6 など) と v5 シリーズ (Dsv5 / Dasv5 / Ddsv5 / Dadsv5 など) が掲載されている</li>
+            <li>具体的な料金は <a href="https://azure.microsoft.com/pricing/details/postgresql/flexible-server/" target="_blank" rel="noopener">料金ページ</a> および <a href="https://azure.microsoft.com/pricing/calculator/" target="_blank" rel="noopener">Azure 料金計算ツール</a> を参照</li>
+        </ul>
+    </section>
+
+    <!-- 利用可能リージョン -->
+    <section class="section">
+        <h2 class="section-title">🌏 利用可能リージョン</h2>
+        <p>公式アナウンスにリージョン一覧の記載はありません。<a href="https://learn.microsoft.com/azure/postgresql/overview#azure-regions" target="_blank" rel="noopener">Azure Database for PostgreSQL のリージョン情報</a> を参照してください。</p>
+    </section>
+
+    <!-- 関連サービス・機能 -->
+    <section class="section">
+        <h2 class="section-title">🔗 関連サービス・機能</h2>
+        <div class="related-card">
+            <div class="r-icon">🖥️</div>
+            <div>
+                <h5>Azure Virtual Machines (Dsv6 / Ddsv6 / Cobalt シリーズ)</h5>
+                <p>Flexible Server のコンピュートティアは Azure VM シリーズに対応しており、VM 側の世代拡充がデータベースサービスにも展開された形。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <div class="r-icon">💾</div>
+            <div>
+                <h5>Premium SSD / Premium SSD v2 ストレージ</h5>
+                <p>実効 IOPS / スループットはストレージティアとの組み合わせで決まるため、コンピュートとあわせた選定が必要。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <div class="r-icon">🛡️</div>
+            <div>
+                <h5>高可用性 (ゾーン冗長 HA) / 読み取りレプリカ</h5>
+                <p>新コンピュートでも Flexible Server の既存機能をそのまま利用可能 (Flexible Server の操作体験を維持とアナウンスに明記)。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- まとめ -->
+    <section class="section">
+        <h2 class="section-title">📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Azure Database for PostgreSQL Flexible Server のコンピュートポートフォリオが、<strong>v6 世代 (temp disk 付き・最大 192 vCore)</strong>、<strong>v5 diskless</strong>、そして <strong>ARM64 ベースの Cobalt 200</strong> へと一気に拡充されました。特に v6 は同一 vCore 数でも IOPS / I/O 帯域が向上し、128 / 192 vCore の大規模 SKU が追加されたため、既存の v4 / v5 ユーザーはスケールアップ余地と価格性能比の観点で移行を検討する価値があります。</p>
+            <p style="margin-top: 12px;">新規設計では、<strong>ローカル一時ディスクの要否 (v6 temp disk 付き vs diskless)</strong> と <strong>アーキテクチャ (x64 vs ARM64 Cobalt 200)</strong> という 2 つの軸でコンピュート選定を行うことが推奨されます。Cobalt 200 と v5 diskless の具体的な SKU・リージョン展開は、Azure ポータルおよび最新の公式ドキュメントで確認してください。</p>
+        </div>
+        <p style="margin-top: 16px; font-size: 13px; color: var(--ms-text-secondary);">
+            <strong>タグ</strong>: Azure Database for PostgreSQL, Flexible Server, Compute, v6, v5 diskless, Cobalt 200, ARM64, GA, Microsoft Ignite, Databases
+        </p>
+    </section>
+
+    <!-- フッター -->
+    <footer class="footer">
+        <p><strong>出典・参考リンク</strong></p>
+        <div class="sources">
+            <ul class="link-list">
+                <li><a href="https://azure.microsoft.com/updates?id=579590" target="_blank" rel="noopener">公式アップデート情報: Intel and AMD v6 with temp disk (GA)</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=579595" target="_blank" rel="noopener">公式アップデート情報: Intel and AMD v5 diskless tier (GA)</a></li>
+                <li><a href="https://azure.microsoft.com/updates?id=579585" target="_blank" rel="noopener">公式アップデート情報: Cobalt 200 compute (GA)</a></li>
+                <li><a href="https://learn.microsoft.com/azure/postgresql/flexible-server/concepts-compute" target="_blank" rel="noopener">Microsoft Learn: Compute options in Azure Database for PostgreSQL</a></li>
+                <li><a href="https://learn.microsoft.com/azure/postgresql/overview#azure-regions" target="_blank" rel="noopener">Microsoft Learn: Azure Database for PostgreSQL のリージョン情報</a></li>
+                <li><a href="https://azure.microsoft.com/pricing/details/postgresql/flexible-server/" target="_blank" rel="noopener">料金ページ (PostgreSQL Flexible Server)</a></li>
+            </ul>
+        </div>
+        <p style="margin-top: 16px;">ソースレポート: reports/2026/2026-11-17-postgresql-compute-v5-v6-cobalt200.md | 生成日: 2026-11-18 | Azure News Summary</p>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

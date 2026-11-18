@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Monitor: Health Models GA / traces と Trace Analytics パブリックプレビュー</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: rgba(80, 230, 255, 0.15);
+}
+.header::before {
+    content: "";
+    position: absolute;
+    right: 60px;
+    bottom: -80px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+}
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+    position: relative;
+    z-index: 1;
+}
+.header .date {
+    display: inline-block;
+    margin-top: 16px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+}
+
+/* ===== Section ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--ms-blue-200);
+}
+.section-title .icon {
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 10px;
+    font-size: 22px;
+}
+.sub-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box p + p { margin-top: 10px; }
+
+/* ===== Two announcement cards ===== */
+.announce-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+.announce-card {
+    border-radius: 12px;
+    padding: 20px;
+    border: 2px solid var(--ms-blue-300);
+    background: var(--ms-blue-100);
+}
+.announce-card.preview-card {
+    border-color: #F0D58C;
+    background: #FFF9E6;
+}
+.announce-card h4 {
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: var(--azure-dark-blue);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.announce-card p { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Before/After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+.diagram-note {
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-top: 12px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-card.preview-feature { border-left-color: var(--ms-purple); }
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 {
+    font-size: 15px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 6px;
+}
+.feature-content p, .feature-content ul {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+}
+.feature-content ul { padding-left: 18px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+td code, li code, p code {
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* ===== Steps ===== */
+.step-list { counter-reset: step; list-style: none; margin: 12px 0; }
+.step-list li {
+    position: relative;
+    padding: 12px 16px 12px 56px;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+.step-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 28px;
+    height: 28px;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 10px;
+    padding: 18px;
+    border: 1px solid var(--ms-border);
+    background: var(--ms-surface-secondary);
+}
+.merit-card h4 {
+    font-size: 15px;
+    margin-bottom: 10px;
+    color: var(--ms-blue-800);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.merit-card ul { padding-left: 18px; font-size: 14px; }
+.merit-card li { margin-bottom: 8px; color: var(--ms-text-secondary); }
+.caution-card {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 10px;
+    padding: 18px;
+    margin: 12px 0;
+}
+.caution-card ul { padding-left: 18px; font-size: 14px; }
+.caution-card li { margin-bottom: 10px; }
+.caution-card strong { color: var(--ms-red); }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    margin: 16px 0;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.usecase-header {
+    background: linear-gradient(90deg, var(--azure-blue), var(--ms-blue-500));
+    color: white;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 15px;
+}
+.usecase-body { padding: 18px 20px; font-size: 14px; }
+.usecase-body .row { margin-bottom: 12px; }
+.usecase-body .label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-bottom: 4px;
+}
+.usecase-body .row.effect .label { background: #E8F5E9; color: var(--ms-green); }
+.usecase-body p { color: var(--ms-text-secondary); }
+
+/* ===== Region ===== */
+.region-box {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    font-size: 14px;
+}
+.region-box h4 {
+    font-size: 15px;
+    color: var(--ms-blue-800);
+    margin-bottom: 8px;
+}
+.region-box p, .region-box li { color: var(--ms-text-secondary); }
+.region-box ul { padding-left: 18px; }
+.region-box li { margin-bottom: 6px; }
+.region-tag {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    margin: 2px;
+}
+.region-note {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 10px;
+    font-size: 13px;
+}
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 12px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13px;
+}
+.related-card h4 {
+    font-size: 14px;
+    color: var(--azure-blue);
+    margin-bottom: 4px;
+}
+.related-card p { color: var(--ms-text-secondary); }
+
+/* ===== Links ===== */
+.link-list { list-style: none; }
+.link-list li {
+    padding: 10px 14px;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+.link-list a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+.link-list a:hover { text-decoration: underline; }
+a { color: var(--azure-blue); }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+.summary-box p + p { margin-top: 12px; }
+.summary-box strong { color: var(--azure-dark-blue); }
+
+/* ===== Tags ===== */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-blue-400);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    padding: 3px 12px;
+    border-radius: 14px;
+}
+
+/* ===== Footer ===== */
+.footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    border-top: 1px solid var(--ms-border);
+    margin-top: 8px;
+}
+.footer a { color: var(--azure-blue); }
+.footer p { margin-bottom: 6px; }
+
+/* ===== Code ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+}
+
+@media (max-width: 720px) {
+    .announce-grid, .before-after, .merit-grid, .related-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Header ===== -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="service-badge">Azure Monitor</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Health Models が GA /<br>traces と Trace Analytics がパブリックプレビュー</h1>
+        <p class="subtitle">Microsoft Ignite 2026 で発表された、Azure Monitor の可観測性を強化する 2 つのアップデート</p>
+        <span class="date">📅 リリース日: 2026-11-17</span>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <div class="announce-grid">
+            <div class="announce-card">
+                <h4>❤️ Health Models <span class="badge badge-ga">GA</span></h4>
+                <p>ワークロードの健全性を第一級の構成要素として定義・運用。メトリクス・ログ・依存関係にまたがるシグナルを集約し、単一の統合ヘルス状態として表現する「状態ベースの監視 (state-based monitoring)」を実現。アラートノイズの削減、インシデント対応の迅速化、サービス信頼性の向上につながる。</p>
+            </div>
+            <div class="announce-card preview-card">
+                <h4>🔗 traces / Trace Analytics <span class="badge badge-preview">Public Preview</span></h4>
+                <p>分散トレース専用のトレースストアを提供し、取り込み時に関連スパンを完全なトレースとして組み立てる。Trace Analytics により数千件規模のトレースを検索・分析・比較し、傾向の把握から根本原因の特定まで Application Insights 内で一貫して実行可能。2026 年 9 月にプライベートプレビュー、11 月にパブリックプレビュー化。</p>
+            </div>
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>監視がリソース中心のアラートに偏り、シグナルごとにアラートが発生するためアラート疲れ (alert fatigue) が起きやすい</li>
+                    <li>ワークロード全体として「今健全かどうか」を把握しにくい</li>
+                    <li>複数サービス・依存関係にまたがるトランザクションを大量のトレースから横断的に分析・比較する専用の仕組みがなく、根本原因の掘り下げに手間がかかる</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>エンティティごとにヘルス状態を割り当て、依存関係に沿ってロールアップ。ワークロード全体の健全性を 1 つのビューで追跡し、アラートノイズを削減</li>
+                    <li>取り込み時点でスパンをトレースに組み立て、Trace Analytics で検索・P50/P99 レイテンシ分析・ベースライン比較・Critical Path Analysis・Attribute Analysis が可能</li>
+                    <li>トレース由来のメトリクス (trace-derived metrics) を SLI、ダッシュボード、アラート、長期トレンド分析に活用可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph Signals["📡 監視シグナル"]
+            M["📊 メトリクス / Prometheus"]
+            L["📝 ログ / パフォーマンスカウンター"]
+            AI["🔍 Application Insights"]
+        end
+
+        subgraph HM["❤️ Health Models (GA)"]
+            E1["🧩 エンティティ<br/>(リソース / 論理コンポーネント)"]
+            HS["✅ 統合ヘルス状態<br/>(依存関係に沿ってロールアップ)"]
+        end
+
+        subgraph TR["🔗 traces / Trace Analytics (Preview)"]
+            TS[("🗄️ トレースストア<br/>(取り込み時にスパンを組み立て)")]
+            TA["📈 Trace Analytics<br/>(検索 / 比較 / 根本原因分析)"]
+        end
+
+        AL["🔔 Azure Monitor アラート<br/>(アクショングループ連携)"]
+    end
+
+    M --> E1
+    L --> E1
+    AI --> E1
+    AI --> TS
+    E1 --> HS
+    HS --> AL
+    TS --> TA
+            </pre>
+        </div>
+        <p class="diagram-note">メトリクス・ログ・Application Insights の既存シグナルを Health Models のエンティティに集約してワークロード全体のヘルス状態を導出し、ヘルス状態ベースのアラートへ接続する。並行して、トレースデータは専用トレースストアに格納され、Trace Analytics で大規模分析が行える。</p>
+    </section>
+
+    <!-- ===== Features: Health Models ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>主要機能</h2>
+
+        <h3 class="sub-title">❤️ Azure Monitor Health Models <span class="badge badge-ga">GA</span></h3>
+
+        <div class="feature-card">
+            <div class="feature-icon">🚦</div>
+            <div class="feature-content">
+                <h4>状態ベースの監視 (state-based monitoring)</h4>
+                <p>各エンティティにヘルス状態を割り当て、複数エンティティを組み合わせてアプリケーションやワークロードを表現。複数シグナルを 1 つのヘルス状態に相関させ、アラートノイズを削減する。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>エンティティとシグナルによるヘルス定義</h4>
+                <ul>
+                    <li>エンティティは Azure リソースのほか、コードコンポーネント、ユーザー/システムフロー、ビジネスチームなどの論理コンポーネントも表現可能</li>
+                    <li>シグナルはメトリクスまたはログクエリに基づき、独自定義のほか、一般的な Azure リソース向けの推奨シグナルセットも利用可能</li>
+                    <li>各エンティティのヘルスは依存するエンティティへロールアップされ、ワークロード全体のヘルス状態が得られる</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>Graph ビュー / Timeline ビュー</h4>
+                <p>Graph ビューで現在のヘルスをグラフィカルに表示、Timeline ビューで時系列のヘルス推移を確認。任意のエンティティをドリルダウンして、ヘルス状態と寄与するシグナルの詳細を確認できる。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">♻️</div>
+            <div class="feature-content">
+                <h4>既存の監視投資の活用</h4>
+                <p>Azure リソースのプラットフォームメトリクス/リソースログ、Kubernetes クラスターの Prometheus メトリクス、仮想マシンのログ/パフォーマンスカウンター、Application Insights のアプリケーションデータなど、既に収集しているデータをそのまま利用できる。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛠️</div>
+            <div class="feature-content">
+                <h4>モデル構成の柔軟性</h4>
+                <ul>
+                    <li>グラフィカルデザイナーでエンティティ配置、依存関係定義、シグナル追加、ヘルスロールアップ動作を調整</li>
+                    <li>Azure Resource Graph クエリ、Application Insights リソース、サービスグループに基づく自動検出 (discovery) でモデルを自動構成</li>
+                    <li>Infrastructure as Code (IaC) と CLI をファーストクラスでサポート</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔔</div>
+            <div class="feature-content">
+                <h4>ヘルス状態ベースのアラート</h4>
+                <p>個別シグナルではなくヘルス状態に基づくアラートを作成可能。非正常なエンティティや、複数の依存関係にまたがるビジネス影響を表す集約ヘルスに対して設定でき、既存の Azure Monitor アラートと統合され同じアクショングループで通知・自動化できる。</p>
+            </div>
+        </div>
+
+        <h3 class="sub-title">🔗 Azure Monitor traces / Trace Analytics <span class="badge badge-preview">Public Preview</span></h3>
+
+        <div class="feature-card preview-feature">
+            <div class="feature-icon">🗄️</div>
+            <div class="feature-content">
+                <h4>専用トレースストア</h4>
+                <p>分散トレース専用のストアを提供し、取り込み時に関連スパンを完全なトレースとして組み立てる。サービスや依存関係をまたぐエンドツーエンドのトランザクション分析が可能。</p>
+            </div>
+        </div>
+        <div class="feature-card preview-feature">
+            <div class="feature-icon">📈</div>
+            <div class="feature-content">
+                <h4>Trace Analytics による大規模分析</h4>
+                <ul>
+                    <li>トレース/スパン条件での検索 (検索は常にトレースレベルで実行され、結果にはトレース数と P50/P99 期間が表示される)</li>
+                    <li>集約結果、ヒートマップ、ヒストグラム、生レコードの表示と、Span Statistics によるスパン分析</li>
+                    <li><strong>Critical Path Analysis</strong>: スパンごとのアクティブ時間と待機時間を算出し、レイテンシへの主要な寄与箇所を特定</li>
+                    <li><strong>Attribute Analysis</strong>: 選択したトレースグループとベースラインを最も区別する属性をランク付けし、正常/異常トレースの比較から性能・障害パターンに関連する属性を発見</li>
+                    <li>トレースグループ同士や時間範囲同士の比較、個別トレースのスパン/依存関係の詳細調査</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card preview-feature">
+            <div class="feature-icon">📐</div>
+            <div class="feature-content">
+                <h4>トレース由来のメトリクス (trace-derived metrics)</h4>
+                <p>トランザクション量、期間、エラーの監視に利用でき、SLI、ダッシュボード、アラート、長期トレンド分析に活用できる。</p>
+            </div>
+        </div>
+        <div class="feature-card preview-feature">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>Azure Portal からのアクセス</h4>
+                <p>Application Insights または Azure Monitor ワークスペースの「Traces」から Trace Analytics を開ける。どちらも Azure Monitor ワークスペースに関連付けられたトレースデータを使用。Application Insights リソースから開いた場合は、そのリソースに送信されたスパンを少なくとも 1 つ含むトレースに絞るフィルターが自動適用される。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📐</span>技術仕様</h2>
+        <table>
+            <thead><tr><th style="width: 36%;">項目</th><th>詳細</th></tr></thead>
+            <tbody>
+                <tr><td>Health Models のエンティティ</td><td>Azure リソース、コードコンポーネント、ユーザー/システムフロー、ビジネスチームなどの論理コンポーネント</td></tr>
+                <tr><td>Health Models のシグナル</td><td>メトリクスベースまたはログクエリベース。推奨シグナルセットあり。Resource Health シグナルは無料</td></tr>
+                <tr><td>Health Models のデータ保持</td><td>ヘルスデータは 30 日間保持</td></tr>
+                <tr><td>Health Models の構成方法</td><td>グラフィカルデザイナー、自動検出 (Azure Resource Graph / Application Insights / サービスグループ)、IaC、CLI</td></tr>
+                <tr><td>traces のデータモデル</td><td>トランザクション = トレース、各操作 = スパン (サービス、操作、期間、ステータス、属性を記録)。取り込み時にスパンをトレースに組み立て</td></tr>
+                <tr><td>traces の利用前提</td><td>Application Insights リソースを Azure Monitor ワークスペースにリンクしてオンボード</td></tr>
+                <tr><td>traces のステータス</td><td>パブリックプレビュー (SLA なし、本番ワークロード非推奨)</td></tr>
+            </tbody>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>設定方法</h2>
+        <h3 class="sub-title">前提条件 (traces / Trace Analytics)</h3>
+        <ol class="step-list">
+            <li>Azure Monitor ワークスペースが必要。プレビュー時点でワークスペースのオンボードは <code>newzealandnorth</code>、<code>westeurope</code>、<code>eastus2</code> のいずれかのリージョンのみ対応</li>
+            <li>Application Insights リソースのトレースを利用するには、リソースを Azure Monitor ワークスペースにリンクしてオンボードする (対応リージョンは「利用可能リージョン」を参照)</li>
+        </ol>
+        <h3 class="sub-title">Azure Portal での操作</h3>
+        <div class="feature-card">
+            <div class="feature-icon">❤️</div>
+            <div class="feature-content">
+                <h4>Health Models</h4>
+                <p>Azure Monitor のヘルスモデルのデザイナーで、エンティティの配置、依存関係の定義、シグナルの追加、ヘルスロールアップの調整を行う。リソースの手動追加のほか、Azure Resource Graph クエリ / Application Insights リソース / サービスグループに基づく自動検出も利用できる。</p>
+            </div>
+        </div>
+        <div class="feature-card preview-feature">
+            <div class="feature-icon">🔗</div>
+            <div class="feature-content">
+                <h4>Trace Analytics</h4>
+                <p>Application Insights リソースまたは Azure Monitor ワークスペースの「Traces」メニューから開く。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>ワークロードの健全性をビジネス影響の観点で可視化でき、障害時に「どのビジネス機能が影響を受けているか」を即座に判断できる</li>
+                    <li>アラートノイズの削減により運用チームの疲弊を防ぎ、重要なインシデントへの集中と対応の迅速化が期待できる</li>
+                    <li>既に収集している監視データをそのまま活用するため、追加の計装コストを抑えられる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🔬 技術面</h4>
+                <ul>
+                    <li>リソース中心のアラートから、依存関係を考慮したヘルス状態ベースのアラートへ移行できる</li>
+                    <li>Health Models は IaC / CLI をサポートし、ヘルスモデル定義のコード管理・再現が可能</li>
+                    <li>Critical Path Analysis / Attribute Analysis により、レイテンシ要因や障害パターンの特定をデータドリブンに行える</li>
+                    <li>トレース由来のメトリクスを SLI やアラートに利用でき、SRE プラクティスとの親和性が高い</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-card">
+            <ul>
+                <li><strong>traces / Trace Analytics はプレビュー</strong>: SLA の提供はなく、本番ワークロードへの利用は推奨されない</li>
+                <li><strong>traces のリージョン制約</strong>: Azure Monitor ワークスペースのオンボードは <code>newzealandnorth</code>、<code>westeurope</code>、<code>eastus2</code> の 3 リージョンに限定 (Application Insights のオンボード対応リージョンはより広い)</li>
+                <li><strong>Health Models のデータ保持は 30 日間</strong>: 長期のヘルス履歴分析には別途の仕組みが必要</li>
+                <li>Health Models はシグナルの種類と数に基づいて課金されるため、大規模モデルではシグナル設計がコストに影響する</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+        <div class="usecase-card">
+            <div class="usecase-header">1. ミッションクリティカルなワークロードのヘルス監視</div>
+            <div class="usecase-body">
+                <div class="row">
+                    <span class="label">シナリオ</span>
+                    <p>複数の Azure リソース (App Service、AKS、データベースなど) で構成される基幹アプリケーションで、リソース単位のアラートが大量に発生し、どの障害がビジネスに影響するのか判断に時間がかかっている。</p>
+                </div>
+                <div class="row">
+                    <span class="label">実装</span>
+                    <p>Health Models でアプリケーションのユーザーフローや論理コンポーネントをエンティティとして定義し、依存する Azure リソースのメトリクス/ログシグナルを関連付ける。ヘルス状態のロールアップにより、ワークロード最上位のヘルスに対してアラートを設定する。</p>
+                </div>
+                <div class="row effect">
+                    <span class="label">効果</span>
+                    <p>個別リソースのアラートに振り回されず、ビジネス影響のあるヘルス劣化のみに対応を集中できる。</p>
+                </div>
+            </div>
+        </div>
+        <div class="usecase-card">
+            <div class="usecase-header">2. マイクロサービスのレイテンシ悪化の根本原因分析</div>
+            <div class="usecase-body">
+                <div class="row">
+                    <span class="label">シナリオ</span>
+                    <p>分散アプリケーションで特定の時間帯に P99 レイテンシが悪化するが、どのサービス・操作が原因か特定できない。</p>
+                </div>
+                <div class="row">
+                    <span class="label">実装</span>
+                    <p>Application Insights リソースを Azure Monitor ワークスペースにリンクして traces をオンボードし、Trace Analytics で対象時間帯のトレースグループをベースラインと比較する。Critical Path Analysis でエンドツーエンド期間に寄与するスパンを特定し、Attribute Analysis で異常トレースを特徴付ける属性を抽出する。</p>
+                </div>
+                <div class="row effect">
+                    <span class="label">効果</span>
+                    <p>数千件のトレースを横断した傾向分析から個別トレースの詳細調査まで一貫して行い、根本原因の特定を短縮できる。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p style="font-size: 14px; color: var(--ms-text-secondary); margin-bottom: 8px;">Health Models は、監視する「ヘルスシグナル」の種類と数に基づいて課金される。具体的な単価はリージョン・通貨により異なるため料金ページで確認のこと。</p>
+        <table>
+            <thead><tr><th style="width: 40%;">項目</th><th>課金</th></tr></thead>
+            <tbody>
+                <tr><td>Metric Signal</td><td>月額課金 (動的しきい値を使う場合は追加料金あり)</td></tr>
+                <tr><td>Prometheus Metric Signal</td><td>月額課金</td></tr>
+                <tr><td>Log Signal</td><td>頻度 (1 分 / 5 分 / 10 分 / 15 分) 別の月額課金。15 分超の頻度は 15 分と同額</td></tr>
+                <tr><td>Resource Health シグナル</td><td>無料</td></tr>
+                <tr><td>無効化中のシグナル</td><td>無料</td></tr>
+            </tbody>
+        </table>
+        <div class="highlight-box">
+            <p style="font-size: 14px;">traces / Trace Analytics 固有の料金項目は、現時点で Azure Monitor の料金ページに記載が確認できなかった。詳細は <a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank">Azure Monitor 料金ページ</a>を参照。</p>
+        </div>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <div class="region-box">
+            <h4>❤️ Health Models (GA)</h4>
+            <p>アナウンスにリージョン情報の記載なし。<a href="https://aka.ms/ahm/docs" target="_blank">公式ドキュメント</a>を参照。</p>
+        </div>
+        <div class="region-box">
+            <h4>🔗 traces / Trace Analytics (Preview)</h4>
+            <ul>
+                <li><strong>Azure Monitor ワークスペースのオンボード</strong>:
+                    <span class="region-tag">newzealandnorth</span>
+                    <span class="region-tag">westeurope</span>
+                    <span class="region-tag">eastus2</span> のみ
+                </li>
+                <li><strong>Application Insights のオンボード</strong>: eastus、eastus2、westus、westus2、westus3、centralus、northcentralus、southcentralus、westcentralus、canadacentral、canadaeast、brazilsouth、brazilsoutheast、chilecentral、northeurope、westeurope、uksouth、ukwest、francecentral、francesouth、germanynorth、germanywestcentral、norwayeast、norwaywest、swedencentral、switzerlandnorth、switzerlandwest、polandcentral、spaincentral、austriaeast、israelcentral、uaecentral、uaenorth、southafricanorth、southafricawest、eastasia、southeastasia、japanwest、koreacentral、koreasouth、centralindia、southindia、jioindiawest、indonesiacentral、malaysiawest、taiwannorth、taiwannorthwest、australiacentral、australiasoutheast、newzealandnorth など多数のリージョンに対応</li>
+            </ul>
+            <div class="region-note">🇯🇵 日本は <strong>japanwest のみ対応</strong> (japaneast は未対応)</div>
+        </div>
+    </section>
+
+    <!-- ===== Related services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🧩</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>Application Insights</h4>
+                <p>Health Models のアプリケーションデータのシグナルソースであり、traces のオンボード元。Trace Analytics の入口にもなる。</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Monitor ワークスペース</h4>
+                <p>traces のトレースデータが関連付けられる基盤。Trace Analytics のもう 1 つの入口。</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Monitor アラート / アクショングループ</h4>
+                <p>Health Models のヘルス状態ベースのアラートは既存のアラート体験に統合され、同じアクショングループで通知・自動化できる。</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Resource Graph / サービスグループ</h4>
+                <p>Health Models の自動検出 (discovery) によるモデル自動構成に利用できる。</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Managed Prometheus</h4>
+                <p>Kubernetes クラスターの Prometheus メトリクスを Health Models のシグナルとして利用できる。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p><strong>Azure Monitor Health Models の GA</strong> により、リソース中心のアラート運用からワークロードの健全性を軸にした状態ベースの監視へ本格的に移行できるようになった。既存の監視データをそのまま活用でき、IaC/CLI にも対応するため、ミッションクリティカルなワークロードを運用するチームはヘルスモデルの導入を検討する価値が高い。</p>
+            <p>あわせてパブリックプレビューとなった <strong>Azure Monitor traces と Trace Analytics</strong> は、分散トレースの大規模分析によって根本原因分析を大きく効率化する。プレビュー段階でリージョン制約があるため、まずは非本番環境での評価から始め、Health Models と組み合わせた「<strong>検知 (ヘルス) → 調査 (トレース)</strong>」の一貫した可観測性パイプラインの構築を見据えるとよい。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure Monitor</span>
+            <span class="tag">Health Models</span>
+            <span class="tag">Distributed Tracing</span>
+            <span class="tag">Trace Analytics</span>
+            <span class="tag">Application Insights</span>
+            <span class="tag">Observability</span>
+            <span class="tag">DevOps</span>
+            <span class="tag">Microsoft Ignite</span>
+            <span class="tag">GA</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- ===== References ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>参考リンク</h2>
+        <ul class="link-list">
+            <li>📢 <a href="https://azure.microsoft.com/updates?id=580261" target="_blank">公式アップデート情報: Generally Available: Azure Monitor Health Models</a></li>
+            <li>📢 <a href="https://azure.microsoft.com/updates?id=580184" target="_blank">公式アップデート情報: Public Preview: Azure Monitor traces and Trace Analytics</a></li>
+            <li>📚 <a href="https://learn.microsoft.com/azure/azure-monitor/health-models/overview" target="_blank">Microsoft Learn: Health models in Azure Monitor</a></li>
+            <li>📚 <a href="https://learn.microsoft.com/azure/azure-monitor/app/traces-overview" target="_blank">Microsoft Learn: Azure Monitor traces overview</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/monitor/" target="_blank">料金ページ: Azure Monitor</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong>:
+            <a href="https://azure.microsoft.com/updates?id=580261" target="_blank">Azure Updates (Health Models GA)</a> /
+            <a href="https://azure.microsoft.com/updates?id=580184" target="_blank">Azure Updates (traces &amp; Trace Analytics Preview)</a> /
+            <a href="https://learn.microsoft.com/azure/azure-monitor/health-models/overview" target="_blank">Microsoft Learn</a>
+        </p>
+        <p>ソースレポート: reports/2026/2026-11-17-azure-monitor-health-models-traces.md (Azure News Summary)</p>
+        <p>リリース日: 2026-11-17 / インフォグラフィック生成日: 2026-11-18</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>

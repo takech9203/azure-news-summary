@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure AI Search: Content Understanding セマンティックチャンキング & AI 生成画像説明 GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 60%, var(--ms-purple) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "🔍";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+.hero .meta-badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hero h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+.hero .subtitle { font-size: 15px; opacity: 0.9; }
+.hero .release-date {
+    display: inline-block;
+    background: rgba(255,255,255,0.18);
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.service-badge {
+    background: rgba(255,255,255,0.92);
+    color: var(--azure-blue);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-ai { background: var(--ms-purple); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section h2 .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    width: 40px; height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+.section p { margin: 10px 0; font-size: 15px; }
+.section ul { margin: 10px 0 10px 22px; font-size: 15px; }
+.section li { margin: 6px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: var(--ms-blue-800);
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 8px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; font-size: 16px; }
+.before ul, .after ul { margin-left: 20px; font-size: 14px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { margin: 6px 0 0 20px; font-size: 14px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+/* ===== Code block ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Merit / Caution ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-card {
+    border-radius: 8px;
+    padding: 16px 20px;
+}
+.merit-business { background: var(--ms-blue-100); border-top: 4px solid var(--azure-blue); }
+.merit-tech { background: #F3EEF9; border-top: 4px solid var(--ms-purple); }
+.merit-card h4 { font-size: 16px; margin-bottom: 8px; }
+.merit-business h4 { color: var(--ms-blue-800); }
+.merit-tech h4 { color: var(--ms-purple); }
+.merit-card ul { margin-left: 20px; font-size: 14px; }
+
+.caution-card {
+    background: #FFF8E1;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 18px;
+    margin: 10px 0;
+    font-size: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.caution-card .mark { font-size: 18px; }
+
+/* ===== Related / Links ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card strong { color: var(--ms-blue-800); display: block; margin-bottom: 4px; }
+
+.link-list { list-style: none; margin: 10px 0 0 0 !important; }
+.link-list li {
+    padding: 8px 0;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+}
+.link-list li::before { content: "🔗 "; }
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), #F3EEF9);
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ===== Footer ===== */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 40px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+footer p { margin: 4px 0; }
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+    .section { padding: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="hero">
+        <div class="meta-badges">
+            <span class="service-badge">Azure AI Search (Foundry IQ)</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="badge badge-ai">AI / RAG</span>
+            <span class="release-date">📅 リリース日: 2026-11-17</span>
+        </div>
+        <h1>Azure Content Understanding スキル<br>セマンティックチャンキング &amp; AI 生成画像説明が GA</h1>
+        <p class="subtitle">Microsoft Ignite に合わせて一般提供開始。Search REST API <strong>2026-10-01</strong> で本番利用可能に。</p>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2><span class="icon">📋</span>概要</h2>
+        <p>Azure AI Search (Foundry IQ) の <strong>Azure Content Understanding スキル</strong>において、<strong>セマンティックチャンキング</strong>と <strong>AI 生成画像説明</strong>が一般提供 (GA) になりました。2026 年 6 月のプレビュー開始を経て、Microsoft Ignite に合わせて GA に到達しています。ベーススキルは Search REST API <code class="inline">2026-04-01</code> で GA 済みで、今回 GA となった 2 機能は <code class="inline">2026-05-01-preview</code> で導入され、Search REST API <code class="inline">2026-10-01</code> で一般提供されます。</p>
+        <div class="highlight-box">
+            このスキルは、Azure Content Understanding (Foundry Tools) のドキュメントアナライザーを使用してドキュメントから<strong>テキスト・画像・位置メタデータ</strong>を抽出し、マルチモーダル検索、エージェント検索 (agentic retrieval)、RAG 向けにコンテンツをチャンク化します。エンリッチメントパイプライン内で、構造化された Markdown 形式のチャンク、位置メタデータ、検索可能な画像説明を生成します。Foundry IQ および Azure AI Search での利用を想定した機能です。
+        </div>
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>固定文字数ベースのチャンキング (Text Split スキルなど) では、段落や見出しの途中で分割され、意味的に一貫しないチャンクが生成されることがあった</li>
+                    <li>ドキュメントに埋め込まれた図・グラフ・ダイアグラムはテキスト抽出では内容が失われ、検索や RAG の回答に活用できなかった</li>
+                    <li>セマンティックチャンキングと画像説明はプレビュー機能であり、本番ワークロードでの採用が難しかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li><code class="inline">semantic</code> チャンキングにより、レイアウト・段落・見出しの境界に沿ったトークン長ベースの意味的に一貫したチャンクが生成される (チャンキング用に Text Split スキルを追加する必要がない)</li>
+                    <li><code class="inline">modelName</code> / <code class="inline">modelDeployment</code> を指定することで、埋め込み画像 (図・グラフ・ダイアグラム) の説明を LLM で生成し、ベクトル化前にチャンクの Markdown にインライン挿入できる</li>
+                    <li>GA 版 API (<code class="inline">2026-10-01</code>) により本番環境で安心して利用可能になった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    DOC([📄 ドキュメント&lt;br/&gt;PDF / DOCX / PPTX など]) --> CU
+
+    subgraph Pipeline["☁️ Azure AI Search エンリッチメントパイプライン"]
+        CU["🧠 Content Understanding スキル&lt;br/&gt;semantic chunking"]
+        LLM["🤖 チャット補完モデル&lt;br/&gt;画像説明の生成"]
+        EMB["🔢 Embedding スキル&lt;br/&gt;text-embedding-3-large など"]
+        CU -->|"埋め込み画像"| LLM
+        LLM -->|"説明を Markdown に&lt;br/&gt;インライン挿入"| CU
+        CU -->|"text_sections&lt;br/&gt;(Markdown チャンク +&lt;br/&gt;位置メタデータ)"| EMB
+    end
+
+    EMB --> IDX[("🔍 検索インデックス&lt;br/&gt;チャンク + ベクトル")]
+    IDX --> RAG(["💬 RAG / エージェント検索&lt;br/&gt;Foundry IQ"])
+            </pre>
+        </div>
+        <p>ドキュメントは Content Understanding スキルでセマンティックチャンクに分割され、埋め込み画像の説明が LLM で生成されてチャンクに挿入された後、ベクトル化されて検索インデックスに格納されます。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2><span class="icon">⚡</span>サービスアップデートの詳細: 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">✂️</div>
+            <div class="feature-content">
+                <h4>1. セマンティックチャンキング (<code class="inline">chunkingProperties.method: semantic</code>)</h4>
+                <ul>
+                    <li>レイアウト・段落・見出しの境界に従い、トークン長単位 (100〜8,000 トークン、既定 500) で意味的に一貫したチャンクを生成</li>
+                    <li>ページをまたぐチャンクやページ間テーブル (cross-page table) を認識し、Markdown のテーブル・図として出力</li>
+                    <li>従来の <code class="inline">fixedSize</code> (文字数ベース、300〜50,000 文字) も引き続き選択可能</li>
+                    <li>「セマンティックチャンキング」は検索時のセマンティックランキングとは別の機能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🖼️</div>
+            <div class="feature-content">
+                <h4>2. AI 生成画像説明 (image verbalization)</h4>
+                <ul>
+                    <li>スキルセットにアタッチした Foundry リソース内のチャット補完モデル (<code class="inline">modelName</code> + <code class="inline">modelDeployment</code> のペア) を指定すると、埋め込み図・グラフ・ダイアグラムの説明を生成</li>
+                    <li>生成された説明はベクトル化の前にチャンクの Markdown コンテンツへインライン挿入され、ベクトル検索・RAG で画像内容を検索可能にする</li>
+                    <li>両プロパティを省略すれば画像説明は無効化でき、チャンキングや画像抽出のみ継続可能</li>
+                    <li>対応モデルは Content Understanding の <code class="inline">prebuilt-document</code> アナライザーが決定 (Content Understanding の Supported generative models を参照)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📍</div>
+            <div class="feature-content">
+                <h4>3. 画像・位置メタデータの抽出 (<code class="inline">extractionOptions</code>)</h4>
+                <ul>
+                    <li><code class="inline">images</code> を指定すると <code class="inline">normalized_images</code> (id、base64 データ、imagePath) を出力</li>
+                    <li><code class="inline">locationMetadata</code> を指定すると <code class="inline">pageNumberFrom</code> / <code class="inline">pageNumberTo</code> / <code class="inline">ordinalPosition</code> / <code class="inline">source</code> を付与し、引用 (citation) やページ参照に活用できる</li>
+                    <li>画像抽出と画像説明は独立した設定 (抽出だけでは説明は生成されない)</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <tr><th style="width: 30%;">項目</th><th>詳細</th></tr>
+            <tr><td>@odata.type</td><td><code class="inline">#Microsoft.Skills.Util.ContentUnderstandingSkill</code></td></tr>
+            <tr><td>GA 対象 API</td><td>Search REST API <code class="inline">2026-10-01</code> (ベーススキルは <code class="inline">2026-04-01</code> で GA)</td></tr>
+            <tr><td>呼び出し先 API</td><td>Content Understanding REST API <code class="inline">2025-11-01</code></td></tr>
+            <tr><td>チャンキング方式</td><td><code class="inline">fixedSize</code> (既定、characters 単位) / <code class="inline">semantic</code> (tokens 単位)</td></tr>
+            <tr><td>チャンク最大長</td><td>300〜50,000 文字 または 100〜8,000 トークン (既定: 500)</td></tr>
+            <tr><td>オーバーラップ</td><td><code class="inline">fixedSize</code> のみ (<code class="inline">maximumLength</code> の半分未満、既定 0)。<code class="inline">semantic</code> では 0 または省略</td></tr>
+            <tr><td>スキル入力</td><td><code class="inline">file_data</code> (base64 データまたはダウンロード可能 URL。インデクサーで <code class="inline">allowSkillsetToReadFileData: true</code> が必要)</td></tr>
+            <tr><td>スキル出力</td><td><code class="inline">text_sections</code> (Markdown チャンク + 位置メタデータ)、<code class="inline">normalized_images</code></td></tr>
+            <tr><td>対応ファイル形式</td><td>PDF, JPEG/JPG, PNG, BMP, HEIF, TIFF, DOCX, XLSX, PPTX, HTML, TXT, MD, RTF, EML</td></tr>
+            <tr><td>分析ポーリング上限</td><td>ドキュメント分析のポーリングウィンドウは最大 8 分 (超過時はスキルタイムアウトエラー)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2><span class="icon">⚙️</span>設定方法</h2>
+        <h3>前提条件</h3>
+        <ul>
+            <li>Foundry IQ (Azure AI Search) サービスと、スキルセットにアタッチする Microsoft Foundry リソース (Content Understanding 対応リージョンに配置)</li>
+            <li>Search マネージド ID への Foundry リソースに対するアクセス許可の構成</li>
+            <li>画像説明を使う場合: Foundry リソースに Content Understanding 対応のチャット補完モデルをデプロイ</li>
+            <li>Blob / SharePoint インデクサーでは <code class="inline">parameters.configuration.allowSkillsetToReadFileData</code> を <code class="inline">true</code> に設定</li>
+            <li>パスワード保護された PDF は事前に保護を解除</li>
+        </ul>
+        <h3>REST API (スキルセット定義例)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">HTTP</span><span>スキルセット定義 (api-version=2026-10-01)</span></div>
+            <pre><code class="language-http">PUT {endpoint}/skillsets/cu-semantic?api-version=2026-10-01
+Authorization: Bearer &lt;access-token&gt;
+Content-Type: application/json
+
+{
+  "name": "cu-semantic",
+  "skills": [
+    {
+      "@odata.type": "#Microsoft.Skills.Util.ContentUnderstandingSkill",
+      "context": "/document",
+      "modelName": "&lt;MODEL_NAME&gt;",
+      "modelDeployment": "&lt;chat-deployment&gt;",
+      "extractionOptions": ["images", "locationMetadata"],
+      "chunkingProperties": {
+        "method": "semantic",
+        "unit": "tokens",
+        "maximumLength": 500
+      },
+      "inputs": [{"name": "file_data", "source": "/document/file_data"}],
+      "outputs": [
+        {"name": "text_sections", "targetName": "text_sections"},
+        {"name": "normalized_images", "targetName": "normalized_images"}
+      ]
+    }
+  ],
+  "cognitiveServices": {
+    "@odata.type": "#Microsoft.Azure.Search.AIServicesByIdentity",
+    "subdomainUrl": "https://&lt;foundry-resource&gt;.services.ai.azure.com",
+    "identity": null
+  }
+}</code></pre>
+        </div>
+        <div class="highlight-box">
+            ベクトル検索を行う場合は、同じスキルセットに Azure OpenAI Embedding スキル (context: <code class="inline">/document/text_sections/*</code>) を追加し、チャンクの <code class="inline">content</code> (画像説明を含む) をベクトル化してインデックスプロジェクションでベクトルフィールドに投影します。
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card merit-business">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li><strong>RAG・エージェント検索の回答品質向上</strong>: 意味的に一貫したチャンクと画像内容の説明により、図表を多用する社内文書 (マニュアル、レポート、プレゼン資料) も検索・回答の対象にできる</li>
+                    <li>GA により本番ワークロードで採用可能になり、プレビュー機能に依存しない構成を組める</li>
+                </ul>
+            </div>
+            <div class="merit-card merit-tech">
+                <h4>🛠️ 技術面</h4>
+                <ul>
+                    <li>Text Split スキルが不要になり、抽出とチャンキングを 1 スキルで完結できる</li>
+                    <li>Document Layout スキルと比較して、Markdown のテーブル・図の出力、ページ間テーブルの認識、ページをまたぐチャンクに対応</li>
+                    <li>位置メタデータ (<code class="inline">locationMetadata</code>) により、引用・ページ参照付きの RAG 回答を実装しやすい</li>
+                    <li>チャンキング・画像抽出・画像説明・埋め込みが独立して構成でき、要件に応じてコストと品質を調整可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-card"><span class="mark">⏱️</span><span>ドキュメント分析のポーリングウィンドウは<strong>最大 8 分</strong>で、超過するとスキルタイムアウトエラーとなりそのドキュメントの分析出力が得られない (顧客側でのオーバーライド不可)。大規模・複雑なドキュメントは代表ファイルで事前検証が必要</span></div>
+        <div class="caution-card"><span class="mark">📄</span><span>DOCX と PDF で画像の出力結果が異なる場合があるなど、Content Understanding のドキュメントタイプごとのサービス動作が出力に影響する (一貫した画像処理が必要なら PDF への変換を検討)</span></div>
+        <div class="caution-card"><span class="mark">🌍</span><span>Foundry リソースは Content Understanding 対応リージョンに配置する必要があり、Search とのリージョンが離れるとインデクサー性能に影響する</span></div>
+        <div class="caution-card"><span class="mark">💳</span><span>他の組み込みスキルで利用できる無料ドキュメント枠は適用されない</span></div>
+        <div class="caution-card"><span class="mark">🔁</span><span>インデクサーの再実行・リセットは分析を再実行し追加課金が発生しうる (以前の分析結果は再利用されない)</span></div>
+        <div class="caution-card"><span class="mark">🔐</span><span>SharePoint ACL (ドキュメント権限) を取り込むパイプラインでは、画像ストレージ手順に制限がある</span></div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2><span class="icon">💰</span>料金</h2>
+        <p>スキルセットにアタッチした Microsoft Foundry リソースを通じて処理・課金されます。</p>
+        <table>
+            <tr><th style="width: 35%;">課金要素</th><th>内容</th></tr>
+            <tr><td>Content Understanding</td><td>レイアウト解析・抽出のアナライザー呼び出し (Foundry IQ とは別課金)</td></tr>
+            <tr><td>画像説明 (image verbalization)</td><td>構成した LLM デプロイメントのモデル使用料が追加で発生</td></tr>
+            <tr><td>Foundry IQ (Azure AI Search)</td><td>検索サービス自体の料金</td></tr>
+            <tr><td>埋め込み</td><td>Embedding スキルを構成した場合のモデル使用料</td></tr>
+        </table>
+        <div class="highlight-box">
+            画像説明を無効化 (<code class="inline">modelName</code> / <code class="inline">modelDeployment</code> を両方省略) しても、Content Understanding の抽出・チャンキング、Search、埋め込み、取得の課金は発生します。詳細は <a href="https://azure.microsoft.com/pricing/details/content-understanding/" target="_blank">Content Understanding 料金ページ</a>、<a href="https://azure.microsoft.com/pricing/details/search/" target="_blank">Azure AI Search 料金ページ</a> を参照してください。
+        </div>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2><span class="icon">🌐</span>利用可能リージョン</h2>
+        <p>スキルがアタッチする Foundry リソースは <a href="https://learn.microsoft.com/azure/ai-services/content-understanding/language-region-support" target="_blank">Content Understanding 対応リージョン</a>に配置する必要があります。Foundry IQ (Azure AI Search) サービス自体は<a href="https://learn.microsoft.com/azure/search/search-region-support" target="_blank">対応する任意のリージョン</a>に配置できますが、リージョン間のネットワーク遅延はインデクサー性能に影響します。</p>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card"><strong>Microsoft Foundry / Foundry IQ</strong>本スキルの主要な利用先。ナレッジソース・ナレッジベース API によるマネージドな取得 (agentic retrieval) で活用</div>
+            <div class="related-card"><strong>Azure Content Understanding (Foundry Tools)</strong>ドキュメントアナライザーの提供元。スキルは Content Understanding <code class="inline">2025-11-01</code> API を呼び出す</div>
+            <div class="related-card"><strong>Azure OpenAI Embedding スキル</strong>チャンク (画像説明を含む) のベクトル化に組み合わせて使用</div>
+            <div class="related-card"><strong>Document Layout スキル</strong>類似の抽出スキル。Content Understanding スキルはこれと比べて Markdown テーブル・図の出力やページ間テーブル認識に対応</div>
+            <div class="related-card"><strong>SharePoint インデクサー</strong>SharePoint ドキュメントの抽出・エンリッチにも対応 (ナレッジソース API またはインデクサー + スキルセット構成を選択可能)</div>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=563661" target="_blank">公式アップデート情報 (Azure Updates #563661)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/search/cognitive-search-skill-content-understanding" target="_blank">Microsoft Learn: Azure Content Understanding skill</a></li>
+            <li><a href="https://learn.microsoft.com/azure/search/search-how-to-semantic-chunking-content-understanding" target="_blank">Microsoft Learn: Chunk and vectorize with Content Understanding</a></li>
+            <li><a href="https://learn.microsoft.com/azure/ai-services/content-understanding/overview" target="_blank">Microsoft Learn: Content Understanding の概要</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/content-understanding/" target="_blank">Content Understanding 料金ページ</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/search/" target="_blank">Azure AI Search 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Azure AI Search の Content Understanding スキルで、セマンティックチャンキングと AI 生成画像説明が GA になりました。固定長分割では失われがちだった文書構造 (見出し・段落・ページ間テーブル) を保ったチャンク生成と、図表のテキスト化により、マルチモーダルな RAG・エージェント検索の品質を大きく底上げする機能です。</p>
+            <p>RAG パイプラインを構築・運用している Solutions Architect は、Search REST API <code class="inline">2026-10-01</code> への移行とあわせて、既存の Text Split / Document Layout スキル構成からの置き換えを評価することを推奨します。その際は、<strong>8 分の分析ポーリングウィンドウ</strong>、<strong>Foundry リソースのリージョン配置</strong>、<strong>画像説明による追加の LLM 課金</strong>を考慮した事前検証が重要です。</p>
+            <div class="tag-list">
+                <span class="tag">Azure AI Search</span>
+                <span class="tag">Foundry IQ</span>
+                <span class="tag">Content Understanding</span>
+                <span class="tag">Microsoft Foundry</span>
+                <span class="tag">セマンティックチャンキング</span>
+                <span class="tag">RAG</span>
+                <span class="tag">マルチモーダル検索</span>
+                <span class="tag">GA</span>
+                <span class="tag">Microsoft Ignite</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== フッター ===== -->
+    <footer>
+        <p><strong>出典</strong>: Azure News Summary レポート <code class="inline">reports/2026/2026-11-17-ai-search-content-understanding.md</code></p>
+        <p>データソース: <a href="https://azure.microsoft.com/updates?id=563661" target="_blank">Azure Updates (Release Communications)</a> / Microsoft Learn ドキュメント</p>
+        <p>生成日: 2026-11-18 | Azure News Summary Project</p>
+    </footer>
+
+</div>
+
+<!-- Mermaid.js -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+
+<!-- highlight.js -->
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

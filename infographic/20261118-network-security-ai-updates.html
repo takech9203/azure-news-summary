@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure ネットワークセキュリティ: AI 時代のセキュリティ新機能 4 連発</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+}
+
+.header .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: center;
+}
+
+.header h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.header .subtitle {
+    font-size: 15px;
+    opacity: 0.9;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+.date-chip {
+    font-size: 13px;
+    font-weight: 500;
+    background: rgba(255,255,255,0.9);
+    color: var(--azure-dark-blue);
+    padding: 4px 14px;
+    border-radius: 16px;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 20px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon { font-size: 24px; }
+
+h3.sub-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+h4 { margin-bottom: 8px; }
+
+p.lead {
+    font-size: 15px;
+    margin-bottom: 16px;
+}
+
+/* ===== Cards ===== */
+.card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+/* ===== Overview 4-feature grid ===== */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+
+.overview-card {
+    border: 1px solid var(--ms-border);
+    border-top: 5px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 18px;
+    background: var(--ms-surface);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.overview-card.c1 { border-top-color: var(--azure-blue); }
+.overview-card.c2 { border-top-color: var(--ms-green); }
+.overview-card.c3 { border-top-color: var(--ms-red); }
+.overview-card.c4 { border-top-color: var(--ms-purple); }
+
+.overview-card .ov-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.overview-card .ov-icon { font-size: 26px; }
+.overview-card h4 { font-size: 15px; color: var(--azure-dark-blue); margin: 0; }
+.overview-card p { font-size: 13.5px; color: var(--ms-text-secondary); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { font-size: 13.5px; margin-bottom: 8px; }
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+
+.feature-icon {
+    font-size: 24px;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 15px; color: var(--azure-dark-blue); }
+.feature-content p, .feature-content ul { font-size: 13.5px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; margin-top: 4px; }
+
+/* ===== Tables ===== */
+.table-wrap { overflow-x: auto; margin: 12px 0; }
+
+table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+}
+
+table.spec-table th {
+    background: var(--ms-blue-800);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+table.spec-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+table.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+table.spec-table td:first-child { font-weight: 500; white-space: nowrap; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Code block (dark, excluding mermaid) ===== */
+.code-block,
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Caution / warning boxes ===== */
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 14px 0;
+    font-size: 13.5px;
+}
+
+.warning-box h4 { color: var(--ms-orange); margin-bottom: 6px; font-size: 14px; }
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin-bottom: 6px; }
+
+.constraint-box {
+    background: var(--ms-surface-tertiary);
+    border-left: 4px solid var(--ms-text-disabled);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 14px 0;
+    font-size: 13.5px;
+}
+
+.constraint-box h4 { color: var(--ms-text-secondary); margin-bottom: 6px; font-size: 14px; }
+.constraint-box ul { padding-left: 20px; }
+.constraint-box li { margin-bottom: 6px; }
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.merit-card {
+    border-radius: 8px;
+    padding: 18px;
+    border: 1px solid var(--ms-border);
+}
+
+.merit-card.biz { background: var(--ms-blue-100); border-top: 4px solid var(--azure-blue); }
+.merit-card.tech { background: #F3EFF9; border-top: 4px solid var(--ms-purple); }
+
+.merit-card h4 { margin-bottom: 10px; color: var(--azure-dark-blue); }
+.merit-card.tech h4 { color: var(--ms-purple); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 13.5px; margin-bottom: 8px; }
+
+.demerit-list {
+    background: #FFEBEE;
+    border-left: 4px solid var(--ms-red);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+}
+
+.demerit-list ul { padding-left: 20px; }
+.demerit-list li { font-size: 13.5px; margin-bottom: 8px; }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    margin: 16px 0;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.usecase-header {
+    background: var(--ms-blue-800);
+    color: #FFFFFF;
+    padding: 12px 18px;
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.usecase-body { padding: 16px 18px; }
+
+.usecase-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    font-size: 13.5px;
+}
+
+.usecase-label {
+    min-width: 72px;
+    font-weight: 700;
+    color: var(--azure-blue);
+    white-space: nowrap;
+}
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 12px;
+}
+
+.related-item {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13.5px;
+    border-left: 4px solid var(--ms-blue-500);
+}
+
+.related-item strong { color: var(--azure-dark-blue); display: block; margin-bottom: 4px; }
+
+/* ===== Links ===== */
+.links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 10px;
+}
+
+.link-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+}
+
+.link-item a {
+    color: var(--ms-blue-700);
+    text-decoration: none;
+    font-weight: 500;
+    word-break: break-all;
+}
+
+.link-item a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 14.5px;
+}
+
+/* ===== Tags ===== */
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    font-size: 12px;
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-weight: 500;
+}
+
+/* ===== Footer ===== */
+.footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 24px 0;
+    font-size: 12.5px;
+}
+
+.footer h4 { margin-bottom: 10px; font-size: 14px; }
+.footer ul { list-style: none; }
+.footer li { margin-bottom: 5px; }
+.footer a { color: var(--azure-light-blue); text-decoration: none; word-break: break-all; }
+.footer a:hover { text-decoration: underline; }
+.footer .gen-note { margin-top: 14px; opacity: 0.7; }
+
+.jp-note {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 12px 16px;
+    border-radius: 0 8px 8px 0;
+    margin-top: 12px;
+    font-size: 13.5px;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 22px; }
+    .section { padding: 20px 16px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="header">
+        <div class="meta-row">
+            <span class="date-chip">📅 リリース日: 2026-11-17</span>
+            <span class="badge badge-preview">In Preview</span>
+            <span class="date-chip">🎪 Microsoft Ignite 2026</span>
+        </div>
+        <h1>Azure ネットワークセキュリティ<br>AI 時代のセキュリティ新機能 4 連発</h1>
+        <div class="subtitle">Agent Grid / Azure Adaptive Virtual Patching / AI Security add-on for Azure Firewall Premium / Azure Bastion RDP/SSH Vision</div>
+        <div class="meta-row" style="margin-top: 16px; margin-bottom: 0;">
+            <span class="service-badge">🕸️ Agent Grid</span>
+            <span class="service-badge">🩹 Adaptive Virtual Patching</span>
+            <span class="service-badge">🔥 Azure Firewall Premium</span>
+            <span class="service-badge">🚪 Azure Bastion Premium</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p class="lead">Microsoft Ignite 2026 に合わせて、Azure のネットワークセキュリティ領域で AI に関連する 4 つの新機能がパブリックプレビューとして発表された。いずれも<strong>「AI を守る (Secure AI)」</strong>と<strong>「AI で守る (Secure with AI)」</strong>の両面から、ネットワーク層のセキュリティ境界を強化するアップデートである。</p>
+
+        <div class="overview-grid">
+            <div class="overview-card c1">
+                <div class="ov-head"><span class="ov-icon">🕸️</span><h4>1. Agent Grid</h4></div>
+                <p>AI エージェントとモデル・ツール・外部サービス間の通信に、ワークロード ID ベースのゼロトラストネットワークセキュリティを提供する新機能。エージェントのコード変更やサイドカー不要で、エージェントの信頼境界の外側でポリシーを強制する。</p>
+            </div>
+            <div class="overview-card c2">
+                <div class="ov-head"><span class="ov-icon">🩹</span><h4>2. Azure Adaptive Virtual Patching</h4></div>
+                <p>AI がオーケストレーションする「Adaptive Shield」により、ゼロデイ脆弱性の公開からパッチ適用までの間、一時的な緩和策 (仮想パッチ) を適用してエクスポージャーを削減するサービス。初期対象は Azure 上の Linux VM / VMSS。</p>
+            </div>
+            <div class="overview-card c3">
+                <div class="ov-head"><span class="ov-icon">🔥</span><h4>3. AI Security add-on for Azure Firewall Premium</h4></div>
+                <p>Azure Firewall Premium 向けの新アドオン。プロンプトインジェクション対策、ネットワーク DLP、マルウェア検出、アプリケーション脆弱性保護、AI によるポリシー分析の 5 つの機能を追加する。</p>
+            </div>
+            <div class="overview-card c4">
+                <div class="ov-head"><span class="ov-icon">🚪</span><h4>4. Azure Bastion RDP/SSH Vision</h4></div>
+                <p>Azure Bastion Premium のセッション記録を AI が分析し、特権セッションのサマリーとリスクのあるアクティビティのインサイトを生成する機能。全録画を最初から最後まで確認する必要がなくなる。</p>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>AI エージェントの通信は多数のエージェント・モデル・MCP サーバー・ツールにまたがる多段ホップで構成され、IP アドレスベースのポリシーや各エージェント前段へのゲートウェイ配置では管理がスケールしなかった。プロンプトインジェクションで操られたエージェントが、本来呼ぶべきでないツールや宛先に正規の資格情報でアクセスするリスクがあった</li>
+                    <li>脆弱性 (CVE) の公開からパッチ適用までの間、メンテナンスウィンドウ・再起動・テストの必要性から、ワークロードが無防備なまま露出する期間が存在した</li>
+                    <li>Azure Firewall は TLS インスペクションや IDPS を備えるものの、AI アプリ特有の脅威 (プロンプトインジェクション、AI アプリへの機密データ流出) やファイル・リクエスト内容の AI 分析には対応していなかった</li>
+                    <li>Azure Bastion Premium のセッション記録は取得できても、監査やインシデント調査では録画を人手で最初から最後まで確認する必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Agent Grid により、エージェントごとの検証済みワークロード ID (SPIFFE 準拠の X.509 証明書) と mTLS トンネル、集中管理ポリシー (FQDN/URL フィルタリング、MCP ツール単位のフィルタリング、TLS インスペクション、Prompt Shields 連携) で、エージェント通信をコード変更なしに制御可能に</li>
+                    <li>Adaptive Virtual Patching により、CVE 公開から 48 時間以内にゼロデイがインベントリに追加され、eBPF ベースのワークロード保護とネットワーク補償制御による一時緩和策を自動 (Auto モード) または承認制 (Manual モード) で適用し、パッチ適用後にロールバック可能に</li>
+                    <li>Azure Firewall Premium に、CPU 最適化された小規模言語モデル (SLM) によるインラインのマルウェア・エクスプロイト検出、Microsoft Purview 連携のネットワーク DLP、Prompt Shields によるプロンプトインジェクション検出、AI によるポリシー推奨 (Policy Advisor) を追加</li>
+                    <li>Bastion のセッション終了後に AI が自動分析し、リスクレベル・カテゴリ・重大度付きのインサイトと該当箇所 (録画のタイムスタンプ / SSH コマンド) を提示するため、調査の優先順位付けが効率化</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    ADMIN(["👤 管理者"])
+    EXT["🌐 外部サービス / モデル / MCP サーバー"]
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph Boundary["🛡️ AI 時代のネットワークセキュリティ境界"]
+            AG["🕸️ Agent Grid&lt;br/&gt;ワークロード ID + mTLS + MCP ポリシー"]
+            FW["🔥 Azure Firewall Premium&lt;br/&gt;+ AI Security add-on"]
+            AVP["🩹 Adaptive Virtual Patching&lt;br/&gt;Adaptive Shield (eBPF + ネットワーク制御)"]
+            BAS["🚪 Azure Bastion Premium&lt;br/&gt;+ RDP/SSH Vision (AI セッション分析)"]
+        end
+        AGENT(["🤖 AI エージェント&lt;br/&gt;(ACI サンドボックス / AKS)"])
+        APP["📦 AI アプリケーション"]
+        VM[("🖥️ Linux VM / VMSS")]
+    end
+    AGENT --&gt;|"全トラフィックを強制経由"| AG --&gt;|"許可された通信のみ"| EXT
+    APP --&gt; FW --&gt;|"検査済みトラフィック"| EXT
+    AVP --&gt;|"一時的な緩和策を適用"| VM
+    ADMIN --&gt;|"特権アクセス (記録+AI 分析)"| BAS --&gt; VM
+            </pre>
+        </div>
+        <div class="highlight-box">
+            4 つの新機能はそれぞれ異なるレイヤーでセキュリティ境界を形成する。<strong>Agent Grid</strong> は AI エージェントの東西・外向き通信、<strong>Firewall AI Security</strong> はアプリケーショントラフィック、<strong>Adaptive Virtual Patching</strong> は VM ワークロード、<strong>Bastion Vision</strong> は特権アクセスの監査をカバーする。
+        </div>
+    </section>
+
+    <!-- ===== Details ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔍</span>サービスアップデートの詳細</h2>
+
+        <!-- 1. Agent Grid -->
+        <h3 class="sub-title">🕸️ 1. Agent Grid <span class="badge badge-preview">Public Preview</span></h3>
+        <p class="lead">AI エージェントを「信頼できない内部者」として扱い、Azure ネットワークプラットフォームに組み込まれた形でエージェント通信を保護する新機能。内部名称は <strong>Agent Fabric</strong> であり、ARM リソースタイプや CLI にはその名前が残る場合がある。</p>
+
+        <div class="feature-card">
+            <div class="feature-icon">🪪</div>
+            <div class="feature-content">
+                <h4>ワークロード ID とゼロトラスト通信</h4>
+                <ul>
+                    <li>登録 (enroll) された各ワークロードを構成証明 (attest) し、SPIFFE 標準に基づく短命の X.509 ワークロード ID 証明書 (SVID) を発行</li>
+                    <li>トラフィックはワークロード ID に紐づく mTLS トンネルで伝送され、認証された相手とのみ通信可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔎</div>
+            <div class="feature-content">
+                <h4>エージェントトラフィック向けの検査ポリシー</h4>
+                <ul>
+                    <li>FQDN フィルタリング、URL フィルタリング、TLS インスペクション</li>
+                    <li>MCP ポリシー: 承認済み MCP サーバー上で特定のツールのみ許可 (例: read 系ツールのみ許可し write 系をブロック) する粒度の制御</li>
+                    <li>Azure AI Content Safety (自前リソースを接続) の Prompt Shields によるプロンプトインジェクション検査</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>信頼境界の外側での強制</h4>
+                <p>サンドボックスの外側でトラフィックを傍受するため、エージェントが強制を無効化・迂回できない。エージェントのコード変更、SDK 追加、サイドカー配置は不要。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>可観測性</h4>
+                <p>診断設定経由で Azure Monitor にフローログを送信。フローマップでメンバー間の接続と宛先を可視化し、ブロックされたフローのポリシーと理由を確認可能。</p>
+            </div>
+        </div>
+
+        <h4 style="margin-top: 16px; color: var(--ms-blue-800);">技術仕様</h4>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>対応コンピューティング</td><td>ACI の AI サンドボックス (サンドボックスグループ): Public Preview / AKS (Agent Sandbox + 通常の Kubernetes ワークロード): Gated Preview</td></tr>
+                <tr><td>ワークロード ID</td><td>SPIFFE 準拠の短命 X.509 証明書 (SVID)</td></tr>
+                <tr><td>ポリシーレイヤー</td><td>L3〜L7 (ID ベースに加え IP アドレス/範囲も使用可能)</td></tr>
+                <tr><td>サービス上限</td><td>リージョンあたり 500 グリッド、グリッドあたり 100 メンバー</td></tr>
+                <tr><td>プロトコル</td><td>TCP、IPv4 のみ (プレビュー時点)</td></tr>
+            </table>
+        </div>
+
+        <div class="constraint-box">
+            <h4>⚠️ 主な制約 (プレビュー)</h4>
+            <ul>
+                <li>ACI サンドボックスグループはパブリック IP のみ対応 (VNet 統合は未対応)</li>
+                <li>プライベート AKS クラスターは未対応。AKS クラスターは Microsoft Entra 統合を推奨</li>
+                <li>コンピューティングリソースはグリッドと同一サブスクリプションに存在し、1 リソースは 1 グリッドにのみアタッチ可能</li>
+                <li>Microsoft Foundry ホストエージェント、Azure Container Apps、Microsoft Copilot Studio などは未対応</li>
+                <li>独自 VNet 使用時は、NSG で Agent Grid ゲートウェイのロードバランサー IP への TCP ポート 15008/15009 のインバウンドを許可する必要がある</li>
+            </ul>
+        </div>
+
+        <!-- 2. Adaptive Virtual Patching -->
+        <h3 class="sub-title">🩹 2. Azure Adaptive Virtual Patching <span class="badge badge-preview">Public Preview</span></h3>
+        <p class="lead">CVE 公開からパッチ適用までの「エクスポージャーウィンドウ」を埋める AI 駆動の予防的セキュリティサービス。脆弱性を修正するのではなく、一時的な保護レイヤーを提供する。</p>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔁</div>
+            <div class="feature-content">
+                <h4>AI オーケストレーションによる保護ループ</h4>
+                <p>検出 (公開脆弱性情報の監視 + VM のソフトウェアインベントリ取得) → マッチング (CVE と照合して Finding を作成) → 推奨 (ワークロードに合わせた緩和策をランク付け) → 検証 → 適用 → 再検証の 6 ステップを継続実行。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧠</div>
+            <div class="feature-content">
+                <h4>3 つのセマンティックレイヤー</h4>
+                <p>脆弱性とエクスプロイト条件のナレッジグラフ、顧客ワークロードとランタイムコンテキストのマップ、関連するエクスポージャーを特定しワークロード固有の緩和策を生成するオーケストレーションレイヤーを接続。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>Adaptive Shield による強制</h4>
+                <p>eBPF ベースのワークロード保護とネットワークベースの補償制御を組み合わせ、明示的なマッチング条件と強制アクションを持つ AI 合成ポリシーを決定論的に実行。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">↩️</div>
+            <div class="feature-content">
+                <h4>制御性とロールバック</h4>
+                <p>Auto モード (自動適用) / Manual モード (承認制) を選択可能。適用済みの緩和策は (ロールバック対応のものであれば) いつでも手動ロールバック可能。全コマンドは監査証跡に記録。</p>
+            </div>
+        </div>
+
+        <h4 style="margin-top: 16px; color: var(--ms-blue-800);">技術仕様</h4>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>対象ワークロード</td><td>Azure Linux / Ubuntu の VM および均一 (uniform) VMSS (カーネル 4.19 以降)。Windows、VMSS Flex、コンテナーは未対応</td></tr>
+                <tr><td>エージェント</td><td>Neuron 拡張機能 (インベントリ収集と緩和策適用を担う軽量エージェント、ポーリング間隔約 15 分)</td></tr>
+                <tr><td>CVE インベントリ</td><td>直近 3 か月の既知 CVE。ゼロデイ CVE は公開から 48 時間以内に追加</td></tr>
+                <tr><td>容量クォータ</td><td>サブスクリプションあたり Adaptive Shield 2 つまで。1 シールドで VM 40 台まで (VMSS は合計 40 インスタンスまで)</td></tr>
+                <tr><td>緩和対象</td><td>構成した重大度しきい値以上の High / Critical の Finding</td></tr>
+            </table>
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ 注意</h4>
+            <p>プレビュー期間中は本番環境ではなくテスト環境への展開が推奨されている。</p>
+        </div>
+
+        <!-- 3. AI Security add-on -->
+        <h3 class="sub-title">🔥 3. AI Security add-on for Azure Firewall Premium <span class="badge badge-preview">Public Preview</span></h3>
+        <p class="lead">Azure Firewall Premium を拡張するオプションのアドオン。既存 SKU を置き換えるものではなく、Premium デプロイに保護設定とポリシー分析を追加する。</p>
+
+        <div class="feature-card">
+            <div class="feature-icon">💉</div>
+            <div class="feature-content">
+                <h4>Prompt Threat Protection (プロンプトインジェクション保護)</h4>
+                <p>Azure AI Content Safety Prompt Shields を使用し、対象 AI トラフィック内の直接・間接プロンプトインジェクションを検出・ブロック。アプリケーションごとの SDK 統合は不要。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>Network DLP (ネットワークデータ損失防止)</h4>
+                <p>Microsoft Purview の分類とポリシー判定と統合し、組織が許可していない宛先 (AI アプリやモデルを含む) への機密データのアップロードを防止。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🦠</div>
+            <div class="feature-content">
+                <h4>Advanced Malware Threat Protection (マルウェア検出)</h4>
+                <p>ネットワークセキュリティ向けにファインチューニングされ CPU で動作するよう最適化された小規模言語モデル (SLM) が、転送中のバイナリファイルをインライン分析し、脅威が宛先に到達する前にポリシーを強制。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧪</div>
+            <div class="feature-content">
+                <h4>Advanced Application Threat Protection (アプリケーション脆弱性保護)</h4>
+                <p>同じく SLM により、アプリケーションリクエストを分析してエクスプロイトの試みを検出し、アラート/拒否のしきい値を適用。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">💡</div>
+            <div class="feature-content">
+                <h4>Policy Advisor (AI ポリシー分析)</h4>
+                <p>ファイアウォール構成と観測されたトラフィックログを組み合わせてコンテキストに基づくインサイトと推奨事項を提供。未使用ルールのレビュー、ルール順序の改善、トラフィック異常の調査に活用でき、適用前にドライランで検証可能。</p>
+            </div>
+        </div>
+
+        <h4 style="margin-top: 16px; color: var(--ms-blue-800);">技術仕様・設定の考え方</h4>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>前提 SKU</td><td>Azure Firewall Premium (+ Premium ポリシー)</td></tr>
+                <tr><td>設定モデル</td><td>セキュリティプロファイル (機能ごとの構成) → セキュリティプロファイルグループ (各タイプ最大 1 プロファイル) → アプリケーションルールに関連付け</td></tr>
+                <tr><td>依存リソース</td><td>Prompt Threat Protection: マネージド ID でアクセスする Azure AI Content Safety リソース / DLP: Microsoft Purview のポリシー構成とユーザーコンテキスト / Policy Advisor: Policy Analytics</td></tr>
+                <tr><td>HTTPS 検査</td><td>TLS インスペクションの成功とクライアントによる検査 CA 証明書の信頼が必要</td></tr>
+                <tr><td>構成手段</td><td>プレビュー期間中は Azure Portal のみ (PowerShell / CLI / Terraform / REST API は未対応)</td></tr>
+            </table>
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ 注意点</h4>
+            <ul>
+                <li>既存ファイアウォールでアドオンを有効化する際はダウンタイムが発生するため、メンテナンス作業として計画する必要がある</li>
+                <li>ポリシーを複数のファイアウォールに関連付けている場合、保護を構成する前にすべての関連ファイアウォールでアドオンを有効化する必要がある</li>
+                <li>ネットワークルールはアプリケーションルールより先に処理されるため、ネットワークルールに一致したトラフィックはセキュリティプロファイルグループ付きのアプリケーションルールに到達しない点に注意</li>
+            </ul>
+        </div>
+
+        <!-- 4. Bastion Vision -->
+        <h3 class="sub-title">🚪 4. Azure Bastion RDP/SSH Vision <span class="badge badge-preview">Public Preview</span></h3>
+        <p class="lead">Azure Bastion Premium のセッション記録機能の上に構築された、特権セッションの AI 支援レビュー機能。</p>
+
+        <div class="feature-card">
+            <div class="feature-icon">🖥️</div>
+            <div class="feature-content">
+                <h4>RDP Vision</h4>
+                <p>RDP セッションのグラフィカル録画を分析し、リスクのあるアクティビティが発生した録画内の正確な時間帯を提示。タイムライン形式のインサイト (時間範囲、重大度、説明、カテゴリ、信頼度、サムネイル) から録画プレーヤーを該当箇所で起動して検証可能。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⌨️</div>
+            <div class="feature-content">
+                <h4>SSH Vision + SSH コマンドログ</h4>
+                <p>SSH セッションのコマンドログ (新機能のコマンドロギングで取得) を分析し、リスクのあるコマンドそのものを特定。コマンド、説明、カテゴリ、重大度、信頼度を提示。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📝</div>
+            <div class="feature-content">
+                <h4>セッションサマリーとリスクレベル</h4>
+                <p>セッションごとに要約、全体リスクレベル (High / Medium など)、重大度別インサイト数を提供し、レビューの優先順位付けを支援。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚨</div>
+            <div class="feature-content">
+                <h4>検出例</h4>
+                <p>ローカル Administrators グループへのユーザー追加、ホストファイアウォール保護の無効化、平文ファイルへのシークレット保存、SSH からの特権昇格や sudo 構成変更の試みなど。</p>
+            </div>
+        </div>
+
+        <h4 style="margin-top: 16px; color: var(--ms-blue-800);">技術仕様・前提条件</h4>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td>必要 SKU</td><td>Azure Bastion Premium</td></tr>
+                <tr><td>前提機能</td><td>RDP Vision: セッション記録 / SSH Vision: コマンドロギング (プレビュー)</td></tr>
+                <tr><td>ストレージ</td><td>録画・コマンドログは顧客指定の Azure Storage アカウントコンテナーに保存 (マネージド ID 推奨 or SAS URL)。閲覧には Storage Blob Data Reader ロールが必要</td></tr>
+                <tr><td>分析タイミング</td><td>セッション終了後に分析 (リアルタイムのブロックやセッション切断は行わない)</td></tr>
+                <tr><td>ポータル</td><td>プレビュー期間中は https://preview.portal.azure.com から構成</td></tr>
+            </table>
+        </div>
+
+        <div class="constraint-box">
+            <h4>⚠️ 主な制約 (プレビュー)</h4>
+            <ul>
+                <li>有効化以前に記録されたセッションは分析されない</li>
+                <li>検出対象の挙動はカスタマイズ不可</li>
+                <li>セッション記録は RDP/SSH 共通設定 (片方のみの有効化は不可)</li>
+                <li>ネイティブクライアント経由のセッションは記録・分析されない</li>
+                <li>構成は Azure Portal のみ対応</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">✨</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card biz">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>AI エージェント・AI アプリの本番導入に必要なガバナンスとコンプライアンスの枠組みをネットワーク層で確保でき、AI 活用の推進とリスク管理を両立できる</li>
+                    <li>パッチ適用の計画・テストに必要な時間を確保しながらゼロデイのリスクを低減でき、緊急パッチ対応による運用負荷と事業影響を軽減できる</li>
+                    <li>特権セッション監査の工数を大幅に削減し、監査・調査の対応速度を向上できる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>Agent Grid はエージェントのコード変更・SDK・サイドカー不要で、IP ではなくワークロード ID ベースのポリシーを実現。短命ポッドやサンドボックスが混在する環境でもポリシーが安定する</li>
+                    <li>Adaptive Virtual Patching は eBPF とネットワーク制御の組み合わせで、ソフトウェア修正をインストールせずに一時緩和を適用し、パッチ後にクリーンにロールバックできる</li>
+                    <li>Firewall の SLM によるインライン検査は CPU で動作するよう最適化されており、既存の TLS インスペクション・IDPS と同じ経路で AI 由来の脅威検出を追加できる</li>
+                    <li>Bastion Vision はインサイトから元の証拠 (録画のタイムスタンプ、コマンドログ) に直接到達でき、検証可能性を保った AI 分析となっている</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Demerits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="demerit-list">
+            <ul>
+                <li>4 機能ともパブリックプレビューであり、SLA はなく、機能・構成・制限は GA までに変更される可能性がある</li>
+                <li>いずれも利用可能リージョンが限定的 (下記「利用可能リージョン」参照)。特に Firewall AI Security は 3 リージョン、Bastion Vision は 5 リージョンのみ</li>
+                <li>Agent Grid は現時点で ACI サンドボックス (パブリック IP のみ) が中心で、AKS は Gated Preview。Container Apps や Copilot Studio などは未対応</li>
+                <li>Adaptive Virtual Patching は Linux (Azure Linux / Ubuntu、カーネル 4.19+) 限定で、Windows 未対応。クォータも小さく (シールド 2 つ/サブスクリプション、40 VM/シールド)、プレビュー中はテスト環境での利用が推奨</li>
+                <li>Firewall AI Security の有効化には既存ファイアウォールのダウンタイムを伴い、構成はポータルのみ。TLS インスペクションの証明書配布が前提となる</li>
+                <li>Bastion Vision のインサイトは AI 生成であり、すべてのリスクアクティビティを検出できるとは限らない。元の録画・ログによる検証が前提</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use cases ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🕸️ ユースケース 1: MCP ツールの最小権限化によるプロンプトインジェクション被害の封じ込め</div>
+            <div class="usecase-body">
+                <div class="usecase-row"><span class="usecase-label">シナリオ</span><span>サポートチケットを読み取り・要約するエージェントが、チケット本文に仕込まれた隠し指示 (間接プロンプトインジェクション) により、MCP サーバーの write 系ツール (ライセンス延長など) を呼び出そうとする。</span></div>
+                <div class="usecase-row"><span class="usecase-label">実装</span><span>Agent Grid でエージェントを ACI サンドボックスグループごとグリッドに登録し、MCP ポリシーで該当エージェントには read 系ツールのみ許可する。あわせて FQDN/URL フィルタリングで外部送信先を制限し、Prompt Shields で悪意あるプロンプト自体を検出する。</span></div>
+                <div class="usecase-row"><span class="usecase-label">効果</span><span>正規の認証済みワークロードによる不正なツール呼び出しをネットワーク層でブロックし、試行をログとフローマップで可視化できる。</span></div>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🩹 ユースケース 2: ゼロデイ公開直後の Linux ワークロード保護</div>
+            <div class="usecase-body">
+                <div class="usecase-row"><span class="usecase-label">シナリオ</span><span>重大な CVE が公開されたが、パッチ適用には検証とメンテナンスウィンドウが必要で、数日〜数週間の露出期間が発生する。</span></div>
+                <div class="usecase-row"><span class="usecase-label">実装</span><span>対象の Linux VM / VMSS を Adaptive Shield に Protected Resource として登録。重大度しきい値を設定し、Manual モードで推奨された緩和策を承認して適用 (または Auto モードで自動適用)。パッチ適用と修復確認後に緩和策をロールバックする。</span></div>
+                <div class="usecase-row"><span class="usecase-label">効果</span><span>CVE 公開から 48 時間以内にゼロデイがインベントリに反映され、パッチ前の露出期間を一時緩和策で保護できる。</span></div>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">🔥 ユースケース 3: 生成 AI アプリへの機密データ流出防止と特権アクセス監査</div>
+            <div class="usecase-body">
+                <div class="usecase-row"><span class="usecase-label">シナリオ</span><span>社内から外部 AI サービスへのトラフィックを Azure Firewall Premium 経由とし、機密データのアップロードを防ぎつつ、VM への管理アクセスを監査可能にしたい。</span></div>
+                <div class="usecase-row"><span class="usecase-label">実装</span><span>Firewall Premium で AI Security add-on を有効化し、DLP 用セキュリティプロファイルを Purview ポリシーと組み合わせてアプリケーションルールに関連付ける。管理アクセスは Bastion Premium に集約し、セッション記録 + RDP/SSH Vision を有効化する。</span></div>
+                <div class="usecase-row"><span class="usecase-label">効果</span><span>未許可の AI サービスへの機密データ送信をネットワーク層で防止し、特権セッションは AI サマリーとリスクインサイトで効率的に監査できる。</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p class="lead">いずれもプレビュー段階であり、確認できた料金情報は以下のとおり。</p>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <tr><th>機能</th><th>料金 (プレビュー時点)</th></tr>
+                <tr><td>Agent Grid</td><td>公式ドキュメント・Updates に料金情報の記載なし</td></tr>
+                <tr><td>Azure Adaptive Virtual Patching</td><td>Adaptive Shield の数と保護対象リソース数に基づく課金。プレビュー期間中は 50% の価格</td></tr>
+                <tr><td>AI Security add-on</td><td>Azure Firewall Premium へのアドオンとしてライセンス。詳細は <a href="https://azure.microsoft.com/pricing/details/azure-firewall/" style="color: var(--ms-blue-700);">Azure Firewall 料金ページ</a> を参照</td></tr>
+                <tr><td>Bastion RDP/SSH Vision</td><td>プレビュー期間中は課金なし。Bastion Premium とストレージアカウントの標準料金は発生 (<a href="https://azure.microsoft.com/pricing/details/azure-bastion/" style="color: var(--ms-blue-700);">Azure Bastion 料金ページ</a>)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <div class="table-wrap">
+            <table class="spec-table">
+                <tr><th>機能</th><th>プレビュー対応リージョン</th></tr>
+                <tr><td>Agent Grid</td><td>Central US, West US 2, Sweden Central, Australia East, Indonesia Central</td></tr>
+                <tr><td>Azure Adaptive Virtual Patching</td><td>North Central US, West Central US, East US 2, West US, West US 2, Australia East, Southeast Asia, <strong>Japan East</strong>, North Europe, Switzerland North, UAE North (ほか EUAP: East US 2 EUAP, Central US EUAP)</td></tr>
+                <tr><td>AI Security add-on for Azure Firewall Premium</td><td>East Asia, UK South, West Central US</td></tr>
+                <tr><td>Azure Bastion RDP/SSH Vision</td><td>East Asia, UK South, West Central US, Central US EUAP, East US 2 EUAP</td></tr>
+            </table>
+        </div>
+        <div class="jp-note">
+            🇯🇵 日本リージョンで利用できるのは現時点で <strong>Adaptive Virtual Patching (Japan East)</strong> のみ。
+        </div>
+    </section>
+
+    <!-- ===== Related ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-item"><strong>Azure AI Content Safety (Prompt Shields)</strong>Agent Grid と Firewall AI Security の両方がプロンプトインジェクション検出に利用。顧客所有のリソースをマネージド ID 経由で接続する</div>
+            <div class="related-item"><strong>Microsoft Purview</strong>Firewall AI Security のネットワーク DLP が分類とポリシー判定に利用</div>
+            <div class="related-item"><strong>Azure Container Instances (AI サンドボックス) / Azure Kubernetes Service</strong>Agent Grid の対応コンピューティング環境 (AKS Agent Sandbox は Kata Containers を使用)</div>
+            <div class="related-item"><strong>Azure Monitor / Log Analytics</strong>Agent Grid のフローログ、Firewall の Policy Analytics などの可観測性基盤</div>
+            <div class="related-item"><strong>Azure Storage</strong>Bastion のセッション録画・SSH コマンドログの保存先</div>
+            <div class="related-item"><strong>Azure Update Manager / パッチ管理</strong>Adaptive Virtual Patching は恒久的なパッチ適用を置き換えるものではなく補完する位置づけ</div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Ignite 2026 で発表されたこれら 4 つのパブリックプレビューは、Azure のネットワークセキュリティが<strong>「AI を守る」(Agent Grid、Firewall の Prompt Threat Protection / DLP)</strong> と<strong>「AI で守る」(Adaptive Virtual Patching、SLM によるインライン検査、Bastion Vision)</strong> の両輪へ進化していることを示す重要なアップデートである。特に Agent Grid は、AI エージェントをネットワーク層でゼロトラスト管理するという新しいカテゴリの機能であり、エージェントの本番導入を検討する組織は早期に評価する価値がある。いずれもプレビューでありリージョン・機能の制約が大きいため、まずはテスト環境での検証から始め、GA に向けたアーキテクチャ検討 (TLS インスペクション用証明書の配布、Purview ポリシー、Bastion Premium への移行、パッチ運用プロセスとの統合など) を進めることを推奨する。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Agent Grid</span>
+            <span class="tag">Azure Adaptive Virtual Patching</span>
+            <span class="tag">Azure Firewall</span>
+            <span class="tag">Azure Bastion</span>
+            <span class="tag">Security</span>
+            <span class="tag">Networking</span>
+            <span class="tag">AI</span>
+            <span class="tag">Zero Trust</span>
+            <span class="tag">Public Preview</span>
+            <span class="tag">Microsoft Ignite</span>
+        </div>
+    </section>
+
+    <!-- ===== Footer / Sources ===== -->
+    <footer class="footer">
+        <h4>📚 出典・参考リンク</h4>
+        <ul>
+            <li>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=580684">Agent Grid</a> / <a href="https://azure.microsoft.com/updates?id=580689">Azure Adaptive Virtual Patching</a> / <a href="https://azure.microsoft.com/updates?id=580694">AI Security add-on for Azure Firewall Premium</a> / <a href="https://azure.microsoft.com/updates?id=580699">Azure Bastion RDP and SSH vision</a></li>
+            <li>Microsoft Learn: <a href="https://learn.microsoft.com/azure/agent-grid/overview">What is Azure Agent Grid?</a></li>
+            <li>Microsoft Learn: <a href="https://learn.microsoft.com/azure/adaptive-virtual-patching/overview">Azure Adaptive Virtual Patching overview</a></li>
+            <li>Microsoft Learn: <a href="https://learn.microsoft.com/azure/firewall/ai-security-concepts">Azure Firewall AI Security concepts</a></li>
+            <li>Microsoft Learn: <a href="https://learn.microsoft.com/azure/bastion/rdp-ssh-vision">Configure Azure Bastion RDP/SSH Vision</a></li>
+            <li>発表ブログ: <a href="https://techcommunity.microsoft.com/blog/AzureNetworkingBlog/introducing-agent-grid/4573407">Introducing Agent Grid</a></li>
+            <li>発表ブログ: <a href="https://techcommunity.microsoft.com/blog/AzureNetworkingBlog/the-patch-window-is-closing-put-time-back-on-the-defender%E2%80%99s-side-/4573402">Azure Adaptive Virtual Patching</a></li>
+            <li>発表ブログ: <a href="https://techcommunity.microsoft.com/blog/AzureNetworkingBlog/secure-ai-secure-with-ai-introducing-the-next-chapter-of-azure-firewall-/4573399">Azure Firewall AI Security</a></li>
+            <li>発表ブログ: <a href="https://techcommunity.microsoft.com/blog/AzureNetworkingBlog/from-recordings-to-insights-azure-bastion-brings-ai-to-privileged-session-review/4573409">Azure Bastion RDP/SSH Vision</a></li>
+            <li>料金ページ: <a href="https://azure.microsoft.com/pricing/details/azure-firewall/">Azure Firewall</a> / <a href="https://azure.microsoft.com/pricing/details/azure-bastion/">Azure Bastion</a></li>
+        </ul>
+        <p class="gen-note">ソースレポート: reports/2026/2026-11-17-network-security-ai-updates.md (Azure News Summary) | 生成日: 2026-11-18</p>
+    </footer>
+
+</div>
+</body>
+</html>

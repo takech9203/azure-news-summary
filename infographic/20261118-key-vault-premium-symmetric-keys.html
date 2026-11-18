@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Key Vault Premium 対称キー (oct-HSM / AES) サポート GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Security category */
+    --security-red: #D83B01;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "🔐";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 110px;
+    opacity: 0.15;
+}
+.header .meta-badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 10px;
+}
+.header .subtitle { font-size: 15px; opacity: 0.92; }
+.header .date-chip {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 16px;
+    padding: 4px 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.header .service-badge {
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--azure-dark-blue);
+    font-weight: 700;
+}
+.category-badge {
+    background: var(--security-red);
+    color: #FFFFFF;
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-title .icon { font-size: 24px; }
+.section p { margin-bottom: 12px; font-size: 15px; }
+.section p:last-child { margin-bottom: 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+strong.kw {
+    background: linear-gradient(transparent 62%, var(--ms-blue-300) 62%);
+    padding: 0 2px;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0 4px;
+}
+.before, .after { border-radius: 8px; padding: 16px 18px; }
+.before { background: #FFEBEE; border: 2px solid var(--ms-red); }
+.after { background: #E8F5E9; border: 2px solid var(--ms-green); }
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin-bottom: 8px; font-size: 14px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0 4px;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px 14px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--azure-dark-blue); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; color: var(--ms-text-secondary); margin: 0; }
+
+/* ===== Tables ===== */
+.spec-table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+.spec-table th, .spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    text-align: left;
+    vertical-align: top;
+}
+.spec-table th {
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    white-space: nowrap;
+    width: 230px;
+    font-weight: 700;
+}
+.spec-table tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+.spec-table code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+}
+
+p code, li code {
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-title { color: #A19F9D; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 14px 18px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.warning-box strong { color: var(--ms-orange); }
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 8px 0;
+}
+.merit-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 18px;
+}
+.merit-card.tech { border-top-color: var(--ms-purple); }
+.merit-card h4 { font-size: 16px; margin-bottom: 10px; color: var(--azure-dark-blue); }
+.merit-card ul { padding-left: 20px; }
+.merit-card li { font-size: 14px; margin-bottom: 8px; }
+
+.constraint-list { list-style: none; }
+.constraint-list li {
+    background: #FFF8F5;
+    border-left: 4px solid var(--ms-red);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    font-size: 14px;
+}
+.constraint-list li::before { content: "⚠️ "; }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 18px;
+}
+.usecase-card h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 17px;
+    color: var(--azure-dark-blue);
+    margin-bottom: 12px;
+}
+.usecase-label {
+    display: inline-block;
+    min-width: 72px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #FFFFFF;
+    background: var(--azure-blue);
+    border-radius: 12px;
+    padding: 2px 10px;
+    text-align: center;
+    margin-right: 8px;
+}
+.usecase-label.effect { background: var(--ms-green); }
+.usecase-card p { font-size: 14px; margin-bottom: 10px; }
+
+/* ===== Pricing / Region ===== */
+.pricing-tiers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+.tier-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    font-size: 13px;
+}
+.tier-card .tier-range { font-weight: 700; color: var(--azure-dark-blue); font-size: 15px; }
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+.related-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px;
+}
+.related-card h4 { font-size: 15px; color: var(--azure-blue); margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* ===== Links ===== */
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 0 8px 4px;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+}
+.link-list li:last-child { border-bottom: none; }
+.link-list li::before { content: "🔗 "; }
+a { color: var(--azure-blue); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-section {
+    background: linear-gradient(135deg, var(--ms-blue-100), #FFFFFF);
+    border: 2px solid var(--azure-blue);
+}
+
+/* ===== Tags / Footer ===== */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+}
+.footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 20px 0 32px;
+    border-top: 1px solid var(--ms-border);
+}
+.footer p { margin-bottom: 6px; }
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid, .related-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 23px; }
+    .spec-table th { width: auto; white-space: normal; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトル ===== -->
+    <header class="header">
+        <div class="meta-badges">
+            <span class="service-badge">Azure Key Vault</span>
+            <span class="category-badge">Security</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="date-chip">📅 リリース日: 2026-11-17</span>
+        </div>
+        <h1>Key Vault Premium で対称キー<br>(oct-HSM / AES) サポートが GA</h1>
+        <p class="subtitle">Microsoft Ignite に合わせて発表 — FIPS 140-3 Level 3 の HSM 保護された AES キーを、マルチテナントの Key Vault Premium で本番利用可能に</p>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>2026 年 7 月のパブリックプレビューを経て、Azure Key Vault Premium における<strong class="kw">対称キー (oct-HSM キータイプ) のサポートが一般提供 (GA)</strong> されました。AES (Advanced Encryption Standard) アルゴリズムを使用したデータの<strong class="kw">暗号化・復号・キーラップ・アンラップ</strong>を Key Vault Premium 上で直接実行できます。</p>
+        <p>対称キーは <strong class="kw">HSM 保護のみ (oct-HSM)</strong> で提供され、<strong class="kw">Premium SKU</strong> の Vault が必要です。新規に作成されるキーは最新の <strong class="kw">HSM Platform 2 (FIPS 140-3 Level 3 検証済み HSM)</strong> で保護されます。また、256 ビットキーで使用する AES アルゴリズムは <strong class="kw">CNSA 2.0</strong> (Commercial National Security Algorithm Suite 2.0) の要件に照らして<strong class="kw">耐量子 (quantum-resistant)</strong> とされており、ポスト量子暗号 (PQC) への備えとなるシナリオにも有効です。</p>
+        <div class="highlight-box">
+            GA に伴い、本番ワークロードに求められる<strong>パフォーマンス・スケーラビリティ・信頼性</strong>が提供され、Azure が管理するセキュリティ・コンプライアンス・運用管理の恩恵を受けながら対称キーを利用できます。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">AES<br>128/192/256</div>
+                <div class="stat-label">対応キーサイズ (ビット)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">FIPS 140-3<br>Level 3</div>
+                <div class="stat-label">HSM Platform 2 検証レベル</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">CNSA 2.0</div>
+                <div class="stat-label">256 ビット AES は耐量子</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">4,096 B</div>
+                <div class="stat-label">暗号操作の入力サイズ上限</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>Key Vault (Vaults) がサポートするキータイプは <strong>RSA と EC (非対称キー) のみ</strong>で、対称キーを扱うには単一テナントの Managed HSM (高コスト) や外部のキー管理基盤が必要だった</li>
+                    <li>AES による暗号化・キーラップを HSM 保護で行いたい場合、マルチテナントで低コストな Vault では実現できなかった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Key Vault Premium の <strong>oct-HSM キータイプ</strong>で、HSM 保護された対称キー (AES 128/192/256 ビット) を作成・利用可能に</li>
+                    <li><strong>encrypt / decrypt / wrapKey / unwrapKey</strong> を AES-KW、AES-GCM、AES-CBC で実行でき、<strong>HMAC (HS256/HS384/HS512)</strong> による署名・検証にも対応</li>
+                    <li>本番ワークロードでの利用がサポートされ、既存の Azure セキュリティワークフローと統合して一元的にキーを管理</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    App(["👤 アプリケーション / サービス"])
+    subgraph Azure["☁️ Azure Cloud"]
+        subgraph KV["🔐 Azure Key Vault Premium"]
+            Oct["🔑 oct-HSM 対称キー<br/>AES 128 / 192 / 256 ビット"]
+            HSM["🛡️ HSM Platform 2<br/>FIPS 140-3 Level 3"]
+            Oct --- HSM
+        end
+        RBAC["🔏 Azure RBAC<br/>(Crypto Officer / Crypto User)"]
+    end
+    App -- "encrypt / decrypt<br/>wrapKey / unwrapKey<br/>(AES-KW / AES-GCM / AES-CBC)" --> Oct
+    RBAC -. アクセス制御 .-> KV
+            </pre>
+        </div>
+        <p class="diagram-note">アプリケーションは Key Vault Premium のデータプレーン API を通じて、FIPS 140-3 Level 3 検証済み HSM に保護された対称キーで暗号操作を実行します。<strong>キー素材は Vault の外部に出ることはありません。</strong></p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⭐</span>主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔑</div>
+            <div class="feature-content">
+                <h4>1. HSM 保護された対称キー (oct-HSM)</h4>
+                <p>Key Vault Premium で 128 / 192 / 256 ビットの AES 対称キーを作成可能。対称キーは HSM 保護のみで、ソフトウェア保護版は提供されない。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔒</div>
+            <div class="feature-content">
+                <h4>2. AES による暗号操作</h4>
+                <p><code>encrypt</code> / <code>decrypt</code> / <code>wrapKey</code> / <code>unwrapKey</code> 操作に対応。アルゴリズムは AES-KW (キーラップ、RFC 3394)、AES-GCM (NIST SP 800-38d)、AES-CBC (NIST SP 800-38a) をサポート。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">✍️</div>
+            <div class="feature-content">
+                <h4>3. HMAC による署名・検証</h4>
+                <p>oct-HSM キーで HS256 / HS384 / HS512 (HMAC-SHA) の Sign / Verify 操作に対応。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>4. 耐量子性 (CNSA 2.0 準拠)</h4>
+                <p>256 ビットキーで使用する AES アルゴリズムは CNSA 2.0 の FAQ において耐量子とされ、ポスト量子暗号への移行準備に活用できる。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>5. 本番ワークロード対応 (GA)</h4>
+                <p>2026 年 7 月のパブリックプレビューから GA に昇格し、本番環境で必要なパフォーマンス・スケーラビリティ・信頼性を提供。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>キータイプ</th><td><code>oct-HSM</code> (HSM 保護の対称キー)</td></tr>
+            <tr><th>対応 SKU</th><td>Key Vault <strong>Premium</strong> のみ (Standard は非対応)</td></tr>
+            <tr><th>キーサイズ</th><td>128 / 192 / 256 ビット</td></tr>
+            <tr><th>暗号化・ラップアルゴリズム</th><td>AES-KW、AES-GCM、AES-CBC</td></tr>
+            <tr><th>署名・検証アルゴリズム</th><td>HS256、HS384、HS512 (HMAC)</td></tr>
+            <tr><th>対応操作</th><td><code>encrypt</code>、<code>decrypt</code>、<code>wrapKey</code>、<code>unwrapKey</code> (+ HMAC Sign/Verify)</td></tr>
+            <tr><th>入力サイズ上限</th><td>4,096 バイト (Base64 エンコード前)。アルゴリズム固有の制約でさらに低くなる場合あり</td></tr>
+            <tr><th>HSM 保護レベル</th><td>HSM Platform 2: FIPS 140-3 Level 3 (新規キーは自動的にこのプラットフォームで作成)</td></tr>
+            <tr><th>キーのエクスポート</th><td>不可 (Get 操作でも対称キーのキー素材は返却されない。Backup/Restore は保護された形式のみ)</td></tr>
+            <tr><th>アクセス制御</th><td>Azure RBAC (推奨) または Vault アクセスポリシー (レガシー)</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+        <h3 style="font-size:17px; color:var(--azure-dark-blue); margin-bottom:8px;">前提条件</h3>
+        <ul style="padding-left:24px; font-size:14px; margin-bottom:16px;">
+            <li style="margin-bottom:6px;"><strong>Premium SKU</strong> の Key Vault (対称キーは HSM 保護のみのため Standard では利用不可)</li>
+            <li>キー操作の権限 (Azure RBAC の場合: <strong>Key Vault Crypto Officer / Key Vault Crypto User</strong> など)</li>
+        </ul>
+        <h3 style="font-size:17px; color:var(--azure-dark-blue); margin-bottom:8px;">Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-title">対称キーの作成と AES-GCM 暗号化</span></div>
+            <pre><code class="language-bash"># AES 256 ビット対称キーの作成 (oct-HSM)
+az keyvault key create \
+    --vault-name &lt;vault-name&gt; \
+    --name sample-aes-key \
+    --kty oct-HSM \
+    --size 256 \
+    --ops encrypt decrypt wrapKey unwrapKey
+
+# AES-GCM によるデータの暗号化 (値は Base64 エンコード)
+az keyvault key encrypt \
+    --vault-name &lt;vault-name&gt; \
+    --name sample-aes-key \
+    --algorithm A256GCM \
+    --value aGVsbG8gd29ybGQ= \
+    --query "{iv:iv, result:result, tag:tag}"</code></pre>
+        </div>
+        <div class="warning-box">
+            <strong>注意</strong>: AES-GCM 操作では、暗号化レスポンスの <code>iv</code>、<code>result</code>、<code>tag</code> の 3 つの値を保存する必要があります。復号にはこの 3 つすべてが必要です。
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>Managed HSM (単一テナント・高コスト) を導入せずに、マルチテナントで低コストな Key Vault Premium で HSM 保護の対称キーを利用でき、コンプライアンス要件 (FIPS 140-3 Level 3) を満たしやすい</li>
+                    <li>256 ビット AES の耐量子性 (CNSA 2.0) により、ポスト量子暗号への移行を見据えたセキュリティ戦略を前倒しで実行できる</li>
+                    <li>キー管理を Azure に集約することで、セキュリティ・コンプライアンス・運用の管理負荷を軽減できる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>AES-GCM / AES-CBC による暗号化・復号、AES-KW によるキーラップを Key Vault の REST API / CLI / SDK から直接実行できる</li>
+                    <li>キー素材は HSM 外に出ず、エクスポート不可のため、キーの漏えいリスクを最小化できる</li>
+                    <li><code>key_ops</code> プロパティによるキー単位の操作制限や、Azure RBAC によるきめ細かなアクセス制御が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🚧</span>デメリット・制約事項</h2>
+        <ul class="constraint-list">
+            <li>対称キーは Key Vault <strong>Premium</strong> のみの提供。Standard SKU では利用できない</li>
+            <li>暗号操作の入力サイズは <strong>4,096 バイト (Base64 エンコード前)</strong> が上限のため、大きなデータの直接暗号化には不向き。大容量データはエンベロープ暗号化 (DEK を wrapKey で保護) が前提となる</li>
+            <li>対称キーのキー素材は Get 操作で取得できない (HSM 保護のみ)。ローカルでの暗号処理が必要な場合は設計の見直しが必要</li>
+            <li>AES-GCM では <code>iv</code>・<code>result</code>・<code>tag</code> の 3 値の管理が必要で、いずれかを失うと復号できない</li>
+        </ul>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>📦 ユースケース 1: エンベロープ暗号化における KEK (キー暗号化キー) の HSM 保護</h4>
+            <p><span class="usecase-label">シナリオ</span>アプリケーションがローカルで生成したデータ暗号化キー (DEK) を、Key Vault Premium の oct-HSM キーを KEK として AES-KW でラップし、暗号化済み DEK をデータと共に保存する。</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span class="code-title">KEK の作成例</span></div>
+                <pre><code class="language-bash"># KEK として AES 256 ビット対称キーを作成
+az keyvault key create \
+    --vault-name my-premium-vault \
+    --name envelope-kek \
+    --kty oct-HSM \
+    --size 256 \
+    --ops wrapKey unwrapKey</code></pre>
+            </div>
+            <p><span class="usecase-label effect">効果</span>DEK は常に HSM 保護された KEK でラップされた状態で保存され、KEK 自体は Vault から出ないため、大容量データの暗号化と高いキー保護レベルを両立できる。</p>
+        </div>
+
+        <div class="usecase-card">
+            <h4>⚛️ ユースケース 2: ポスト量子暗号 (PQC) への準備</h4>
+            <p><span class="usecase-label">シナリオ</span>規制の厳しい業界 (金融・公共など) で、CNSA 2.0 への準拠を見据え、暗号基盤を耐量子アルゴリズムへ移行する。</p>
+            <p><span class="usecase-label effect">効果</span>256 ビット AES は CNSA 2.0 において耐量子とされており、RSA ベースのキーラップから oct-HSM (AES-KW) へ移行することで、量子コンピュータ時代に向けた暗号アジリティを確保できる。</p>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Key Vault の料金ページでは、HSM 保護キーは <strong class="kw">Premium SKU のみ</strong>で利用でき、「<strong class="kw">キーごとの月額 + 10,000 トランザクションごとの操作料金</strong>」の体系で課金されます。高度なキータイプは使用キー数に応じた段階的な従量制です。</p>
+        <div class="pricing-tiers">
+            <div class="tier-card"><div class="tier-range">最初の 250 キー</div>段階 1 の単価</div>
+            <div class="tier-card"><div class="tier-range">251 〜 1,500</div>段階 2 の単価</div>
+            <div class="tier-card"><div class="tier-range">1,501 〜 4,000</div>段階 3 の単価</div>
+            <div class="tier-card"><div class="tier-range">4,001 以上</div>段階 4 の単価</div>
+        </div>
+        <div class="highlight-box">
+            課金対象は<strong>過去 30 日間に使用されたキーのみ</strong>で、キーの各バージョンは別キーとしてカウントされます。
+        </div>
+        <p style="font-size:13px; color:var(--ms-text-secondary);">具体的な金額はリージョン・通貨により異なるため、<a href="https://azure.microsoft.com/pricing/details/key-vault/" target="_blank" rel="noopener">Key Vault 料金ページ</a> および <a href="https://azure.microsoft.com/pricing/calculator/" target="_blank" rel="noopener">Azure 料金計算ツール</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p>公式アップデート情報にリージョン固有の記載はありません。最新の提供状況は <a href="https://azure.microsoft.com/explore/global-infrastructure/products-by-region/" target="_blank" rel="noopener">Azure 製品のリージョン別提供状況</a> を参照してください。</p>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>Azure Key Vault Managed HSM</h4>
+                <p>単一テナントの HSM プール。oct-HSM 対称キーを従来からサポートしており、より厳格なセキュリティ・コンプライアンス要件を持つ高価値キー向け。今回の GA により、マルチテナントの Key Vault Premium でも対称キーが利用可能になった。</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure RBAC</h4>
+                <p>キーへのアクセス制御の推奨モデル。Key Vault Crypto Officer / Crypto User / Service Encryption User の組み込みロールでキー操作を管理。</p>
+            </div>
+            <div class="related-card">
+                <h4>カスタマーマネージドキー (CMK)</h4>
+                <p>Azure Storage や Azure SQL などのサーバー側暗号化で Key Vault のキーを利用する構成。Key Vault を軸としたキー管理の代表的なシナリオ。</p>
+            </div>
+            <div class="related-card">
+                <h4>Azure Storage クライアント側暗号化</h4>
+                <p>Key Vault のキーを使ったクライアント側データ暗号化のシナリオで、対称キーのラップ操作と組み合わせて利用可能。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section summary-section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <p>Azure Key Vault Premium での対称キー (oct-HSM / AES) サポートが GA となり、<strong class="kw">Managed HSM を導入せずに FIPS 140-3 Level 3 の HSM 保護された AES キーを本番ワークロードで利用</strong>できるようになりました。AES-KW / AES-GCM / AES-CBC による暗号操作と HMAC 署名に対応し、256 ビットキーは CNSA 2.0 で耐量子とされるため、<strong class="kw">PQC 移行の布石</strong>としても有効です。</p>
+        <p>現在 Managed HSM や外部 KMS で対称キーを管理しているワークロードについては、要件 (テナント分離・コンプライアンスレベル) を確認のうえ、<strong class="kw">Key Vault Premium への集約によるコスト最適化</strong>を検討することを推奨します。なお、暗号操作の入力上限は 4,096 バイトのため、大容量データは<strong class="kw">エンベロープ暗号化パターン</strong>で設計してください。</p>
+        <div class="tag-list">
+            <span class="tag">Azure Key Vault</span>
+            <span class="tag">Security</span>
+            <span class="tag">Symmetric Keys</span>
+            <span class="tag">oct-HSM</span>
+            <span class="tag">AES</span>
+            <span class="tag">HSM</span>
+            <span class="tag">FIPS 140-3</span>
+            <span class="tag">CNSA 2.0</span>
+            <span class="tag">Microsoft Ignite</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- ===== 参考リンク ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📚</span>参考リンク</h2>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/updates?id=579374" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/key-vault/keys/about-keys" target="_blank" rel="noopener">About keys - Azure Key Vault (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/key-vault/keys/about-keys-details" target="_blank" rel="noopener">Key types, algorithms, and operations (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/key-vault/" target="_blank" rel="noopener">Key Vault 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== フッター ===== -->
+    <footer class="footer">
+        <p><strong>出典</strong>: <a href="https://azure.microsoft.com/updates?id=579374" target="_blank" rel="noopener">Azure Updates (ID: 579374)</a> / <a href="https://learn.microsoft.com/azure/key-vault/keys/about-keys" target="_blank" rel="noopener">Microsoft Learn - About keys</a></p>
+        <p>ソースレポート: reports/2026/2026-11-17-key-vault-premium-symmetric-keys.md (Azure News Summary)</p>
+        <p>生成日: 2026-11-18 | このインフォグラフィックは公式情報をもとに自動生成されています</p>
+    </footer>
+
+</div>
+
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+    hljs.highlightAll();
+</script>
+</body>
+</html>
