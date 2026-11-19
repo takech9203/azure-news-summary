@@ -6,6 +6,10 @@
 ## 2026 年
 
 - [2026-11-18 - Azure Disk Storage: 不変スナップショット (Public Preview) と Azure Boost NVMe ディスク可観測性ツール](2026/2026-11-18-disk-storage-immutable-snapshots-boost.md)
+- [2026-11-18 - Azure Databricks: Azure Government 向け新環境が Beta 提供開始](2026/2026-11-18-databricks-azure-government-beta.md)
+- [2026-11-18 - Azure SQL Database / GitHub Copilot: Modernize CLI によるアプリケーションとデータベースの AI 統合モダナイゼーション (Public Preview)](2026/2026-11-18-modernize-cli-app-database.md)
+- [2026-11-18 - Azure Front Door Premium WAF: AI bot ruleset (Public Preview)](2026/2026-11-18-front-door-waf-ai-bot-ruleset.md)
+- [2026-11-18 - Azure Backup: Azure Virtual Machines のクロスサブスクリプションバックアップが一般提供開始 (GA)](2026/2026-11-18-azure-backup-cross-subscription-vm.md)
 - [2026-11-17 - Azure Kubernetes Service (AKS): Confidential VM / Pod Sandboxing 関連アップデート群 (Ignite 2026)](2026/2026-11-17-aks-confidential-sandbox-updates.md)
 - [2026-11-17 - Azure Monitor: Health Models GA / traces と Trace Analytics パブリックプレビュー](2026/2026-11-17-azure-monitor-health-models-traces.md)
 - [2026-11-17 - Azure ExpressRoute / Multicloud Interconnect: ハイブリッド・マルチクラウド接続の強化 (リンクグループ プレビュー / 新 CSP サポート GA)](2026/2026-11-17-expressroute-multicloud-connectivity.md)

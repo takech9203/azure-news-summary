@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Front Door Premium WAF: AI bot ruleset (Public Preview)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* Header */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+}
+
+.hero .badges { margin-bottom: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+
+.hero h1 {
+    font-size: 28px;
+    line-height: 1.4;
+    margin-bottom: 12px;
+}
+
+.hero .subtitle { font-size: 15px; opacity: 0.9; }
+
+.hero .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 18px;
+    font-size: 14px;
+}
+
+.hero .meta span { background: rgba(255,255,255,0.12); padding: 6px 14px; border-radius: 16px; }
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+}
+
+.hero .service-badge { background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.5); }
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-preview {
+    background: var(--ms-yellow);
+    color: var(--ms-text-primary);
+}
+
+/* Sections */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 24px;
+}
+
+h3.sub-title {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+p { margin: 10px 0; }
+
+ul, ol { margin: 10px 0 10px 24px; }
+li { margin: 6px 0; }
+
+a { color: var(--azure-blue); }
+
+/* Highlight box */
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box {
+    background: #FFF8E6;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.warning-box h4 { color: var(--ms-orange); margin-bottom: 8px; }
+
+/* Before / After */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+/* Feature cards */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p { margin: 0; font-size: 14px; color: var(--ms-text-secondary); }
+
+/* Category cards (4 rules) */
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+    margin: 20px 0;
+}
+
+.category-card {
+    border-radius: 10px;
+    padding: 16px;
+    border: 2px solid var(--ms-blue-300);
+    background: var(--ms-blue-100);
+    text-align: center;
+}
+
+.category-card .cat-icon { font-size: 30px; }
+.category-card .cat-id {
+    display: inline-block;
+    background: var(--azure-blue);
+    color: #FFF;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin: 8px 0 6px;
+}
+.category-card h4 { font-size: 15px; color: var(--ms-blue-900); margin-bottom: 6px; }
+.category-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+.category-card.misc { border-color: var(--ms-orange); background: #FFF8E6; }
+.category-card.misc .cat-id { background: var(--ms-orange); }
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 12px;
+    text-align: left;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-surface-secondary); }
+
+.table-wrap { overflow-x: auto; }
+
+/* Mermaid */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+
+/* Code blocks */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-blue-800);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+}
+
+/* Merit / Demerit */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-card {
+    border-radius: 10px;
+    padding: 18px;
+    border: 2px solid var(--ms-green);
+    background: #F3FAF3;
+}
+
+.merit-card h4 { color: var(--ms-green); margin-bottom: 10px; }
+.merit-card ul { font-size: 14px; }
+
+.demerit-box {
+    border-radius: 10px;
+    padding: 18px;
+    border: 2px solid var(--ms-red);
+    background: #FFF5F2;
+    margin: 16px 0;
+}
+
+.demerit-box ul { font-size: 14px; }
+
+/* Use cases */
+.usecase-card {
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    background: var(--ms-surface);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.usecase-card h4 { color: var(--ms-purple); font-size: 16px; margin-bottom: 10px; }
+
+.scenario-label {
+    display: inline-block;
+    background: var(--ms-purple);
+    color: #FFF;
+    font-size: 12px;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin-right: 8px;
+}
+
+/* Flow steps */
+.flow-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: stretch;
+    margin: 16px 0;
+}
+
+.flow-step {
+    flex: 1;
+    min-width: 200px;
+    background: var(--ms-blue-100);
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 10px;
+    padding: 14px;
+    position: relative;
+    font-size: 14px;
+}
+
+.flow-step .step-no {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    background: var(--azure-blue);
+    color: #FFF;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 6px;
+}
+
+.flow-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--azure-blue);
+    font-size: 20px;
+    font-weight: 700;
+}
+
+/* Tags */
+.tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    font-size: 13px;
+    padding: 4px 12px;
+    border-radius: 14px;
+}
+
+/* Footer */
+.footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 24px 0;
+    font-size: 14px;
+}
+
+.footer h3 { margin-bottom: 12px; font-size: 16px; }
+.footer ul { list-style: none; margin: 0; }
+.footer li { margin: 6px 0; }
+.footer a { color: var(--azure-light-blue); word-break: break-all; }
+.footer .gen-info { margin-top: 16px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.25); opacity: 0.85; font-size: 13px; }
+
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+    .flow-arrow { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure Front Door</span>
+            <span class="service-badge">Azure Web Application Firewall (WAF)</span>
+            <span class="badge badge-preview">In Preview (Public Preview)</span>
+        </div>
+        <h1>🛡️ AI bot ruleset for Azure Front Door Premium WAF</h1>
+        <p class="subtitle">AI クローラー / AI エージェントを 4 カテゴリに分類し、robots.txt に依存せずエッジで目的別に制御する新しいマネージドルールセット (Microsoft Ignite 2026 発表)</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-18</span>
+            <span>🏷️ Microsoft_AIBotRuleSet_1.0</span>
+            <span>🎪 Microsoft Ignite 2026</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>Azure Front Door Premium の Web Application Firewall (WAF) に、AI クローラー / AI エージェント専用のマネージドルールセット「<strong>AI bot ruleset</strong>」が Public Preview として追加されました。Microsoft Ignite 2026 に合わせて発表されたアップデートです。</p>
+        <p>AI クローラーやエージェントは、AI モデルの学習データ収集、AI 検索のインデックス作成、ユーザーの依頼に基づくリアルタイムのページ取得など、さまざまな目的でサイトにアクセスします。サイト運営者としては「AI 検索には載せたいが、学習データ収集は拒否したい」といった選択的な制御が求められますが、robots.txt は Bot 側が従う場合にのみ機能し、著名な AI クローラーを騙る偽装 Bot も存在します。</p>
+        <div class="highlight-box">
+            AI bot ruleset は、AI Bot を識別して目的別に <strong>4 つのカテゴリ</strong>に分類し、カテゴリごとに <strong>Allow / Block / Log / Redirect / JS challenge / CAPTCHA</strong> のアクションをエッジで強制適用します。Bot が robots.txt に従うかどうかに関係なく、サイト運営者のポリシーを確実に実行できます。
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>AI クローラーの制御は robots.txt に依存しており、Bot 側が従わなければ効果がなかった</li>
+                    <li>著名な AI クローラーを騙る偽装 Bot (User-Agent 偽装) を識別・排除する標準的な手段がなかった</li>
+                    <li>従来の Bot Manager ruleset は Good / Bad / Unknown の分類であり、「AI 学習は拒否、AI 検索は許可」といった AI Bot の目的別の制御はできなかった</li>
+                    <li>AI 事業者ごとの IP アドレスレンジを自前で追跡・管理する必要があった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>AI Bot を「AI training」「AI search」「AI interactive agents」「Miscellaneous AI agents」の 4 カテゴリに分類し、カテゴリごとに異なるアクションを設定可能</li>
+                    <li>ルール 800101〜800103 は、リクエストが申告どおりの AI Bot 運営者からのものかを Azure WAF が検証。検証に失敗した偽装 Bot は 800104 (Miscellaneous) にのみマッチ</li>
+                    <li>AI Bot のシグネチャは Microsoft が管理・自動更新 (ルールセットのバージョン変更は不要)</li>
+                    <li>すべてのルールが Log アクションで開始されるため、ブロック前に WAF ログ / WAF insights で AI Bot トラフィックを安全に把握できる</li>
+                    <li><code class="inline">AIProvider</code> 一致変数による例外設定で、信頼する AI 事業者 (例: <code class="inline">OpenAI</code>、<code class="inline">Google</code>) のみを許可可能。IP レンジの自前管理が不要</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    T(["🤖 AI 学習クローラー"]) --> FD
+    S(["🔎 AI 検索クローラー"]) --> FD
+    A(["💬 AI 対話型エージェント"]) --> FD
+    U(["🎭 検証不能/偽装 AI Bot"]) --> FD
+    subgraph Edge["☁️ Azure Front Door Premium (エッジ)"]
+        FD["🛡️ WAF ポリシー&lt;br/&gt;Microsoft_AIBotRuleSet_1.0"] --> D{"⚖️ カテゴリ別判定&lt;br/&gt;800101-800104"}
+    end
+    D -->|"Allow / Log"| O["🖥️ オリジン (Web アプリ)"]
+    D -->|"Block / JS challenge / CAPTCHA"| B["⛔ ブロック・チャレンジ応答"]
+            </pre>
+        </div>
+        <p>AI クローラー / エージェントからのリクエストは Front Door Premium のエッジで WAF により検証・分類され、カテゴリごとに設定したアクション (許可 / ブロック / チャレンジなど) が、オリジンに到達する前に適用されます。</p>
+    </section>
+
+    <!-- ===== サービスアップデートの詳細 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚙️</span>サービスアップデートの詳細</h2>
+
+        <h3 class="sub-title">🌟 主要機能</h3>
+
+        <div class="feature-card">
+            <div class="feature-icon">🗂️</div>
+            <div class="feature-content">
+                <h4>1. AI Bot の 4 カテゴリ分類 (ルールグループ: AIBotAccess)</h4>
+                <p>公開コンテンツを AI モデルの学習用に収集する検証済みクローラー、AI 検索・回答・要約のためにインデックスする検証済みクローラー、ユーザーの依頼でリアルタイムにページを取得する検証済みエージェント、検証できない AI Bot (偽装 Bot 含む) の 4 ルールで構成。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-content">
+                <h4>2. 運営者の検証 (Identity verification)</h4>
+                <p>ルール 800101 / 800102 / 800103 では、リクエストが申告どおりの AI Bot 運営者からのものかを Azure WAF が検証。検証に失敗したリクエストは 800104 にのみマッチする。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>3. Microsoft 管理のシグネチャ自動更新</h4>
+                <p>AI Bot の変化に合わせて Microsoft がシグネチャを更新。ルールセットのバージョン変更は不要。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📝</div>
+            <div class="feature-content">
+                <h4>4. Log から始める安全な導入</h4>
+                <p>ルールセット割り当て時は全ルールが Log アクション。WAF ログ / メトリック / WAF insights で AI Bot トラフィックを確認してから、カテゴリごとにアクションを変更できる。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🤝</div>
+            <div class="feature-content">
+                <h4>5. AIProvider 一致変数による例外 (Exception)</h4>
+                <p>信頼する AI 事業者 (WAF ログの <code class="inline">provider_s</code> フィールドの値、大文字小文字を区別) を指定して、特定ルール / ルールグループ / ルールセットのスコープで除外可能。AI Bot と運営者のマッピングは Azure WAF が日次で検証・維持。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>6. 可観測性 (ログ・メトリック・WAF insights)</h4>
+                <p>ログのルール名は <code class="inline">Microsoft_AIBotRuleSet-1.0-AIBotAccess-800101</code> 形式。<code class="inline">provider_s</code> フィールドに <code class="inline">OpenAI</code>、<code class="inline">Google</code>、<code class="inline">Anthropic</code>、<code class="inline">Amazon</code>、<code class="inline">Meta</code>、<code class="inline">Perplexity</code> などの運営者名が記録される。メトリックは <strong>Web Application Firewall Request Count</strong> に <strong>AIProvider</strong> ディメンションが追加。</p>
+            </div>
+        </div>
+
+        <h3 class="sub-title">📑 ルール一覧</h3>
+
+        <div class="category-grid">
+            <div class="category-card">
+                <div class="cat-icon">🤖</div>
+                <div class="cat-id">800101</div>
+                <h4>AI training</h4>
+                <p>AI モデルの学習 / ファインチューニング用に公開コンテンツを収集する検証済みクローラー</p>
+            </div>
+            <div class="category-card">
+                <div class="cat-icon">🔎</div>
+                <div class="cat-id">800102</div>
+                <h4>AI search</h4>
+                <p>AI 検索・回答・要約のためにコンテンツをインデックスする検証済みクローラー</p>
+            </div>
+            <div class="category-card">
+                <div class="cat-icon">💬</div>
+                <div class="cat-id">800103</div>
+                <h4>AI Interactive agents</h4>
+                <p>ユーザーが AI アシスタントに依頼した際にリアルタイムでページ取得・タスク実行する検証済みエージェント</p>
+            </div>
+            <div class="category-card misc">
+                <div class="cat-icon">🎭</div>
+                <div class="cat-id">800104</div>
+                <h4>Miscellaneous AI agents</h4>
+                <p>検証できない AI Bot。検証情報を公開していない既知の AI 事業者の Bot や、著名 AI Bot を騙るが検証に失敗したリクエストを含む</p>
+            </div>
+        </div>
+
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>ルール ID</th><th>ルール名</th><th>マッチ対象</th><th>デフォルトアクション</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>800101</strong></td><td>AI training</td><td>AI モデルの学習 / ファインチューニング用に公開コンテンツを収集する検証済みクローラー</td><td>Log</td></tr>
+                <tr><td><strong>800102</strong></td><td>AI search</td><td>AI 検索・回答・要約のためにコンテンツをインデックスする検証済みクローラー</td><td>Log</td></tr>
+                <tr><td><strong>800103</strong></td><td>AI Interactive agents</td><td>ユーザーが AI アシスタントに依頼した際にリアルタイムでページ取得・タスク実行する検証済みエージェント</td><td>Log</td></tr>
+                <tr><td><strong>800104</strong></td><td>Miscellaneous AI agents</td><td>検証できない AI Bot。検証情報を公開していない既知の AI 事業者の Bot や、著名 AI Bot を騙るが検証に失敗したリクエストを含む</td><td>Log</td></tr>
+            </tbody>
+        </table>
+        </div>
+
+        <div class="warning-box">
+            <h4>⚠️ 重要な注意点</h4>
+            <p>ルール 800104 は、800101〜800103 の検証済み Bot の User-Agent にもマッチします。Log アクションはルール評価を停止しないため、800104 を Block / JS challenge / CAPTCHA に設定する場合は、許可したいカテゴリのルールを Log ではなく <strong>Allow</strong> に設定する必要があります。そうしないと検証済み Bot も 800104 でブロックされます。</p>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>項目</th><th>詳細</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>ルールセット名</td><td>Microsoft_AIBotRuleSet_1.0</td></tr>
+                <tr><td>ルールグループ</td><td>AIBotAccess (4 ルール)</td></tr>
+                <tr><td>対応 SKU</td><td>Azure Front Door Premium (WAF ポリシーは Premium tier)</td></tr>
+                <tr><td>サポートされるアクション</td><td>Allow / Block / Log / Redirect / JS challenge / CAPTCHA</td></tr>
+                <tr><td>非サポートのアクション</td><td>Anomaly score (本ルールセットでは利用不可、sensitivity level も未使用)</td></tr>
+                <tr><td>評価順序</td><td>HTTP DDoS ruleset → カスタムルール → Default Rule Set → Bot Manager ruleset → <strong>AI bot ruleset</strong></td></tr>
+                <tr><td>Detection モード時の動作</td><td>マッチしたリクエストはログのみ記録され、設定アクションは実行されない</td></tr>
+                <tr><td>除外 (Exclusions)</td><td>非サポート。代わりに例外 (Exceptions、<code class="inline">AIProvider</code> 一致変数) を使用</td></tr>
+                <tr><td>設定方法</td><td>Azure Portal / Azure PowerShell / Azure CLI / Bicep</td></tr>
+                <tr><td>シグネチャ更新</td><td>Microsoft が管理・自動更新 (バージョン変更不要)</td></tr>
+            </tbody>
+        </table>
+        </div>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 class="sub-title">✅ 前提条件</h3>
+        <ol>
+            <li>Azure Front Door Premium プロファイル</li>
+            <li>Premium tier の WAF ポリシー</li>
+        </ol>
+
+        <h3 class="sub-title">💻 Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI</span></div>
+            <pre><code class="language-bash"># AI bot ruleset を WAF ポリシーに追加 (全ルール Log で開始)
+az network front-door waf-policy managed-rules add \
+  --resource-group FrontDoorWafPolicy \
+  --policy-name WafPolicy \
+  --type Microsoft_AIBotRuleSet \
+  --version 1.0
+
+# AI 学習クローラー (ルール 800101) を Block に変更
+az network front-door waf-policy managed-rules override add \
+  --resource-group FrontDoorWafPolicy \
+  --policy-name WafPolicy \
+  --type Microsoft_AIBotRuleSet \
+  --rule-group-id AIBotAccess \
+  --rule-id 800101 \
+  --action Block</code></pre>
+        </div>
+
+        <h3 class="sub-title">🖱️ Azure Portal</h3>
+        <ol>
+            <li>Azure Portal で対象の WAF ポリシーを開く</li>
+            <li><strong>Managed rules</strong> を選択し、<strong>Assign</strong> を選択</li>
+            <li>利用可能なルールセットの一覧から AI bot ruleset を選択して <strong>Save</strong></li>
+            <li>アクションを変更するには、マネージドルール一覧で対象ルールを選択し、<strong>Change action</strong> からアクションを選んで保存</li>
+        </ol>
+
+        <h3 class="sub-title">🧭 推奨導入フロー</h3>
+        <div class="flow-steps">
+            <div class="flow-step">
+                <span class="step-no">1</span>
+                <div>デフォルトの <strong>Log</strong> アクションのままルールセットを割り当てる</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <span class="step-no">2</span>
+                <div>WAF ログ / WAF insights で AI Bot トラフィック (カテゴリ別・運営者別) を確認する</div>
+            </div>
+            <div class="flow-arrow">→</div>
+            <div class="flow-step">
+                <span class="step-no">3</span>
+                <div>ブロックまたはチャレンジしたいカテゴリのアクションを変更する (許可カテゴリは <strong>Allow</strong> に設定)</div>
+            </div>
+        </div>
+
+        <h3 class="sub-title">📈 モニタリング (Log Analytics クエリ例)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">kusto</span><span>Log Analytics (KQL)</span></div>
+            <pre><code class="language-sql">AzureDiagnostics
+| where Category == "FrontDoorWebApplicationFirewallLog"
+| where ruleName_s startswith "Microsoft_AIBotRuleSet"
+| summarize RequestCount = count() by provider_s, ruleName_s, action_s
+| order by RequestCount desc</code></pre>
+        </div>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>コンテンツの利用ポリシーを目的別に制御できる (例: AI 学習への無断利用は拒否しつつ、AI 検索経由の流入は維持)</li>
+                    <li>AI 検索 (800102) や対話型エージェント (800103) を許可することで、AI 時代のコンテンツ到達性 (AI 検索・回答への掲載) を確保できる</li>
+                    <li>Log から始める設計により、正当なトラフィックを誤ってブロックするリスクを抑えて導入できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>robots.txt と異なり、Bot の自主性に依存せずエッジで強制適用される</li>
+                    <li>運営者検証により User-Agent 偽装 Bot を排除できる</li>
+                    <li>シグネチャと AI 事業者マッピングは Microsoft が管理・更新するため、IP レンジの自前追跡が不要</li>
+                    <li>Bot Manager ruleset / Default Rule Set と同一ポリシーで併用可能</li>
+                    <li>ログ・メトリック (AIProvider ディメンション)・WAF insights による運営者別の可視化</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="demerit-box">
+            <ul>
+                <li>Public Preview のため、Azure プレビューの追加利用規約が適用される (本番利用は非推奨)</li>
+                <li><strong>Azure Front Door Premium 専用</strong> (Standard や Application Gateway WAF では利用不可)</li>
+                <li>Anomaly score アクションは非サポート</li>
+                <li>除外 (Exclusions) は非サポート (例外 Exceptions で代替)</li>
+                <li>ルール 800104 は検証済み Bot の User-Agent にもマッチするため、800104 をブロックに設定する際は許可カテゴリを Allow に設定する必要がある (設定ミスで検証済み Bot をブロックする可能性)</li>
+                <li>検証可能な情報 (IP / 逆引き DNS) を公開していない AI 事業者の Bot は、正当でも 800104 (Miscellaneous) に分類される</li>
+                <li>Bot Manager ruleset など先に評価されるルールで Allow / Block された場合、AI bot ruleset は評価されない。検索エンジンや SNS のクローラーなど両ルールセットにマッチする Bot を AI bot ruleset で制御したい場合は、該当する Bot Manager ルールを Log に設定する必要がある</li>
+                <li>AI Bot の許可にカスタムルールの Allow を使うことは非推奨 (マネージドルールセット全体の評価がスキップされ、攻撃検査が行われないため)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>ユースケース 1: AI 学習クローラーのみブロックし、AI 検索・エージェントは許可</h4>
+            <p><span class="scenario-label">シナリオ</span>メディアサイトがコンテンツの AI モデル学習への無断利用を防ぎつつ、AI 検索経由の読者流入と、ユーザーの依頼に基づく AI アシスタントのアクセスは維持したい。</p>
+            <p><strong>実装例</strong> (Bicep、公式ドキュメントの例):</p>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bicep</span><span>managedRuleSets</span></div>
+                <pre><code class="language-javascript">managedRuleSets: [
+  {
+    ruleSetType: 'Microsoft_AIBotRuleSet'
+    ruleSetVersion: '1.0'
+    ruleGroupOverrides: [
+      {
+        ruleGroupName: 'AIBotAccess'
+        rules: [
+          { ruleId: '800101', enabledState: 'Enabled', action: 'Block' }       // AI 学習: ブロック
+          { ruleId: '800102', enabledState: 'Enabled', action: 'Allow' }       // AI 検索: 許可
+          { ruleId: '800103', enabledState: 'Enabled', action: 'Allow' }       // 対話型エージェント: 許可
+          { ruleId: '800104', enabledState: 'Enabled', action: 'JSChallenge' } // 検証不能 Bot: JS チャレンジ
+        ]
+      }
+    ]
+  }
+]</code></pre>
+            </div>
+            <div class="highlight-box">
+                <strong>効果</strong>: 学習用クローラーはエッジでブロック。検証済みの AI 検索・エージェントは許可され、偽装 Bot を含む検証不能な Bot は JavaScript チャレンジで排除 (大半のクローラーは JavaScript を実行できないため通過不可)。
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>ユースケース 2: 特定の信頼する AI 事業者のみ許可</h4>
+            <p><span class="scenario-label">シナリオ</span>Miscellaneous カテゴリをブロックしつつ、提携している特定の AI 事業者の Bot だけは通したい。</p>
+            <p><strong>実装例</strong>: WAF ポリシーの例外 (Exception) を作成し、以下を設定。</p>
+            <ul>
+                <li><strong>Applies to</strong>: Microsoft_AIBotRuleSet_1.0 (スコープは可能な限り狭く、単一ルール推奨)</li>
+                <li><strong>Match variable</strong>: AIProvider</li>
+                <li><strong>Operator</strong>: Equals</li>
+                <li><strong>Values</strong>: 信頼する AI 事業者名 (WAF ログの <code class="inline">provider_s</code> の値、大文字小文字を区別)</li>
+            </ul>
+            <div class="highlight-box">
+                <strong>効果</strong>: 例外にマッチしたリクエストはスコープ内の AI Bot ルールのみバイパスし、カスタムルール・Default Rule Set・Bot Manager ruleset による攻撃検査は引き続き適用される。IP レンジの自前管理も不要。
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>Azure Front Door Premium には WAF (マネージドルールセット含む) が追加料金なしで含まれます。料金ページに "includes WAF and Private Link at no additional cost" と明記されています。AI bot ruleset 自体の個別料金の記載はありません。</p>
+        <div class="table-wrap">
+        <table>
+            <thead>
+                <tr><th>項目</th><th>料金 (従量課金、参考)</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>Front Door Premium 基本料金</td><td>$330/月 (時間単位で課金)</td></tr>
+                <tr><td>リクエスト料金 (Premium、1 万リクエストあたり)</td><td>Zone 1 (北米) / Zone 6 (欧州): $0.015、Zone 2 (日本含むアジア太平洋): $0.0168</td></tr>
+                <tr><td>WAF マネージドルール</td><td>Premium に含まれる (追加料金なし)</td></tr>
+                <tr><td>CAPTCHA (アドオン)</td><td>$0.4 / 1,000 CAPTCHA セッション</td></tr>
+            </tbody>
+        </table>
+        </div>
+        <div class="warning-box">
+            <p>CAPTCHA アクションを使用する場合のみ、セッション数に応じた追加課金が発生する点に注意してください。最新の料金は <a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">Azure Front Door 料金ページ</a>を参照してください。</p>
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🤖</div>
+            <div class="feature-content">
+                <h4>Bot Manager ruleset (Bot protection rule set)</h4>
+                <p>従来からの Bot 対策マネージドルールセット。Good / Bad / Unknown の分類で、検索エンジン・SNS クローラーなどを制御。AI bot ruleset は Bot Manager ruleset の直後に評価され、同一ポリシーで併用可能。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>WAF Default Rule Set</h4>
+                <p>SQL インジェクションや XSS などの一般的な攻撃からの保護。AI bot ruleset と併用して多層防御を構成。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌊</div>
+            <div class="feature-content">
+                <h4>HTTP DDoS ruleset</h4>
+                <p>ポリシー内で最初に評価されるルールセット。アプリケーション層 DDoS 対策。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🧩</div>
+            <div class="feature-content">
+                <h4>JavaScript challenge / CAPTCHA challenge</h4>
+                <p>AI bot ruleset の各ルールに設定できるチャレンジアクション。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>Azure Monitor / Log Analytics / WAF insights</h4>
+                <p>AI Bot トラフィックのカテゴリ別・運営者別 (AIProvider ディメンション) の可視化と分析。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <p>AI bot ruleset は、急増する AI クローラー / エージェントのトラフィックを「学習」「検索」「対話型エージェント」「検証不能」の 4 カテゴリに分類し、robots.txt に依存せずエッジで目的別の制御を可能にする、Front Door Premium WAF の新しいマネージドルールセットです。運営者検証により偽装 Bot を排除でき、シグネチャは Microsoft が自動更新します。</p>
+        <div class="highlight-box">
+            <p>Front Door Premium を利用中であれば、まずはデフォルトの Log アクションのままルールセットを割り当て、WAF insights で自サイトへの AI Bot トラフィックの実態 (カテゴリ・運営者・アクセス先 URL) を把握することを推奨します。その上で、組織のコンテンツポリシーに応じてカテゴリごとのアクションを設定してください。なお、800104 をブロックに変更する際は、許可したいカテゴリを Allow に設定することを忘れないよう注意が必要です。</p>
+        </div>
+        <div class="tags">
+            <span class="tag">Networking</span>
+            <span class="tag">Security</span>
+            <span class="tag">Azure Front Door</span>
+            <span class="tag">Web Application Firewall</span>
+            <span class="tag">Features</span>
+            <span class="tag">Microsoft Ignite</span>
+            <span class="tag">Public Preview</span>
+        </div>
+    </section>
+
+    <!-- ===== フッター (出典) ===== -->
+    <footer class="footer">
+        <h3>📚 出典・参考リンク</h3>
+        <ul>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=581604" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/web-application-firewall/afds/ai-bot-ruleset" target="_blank" rel="noopener">Microsoft Learn: AI bot ruleset for Azure Front Door WAF (Preview)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/web-application-firewall/afds/afds-overview" target="_blank" rel="noopener">Microsoft Learn: What is Azure Web Application Firewall on Azure Front Door?</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/frontdoor/" target="_blank" rel="noopener">Azure Front Door 料金ページ</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/en-us/blog/microsoft-ignite-2026-whats-new-in-azure-the-platform-purpose-built-for-ai/" target="_blank" rel="noopener">Azure Blog: Microsoft Ignite 2026 — What's new in Azure</a></li>
+        </ul>
+        <div class="gen-info">
+            ソースレポート: reports/2026/2026-11-18-front-door-waf-ai-bot-ruleset.md (リリース日: 2026-11-18 / Public Preview) | 本インフォグラフィックは Azure News Summary プロジェクトにより生成されました。
+        </div>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+</body>
+</html>

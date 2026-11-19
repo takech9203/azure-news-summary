@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Backup: Azure VM のクロスサブスクリプションバックアップが GA</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "";
+    position: absolute;
+    right: -60px;
+    top: -60px;
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    background: rgba(80, 230, 255, 0.15);
+}
+.hero-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+.service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.hero h1 {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1.4;
+    margin-bottom: 12px;
+    position: relative;
+    z-index: 1;
+}
+.hero .subtitle {
+    font-size: 15px;
+    opacity: 0.95;
+    position: relative;
+    z-index: 1;
+}
+.hero-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-top: 18px;
+    font-size: 14px;
+    position: relative;
+    z-index: 1;
+}
+.hero-meta span { opacity: 0.95; }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 21px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+.section-icon {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 10px;
+    font-size: 22px;
+}
+.section p { margin: 10px 0; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+.highlight-box strong { color: var(--ms-blue-800); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Timeline ===== */
+.timeline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 20px 0 4px;
+}
+.timeline-item {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+    border-radius: 10px;
+    padding: 12px 20px;
+    text-align: center;
+    min-width: 180px;
+}
+.timeline-item.ga {
+    background: #E8F5E9;
+    border-color: var(--ms-green);
+}
+.timeline-date { font-weight: 700; color: var(--azure-dark-blue); font-size: 15px; }
+.timeline-item.ga .timeline-date { color: var(--ms-green); }
+.timeline-label { font-size: 13px; color: var(--ms-text-secondary); }
+.timeline-arrow { font-size: 24px; color: var(--azure-blue); font-weight: 700; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+.diagram-caption {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { color: var(--ms-blue-800); font-size: 16px; margin-bottom: 6px; }
+.feature-content p { font-size: 14px; margin: 4px 0; color: var(--ms-text-secondary); }
+
+/* ===== Table ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 14px;
+}
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+}
+.spec-table td {
+    border: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+.spec-table td:first-child {
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    white-space: nowrap;
+}
+
+/* ===== Steps ===== */
+.step-list { list-style: none; counter-reset: step; margin: 12px 0; }
+.step-list li {
+    counter-increment: step;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    margin: 12px 0;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+}
+.step-list li::before {
+    content: counter(step);
+    background: var(--azure-blue);
+    color: white;
+    font-weight: 700;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+.prereq-list { padding-left: 20px; }
+.prereq-list li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 12px 0;
+}
+.merit-card {
+    background: var(--ms-blue-100);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 10px;
+    padding: 16px 20px;
+}
+.merit-card h4 {
+    color: var(--ms-blue-800);
+    font-size: 16px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.merit-card ul { padding-left: 20px; }
+.merit-card li { margin: 8px 0; font-size: 14px; }
+
+.caution-box {
+    background: #FFF4E5;
+    border: 2px solid var(--ms-orange);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin: 12px 0;
+}
+.caution-box ul { padding-left: 20px; }
+.caution-box li { margin: 10px 0; font-size: 14px; }
+
+/* ===== Use case ===== */
+.usecase-card {
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 12px 0;
+}
+.usecase-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 17px;
+    margin-bottom: 12px;
+}
+.usecase-step {
+    display: flex;
+    gap: 12px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.usecase-tag {
+    min-width: 84px;
+    text-align: center;
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 13px;
+    font-weight: 700;
+    height: fit-content;
+}
+.usecase-tag.effect { background: var(--ms-green); }
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin: 12px 0;
+}
+.related-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-blue-300);
+    border-top: 4px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 16px;
+}
+.related-card h4 { color: var(--ms-blue-800); font-size: 15px; margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); }
+
+/* ===== Links ===== */
+.link-list { list-style: none; }
+.link-list li {
+    margin: 10px 0;
+    padding-left: 26px;
+    position: relative;
+    font-size: 14px;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 20px 24px;
+    font-size: 15px;
+}
+
+/* ===== Tags ===== */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    border-radius: 14px;
+    padding: 4px 14px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+/* ===== Code blocks (not used for mermaid) ===== */
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    border-radius: 8px;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Footer ===== */
+footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    font-size: 13px;
+    margin-bottom: 24px;
+}
+footer h3 { font-size: 15px; margin-bottom: 10px; }
+footer ul { list-style: none; }
+footer li { margin: 6px 0; }
+footer a { color: var(--azure-light-blue); }
+.footer-note {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    opacity: 0.85;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 22px; }
+    .timeline { flex-direction: column; }
+    .timeline-arrow { transform: rotate(90deg); }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="hero">
+        <div class="hero-badges">
+            <span class="service-badge">Azure Backup</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+        </div>
+        <h1>Azure Virtual Machines の<br>クロスサブスクリプションバックアップが一般提供開始 (GA)</h1>
+        <p class="subtitle">同一テナント内なら、別サブスクリプションの Recovery Services vault で VM を保護可能に</p>
+        <div class="hero-meta">
+            <span>📅 リリース日: 2026-11-18</span>
+            <span>🛠️ 機能: Cross-subscription backup for Azure Virtual Machines</span>
+        </div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">📰</span>概要</h2>
+        <p>Azure Backup が Azure Virtual Machines の<strong>クロスサブスクリプションバックアップ (Cross-subscription backup)</strong> の一般提供を開始しました。同一テナント内であれば、VM が存在するサブスクリプションとは別のサブスクリプションにある Recovery Services vault を使って VM を保護できるようになります。</p>
+        <div class="highlight-box">
+            <strong>ポイント</strong>: 複数サブスクリプションにまたがるバックアップ管理を一元化。バックアップ運用の簡素化、ガバナンスの向上、サブスクリプションごとに個別のバックアップ vault を維持する必要性の削減につながります。特に、バックアップやセキュリティ運用の専用サブスクリプションを持つ大規模な Azure 環境を管理するエンタープライズにとって価値の高い機能です。
+        </div>
+
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">2026 年 4 月</div>
+                <div class="timeline-label">プレビュー提供開始</div>
+            </div>
+            <div class="timeline-arrow">➜</div>
+            <div class="timeline-item ga">
+                <div class="timeline-date">2026 年 11 月</div>
+                <div class="timeline-label">GA 到達 (Microsoft Ignite のタイミング)</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>VM とそのバックアップ先の Recovery Services vault は同一サブスクリプション内に配置する必要があり、サブスクリプションごとに vault を作成・維持する必要があった</li>
+                    <li>サブスクリプション単位で vault が分散するため、バックアップポリシーの統制やガバナンスの一元化が困難だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>同一テナント内であれば、別サブスクリプションの Recovery Services vault で VM を保護できるようになった</li>
+                    <li>バックアップ/セキュリティ運用専用のサブスクリプションに vault を集約し、複数サブスクリプションの VM バックアップを一元管理できるようになった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph Tenant["🏢 Microsoft Entra テナント (同一テナント)"]
+        subgraph SubA["📦 サブスクリプション A (ワークロード)"]
+            VMA["🖥️ Azure VM (App)"]
+        end
+        subgraph SubB["📦 サブスクリプション B (ワークロード)"]
+            VMB["🖥️ Azure VM (DB)"]
+        end
+        subgraph SubC["🛡️ サブスクリプション C (バックアップ/セキュリティ運用)"]
+            Vault[("🗄️ Recovery Services vault")]
+            Policy["📋 バックアップポリシー"]
+        end
+        VMA -- "クロスサブスクリプション&lt;br/&gt;バックアップ" --> Vault
+        VMB -- "クロスサブスクリプション&lt;br/&gt;バックアップ" --> Vault
+        Policy --> Vault
+    end
+            </pre>
+        </div>
+        <p class="diagram-caption">同一テナント・同一リージョン内であれば、ワークロード用サブスクリプション A/B の VM を、バックアップ運用専用のサブスクリプション C に集約した Recovery Services vault で一元的に保護できます。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">⚡</span>サービスアップデートの詳細 — 主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🗄️</div>
+            <div class="feature-content">
+                <h4>1. 別サブスクリプションの vault による VM 保護</h4>
+                <p>VM と Recovery Services vault が同一テナント・同一リージョン内であれば、異なるサブスクリプション間でのバックアップ構成が可能。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🎯</div>
+            <div class="feature-content">
+                <h4>2. バックアップ管理の一元化</h4>
+                <p>複数サブスクリプションに分散した VM のバックアップを、専用サブスクリプションの vault に集約して管理可能。</p>
+                <p>サブスクリプションごとに個別の vault を維持する必要性を削減し、ガバナンスを向上。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🌍</div>
+            <div class="feature-content">
+                <h4>3. 全 Azure リージョンで利用可能</h4>
+                <p>GA 時点ですべての Azure リージョンで利用可能。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">📋</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象リソース</td><td>Azure Virtual Machines</td></tr>
+            <tr><td>vault の種類</td><td>Recovery Services vault</td></tr>
+            <tr><td>テナント要件</td><td>VM と vault が同一の Microsoft Entra テナント内にあること</td></tr>
+            <tr><td>リージョン要件</td><td>VM と vault が同一リージョンにあること (クロスリージョンバックアップは非サポート)</td></tr>
+            <tr><td>利用可能リージョン</td><td>すべての Azure リージョン</td></tr>
+            <tr><td>非サポート</td><td>Confidential VM (CVM)。ADE で暗号化された CVM を含む</td></tr>
+            <tr><td>vault 間のデータ移動</td><td>バックアップ済みデータの vault 間移動は非サポート</td></tr>
+            <tr><td>提供時期</td><td>プレビュー: 2026 年 4 月 / GA: 2026 年 11 月</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">⚙️</span>設定方法</h2>
+        <h3 style="color: var(--ms-blue-800); margin-bottom: 8px;">前提条件</h3>
+        <ul class="prereq-list">
+            <li>VM と Recovery Services vault が同一テナント・同一リージョン内にあること</li>
+            <li>VM に Azure VM エージェントがインストールされていること (Azure Marketplace イメージから作成した VM にはインストール済み。Azure Backup はエージェントの拡張機能を通じてバックアップを実行)</li>
+            <li><a href="https://learn.microsoft.com/en-us/azure/backup/backup-support-matrix-iaas" target="_blank" rel="noopener">サポートマトリックス</a>で対象 VM の構成がサポートされていることを確認すること</li>
+        </ul>
+        <h3 style="color: var(--ms-blue-800); margin: 18px 0 8px;">Azure Portal での構成手順</h3>
+        <p style="font-size: 14px; color: var(--ms-text-secondary);">Azure Portal の Resiliency (旧 Backup center) から構成します。</p>
+        <ol class="step-list">
+            <li><div><strong>Resiliency</strong> に移動し、<strong>+ Configure protection</strong> を選択</div></li>
+            <li><div><strong>Resources managed by</strong> に <strong>Azure</strong>、<strong>Datasource type</strong> に <strong>Azure Virtual machines</strong>、<strong>Solution</strong> に <strong>Azure Backup</strong> を選択して続行</div></li>
+            <li><div>バックアップ先の Recovery Services vault (別サブスクリプションの vault を含む) を選択</div></li>
+            <li><div>バックアップポリシーを割り当て (既定ポリシーは 1 日 1 回バックアップ、30 日間保持、インスタント リカバリ スナップショット 2 日間保持)</div></li>
+            <li><div><strong>Virtual Machines</strong> で <strong>Add</strong> を選択し、保護対象の VM を選択 (vault と同一リージョンの VM のみ選択可能。vault と異なるサブスクリプションの VM も同一テナント内であれば選択可能)</div></li>
+            <li><div><strong>Enable backup</strong> を選択してポリシーをデプロイし、バックアップを有効化</div></li>
+        </ol>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">💎</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>サブスクリプションごとの vault 乱立を防ぎ、バックアップ運用コスト (管理工数) を削減できる</li>
+                    <li>バックアップ/セキュリティ運用を専用サブスクリプションに分離することで、ガバナンスと職務分掌を強化できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>複数サブスクリプションの VM バックアップを単一 vault に集約し、ポリシー管理・監視を一元化できる</li>
+                    <li>Cross Subscription Restore と組み合わせることで、バックアップから復元までサブスクリプションをまたいだ運用が可能になる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>VM と vault は<strong>同一テナント・同一リージョン内</strong>にある必要がある (クロステナント、クロスリージョンのバックアップは不可)</li>
+                <li><strong>Confidential VM (CVM)</strong> はクロスサブスクリプションバックアップ非サポート (ADE で暗号化された CVM を含む)</li>
+                <li>バックアップ済みデータの <strong>vault 間移動は非サポート</strong>のため、vault の配置 (集約先サブスクリプション) は事前に慎重に設計する必要がある</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">💡</span>ユースケース</h2>
+        <div class="usecase-card">
+            <h4>ユースケース 1: バックアップ専用サブスクリプションへの vault 集約</h4>
+            <div class="usecase-step">
+                <span class="usecase-tag">シナリオ</span>
+                <div>ランディングゾーン設計で、アプリケーションチームごとにワークロード用サブスクリプションを分離している企業が、バックアップ運用を中央の管理チームに集約したい。</div>
+            </div>
+            <div class="usecase-step">
+                <span class="usecase-tag">実装</span>
+                <div>バックアップ/セキュリティ運用専用のサブスクリプションに Recovery Services vault を作成し、各ワークロードサブスクリプションの VM に対してクロスサブスクリプションバックアップを構成する。</div>
+            </div>
+            <div class="usecase-step">
+                <span class="usecase-tag effect">効果</span>
+                <div>vault とバックアップポリシーが一元管理され、各サブスクリプションに vault を個別に作成・維持する必要がなくなる。バックアップデータをワークロード所有者から分離することでガバナンスも向上する。</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">💰</span>料金</h2>
+        <p>本アップデートに固有の料金情報は公式ページで確認できませんでした。Azure Backup の料金体系は以下の公式料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank" rel="noopener">Azure Backup の料金</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">🌐</span>利用可能リージョン</h2>
+        <div class="highlight-box">
+            <strong>すべての Azure リージョン</strong>で利用可能です (VM と vault は同一リージョン内に配置する必要があります)。
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🗄️ Recovery Services vault</h4>
+                <p>VM の復旧ポイントを格納する管理エンティティ。本機能により VM と異なるサブスクリプションに配置可能。</p>
+            </div>
+            <div class="related-card">
+                <h4>🔄 Cross Subscription Restore</h4>
+                <p>vault 層の復旧ポイントを同一テナント内の別サブスクリプションへ復元する機能。vault で有効化が必要。</p>
+            </div>
+            <div class="related-card">
+                <h4>🖥️ Resiliency (Backup center)</h4>
+                <p>複数 vault をまたいだバックアップのガバナンス・監視・運用を提供する統合管理エクスペリエンス。クロスサブスクリプションバックアップの構成にも使用。</p>
+            </div>
+            <div class="related-card">
+                <h4>🔒 Azure Backup immutable vault</h4>
+                <p>復旧ポイントの期限前削除を防ぐ不変 vault。ランサムウェア対策として集中管理 vault と組み合わせて利用可能。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="section-icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            Azure VM のクロスサブスクリプションバックアップの GA により、同一テナント内であれば別サブスクリプションの Recovery Services vault で VM を保護できるようになり、エンタープライズ環境でのバックアップ管理の一元化とガバナンス強化が実現しやすくなりました。複数サブスクリプションを運用している組織は、バックアップ専用サブスクリプションへの vault 集約を検討する価値があります。ただし、同一テナント・同一リージョンの制約、Confidential VM の非サポート、vault 間データ移動不可の制約があるため、vault の配置設計は事前に十分に検討してください。
+        </div>
+        <div class="tag-list">
+            <span class="tag">Azure Backup</span>
+            <span class="tag">Virtual Machines</span>
+            <span class="tag">Recovery Services vault</span>
+            <span class="tag">Cross-subscription</span>
+            <span class="tag">Management and governance</span>
+            <span class="tag">Storage</span>
+            <span class="tag">Microsoft Ignite</span>
+            <span class="tag">GA</span>
+        </div>
+    </section>
+
+    <!-- ===== フッター (出典) ===== -->
+    <footer>
+        <h3>📚 出典・参考リンク</h3>
+        <ul>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=581048" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a> — https://azure.microsoft.com/updates?id=581048</li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/backup/backup-azure-arm-vms-prepare" target="_blank" rel="noopener">Back up Azure VMs in a Recovery Services vault (Microsoft Learn)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/backup/backup-support-matrix-iaas" target="_blank" rel="noopener">Support matrix for Azure VM backups (Microsoft Learn)</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/backup/" target="_blank" rel="noopener">Azure Backup 料金ページ</a></li>
+        </ul>
+        <div class="footer-note">
+            本インフォグラフィックは Azure News Summary レポート (2026-11-18 / Azure Backup: Azure Virtual Machines のクロスサブスクリプションバックアップが一般提供開始) を基に生成されています。
+        </div>
+    </footer>
+
+</div>
+</body>
+</html>
