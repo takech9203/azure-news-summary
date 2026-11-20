@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Functions: OpenAI Extension のサポート終了 (2027-04-20)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "⚡";
+    position: absolute;
+    right: 24px;
+    bottom: -20px;
+    font-size: 140px;
+    opacity: 0.12;
+}
+.hero .badges { margin-bottom: 14px; }
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 10px;
+}
+.hero .subtitle {
+    font-size: 15px;
+    opacity: 0.92;
+}
+.hero .deadline-banner {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(216, 59, 1, 0.9);
+    border: 2px solid #FFFFFF;
+    border-radius: 12px;
+    padding: 10px 20px;
+    margin-top: 18px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+    display: inline-block;
+    margin-right: 8px;
+}
+.hero .service-badge {
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+.badge-retirement { background: var(--ms-red); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section h2 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+}
+.section h2 .icon {
+    font-size: 24px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 22px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.section p { margin: 10px 0; font-size: 15px; }
+
+strong.key { color: var(--ms-red); font-weight: 700; }
+strong.key-blue { color: var(--azure-blue); font-weight: 700; }
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 15px;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 8px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 8px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 6px 0; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-card.red { background: linear-gradient(135deg, var(--ms-red), #A52A00); }
+.stat-value { font-size: 26px; font-weight: bold; line-height: 1.3; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+.feature-content h4 { font-size: 15px; color: var(--ms-blue-800); margin-bottom: 4px; }
+.feature-content p { font-size: 14px; margin: 0; color: var(--ms-text-secondary); }
+.feature-card.warn { border-left-color: var(--ms-red); }
+.feature-card.warn .feature-icon { background: #FFEBEE; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0;
+    font-size: 14px;
+    background: var(--ms-surface);
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+td code, p code, li code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--ms-blue-900);
+    word-break: break-all;
+}
+
+/* ===== Timeline ===== */
+.timeline {
+    position: relative;
+    margin: 24px 0 8px;
+    padding-left: 34px;
+}
+.timeline::before {
+    content: "";
+    position: absolute;
+    left: 11px;
+    top: 6px;
+    bottom: 6px;
+    width: 4px;
+    background: var(--ms-blue-300);
+    border-radius: 2px;
+}
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+.timeline-item::before {
+    content: "";
+    position: absolute;
+    left: -31px;
+    top: 5px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--azure-blue);
+    border: 3px solid #FFFFFF;
+    box-shadow: 0 0 0 2px var(--azure-blue);
+}
+.timeline-item.deadline::before {
+    background: var(--ms-red);
+    box-shadow: 0 0 0 2px var(--ms-red);
+}
+.timeline-date {
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    font-size: 15px;
+}
+.timeline-item.deadline .timeline-date { color: var(--ms-red); }
+.timeline-desc { font-size: 14px; color: var(--ms-text-secondary); }
+
+/* ===== Migration path ===== */
+.migration-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+.migration-card {
+    background: var(--ms-blue-100);
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 18px;
+    position: relative;
+}
+.migration-card .num {
+    position: absolute;
+    top: -14px;
+    left: 16px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+.migration-card h4 {
+    color: var(--azure-dark-blue);
+    font-size: 16px;
+    margin: 6px 0 8px;
+}
+.migration-card p { font-size: 13.5px; margin: 0; color: var(--ms-text-secondary); }
+
+/* ===== Arrow between flows ===== */
+.flow-arrow {
+    text-align: center;
+    font-size: 30px;
+    color: var(--azure-blue);
+    margin: 4px 0;
+    font-weight: 700;
+}
+
+/* ===== Mermaid ===== */
+.mermaid-wrapper {
+    background: #FFFFFF;
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    overflow-x: auto;
+}
+pre.mermaid {
+    background: #FFFFFF;
+    text-align: center;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 14px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    background: #1E1E1E;
+    display: block;
+}
+
+/* ===== Links / related ===== */
+.link-list { list-style: none; padding: 0; }
+.link-list li {
+    margin: 8px 0;
+    padding: 10px 14px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.link-list a {
+    color: var(--ms-blue-800);
+    font-weight: 500;
+    text-decoration: none;
+    word-break: break-all;
+}
+.link-list a:hover { text-decoration: underline; }
+
+.related-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 10px 0;
+}
+.related-card .icon {
+    font-size: 22px;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.related-card h4 { font-size: 15px; color: var(--azure-dark-blue); margin-bottom: 2px; }
+.related-card p { font-size: 13.5px; margin: 0; color: var(--ms-text-secondary); }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 22px 24px;
+}
+.summary-box ol { padding-left: 22px; font-size: 15px; }
+.summary-box li { margin: 8px 0; }
+
+/* ===== Tags ===== */
+.tags { margin-top: 14px; }
+.tag {
+    display: inline-block;
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12.5px;
+    margin: 3px 4px 3px 0;
+}
+
+/* ===== Footer ===== */
+footer {
+    margin-top: 32px;
+    padding: 24px;
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    font-size: 13px;
+}
+footer h3 { font-size: 15px; margin-bottom: 10px; }
+footer a { color: var(--azure-light-blue); word-break: break-all; }
+footer ul { padding-left: 20px; }
+footer li { margin: 5px 0; }
+footer .meta { margin-top: 14px; opacity: 0.8; }
+
+ul.plain { padding-left: 22px; font-size: 14.5px; }
+ul.plain li { margin: 6px 0; }
+
+@media (max-width: 700px) {
+    .before-after { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+    .container { padding: 14px; }
+    .section { padding: 18px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">⚡ Azure Functions</span>
+            <span class="badge badge-retirement">Retirement (アナウンス)</span>
+        </div>
+        <h1>Azure Functions OpenAI Extension<br>サポート終了のお知らせ</h1>
+        <div class="subtitle">📅 リリース日 (アナウンス): 2026-11-20 ｜ 機能: Azure Functions OpenAI Extension のリタイアメント</div>
+        <div class="deadline-banner">⏰ 2027 年 4 月 20 日 サポート終了</div>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2><span class="icon">📋</span>概要</h2>
+        <p>
+            Azure Functions OpenAI extension のサポートが <strong class="key">2027 年 4 月 20 日</strong> に終了することがアナウンスされました。
+            この拡張機能は、<strong class="key-blue">Azure OpenAI in Foundry Models</strong> の機能 (テキスト補完、アシスタント、埋め込み、セマンティック検索など) を
+            トリガー / バインディングとして関数コードに簡単に統合できるものでしたが、今後はシナリオに応じて
+            <strong class="key-blue">OpenAI SDK、Microsoft Foundry SDK、Azure AI Search SDK</strong> を直接利用する方式への移行が必要になります。
+        </p>
+        <p>
+            移行が完了するまでの間、.NET アプリは引き続き動作し、非 .NET アプリもプレビュー拡張機能バンドルのバージョン 4.60.0 より前
+            (<code>[4.*, 4.60.0)</code>) を使用するよう構成すれば動作を継続できます。ただし、プレビュー拡張機能バンドル 4.60.0 以降にはこの拡張機能が含まれておらず、
+            古いバンドルへのピン留めや NuGet パッケージの継続利用によって<strong class="key">サポート期限が延長されることはありません</strong>。
+            2027 年 4 月 20 日以降はサポート対象外となり、セキュリティ更新、パッチ、テクニカルサポートは提供されなくなります。
+        </p>
+
+        <div class="stats-grid">
+            <div class="stat-card red">
+                <div class="stat-value">2027-04-20</div>
+                <div class="stat-label">サポート終了日</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">8 種類</div>
+                <div class="stat-label">対象トリガー / バインディング</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3 つの SDK</div>
+                <div class="stat-label">移行先 (OpenAI / Foundry / AI Search)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">[4.*, 4.60.0)</div>
+                <div class="stat-label">非 .NET の暫定ピン留め範囲</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (現状: 拡張機能経由)</h4>
+                <ul>
+                    <li>Azure OpenAI の機能をトリガー / バインディングとして<strong>宣言的に利用</strong>でき、SDK 呼び出しコードを書かずに AI 機能を関数へ統合できた</li>
+                    <li>アシスタントの状態管理や埋め込みストアへの書き込みなどを<strong>拡張機能側が抽象化</strong>していた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (リタイアメント後)</h4>
+                <ul>
+                    <li>2027 年 4 月 20 日以降、拡張機能はサポート対象外となり、<strong>セキュリティ更新・パッチ・テクニカルサポートが提供されない</strong></li>
+                    <li>サポート外の拡張機能・ランタイム・言語バージョンでの実行は、問題発生やパフォーマンス低下につながる可能性がある</li>
+                    <li>シナリオに応じて <strong>OpenAI SDK、Microsoft Foundry SDK、Azure AI Search SDK</strong> を関数コードから直接呼び出す構成への移行が必要</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-wrapper">
+<pre class="mermaid">
+flowchart TD
+    subgraph Before["⚠️ Before: 拡張機能経由 (2027-04-20 サポート終了)"]
+        F1["⚡ Azure Functions アプリ"] --> EXT["🔌 OpenAI Extension<br>(トリガー / バインディング)"]
+        EXT --> AOAI1["🤖 Azure OpenAI<br>in Foundry Models"]
+        EXT --> VDB["🗄️ ベクトル DB<br>(AI Search / Cosmos DB など)"]
+    end
+
+    subgraph After["✅ After: 各 SDK を直接利用"]
+        F2["⚡ Azure Functions アプリ"] --> SDK1["📦 OpenAI SDK"]
+        F2 --> SDK2["📦 Microsoft Foundry SDK"]
+        F2 --> SDK3["📦 Azure AI Search SDK"]
+    end
+
+    Before -.->|"🔄 2027-04-20 までに移行"| After
+</pre>
+        </div>
+        <p>
+            拡張機能のトリガー / バインディング経由で Azure OpenAI やベクトル DB にアクセスしていた構成から、
+            関数コード内で各シナリオに対応する SDK (<strong class="key-blue">OpenAI / Microsoft Foundry / Azure AI Search</strong>) を
+            直接呼び出す構成へ移行します。
+        </p>
+    </section>
+
+    <!-- ===== サービスアップデートの詳細 ===== -->
+    <section class="section">
+        <h2><span class="icon">🔍</span>サービスアップデートの詳細</h2>
+
+        <h3>🎯 影響を受ける機能 (拡張機能が提供するトリガー / バインディング)</h3>
+        <p>Azure Functions OpenAI extension は以下のトリガー / バインディングを提供しており、<strong class="key">これらすべてがリタイアメントの対象</strong>です。</p>
+        <table>
+            <thead>
+                <tr><th>用途</th><th>トリガー / バインディング</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>標準テキストプロンプトによるコンテンツ補完</td><td>Azure OpenAI text completion 入力バインディング</td></tr>
+                <tr><td>アシスタントからの関数呼び出し要求への応答</td><td>Azure OpenAI assistant トリガー</td></tr>
+                <tr><td>アシスタントの作成</td><td>Azure OpenAI assistant create 出力バインディング</td></tr>
+                <tr><td>アシスタントへのメッセージ送信</td><td>Azure OpenAI assistant post 入力バインディング</td></tr>
+                <tr><td>アシスタント履歴の取得</td><td>Azure OpenAI assistant query 入力バインディング</td></tr>
+                <tr><td>テキスト埋め込みの読み取り</td><td>Azure OpenAI embeddings 入力バインディング</td></tr>
+                <tr><td>ベクトルデータベースへの書き込み</td><td>Azure OpenAI embeddings store 出力バインディング</td></tr>
+                <tr><td>ベクトルデータベースからの読み取り (セマンティック検索)</td><td>Azure OpenAI semantic search 入力バインディング</td></tr>
+            </tbody>
+        </table>
+
+        <p>また、ベクトルデータベース連携用の以下の NuGet パッケージ群 (.NET) も拡張機能の一部です。</p>
+        <ul class="plain">
+            <li><strong>Azure AI Search 連携</strong>: <code>Microsoft.Azure.Functions.Worker.Extensions.OpenAI.AzureAISearch</code> / <code>Microsoft.Azure.WebJobs.Extensions.OpenAI.AzureAISearch</code></li>
+            <li><strong>Azure Cosmos DB 連携</strong>: <code>...OpenAI.CosmosDBSearch</code> / <code>...OpenAI.CosmosDBNoSQLSearch</code></li>
+            <li><strong>Azure Data Explorer 連携</strong>: <code>...OpenAI.Kusto</code></li>
+        </ul>
+
+        <h3>📣 影響範囲</h3>
+        <div class="feature-card warn">
+            <div class="feature-icon">🟣</div>
+            <div class="feature-content">
+                <h4>.NET アプリ</h4>
+                <p><code>Microsoft.Azure.Functions.Worker.Extensions.OpenAI</code> (isolated worker) または <code>Microsoft.Azure.WebJobs.Extensions.OpenAI</code> (in-process) を利用しているアプリ。NuGet パッケージの直接利用で動作は継続するが、2027 年 4 月 20 日以降はサポート対象外。</p>
+            </div>
+        </div>
+        <div class="feature-card warn">
+            <div class="feature-icon">🟡</div>
+            <div class="feature-content">
+                <h4>非 .NET アプリ (Java / JavaScript / TypeScript / PowerShell / Python)</h4>
+                <p>プレビュー拡張機能バンドル経由で拡張機能を利用しているアプリ。バンドル 4.60.0 以降には拡張機能が含まれないため、継続利用にはバージョン範囲 <code>[4.*, 4.60.0)</code> へのピン留めが必要。こちらも 2027 年 4 月 20 日以降はサポート対象外。</p>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🔵</div>
+            <div class="feature-content">
+                <h4>Go</h4>
+                <p>なお、Go はもともとこの機能に対応していない。</p>
+            </div>
+        </div>
+
+        <h3>🛤️ 移行パス</h3>
+        <p>Microsoft は、シナリオに応じて以下の SDK を関数コードから直接利用する方式への移行を推奨しています。</p>
+        <div class="migration-grid">
+            <div class="migration-card">
+                <div class="num">1</div>
+                <h4>📦 OpenAI SDK</h4>
+                <p>テキスト補完、アシスタント、埋め込みなど OpenAI / Azure OpenAI のモデル機能を直接呼び出すシナリオ</p>
+            </div>
+            <div class="migration-card">
+                <div class="num">2</div>
+                <h4>📦 Microsoft Foundry SDK</h4>
+                <p>Microsoft Foundry のモデル・エージェント機能を利用するシナリオ</p>
+            </div>
+            <div class="migration-card">
+                <div class="num">3</div>
+                <h4>📦 Azure AI Search SDK</h4>
+                <p>セマンティック検索やベクトル検索 (RAG) のシナリオ</p>
+            </div>
+        </div>
+        <div class="highlight-box">
+            🔑 移行後の認証・接続は、拡張機能のバインディング設定 (<code>AIConnectionName</code> や <code>AZURE_OPENAI_ENDPOINT</code> / <code>AZURE_OPENAI_KEY</code> など) ではなく、<strong>選択した SDK の認証・接続ガイダンス</strong>に従って構成します。
+        </div>
+
+        <h3>📆 タイムライン</h3>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-date">2026-11-20</div>
+                <div class="timeline-desc">リタイアメントのアナウンス (Microsoft Ignite に合わせて公開)</div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-date">現在〜2027-04-19</div>
+                <div class="timeline-desc">移行期間。.NET アプリは継続動作、非 .NET アプリはバンドル <code>[4.*, 4.60.0)</code> へのピン留めで継続動作</div>
+            </div>
+            <div class="timeline-item deadline">
+                <div class="timeline-date">2027-04-20 サポート終了</div>
+                <div class="timeline-desc">以降はセキュリティ更新・パッチ・テクニカルサポートの提供なし</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2><span class="icon">⚙️</span>設定方法 (移行完了までの暫定措置)</h2>
+        <p>
+            非 .NET アプリ (Java / JavaScript / TypeScript / PowerShell / Python) で拡張機能を継続利用する場合は、
+            <code>host.json</code> で拡張機能バンドルのバージョン範囲を <strong class="key-blue">4.60.0 未満</strong>に固定します。
+        </p>
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-lang">host.json</span>
+                <span style="color:#A19F9D;">JSON</span>
+            </div>
+<pre><code class="language-json">{
+  "version": "2.0",
+  "extensionBundle": {
+    "id": "Microsoft.Azure.Functions.ExtensionBundle.Preview",
+    "version": "[4.*, 4.60.0)"
+  }
+}</code></pre>
+        </div>
+        <div class="warning-box">
+            ⚠️ このピン留めはあくまで<strong>移行完了までの暫定措置</strong>であり、2027 年 4 月 20 日のサポート終了期限を延長するものではありません。
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="feature-card warn">
+            <div class="feature-icon">✍️</div>
+            <div class="feature-content">
+                <h4>コードの書き換えが必要</h4>
+                <p>拡張機能のトリガー / バインディングによる宣言的な AI 統合が利用できなくなり、SDK を直接呼び出すコードへの書き換えが必要。</p>
+            </div>
+        </div>
+        <div class="feature-card warn">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>期限後の継続利用はリスク</h4>
+                <p>期限 (2027-04-20) 以降に移行せず利用を続けた場合、セキュリティ脆弱性への修正が提供されず、問題発生やパフォーマンス低下のリスクがある。</p>
+            </div>
+        </div>
+        <div class="feature-card warn">
+            <div class="feature-icon">⏳</div>
+            <div class="feature-content">
+                <h4>ピン留めでは期限は延びない</h4>
+                <p>古いバンドルへのピン留めや NuGet パッケージの継続利用では、サポート期限は延長されない。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card">
+            <div class="icon">🤖</div>
+            <div>
+                <h4>Azure OpenAI in Foundry Models</h4>
+                <p>拡張機能が統合していたモデル提供サービス。移行後は OpenAI SDK / Microsoft Foundry SDK で直接アクセスする。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <div class="icon">🔎</div>
+            <div>
+                <h4>Azure AI Search</h4>
+                <p>セマンティック検索バインディングの移行先。Azure AI Search SDK を直接利用する。</p>
+            </div>
+        </div>
+        <div class="related-card">
+            <div class="icon">🗄️</div>
+            <div>
+                <h4>Azure Cosmos DB / Azure Data Explorer</h4>
+                <p>拡張機能のベクトルストア連携パッケージが対象としていたデータストア。移行後は各サービスの SDK・API で連携する。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2><span class="icon">📝</span>まとめ — Solutions Architect のアクション</h2>
+        <div class="summary-box">
+            <p>
+                Azure Functions OpenAI extension は <strong class="key">2027 年 4 月 20 日</strong>にサポートが終了します。
+                text completion、assistant、embeddings、semantic search の各トリガー / バインディングを利用している
+                <strong>すべての Functions アプリが対象</strong>です。
+            </p>
+            <ol>
+                <li>🗂️ まず拡張機能を利用しているアプリの<strong>棚卸し</strong>を行う</li>
+                <li>🧭 シナリオごとに <strong>OpenAI SDK / Microsoft Foundry SDK / Azure AI Search SDK</strong> のいずれへ移行するかを決定する</li>
+                <li>🚀 期限までに<strong>移行計画を実行</strong>する</li>
+                <li>⏳ 非 .NET アプリで当面の継続動作が必要な場合は、暫定措置として拡張機能バンドルを <code>[4.*, 4.60.0)</code> にピン留めしつつ、<strong>早期の移行</strong>を進める</li>
+            </ol>
+        </div>
+        <div class="tags">
+            <span class="tag">#Azure Functions</span>
+            <span class="tag">#Retirement</span>
+            <span class="tag">#OpenAI</span>
+            <span class="tag">#Microsoft Foundry</span>
+            <span class="tag">#Azure AI Search</span>
+            <span class="tag">#Compute</span>
+            <span class="tag">#Containers</span>
+            <span class="tag">#Internet of Things</span>
+            <span class="tag">#Microsoft Ignite</span>
+        </div>
+    </section>
+
+    <!-- ===== フッター ===== -->
+    <footer>
+        <h3>📚 出典・参考リンク</h3>
+        <ul>
+            <li>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=579952" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=579952</a></li>
+            <li>Azure OpenAI extension for Azure Functions (Microsoft Learn): <a href="https://learn.microsoft.com/azure/azure-functions/functions-bindings-openai" target="_blank" rel="noopener">https://learn.microsoft.com/azure/azure-functions/functions-bindings-openai</a></li>
+            <li>Bundle for Azure Functions OpenAI Extension (Microsoft Learn): <a href="https://learn.microsoft.com/azure/azure-functions/functions-bindings-openai?tabs=isolated-process%2Cai-connection-name&amp;pivots=programming-language-java#install-bundle" target="_blank" rel="noopener">https://learn.microsoft.com/azure/azure-functions/functions-bindings-openai (install-bundle)</a></li>
+        </ul>
+        <div class="meta">
+            元レポート: <code>reports/2026/2026-11-20-functions-openai-extension-retirement.md</code> ｜ リリース日: 2026-11-20 ｜ ステータス: Retirement (アナウンス)
+        </div>
+    </footer>
+
+</div>
+
+<script>
+mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+        primaryColor: '#0078D4',
+        primaryTextColor: '#323130',
+        primaryBorderColor: '#0078D4',
+        mainBkg: '#E6F2FF',
+        nodeBorder: '#0078D4',
+        lineColor: '#0078D4',
+        edgeLabelBackground: '#FFFFFF',
+        clusterBkg: '#FAF9F8',
+        clusterBorder: '#C7E0F4',
+        fontFamily: "'Noto Sans JP', 'Segoe UI', sans-serif",
+        fontSize: '14px'
+    },
+    flowchart: { useMaxWidth: true, htmlLabels: true }
+});
+hljs.highlightAll();
+</script>
+</body>
+</html>

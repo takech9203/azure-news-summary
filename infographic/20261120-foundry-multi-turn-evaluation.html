@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Microsoft Foundry: マルチターン評価 (Multi-turn Evaluation) パブリックプレビュー</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue), var(--azure-blue));
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "💬🔁";
+    position: absolute;
+    right: 24px;
+    bottom: 12px;
+    font-size: 64px;
+    opacity: 0.18;
+}
+.hero .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+.hero h1 .accent { color: var(--azure-light-blue); }
+.hero .subtitle {
+    font-size: 15px;
+    opacity: 0.92;
+}
+.hero .date {
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 4px 14px;
+    border-radius: 16px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.hero .service-badge {
+    background: rgba(255, 255, 255, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); }
+.badge-development { background: var(--ms-blue-400); }
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+.section h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-blue);
+    border-bottom: 3px solid var(--ms-blue-300);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.section h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ms-blue-800);
+    margin: 20px 0 12px;
+}
+.section p { margin: 10px 0; }
+
+.keyword {
+    font-weight: 700;
+    color: var(--azure-blue);
+}
+code.inline {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    background: var(--ms-blue-100);
+    color: var(--ms-blue-800);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 4px;
+    padding: 1px 6px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+    position: relative;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; }
+.before li, .after li { margin: 8px 0; font-size: 14px; }
+.ba-arrow {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    z-index: 2;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-top: 1px solid var(--ms-border);
+    border-right: 1px solid var(--ms-border);
+    border-bottom: 1px solid var(--ms-border);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content p, .feature-content li { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; margin-top: 6px; }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 700;
+}
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+.table-wrap { overflow-x: auto; }
+
+/* ===== Code ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    overflow-x: auto;
+    text-align: center;
+}
+pre.mermaid {
+    background: #FFFFFF;
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+.merit-col {
+    background: var(--ms-blue-100);
+    border-top: 4px solid var(--azure-blue);
+    border-radius: 8px;
+    padding: 16px 18px;
+}
+.merit-col h4 {
+    color: var(--ms-blue-800);
+    margin-bottom: 10px;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.merit-col ul { padding-left: 20px; }
+.merit-col li { margin: 8px 0; font-size: 14px; }
+
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 16px 20px;
+    margin: 16px 0;
+}
+.warning-box ul { padding-left: 20px; }
+.warning-box li { margin: 8px 0; font-size: 14px; }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-purple);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.usecase-card h4 {
+    color: var(--ms-purple);
+    font-size: 17px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.usecase-step {
+    display: flex;
+    gap: 12px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+.usecase-step .label {
+    min-width: 76px;
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 700;
+    padding: 2px 8px;
+    height: fit-content;
+    font-size: 13px;
+}
+.usecase-step.effect .label { background: #E8F5E9; color: var(--ms-green); }
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+.related-card {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 14px 16px;
+    border-left: 4px solid var(--ms-purple);
+}
+.related-card h5 { font-size: 14px; color: var(--ms-text-primary); margin-bottom: 6px; }
+.related-card p { font-size: 13px; color: var(--ms-text-secondary); margin: 0; }
+
+/* ===== Links ===== */
+a { color: var(--azure-blue); }
+.link-list { padding-left: 20px; }
+.link-list li { margin: 8px 0; font-size: 14px; word-break: break-all; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 16px 0;
+}
+
+/* ===== Tags ===== */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.tag {
+    background: var(--ms-surface-tertiary);
+    color: var(--ms-text-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+}
+
+/* ===== Footer ===== */
+footer {
+    text-align: center;
+    color: var(--ms-text-secondary);
+    font-size: 13px;
+    padding: 24px 12px 36px;
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+}
+footer ul { list-style: none; margin-top: 8px; }
+footer li { margin: 6px 0; word-break: break-all; }
+
+@media (max-width: 680px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .ba-arrow { transform: translate(-50%, -50%) rotate(90deg); }
+    .hero h1 { font-size: 24px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="hero">
+        <div class="meta-row">
+            <span class="service-badge">Microsoft Foundry</span>
+            <span class="badge badge-preview">In Preview</span>
+            <span class="date">📅 リリース日: 2026-11-20</span>
+        </div>
+        <h1>マルチターン評価 <span class="accent">(Multi-turn Evaluation)</span><br>パブリックプレビュー</h1>
+        <p class="subtitle">エージェント評価の単位が「個々の応答」から「<strong>会話全体</strong>」へ — Microsoft Ignite に合わせて発表</p>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2>📋 概要</h2>
+        <p>Microsoft Foundry で、エージェントの<span class="keyword">会話全体を品質基準に照らして評価</span>できる「マルチターン評価」がパブリックプレビューとして発表されました。従来の評価は個々の応答 (ターン) 単位が中心でしたが、本機能により<span class="keyword">複数ターンにまたがる会話を 1 つの単位として評価</span>できるようになります。</p>
+        <div class="highlight-box">
+            <strong>💡 なぜ会話レベルの評価が必要か</strong><br>
+            個々の応答は単体では正しく見えても、会話全体ではユーザーの要求を満たせていないケースがあります。公式ドキュメントの例では、パスワードリセットのサポート会話で「エージェントがリセットリンクの再送を 3 回繰り返し、代替手段を試さずユーザーの問題が未解決のまま」というパターンが示されています。ターンレベル評価では最後の応答 (丁寧でアクションも取っている) が高スコアになる一方、<strong>会話レベルの顧客満足度評価ならこの問題を検出できます</strong>。
+        </div>
+        <p>マルチターン評価では、評価実行 (run) の <code class="inline">evaluation_level</code> パラメーターで「各ターンを個別に評価」するか「会話全体を評価」するかを選択できます。会話データは <code class="inline">messages</code> 配列 (ツール呼び出し・ツール定義を含む) を持つ JSONL として用意し、Foundry SDK で評価を実行します。</p>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>評価が<strong>ターン (個々のクエリ・応答ペア) 単位</strong>であり、会話全体としてのタスク未解決、ユーザーの不満の蓄積、ツール呼び出しのリグレッションといった問題を検出できなかった</li>
+                    <li>単体では適切に見える応答が、会話の文脈ではユーザーの要求を満たしていないケース (同じ失敗アクションの繰り返しなど) を見逃していた</li>
+                </ul>
+            </div>
+            <div class="ba-arrow">➜</div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li><code class="inline">evaluation_level</code> を <code class="inline">conversation</code> に設定することで、<strong>会話全体を 1 つの単位としてスコアリング</strong>できるようになった</li>
+                    <li>タスク完了・顧客満足度・一貫性・根拠性・ツール使用品質などの会話レベルエバリュエーターにより、タスクの未完了、ユーザーの不満、ツール呼び出しのリグレッションを検出できるようになった</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2>🏗️ アーキテクチャ図</h2>
+        <div class="mermaid-container">
+<pre class="mermaid">
+flowchart LR
+    A([🧑 ユーザー ↔ 🤖 エージェント会話]) --> B[📄 JSONL データセット<br/>messages 配列 + tool_definitions]
+    B --> C[🛠️ Foundry SDK<br/>評価 Run 作成]
+    C --> D{⚙️ evaluation_level}
+    D -->|turn| E[🔍 ターン単位で評価]
+    D -->|conversation| F[🔍 会話全体で評価<br/>Task Completion / CSAT / Coherence など]
+    E --> G[✅ Pass / ❌ Fail + 理由]
+    F --> G
+    G --> H[📊 Foundry ポータルで結果確認]
+</pre>
+        </div>
+        <p>エージェントの会話ログを <code class="inline">messages</code> 配列を含む JSONL として用意し、Foundry SDK で評価を実行します。<code class="inline">evaluation_level</code> の指定により、ターン単位または会話全体のどちらのレベルで品質判定するかを切り替えられます。</p>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2>⚙️ サービスアップデートの詳細 — 主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🎚️</div>
+            <div class="feature-content">
+                <h4>1. 評価レベルの選択 (<code class="inline">evaluation_level</code>)</h4>
+                <ul>
+                    <li>評価 Run に <code class="inline">"turn"</code> (各ターンを独立して評価) または <code class="inline">"conversation"</code> (会話全体を評価) を指定可能。<strong>省略時のデフォルトは <code class="inline">"turn"</code></strong></li>
+                    <li>会話レベルに対応しないエバリュエーター (例: <code class="inline">builtin.fluency</code>、<code class="inline">builtin.relevance</code>) を <code class="inline">conversation</code> レベルで指定した場合、評価全体が失敗するのではなく該当エバリュエーターがスキップされる</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">📏</div>
+            <div class="feature-content">
+                <h4>2. 会話レベル対応の組み込みエバリュエーター</h4>
+                <ul>
+                    <li>ターンレベルと会話レベルの両方に対応: <code class="inline">builtin.output_quality</code>、<code class="inline">builtin.tool_use_quality</code>、<code class="inline">builtin.deflection_rate</code>、<code class="inline">builtin.customer_satisfaction</code>、<code class="inline">builtin.task_completion</code>、<code class="inline">builtin.coherence</code>、<code class="inline">builtin.groundedness</code></li>
+                    <li><code class="inline">output_quality</code> と <code class="inline">tool_use_quality</code> は複数の品質次元を <strong>1 回の LLM ジャッジ呼び出しでまとめて評価</strong>するコンポジットエバリュエーター</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔧</div>
+            <div class="feature-content">
+                <h4>3. ツール呼び出しを含む会話データへの対応</h4>
+                <ul>
+                    <li>JSONL の各行に会話全体の <code class="inline">messages</code> 配列を格納。ツール呼び出し (<code class="inline">tool_calls</code>)、ツール結果 (<code class="inline">role: tool</code>)、ツール定義 (<code class="inline">tool_definitions</code>) も含められる</li>
+                    <li>ツール呼び出しのリグレッション検出など、<strong>エージェントのツール利用プロセス全体の品質評価</strong>が可能</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔀</div>
+            <div class="feature-content">
+                <h4>4. 複数の評価ワークフロー</h4>
+                <ul>
+                    <li>ローカルの会話トレースやテストデータ (JSONL、<code class="inline">file_id</code> / <code class="inline">file_content</code>)</li>
+                    <li>Application Insights 上のデプロイ済み会話・サンプリングされた本番トラフィックの評価 (<code class="inline">azure_ai_trace_data_source_preview</code>)</li>
+                    <li>合成テスト会話のシミュレーション生成 (<code class="inline">azure_ai_user_conversation_simulation</code>)</li>
+                </ul>
+            </div>
+        </div>
+
+        <h3>🔍 ターンレベル評価との比較</h3>
+        <div class="table-wrap">
+            <table>
+                <tr><th>観点</th><th>ターンレベル</th><th>会話レベル</th></tr>
+                <tr><td><strong>スコープ</strong></td><td>個々のクエリ・応答ペア</td><td>複数のやり取りを含む会話全体</td></tr>
+                <tr><td><strong>メトリクス</strong></td><td>応答ごとの品質・安全性</td><td>会話全体の成果・ユーザー満足度</td></tr>
+                <tr><td><strong>データ形式</strong></td><td><code class="inline">query</code> / <code class="inline">response</code> フィールドの JSONL</td><td>会話全体の <code class="inline">messages</code> 配列を含む JSONL</td></tr>
+                <tr><td><strong>ユースケース</strong></td><td>個々のモデル応答のテスト</td><td>エンドツーエンドのエージェント体験のテスト</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2>📐 技術仕様</h2>
+        <div class="table-wrap">
+            <table>
+                <tr><th>項目</th><th>詳細</th></tr>
+                <tr><td><strong>評価レベル</strong></td><td><code class="inline">turn</code> (デフォルト) / <code class="inline">conversation</code></td></tr>
+                <tr><td><strong>データ形式</strong></td><td>JSONL (各行に <code class="inline">messages</code> 配列、任意で <code class="inline">tool_definitions</code>)</td></tr>
+                <tr><td><strong>メッセージ構造</strong></td><td>OpenAI メッセージ形式 (<code class="inline">role</code>: user / assistant / system / tool、<code class="inline">content</code>、<code class="inline">tool_calls</code>)</td></tr>
+                <tr><td><strong>会話レベル対応エバリュエーター</strong></td><td><code class="inline">output_quality</code>、<code class="inline">tool_use_quality</code>、<code class="inline">deflection_rate</code>、<code class="inline">customer_satisfaction</code>、<code class="inline">task_completion</code>、<code class="inline">coherence</code>、<code class="inline">groundedness</code></td></tr>
+                <tr><td><strong>実行方法</strong></td><td>Foundry SDK (Python <code class="inline">azure-ai-projects&gt;=2.2.0</code>、C#、JavaScript/TypeScript)、REST API (<code class="inline">2025-11-15-preview</code>)</td></tr>
+                <tr><td><strong>コンポジットエバリュエーターの判定</strong></td><td>適用されたすべてのコンポーネントが Pass の場合のみ Pass。コンポーネントごとのスコア・理由も返却</td></tr>
+                <tr><td><strong>対応ツール (エージェント評価)</strong></td><td>File Search、Function Tool、MCP、Knowledge-based MCP (Bing Grounding、Code Interpreter などは一部エバリュエーターで制限あり)</td></tr>
+            </table>
+        </div>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2>🛠️ 設定方法</h2>
+
+        <h3>✅ 前提条件</h3>
+        <ol style="padding-left: 24px;">
+            <li>Foundry プロジェクトとクラウド評価の前提条件 (SDK クライアントのセットアップ) を完了していること</li>
+            <li><code class="inline">messages</code> 配列を含む会話データ (JSONL) を用意していること</li>
+            <li>選択した評価レベルに対応するエバリュエーターを使用すること</li>
+        </ol>
+
+        <h3>🐍 Foundry SDK (Python)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span></div>
+            <pre><code class="language-bash">pip install "azure-ai-projects&gt;=2.2.0"</code></pre>
+        </div>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">python</span></div>
+            <pre><code class="language-python"># 会話データ (JSONL) をアップロードし、会話レベルで評価を実行
+data_id = project_client.datasets.upload_file(
+    name="multiturn-conversation-data",
+    version="1",
+    file_path="./sample_data_multiturn_conversations.jsonl",
+).id
+
+eval_object = openai_client.evals.create(
+    name="Multi-turn Conversation Evaluation",
+    data_source_config=data_source_config,   # messages / tool_definitions のスキーマ
+    testing_criteria=testing_criteria,       # builtin.task_completion などの評価基準
+)
+
+eval_run = openai_client.evals.runs.create(
+    eval_id=eval_object.id,
+    name="multiturn-conversation-run",
+    data_source=CreateEvalJSONLRunDataSourceParam(
+        type="jsonl",
+        source=SourceFileID(type="file_id", id=data_id),
+    ),
+    extra_body={"evaluation_level": "conversation"},  # 会話レベルを指定
+)</code></pre>
+        </div>
+
+        <h3>📄 会話データの例 (JSONL)</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">json</span></div>
+            <pre><code class="language-json">{"messages": [{"role": "user", "content": "What's my account balance?"}, {"role": "assistant", "content": "Your current balance is $1,234.56."}, {"role": "user", "content": "Thanks!"}, {"role": "assistant", "content": "You're welcome! Is there anything else?"}]}</code></pre>
+        </div>
+        <p>ツールを使うエージェントの場合は、<code class="inline">tool_calls</code> を含む assistant メッセージ、<code class="inline">role: tool</code> のツール結果、および <code class="inline">tool_definitions</code> を同じ行に含めます。</p>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2>🌟 メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-col">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li><strong>ユーザー体験全体</strong> (タスクが最終的に解決されたか、ユーザーが満足したか) を品質基準として計測でき、エージェントの実運用品質を定量化できる</li>
+                    <li>ターンレベルでは見逃されていた「<strong>丁寧だが問題を解決しないエージェント</strong>」のような品質問題を出荷前・運用中に検出できる</li>
+                </ul>
+            </div>
+            <div class="merit-col">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li><code class="inline">evaluation_level</code> パラメーターの切り替えだけでターン評価と会話評価を使い分けられ、<strong>既存の評価パイプラインに組み込みやすい</strong></li>
+                    <li>コンポジットエバリュエーター (<code class="inline">output_quality</code>、<code class="inline">tool_use_quality</code>) により複数の品質次元を 1 回の LLM ジャッジ呼び出しで評価でき、<strong>評価コストとレイテンシを削減</strong>できる</li>
+                    <li>データセット評価だけでなく、Application Insights の本番トレース評価やシミュレーション会話の評価にも同じ仕組みを利用できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2>⚠️ デメリット・制約事項</h2>
+        <div class="warning-box">
+            <ul>
+                <li><strong>パブリックプレビュー</strong>のため SLA はなく、本番ワークロードでの利用は推奨されない (Azure プレビューの追加利用条件が適用される)</li>
+                <li>会話レベルに対応するのは<strong>一部の組み込みエバリュエーターのみ</strong>。ターン専用エバリュエーター (<code class="inline">builtin.fluency</code>、<code class="inline">builtin.relevance</code> など) は <code class="inline">evaluation_level="conversation"</code> ではスキップされる</li>
+                <li>Foundry IQ (Azure AI Search)、Bing Grounding、Code Interpreter、SharePoint Grounding などのツール呼び出しを含む会話では、<code class="inline">tool_call_accuracy</code> や <code class="inline">groundedness</code> など一部エバリュエーターのサポートが限定的</li>
+                <li>Azure OpenAI グレーダー (<code class="inline">label_model</code>、<code class="inline">python_grader</code>、<code class="inline">score_model</code>、<code class="inline">string_check</code>、<code class="inline">text_similarity</code>) は <code class="inline">messages</code> 入力形式に対応していない</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2>💡 ユースケース</h2>
+
+        <div class="usecase-card">
+            <h4>🎧 ユースケース 1: カスタマーサポートエージェントの会話品質ゲート</h4>
+            <div class="usecase-step">
+                <span class="label">シナリオ</span>
+                <span>サポートエージェントが複数ターンの会話でユーザーの問題を実際に解決できているかを、リリース前のテストデータセットで検証する。</span>
+            </div>
+            <div class="usecase-step">
+                <span class="label">実装例</span>
+                <span>過去の会話ログを <code class="inline">messages</code> 配列の JSONL に変換し、<code class="inline">builtin.task_completion</code> と <code class="inline">builtin.customer_satisfaction</code> を <code class="inline">evaluation_level="conversation"</code> で実行。Pass/Fail 判定を <strong>CI/CD の品質ゲート</strong>として利用する。</span>
+            </div>
+            <div class="usecase-step effect">
+                <span class="label">効果</span>
+                <span>「同じ失敗アクションの繰り返し」「タスク未解決のまま会話終了」といったターンレベル評価では検出できない品質問題を<strong>出荷前に発見</strong>できる。</span>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <h4>🔄 ユースケース 2: ツール呼び出しリグレッションの検出</h4>
+            <div class="usecase-step">
+                <span class="label">シナリオ</span>
+                <span>エージェントのプロンプトやツール定義を変更した際に、会話全体を通じたツール利用品質が劣化していないかを確認する。</span>
+            </div>
+            <div class="usecase-step">
+                <span class="label">実装例</span>
+                <span><code class="inline">tool_definitions</code> を含む会話データセットに対して <code class="inline">builtin.tool_use_quality</code> (ツール選択・入力精度・出力活用・呼び出し成功をまとめて評価) を会話レベルで実行し、変更前後の結果を比較する。</span>
+            </div>
+            <div class="usecase-step effect">
+                <span class="label">効果</span>
+                <span>ツール呼び出しのリグレッションを変更のたびに<strong>自動検出</strong>し、エージェント改善の反復サイクルを安全に回せる。</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 / リージョン ===== -->
+    <section class="section">
+        <h2>💰 料金</h2>
+        <p>Foundry のオブザーバビリティ機能 (リスク・安全性評価、エージェントプレイグラウンドでの評価など) は<span class="keyword">消費量ベース</span>で課金されます。また、AI 支援エバリュエーターは <span class="keyword">LLM ジャッジモデルのトークン消費</span>が発生します。詳細は公式の料金ページを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://azure.microsoft.com/pricing/details/foundryobservability/" target="_blank" rel="noopener">Microsoft Foundry Observability 料金ページ</a></li>
+        </ul>
+    </section>
+
+    <section class="section">
+        <h2>🌍 利用可能リージョン</h2>
+        <p>AI 支援エバリュエーターのリージョン対応、レート制限、仮想ネットワーク対応は公式ドキュメントを参照してください。</p>
+        <ul class="link-list">
+            <li><a href="https://learn.microsoft.com/azure/ai-foundry/concepts/evaluation-regions-limits-virtual-network" target="_blank" rel="noopener">Region support, rate limits, and virtual network support for evaluation</a></li>
+        </ul>
+    </section>
+
+    <!-- ===== 関連サービス ===== -->
+    <section class="section">
+        <h2>🔗 関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h5>🤖 Foundry Agent Service</h5>
+                <p>マルチターン会話、ツール呼び出し、状態管理を備えたエージェントの構築基盤。本機能の主な評価対象。</p>
+            </div>
+            <div class="related-card">
+                <h5>📈 Azure Monitor Application Insights</h5>
+                <p>本番トレースの収集先。デプロイ済み会話・サンプリングされた本番トラフィックの会話レベル評価に利用。</p>
+            </div>
+            <div class="related-card">
+                <h5>🧪 Foundry 組み込みエバリュエーター</h5>
+                <p>Task Completion、Customer Satisfaction、Coherence、Groundedness、Tool Use Quality など、会話レベル評価を構成する評価器群。</p>
+            </div>
+            <div class="related-card">
+                <h5>♻️ 継続的評価 (Continuous evaluation)</h5>
+                <p>本番トラフィックをサンプリングして品質・安全性を継続評価する仕組み。会話レベル評価と組み合わせて運用中の品質監視に利用。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2>📝 まとめ</h2>
+        <div class="summary-box">
+            <p>Microsoft Foundry のマルチターン評価により、エージェント評価の単位が「個々の応答」から「<span class="keyword">会話全体</span>」へと拡張されました。<code class="inline">evaluation_level="conversation"</code> を指定するだけで、<strong>タスク完了・顧客満足度・一貫性・根拠性・ツール使用品質</strong>といった観点から会話全体を評価でき、ターンレベル評価では見逃されるタスク未解決やユーザーの不満の蓄積を検出できます。</p>
+            <p>エージェントを本番運用している、または運用を計画している組織は、既存の評価パイプラインに会話レベル評価を追加し、<strong>CI/CD の品質ゲート</strong>や<strong>本番トラフィックの継続評価</strong>への組み込みを検討することを推奨します。なおパブリックプレビューのため、対応エバリュエーターの範囲やツールサポートの制限を確認のうえ利用してください。</p>
+        </div>
+        <div class="tag-list">
+            <span class="tag">AI + machine learning</span>
+            <span class="tag">Microsoft Foundry</span>
+            <span class="tag">Features</span>
+            <span class="tag">Microsoft Ignite</span>
+            <span class="tag">In preview</span>
+            <span class="tag">Evaluation</span>
+            <span class="tag">Agent</span>
+        </div>
+    </section>
+
+    <!-- ===== フッター ===== -->
+    <footer>
+        <strong>出典・参考リンク</strong>
+        <ul>
+            <li><a href="https://azure.microsoft.com/updates?id=581746" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates #581746)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/foundry/observability/how-to/cloud-evaluation-conversations" target="_blank" rel="noopener">Evaluate conversation datasets with the Microsoft Foundry SDK (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/ai-foundry/concepts/evaluation-evaluators/agent-evaluators" target="_blank" rel="noopener">Agent Evaluators for Generative AI (Microsoft Learn)</a></li>
+            <li><a href="https://learn.microsoft.com/azure/ai-foundry/concepts/evaluation-approach-gen-ai" target="_blank" rel="noopener">Observability in Generative AI (Microsoft Learn)</a></li>
+            <li><a href="https://azure.microsoft.com/pricing/details/foundryobservability/" target="_blank" rel="noopener">料金ページ (Foundry Observability)</a></li>
+        </ul>
+        <p style="margin-top: 12px;">元レポート: <code class="inline">reports/2026/2026-11-20-foundry-multi-turn-evaluation.md</code> | 生成日: 2026-11-20</p>
+    </footer>
+
+</div>
+
+<script>
+mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+        primaryColor: '#0078D4',
+        primaryTextColor: '#323130',
+        primaryBorderColor: '#0078D4',
+        lineColor: '#605E5C',
+        mainBkg: '#E6F2FF',
+        nodeBorder: '#0078D4',
+        edgeLabelBackground: '#FFFFFF',
+        clusterBkg: '#EFF6FC',
+        fontFamily: "'Noto Sans JP', 'Segoe UI', sans-serif",
+        background: '#FFFFFF'
+    },
+    flowchart: { htmlLabels: true, curve: 'basis' }
+});
+hljs.highlightAll();
+</script>
+</body>
+</html>

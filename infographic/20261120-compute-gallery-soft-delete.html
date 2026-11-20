@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Compute Gallery: ソフト削除 (Soft Delete) の一般提供開始</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 40px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::after {
+    content: "♻️";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+
+.hero .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.service-badge {
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+
+.badge-ga { background: var(--ms-green); }
+
+.date-badge {
+    background: rgba(255, 255, 255, 0.18);
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+}
+
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 12px;
+}
+
+.hero p.subtitle {
+    font-size: 15px;
+    opacity: 0.92;
+    max-width: 760px;
+}
+
+/* ===== Sections ===== */
+.section {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    padding: 28px;
+    margin: 24px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+}
+
+.section-title .icon {
+    font-size: 26px;
+}
+
+h3.sub-title {
+    font-size: 17px;
+    color: var(--ms-blue-800);
+    margin: 20px 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.keyword {
+    color: var(--azure-blue);
+    font-weight: 700;
+}
+
+.strong-red { color: var(--ms-red); font-weight: 700; }
+.strong-green { color: var(--ms-green); font-weight: 700; }
+
+code.inline {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: var(--ms-blue-800);
+}
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+.stat-value { font-size: 30px; font-weight: bold; line-height: 1.2; }
+.stat-value small { font-size: 16px; font-weight: 500; }
+.stat-label { font-size: 13px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin: 6px 0; }
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+
+.feature-content h4 { font-size: 16px; color: var(--ms-blue-800); margin-bottom: 6px; }
+.feature-content ul { padding-left: 18px; font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content li { margin: 4px 0; }
+
+/* ===== Lifecycle flow ===== */
+.lifecycle-flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    justify-content: center;
+    gap: 8px;
+    margin: 20px 0;
+}
+
+.lifecycle-step {
+    flex: 1;
+    min-width: 170px;
+    border-radius: 10px;
+    padding: 14px;
+    text-align: center;
+    border: 2px solid var(--ms-border);
+    background: var(--ms-surface);
+}
+
+.lifecycle-step .step-icon { font-size: 28px; }
+.lifecycle-step .step-name { font-weight: 700; margin: 6px 0 4px; font-size: 15px; }
+.lifecycle-step .step-desc { font-size: 12.5px; color: var(--ms-text-secondary); }
+
+.step-active { border-color: var(--azure-blue); background: var(--ms-blue-100); }
+.step-retention { border-color: var(--ms-green); background: #E8F5E9; }
+.step-grace { border-color: var(--ms-orange); background: #FFF4E5; }
+.step-deleted { border-color: var(--ms-red); background: #FFEBEE; }
+
+.lifecycle-arrow {
+    display: flex;
+    align-items: center;
+    font-size: 22px;
+    color: var(--azure-blue);
+    font-weight: 700;
+}
+
+/* ===== Tables ===== */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+}
+
+th {
+    background: var(--azure-blue);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 500;
+}
+
+td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+
+tr:nth-child(even) td { background: var(--ms-blue-100); }
+
+/* ===== Region chips ===== */
+.region-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.region-chip {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-900);
+    padding: 5px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.region-chip.jp {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    font-weight: 700;
+}
+
+/* ===== Use cases ===== */
+.usecase-card {
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 16px 0;
+    background: var(--ms-surface);
+}
+
+.usecase-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.usecase-number {
+    background: var(--azure-blue);
+    color: white;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+.usecase-header h4 { font-size: 17px; color: var(--azure-dark-blue); }
+
+.scenario-box {
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+.effect-box {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 16px;
+    font-size: 14px;
+    margin: 10px 0;
+}
+
+/* ===== Merit / Demerit ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 16px 0;
+}
+
+.merit-col {
+    border-radius: 10px;
+    padding: 16px 18px;
+}
+
+.merit-biz { background: var(--ms-blue-100); border-top: 4px solid var(--azure-blue); }
+.merit-tech { background: #F3EEFB; border-top: 4px solid var(--ms-purple); }
+
+.merit-col h4 { margin-bottom: 10px; font-size: 15px; }
+.merit-biz h4 { color: var(--ms-blue-800); }
+.merit-tech h4 { color: var(--ms-purple); }
+.merit-col ul { padding-left: 18px; font-size: 14px; }
+.merit-col li { margin: 6px 0; }
+
+.caution-list { list-style: none; }
+.caution-list li {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+/* ===== Code blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+
+.code-lang {
+    color: #9CDCFE;
+    font-weight: bold;
+}
+
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13.5px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Mermaid ===== */
+.mermaid-wrapper {
+    background: #FFFFFF;
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    overflow-x: auto;
+}
+
+pre.mermaid {
+    background: #FFFFFF;
+    text-align: center;
+}
+
+/* ===== Steps (Portal) ===== */
+.step-list { counter-reset: step; list-style: none; }
+.step-list li {
+    position: relative;
+    padding: 10px 14px 10px 52px;
+    margin: 8px 0;
+    background: var(--ms-surface-tertiary);
+    border-radius: 8px;
+    font-size: 14px;
+}
+.step-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--azure-blue);
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* ===== Related services ===== */
+.related-card {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    background: var(--ms-surface-secondary);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.related-card .rel-icon { font-size: 22px; }
+.related-card h4 { font-size: 14.5px; color: var(--ms-blue-800); margin-bottom: 4px; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+
+/* ===== Links / Footer ===== */
+a { color: var(--azure-blue); }
+
+.link-list { list-style: none; }
+.link-list li {
+    padding: 8px 0 8px 28px;
+    position: relative;
+    border-bottom: 1px dashed var(--ms-border);
+    font-size: 14px;
+}
+.link-list li::before {
+    content: "🔗";
+    position: absolute;
+    left: 0;
+}
+
+.tag-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.tag {
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    color: var(--ms-text-secondary);
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-size: 12.5px;
+}
+
+footer {
+    background: var(--azure-dark-blue);
+    color: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 32px 0 8px;
+    font-size: 13px;
+}
+
+footer h4 { font-size: 14px; margin-bottom: 10px; }
+footer a { color: var(--azure-light-blue); word-break: break-all; }
+footer ul { list-style: none; }
+footer li { margin: 5px 0; }
+footer .footer-note { margin-top: 14px; opacity: 0.8; }
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 24px; }
+    .lifecycle-flow { flex-direction: column; }
+    .lifecycle-arrow { transform: rotate(90deg); justify-content: center; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== タイトルエリア ===== -->
+    <header class="hero">
+        <div class="meta-row">
+            <span class="service-badge">Azure Compute Gallery</span>
+            <span class="badge badge-ga">Launched (GA)</span>
+            <span class="date-badge">📅 リリース日: 2026-11-19</span>
+            <span class="date-badge">🎪 Microsoft Ignite 発表</span>
+        </div>
+        <h1>ソフト削除 (Soft Delete) の一般提供開始<br>誤削除したイメージバージョンを復旧可能に</h1>
+        <p class="subtitle">機能: Soft delete in Azure Compute Gallery — 削除されたイメージバージョンを完全削除前に Undelete で復旧。Private / Direct Shared / Community のすべてのギャラリータイプで利用可能。</p>
+    </header>
+
+    <!-- ===== 概要 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📋</span>概要</h2>
+        <p>
+            Azure Compute Gallery の<span class="keyword">ソフト削除 (Soft Delete)</span> 機能が一般提供 (GA) となった。本機能により、<span class="keyword">誤って削除されたイメージバージョンを完全削除前に復旧</span>できるようになる。Microsoft Ignite に合わせて発表されたアップデートであり、<span class="keyword">Private ギャラリー、Direct Shared ギャラリー、Community ギャラリー</span>のすべてのギャラリータイプで利用可能。
+        </p>
+        <div class="highlight-box" style="margin-top:16px;">
+            ソフト削除が有効なギャラリーでイメージバージョンを削除すると、即座には削除されず「ソフト削除状態」に入り、<strong>「保持期間 (Retention Period) → 猶予期間 (Grace Period) → 完全削除」</strong>というライフサイクルをたどる。API バージョン <code class="inline">2026-03-03</code> を使用すると、<span class="strong-green">保持期間中はソフト削除済みイメージからの VM / VMSS のデプロイ・スケールアウトも引き続き可能</span>で、ゴールデンイメージの誤削除が運用中のスケールアウトを止めるリスクを軽減できる。
+        </div>
+        <p style="font-size:14px; color:var(--ms-text-secondary);">
+            ※ ソフト削除自体は API バージョン <code class="inline">2024-03-03</code> から利用でき、保持期間・猶予期間のカスタマイズや保持期間中のイメージ利用 (consumption) は API バージョン <code class="inline">2026-03-03</code> で追加された。
+        </p>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">7〜365<small> 日</small></div>
+                <div class="stat-label">保持期間 (デフォルト 7 日)<br>復旧可・デプロイ可</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">7〜90<small> 日</small></div>
+                <div class="stat-label">猶予期間 (デフォルト 7 日)<br>復旧のみ可</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">24<small> リージョン</small></div>
+                <div class="stat-label">GA 提供リージョン<br>(Japan East 含む)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">無料</div>
+                <div class="stat-label">ソフト削除機能自体は<br>追加コストなし</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>イメージバージョンを削除すると<strong>即座に完全削除</strong>され、誤削除時の復旧手段がなかった (リソースロックや <code class="inline">safetyProfile</code> などの予防策しかなかった)</li>
+                    <li>ゴールデンイメージの誤削除により、VMSS のスケールアウトや VM デプロイが即座に失敗し、<strong>ワークフローの中断やデータ損失</strong>につながるリスクがあった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>削除されたイメージバージョンがソフト削除状態として保持され、<code class="inline">hardDeletionTargetTime</code> まで<strong>復旧 (Undelete) が可能</strong>に</li>
+                    <li>API <code class="inline">2026-03-03</code> では保持期間中の <strong>VM / VMSS デプロイ・スケールアウトを継続</strong>でき、誤削除がデプロイパイプラインを即座に停止させない</li>
+                    <li>保持期間 (7〜365 日)・猶予期間 (7〜90 日) を<strong>組織のガバナンス要件に合わせて設定可能</strong></li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== アーキテクチャ図 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図 — ソフト削除のライフサイクル</h2>
+        <div class="mermaid-wrapper">
+<pre class="mermaid">
+flowchart TD
+    subgraph Before["❌ 従来: ソフト削除なし"]
+        B1["🖼️ イメージバージョン"] -->|"🗑️ 削除"| B2["💥 即時完全削除<br/>(復旧不可)"]
+    end
+    subgraph After["✅ 以後: ソフト削除 (GA)"]
+        A1["🖼️ イメージバージョン"] -->|"🗑️ 削除"| A2["♻️ ソフト削除状態<br/>保持期間 7〜365 日<br/>(デプロイ可・復旧可)"]
+        A2 --> A3["⏳ 猶予期間 7〜90 日<br/>(デプロイ不可・復旧可)"]
+        A3 -->|"期限到達"| A4["💀 完全削除"]
+        A2 -. "🔄 Undelete" .-> A1
+        A3 -. "🔄 Undelete" .-> A1
+    end
+</pre>
+        </div>
+        <p style="font-size:14px;">
+            従来はイメージバージョンの削除が<span class="strong-red">即時かつ不可逆</span>だったが、ソフト削除の GA により、<span class="strong-green">保持期間・猶予期間中であれば Undelete 操作で復旧</span>できるようになった。保持期間中 (API <code class="inline">2026-03-03</code> 使用時) はソフト削除済みイメージからのデプロイも継続可能。
+        </p>
+
+        <div class="lifecycle-flow">
+            <div class="lifecycle-step step-active">
+                <div class="step-icon">🖼️</div>
+                <div class="step-name">Active</div>
+                <div class="step-desc">通常運用中の<br>イメージバージョン</div>
+            </div>
+            <div class="lifecycle-arrow">➡</div>
+            <div class="lifecycle-step step-retention">
+                <div class="step-icon">♻️</div>
+                <div class="step-name">保持期間</div>
+                <div class="step-desc">7〜365 日 (既定 7 日)<br>復旧可 ✔ / デプロイ可 ✔<br>(API 2026-03-03)</div>
+            </div>
+            <div class="lifecycle-arrow">➡</div>
+            <div class="lifecycle-step step-grace">
+                <div class="step-icon">⏳</div>
+                <div class="step-name">猶予期間</div>
+                <div class="step-desc">7〜90 日 (既定 7 日)<br>復旧可 ✔ / デプロイ不可 ✖</div>
+            </div>
+            <div class="lifecycle-arrow">➡</div>
+            <div class="lifecycle-step step-deleted">
+                <div class="step-icon">💀</div>
+                <div class="step-name">完全削除</div>
+                <div class="step-desc">hardDeletionTargetTime<br>到達で復旧不可に</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 主要機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+        <div class="feature-card">
+            <div class="feature-icon">🔄</div>
+            <div class="feature-content">
+                <h4>1. 誤削除からの復旧 (Undelete)</h4>
+                <ul>
+                    <li>ソフト削除されたイメージバージョンは、完全削除予定時刻 (<code class="inline">hardDeletionTargetTime</code>) まで Azure Portal / REST / CLI (<code class="inline">az sig image-version undelete</code>) / PowerShell (<code class="inline">Restore-AzGalleryImageVersion</code>) で復旧可能</li>
+                    <li>ソフト削除有効時に削除したイメージは、その後ギャラリーのソフト削除を無効化しても保持期間中は復旧可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🚀</div>
+            <div class="feature-content">
+                <h4>2. 保持期間中のイメージ利用継続 (API 2026-03-03)</h4>
+                <ul>
+                    <li>保持期間中はソフト削除済みイメージからの VM / VMSS 作成、既存 VMSS のスケールアウトが可能</li>
+                    <li><code class="inline">2026-03-03</code> より前の API バージョンでは、保持期間中でもソフト削除済みイメージからのデプロイは不可</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-content">
+                <h4>3. 保持期間・猶予期間のカスタマイズ</h4>
+                <ul>
+                    <li>保持期間: 7〜365 日 (デフォルト 7 日)。期間中は復旧・デプロイの両方が可能</li>
+                    <li>猶予期間: 7〜90 日 (デフォルト 7 日)。保持期間終了後に開始し、復旧のみ可能 (デプロイは不可)</li>
+                    <li>保持期間の変更は、変更後にソフト削除されたイメージにのみ適用 (既存のソフト削除済みイメージには影響しない)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <div class="feature-content">
+                <h4>4. ソフト削除済みイメージの一覧表示とライフサイクルプロパティ</h4>
+                <ul>
+                    <li><code class="inline">az sig image-version list-soft-deleted</code> / <code class="inline">Get-AzGallerySoftDeletedImageVersion</code> / Portal の「Show soft deleted versions」トグルで一覧表示</li>
+                    <li>API <code class="inline">2026-03-03</code> から <code class="inline">softDeleteTime</code>、<code class="inline">consumptionEndTime</code>、<code class="inline">hardDeletionTargetTime</code>、<code class="inline">imageState</code> (<code class="inline">Active</code> / <code class="inline">SoftDeleted</code>) の各プロパティで状態を確認可能</li>
+                </ul>
+            </div>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">🗑️</div>
+            <div class="feature-content">
+                <h4>5. ハード削除 (バイパス) オプション</h4>
+                <ul>
+                    <li>復旧ウィンドウが不要な場合、<code class="inline">bypassSoftDelete=true</code> でソフト削除を経由せず即時完全削除が可能</li>
+                    <li>ソフト削除状態のイメージも、保持期間・猶予期間の終了を待たずにハード削除でき、保持コストを打ち切れる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 技術仕様 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔧</span>技術仕様</h2>
+        <table>
+            <tr><th style="width:36%;">項目</th><th>詳細</th></tr>
+            <tr><td>最小 API バージョン</td><td><code class="inline">2024-03-03</code> (ソフト削除の基本機能)</td></tr>
+            <tr><td>推奨 API バージョン</td><td><code class="inline">2026-03-03</code> (保持期間・猶予期間のカスタマイズ、保持期間中のデプロイ、ライフサイクルプロパティ)</td></tr>
+            <tr><td>保持期間 (Retention Period)</td><td>7〜365 日、デフォルト 7 日。復旧可・デプロイ可 (API <code class="inline">2026-03-03</code>)</td></tr>
+            <tr><td>猶予期間 (Grace Period)</td><td>7〜90 日、デフォルト 7 日。復旧可・デプロイ不可</td></tr>
+            <tr><td>対応ギャラリータイプ</td><td>Private / Direct Shared Gallery / Community Gallery</td></tr>
+            <tr><td>対象リソース</td><td>Azure Compute Gallery のイメージのみ (VM Apps の復旧は非対応)</td></tr>
+            <tr><td>設定プロパティ (REST)</td><td><code class="inline">properties.softDeletePolicy.isSoftDeleteEnabled</code> / <code class="inline">retentionPeriodInDays</code> / <code class="inline">gracePeriodInDays</code></td></tr>
+            <tr><td>ライフサイクルプロパティ</td><td><code class="inline">softDeleteTime</code> / <code class="inline">consumptionEndTime</code> / <code class="inline">hardDeletionTargetTime</code> / <code class="inline">imageState</code></td></tr>
+            <tr><td>有効化できるユーザー</td><td>サブスクリプション所有者、またはサブスクリプション / ギャラリーレベルで Compute Gallery Sharing Admin ロールを割り当てられたユーザー・サービスプリンシパル</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== 設定方法 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <h3 class="sub-title">📝 前提条件</h3>
+        <ol class="step-list">
+            <li>API バージョン <code class="inline">2024-03-03</code> 以降 (保持期間・猶予期間のカスタマイズには <code class="inline">2026-03-03</code>)</li>
+            <li>サブスクリプション所有者、または Compute Gallery Sharing Admin ロール (サブスクリプションまたはギャラリーレベル)</li>
+            <li>ソフト削除が GA 提供されているリージョンのギャラリーであること (下記「利用可能リージョン」参照)</li>
+        </ol>
+
+        <h3 class="sub-title">💻 Azure CLI</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span>Azure CLI</span></div>
+<pre><code class="language-bash"># ソフト削除を有効にしてギャラリーを作成 (保持期間 7 日、猶予期間 30 日)
+az sig create \
+    --resource-group myResourceGroup \
+    --gallery-name myGallery \
+    --location eastasia \
+    --soft-delete true \
+    --soft-delete-retention-period 7 \
+    --soft-delete-grace-period 30
+
+# ソフト削除済みイメージバージョンの一覧表示
+az sig image-version list-soft-deleted \
+    --resource-group myResourceGroup \
+    --gallery-name myGallery \
+    --gallery-image-definition myImageDefinition
+
+# ソフト削除済みイメージバージョンの復旧 (location は元のホームリージョン)
+az sig image-version undelete \
+    --resource-group myResourceGroup \
+    --gallery-name myGallery \
+    --gallery-image-definition myImageDefinition \
+    --gallery-image-version 1.0.0 \
+    --location eastasia</code></pre>
+        </div>
+
+        <h3 class="sub-title">💻 Azure PowerShell</h3>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">powershell</span><span>Azure PowerShell</span></div>
+<pre><code class="language-powershell"># ソフト削除を有効にしてギャラリーを作成
+New-AzGallery `
+    -ResourceGroupName "myResourceGroup" `
+    -Name "myGallery" `
+    -Location "eastasia" `
+    -EnableSoftDelete `
+    -SoftDeleteRetentionPeriodInDays 7 `
+    -SoftDeleteGracePeriodInDays 30
+
+# ソフト削除済みイメージバージョンの復旧
+Restore-AzGalleryImageVersion `
+    -ResourceGroupName "myResourceGroup" `
+    -GalleryName "myGallery" `
+    -GalleryImageDefinitionName "myImageDefinition" `
+    -Name "1.0.0" `
+    -Location "eastasia"</code></pre>
+        </div>
+
+        <h3 class="sub-title">🖥️ Azure Portal</h3>
+        <ol class="step-list">
+            <li>Azure Portal で「Azure compute galleries」を検索して選択し、「Create」を選択</li>
+            <li>「Basics」タブの「Soft delete」セクションで「Enables soft delete for image versions」をオンにする</li>
+            <li>保持期間 (7〜365 日) と猶予期間 (7〜90 日) を設定し、「Review + Create」で作成</li>
+            <li>復旧する場合は、ギャラリーの「Image Definitions」ブレードで「Show soft deleted versions」トグルをオンにし、対象バージョンを選択して「Undelete」を実行</li>
+        </ol>
+    </section>
+
+    <!-- ===== メリット ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-col merit-biz">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>誤削除による<strong>ゴールデンイメージの喪失リスクを排除</strong>し、イメージ管理のガバナンスを強化できる</li>
+                    <li>保持期間中はデプロイを継続できるため、誤削除が<strong>本番ワークロードのスケールアウトやプロビジョニングを即座に停止させない</strong></li>
+                    <li>ソフト削除機能自体は<strong>無料</strong>で、追加ライセンスコストなしで導入できる</li>
+                </ul>
+            </div>
+            <div class="merit-col merit-tech">
+                <h4>⚙️ 技術面</h4>
+                <ul>
+                    <li>保持期間 (最大 365 日)・猶予期間 (最大 90 日) を<strong>組織のポリシーに合わせて柔軟に設定可能</strong></li>
+                    <li><code class="inline">imageState</code> や <code class="inline">hardDeletionTargetTime</code> などのプロパティにより、削除済みイメージのライフサイクルを<strong>プログラムから追跡可能</strong></li>
+                    <li><code class="inline">bypassSoftDelete</code> によるハード削除も選択でき、不要なイメージの保持コストを即座に打ち切れる</li>
+                    <li>リソースロックや <code class="inline">safetyProfile.allowDeletionOfReplicatedLocations</code> などの既存の削除防止策を補完し、<strong>「防止」と「復旧」の両面で保護</strong>できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== デメリット・制約事項 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <ul class="caution-list">
+            <li>⚠️ GA 提供は <strong>24 リージョンに限定</strong>される (下記「利用可能リージョン」参照)</li>
+            <li>⚠️ <strong>VM Applications の復旧は非対応</strong> (対象は Compute Gallery のイメージのみ)</li>
+            <li>⚠️ ソフト削除済みリソースを含むギャラリーやイメージ定義は削除できない (すべてのソフト削除済みイメージを削除するか、ソフト削除を無効化する必要がある)</li>
+            <li>⚠️ ギャラリー / イメージ定義とイメージバージョンが異なるリージョンにある場合、ソフト削除の有効化およびイメージの復旧はできない</li>
+            <li>💰 ソフト削除状態でも<strong>レプリカ数は減らない</strong>ため、完全削除までの保持期間・猶予期間中はすべてのレプリカのストレージ課金が継続する</li>
+            <li>⚠️ 保持期間の変更は既存のソフト削除済みイメージには適用されない (変更後に削除されたイメージのみ対象)</li>
+            <li>⚠️ プロビジョニング失敗状態のイメージはソフト削除できず、ハード削除 (バイパス) が必要</li>
+        </ul>
+    </section>
+
+    <!-- ===== ユースケース ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🎯</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">
+                <div class="usecase-number">1</div>
+                <h4>ゴールデンイメージの誤削除対策</h4>
+            </div>
+            <div class="scenario-box">
+                <strong>📖 シナリオ</strong>: VMSS のゴールデンイメージを Compute Gallery で管理している環境で、運用者が誤って使用中のイメージバージョンを削除してしまった。
+            </div>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+<pre><code class="language-bash"># ソフト削除済みバージョンを確認
+az sig image-version list-soft-deleted \
+    --resource-group prodRG \
+    --gallery-name prodGallery \
+    --gallery-image-definition webServerImage
+
+# 誤削除されたバージョンを復旧
+az sig image-version undelete \
+    --resource-group prodRG \
+    --gallery-name prodGallery \
+    --gallery-image-definition webServerImage \
+    --gallery-image-version 2.1.0 \
+    --location japaneast</code></pre>
+            </div>
+            <div class="effect-box">
+                <strong>✅ 効果</strong>: API <code class="inline">2026-03-03</code> 使用時は保持期間中もソフト削除済みイメージからの VMSS スケールアウトが継続するため、<strong>サービスを止めずに復旧作業を実施できる</strong>。
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">
+                <div class="usecase-number">2</div>
+                <h4>イメージライフサイクルのガバナンス強化</h4>
+            </div>
+            <div class="scenario-box">
+                <strong>📖 シナリオ</strong>: コンプライアンス要件により、削除されたイメージを一定期間 (例: 90 日) 復旧可能な状態で保持する必要がある。
+            </div>
+            <div class="code-block">
+                <div class="code-header"><span class="code-lang">bash</span><span>実装例</span></div>
+<pre><code class="language-bash"># 保持期間 90 日、猶予期間 30 日でギャラリーを構成
+az sig create \
+    --resource-group complianceRG \
+    --gallery-name complianceGallery \
+    --location japaneast \
+    --soft-delete true \
+    --soft-delete-retention-period 90 \
+    --soft-delete-grace-period 30</code></pre>
+            </div>
+            <div class="effect-box">
+                <strong>✅ 効果</strong>: 削除から<strong>最大 120 日間 (保持 90 日 + 猶予 30 日) の復旧ウィンドウ</strong>を確保でき、監査・コンプライアンス要件に対応できる。
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== 料金 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <p>
+            ソフト削除機能自体は<span class="strong-green">無料</span>。ただし、ソフト削除状態になってもレプリカ数は減らないため、保持期間および猶予期間を通じて、完全削除までの間は<span class="strong-red">すべての保持レプリカのストレージ (スナップショットとして課金) に対する課金が継続</span>する。保持コストを早期に打ち切りたい場合は、ハード削除で即時完全削除が可能。
+        </p>
+        <table>
+            <tr><th style="width:40%;">項目</th><th>料金</th></tr>
+            <tr><td>ソフト削除機能</td><td><strong>無料</strong></td></tr>
+            <tr><td>ソフト削除済みイメージのレプリカ保持</td><td>通常のイメージレプリカと同様にストレージ課金が継続 (完全削除まで)</td></tr>
+        </table>
+        <p style="font-size:14px;">詳細は <a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank" rel="noopener">Managed Disks 料金ページ</a> を参照。</p>
+    </section>
+
+    <!-- ===== 利用可能リージョン ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌏</span>利用可能リージョン</h2>
+        <p>GA 提供は以下の <strong>24 リージョン</strong>に限定される。</p>
+        <div class="region-grid">
+            <span class="region-chip">Australia Central 2</span>
+            <span class="region-chip">Australia East</span>
+            <span class="region-chip">Brazil South</span>
+            <span class="region-chip">Canada Central</span>
+            <span class="region-chip">Central US EUAP</span>
+            <span class="region-chip">East Asia</span>
+            <span class="region-chip">East US 2 EUAP</span>
+            <span class="region-chip">France South</span>
+            <span class="region-chip">Germany West Central</span>
+            <span class="region-chip jp">Japan East</span>
+            <span class="region-chip">Jio India West</span>
+            <span class="region-chip">Korea South</span>
+            <span class="region-chip">North Central US</span>
+            <span class="region-chip">North Europe</span>
+            <span class="region-chip">Norway East</span>
+            <span class="region-chip">Qatar Central</span>
+            <span class="region-chip">South Africa West</span>
+            <span class="region-chip">South Central US</span>
+            <span class="region-chip">Sweden Central</span>
+            <span class="region-chip">Taiwan North</span>
+            <span class="region-chip">UK South</span>
+            <span class="region-chip">UK West</span>
+            <span class="region-chip">West India</span>
+            <span class="region-chip">West US 3</span>
+        </div>
+    </section>
+
+    <!-- ===== 関連サービス・機能 ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-card">
+            <span class="rel-icon">🖥️</span>
+            <div>
+                <h4>Azure Virtual Machines / Virtual Machine Scale Sets</h4>
+                Compute Gallery のイメージから VM / VMSS をデプロイする。保持期間中のソフト削除済みイメージからのデプロイ・スケールアウトにも対応 (API <code class="inline">2026-03-03</code>)
+            </div>
+        </div>
+        <div class="related-card">
+            <span class="rel-icon">🔒</span>
+            <div>
+                <h4>リソースロック (Azure Resource Manager)</h4>
+                ギャラリーレベルでの誤削除「防止」策。ソフト削除は削除後の「復旧」策として補完関係にある
+            </div>
+        </div>
+        <div class="related-card">
+            <span class="rel-icon">🛡️</span>
+            <div>
+                <h4>イメージバージョンの safetyProfile</h4>
+                <code class="inline">allowDeletionOfReplicatedLocations</code> や <code class="inline">BlockDeletionBeforeEndOfLife</code> による削除保護と組み合わせて多層防御を構成できる
+            </div>
+        </div>
+        <div class="related-card">
+            <span class="rel-icon">📈</span>
+            <div>
+                <h4>Azure Monitor アクティビティログ</h4>
+                ギャラリー・イメージ・バージョンの削除や構成変更の操作履歴を追跡できる
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== まとめ ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            Azure Compute Gallery のソフト削除 GA により、これまで不可逆だったイメージバージョンの削除に<span class="keyword">「保持期間 + 猶予期間」の復旧ウィンドウ</span>が追加され、誤削除によるゴールデンイメージ喪失のリスクを大幅に低減できる。特に API バージョン <code class="inline">2026-03-03</code> では<span class="strong-green">保持期間中のデプロイ継続が可能</span>になり、誤削除が本番の VMSS スケールアウトを止めない点は運用上の大きな改善である。Compute Gallery でイメージを管理している環境では、対象リージョン (Japan East を含む 24 リージョン) であれば<strong>ソフト削除の有効化を推奨</strong>する。ただし、<span class="strong-red">保持期間中はレプリカのストレージ課金が継続</span>する点と、<span class="strong-red">GA リージョンが限定</span>されている点には留意が必要。
+        </div>
+        <div class="tag-row">
+            <span class="tag"># Azure Compute Gallery</span>
+            <span class="tag"># Soft Delete</span>
+            <span class="tag"># GA</span>
+            <span class="tag"># Compute</span>
+            <span class="tag"># Images</span>
+            <span class="tag"># VMSS</span>
+            <span class="tag"># Microsoft Ignite</span>
+        </div>
+    </section>
+
+    <!-- ===== フッター (出典) ===== -->
+    <footer>
+        <h4>📚 出典・参考リンク</h4>
+        <ul>
+            <li>公式アップデート情報: <a href="https://azure.microsoft.com/updates?id=581907" target="_blank" rel="noopener">https://azure.microsoft.com/updates?id=581907</a></li>
+            <li>Soft Delete in Azure Compute Gallery (Microsoft Learn): <a href="https://learn.microsoft.com/azure/virtual-machines/soft-delete-gallery" target="_blank" rel="noopener">https://learn.microsoft.com/azure/virtual-machines/soft-delete-gallery</a></li>
+            <li>Azure Compute Gallery 概要 (Microsoft Learn): <a href="https://learn.microsoft.com/azure/virtual-machines/azure-compute-gallery" target="_blank" rel="noopener">https://learn.microsoft.com/azure/virtual-machines/azure-compute-gallery</a></li>
+            <li>Managed Disks 料金ページ: <a href="https://azure.microsoft.com/pricing/details/managed-disks/" target="_blank" rel="noopener">https://azure.microsoft.com/pricing/details/managed-disks/</a></li>
+        </ul>
+        <p class="footer-note">
+            元レポート: <code>reports/2026/2026-11-19-compute-gallery-soft-delete.md</code> (Azure News Summary)<br>
+            リリース日: 2026-11-19 / インフォグラフィック生成日: 2026-11-20
+        </p>
+    </footer>
+
+</div>
+
+<script>
+mermaid.initialize({
+    startOnLoad: true,
+    theme: 'base',
+    themeVariables: {
+        primaryColor: '#0078D4',
+        primaryTextColor: '#323130',
+        primaryBorderColor: '#0078D4',
+        mainBkg: '#E6F2FF',
+        nodeBorder: '#0078D4',
+        lineColor: '#0078D4',
+        edgeLabelBackground: '#FFFFFF',
+        clusterBkg: '#FAF9F8',
+        clusterBorder: '#C7E0F4',
+        fontFamily: "'Noto Sans JP', 'Segoe UI', sans-serif"
+    }
+});
+hljs.highlightAll();
+</script>
+</body>
+</html>

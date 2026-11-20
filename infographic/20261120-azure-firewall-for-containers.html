@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Firewall for Containers (Public Preview) | Azure News</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/vs2015.min.css">
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.header {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+}
+.header::after {
+    content: "🔥";
+    position: absolute;
+    right: 24px;
+    bottom: -18px;
+    font-size: 120px;
+    opacity: 0.15;
+}
+.header .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 10px;
+}
+.header .subtitle { font-size: 16px; opacity: 0.92; }
+.header .release-date {
+    display: inline-block;
+    margin-top: 14px;
+    background: rgba(255, 255, 255, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 20px;
+    padding: 4px 16px;
+    font-size: 14px;
+}
+
+.service-badge {
+    background: var(--azure-blue);
+    color: white;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 500;
+}
+.header .service-badge {
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--azure-dark-blue);
+    font-weight: 700;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-ga { background: var(--ms-green); }
+.badge-preview { background: var(--ms-yellow); color: var(--ms-text-primary); font-weight: 700; }
+.badge-development { background: var(--ms-blue-400); }
+
+/* ===== Sections / Cards ===== */
+.section { margin-bottom: 28px; }
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 16px;
+}
+.section-title .icon { font-size: 24px; }
+
+.card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.lead-text { font-size: 15px; }
+.lead-text strong { color: var(--azure-dark-blue); }
+code.inline {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.9em;
+}
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; font-size: 16px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; font-size: 16px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid { display: flex; justify-content: center; }
+.diagram-caption {
+    text-align: center;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+    margin-top: 8px;
+}
+
+/* ===== Feature Cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { font-size: 16px; color: var(--azure-dark-blue); margin-bottom: 6px; }
+.feature-content p, .feature-content ul { font-size: 14px; color: var(--ms-text-secondary); }
+.feature-content ul { padding-left: 18px; margin-top: 4px; }
+.feature-content li { margin-bottom: 4px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 32px; font-weight: bold; line-height: 1.2; }
+.stat-label { font-size: 14px; opacity: 0.9; margin-top: 6px; }
+
+/* ===== Tables ===== */
+.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    background: var(--ms-surface);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.spec-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+.spec-table td {
+    border-bottom: 1px solid var(--ms-border);
+    padding: 10px 14px;
+    vertical-align: top;
+}
+.spec-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+.spec-table td:first-child { font-weight: 700; color: var(--azure-dark-blue); white-space: nowrap; }
+.spec-table code { font-family: 'Cascadia Code', 'Consolas', monospace; background: var(--ms-blue-200); color: var(--azure-dark-blue); border-radius: 4px; padding: 1px 6px; font-size: 0.9em; }
+
+/* ===== Steps ===== */
+.step-list { counter-reset: step; list-style: none; }
+.step-list li {
+    position: relative;
+    padding: 10px 0 10px 48px;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--ms-border);
+}
+.step-list li:last-child { border-bottom: none; }
+.step-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 32px;
+    height: 32px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+}
+
+/* ===== Code Blocks ===== */
+.code-block {
+    background: #1E1E1E;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 16px 0;
+}
+.code-header {
+    background: #2D2D2D;
+    padding: 8px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+}
+.code-lang { color: #9CDCFE; font-weight: bold; }
+.code-desc { color: #A19F9D; }
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+pre:not(.mermaid) code {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    padding: 16px !important;
+    color: #E8E8E8;
+    display: block;
+}
+
+/* ===== Warning / Caution ===== */
+.warning-box {
+    background: #FFF4E5;
+    border-left: 4px solid var(--ms-orange);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+    font-size: 14px;
+}
+.warning-box strong { color: var(--ms-orange); }
+
+/* ===== Merit / Constraint ===== */
+.merit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.merit-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-top: 4px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 18px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.merit-card h4 { color: var(--ms-green); font-size: 16px; margin-bottom: 10px; }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin-bottom: 8px; }
+
+.constraint-list { list-style: none; }
+.constraint-list li {
+    position: relative;
+    padding: 8px 0 8px 30px;
+    font-size: 14px;
+    border-bottom: 1px dashed var(--ms-border);
+}
+.constraint-list li:last-child { border-bottom: none; }
+.constraint-list li::before {
+    content: "⚠️";
+    position: absolute;
+    left: 0;
+    top: 8px;
+}
+
+/* ===== Region chips ===== */
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 12px;
+}
+.region-chip {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-blue-300);
+    border-radius: 8px;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.region-chip .region-name { font-weight: 700; color: var(--azure-dark-blue); }
+.region-chip code { font-family: 'Cascadia Code', 'Consolas', monospace; background: var(--ms-blue-100); color: var(--ms-blue-800); border-radius: 4px; padding: 1px 6px; font-size: 12px; }
+
+/* ===== Related services ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+}
+.related-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 13px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.related-card h4 { font-size: 14px; color: var(--azure-blue); margin-bottom: 6px; }
+.related-card p { color: var(--ms-text-secondary); }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+.summary-box h3 { color: var(--azure-dark-blue); margin-bottom: 12px; font-size: 18px; }
+
+/* ===== Tags ===== */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tag {
+    background: var(--ms-blue-200);
+    color: var(--ms-blue-800);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* ===== Footer ===== */
+.footer {
+    border-top: 1px solid var(--ms-border);
+    margin-top: 32px;
+    padding: 20px 4px;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+}
+.footer h4 { color: var(--ms-text-primary); margin-bottom: 8px; font-size: 14px; }
+.footer ul { list-style: none; }
+.footer li { margin-bottom: 4px; }
+.footer a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+.footer a:hover { text-decoration: underline; }
+.footer .meta { margin-top: 12px; font-size: 12px; color: var(--ms-text-disabled); }
+
+a { color: var(--azure-blue); }
+
+/* ===== Responsive ===== */
+@media (max-width: 720px) {
+    .before-after, .merit-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .container { padding: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="header">
+        <div class="badges">
+            <span class="service-badge">Azure Firewall</span>
+            <span class="service-badge">Azure Kubernetes Service (AKS)</span>
+            <span class="badge badge-preview">🧪 Public Preview</span>
+        </div>
+        <h1>Azure Firewall for Containers</h1>
+        <p class="subtitle">Azure Firewall の保護をコンテナーワークロードへ拡張 — Pod ラベル / namespace 単位の Kubernetes ネイティブな egress 制御を実現 (Microsoft Ignite 発表)</p>
+        <span class="release-date">📅 リリース日: 2026-11-20</span>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📌</span>概要</h2>
+        <div class="card lead-text">
+            <p>Azure Firewall for Containers がパブリックプレビューとして発表された。Azure Firewall の保護をコンテナーワークロードに拡張し、コンテナー環境のネットワークトラフィックを<strong>集中管理で保護</strong>する機能である。組織は Azure 全体のネットワークセキュリティ戦略の一部として Azure Firewall を活用しながら、コンテナーワークロードの保護を強化できる。</p>
+            <div class="highlight-box" style="margin-bottom: 0;">
+                本機能の中核は、AKS クラスター上で動作する <strong>Azure Firewall Controller</strong>。Kubernetes のカスタムリソース (CRD) として定義したファイアウォール設定・セキュリティポリシーを、コントローラーが Azure Firewall の構成と Firewall Policy に変換して適用する。これにより Pod ラベルや namespace セレクターを使った Kubernetes ネイティブな粒度で、ネットワークルール・アプリケーションルール・IDPS・脅威インテリジェンスなどを AKS ワークロードの egress トラフィックに適用できる。
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>UDR で 0.0.0.0/0 を Azure Firewall に向ける構成では、Pod のトラフィックがノード IP に <strong>SNAT (マスカレード)</strong> されるため、Pod 単位・namespace 単位の識別ができず、クラスター (サブネット) 単位の一律ルールしか適用できなかった</li>
+                    <li>ルール管理は Azure 側 (Portal / ARM / CLI) で行う必要があり、Kubernetes のラベルやマニフェストと連動せず、アプリチームのデプロイフローとセキュリティポリシー管理が分離していた</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li><code class="inline">SecurityPolicy</code> CRD の <code class="inline">podSelector</code> / <code class="inline">namespaceSelector</code> で Pod ラベル・namespace 単位の許可/拒否ルールを定義。コントローラーが SNAT を無効化し、<strong>Pod IP をソース</strong>としてトラフィックを識別</li>
+                    <li>ファイアウォール本体・ポリシー・適用をすべて Kubernetes カスタムリソースとして<strong>宣言的に管理</strong>。コントローラーが Azure Firewall Policy (子ポリシー) へ自動変換</li>
+                    <li>既存ポリシーに一致する新規 Pod は ARM デプロイ不要で<strong>数秒でルール適用</strong> (fast-path 更新)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">3 つ</div>
+                <div class="stat-label">CRD による宣言的構成<br>(Firewall / Policy / Attachment)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">数秒</div>
+                <div class="stat-label">新規 Pod へのルール適用<br>(fast-path・ARM デプロイ不要)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">Pod 単位</div>
+                <div class="stat-label">ラベル / namespace での<br>egress 制御の粒度</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">6 リージョン</div>
+                <div class="stat-label">プレビュー提供<br>(パブリッククラウド)</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart TD
+    subgraph VNet["☁️ Azure Virtual Network"]
+        subgraph AKS["🚢 AKS クラスター (Azure CNI)"]
+            CRD["📜 CRD: AzureFirewall /<br/>SecurityPolicy / Attachment"]
+            Controller["🤖 Azure Firewall<br/>Controller"]
+            Pod["📦 アプリ Pod<br/>(例: role=developer)"]
+        end
+        subgraph FWSubnet["🔒 AzureFirewallSubnet"]
+            FW["🔥 Azure Firewall<br/>(既定: Premium SKU)"]
+        end
+        Policy[("📋 Firewall Policy<br/>(コントローラー管理の子ポリシー)")]
+    end
+    Internet(["🌐 インターネット / 外部サービス"])
+
+    CRD --> Controller
+    Controller -->|"CRD をポリシーに変換"| Policy
+    Policy -.->|"ルール適用"| FW
+    Pod -->|"UDR 0.0.0.0/0<br/>Pod IP のまま (SNAT 無効)"| FW
+    FW -->|"✅ 許可された通信のみ"| Internet
+            </pre>
+        </div>
+        <p class="diagram-caption">AKS 上の Azure Firewall Controller が Kubernetes カスタムリソースを Azure Firewall Policy に変換し、UDR で Azure Firewall に向けられた Pod の egress トラフィックを Pod IP ベースで検査・制御する。</p>
+    </section>
+
+    <!-- ===== Key Features ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">📜</div>
+            <div class="feature-content">
+                <h4>1. 3 つの CRD による宣言的な構成モデル</h4>
+                <ul>
+                    <li><code class="inline">AzureFirewall</code>: Azure Firewall のデプロイを作成・管理 (既存ファイアウォールの Azure リソース ID 参照も可能)</li>
+                    <li><code class="inline">SecurityPolicy</code>: ネットワークルール、アプリケーションルール、および IDPS・DNS・脅威インテリジェンス・SNAT などの高度な設定を定義</li>
+                    <li><code class="inline">SecurityPolicyAttachment</code>: ポリシーとファイアウォール、保護対象の AKS ワークロードサブネットを紐付け。参照された複数ポリシーは 1 つの子 Firewall Policy に統合</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🏷️</div>
+            <div class="feature-content">
+                <h4>2. Pod / namespace セレクターによるラベルベースのルール適用</h4>
+                <ul>
+                    <li>ルールコレクションの <code class="inline">refs</code> で <code class="inline">podSelector</code> / <code class="inline">namespaceSelector</code> を指定し、特定のラベルを持つ Pod のみに egress ルールを適用</li>
+                    <li>既存ポリシーに一致する新規 Pod は数秒で許可対象になる (ARM デプロイ不要の fast-path)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧱</div>
+            <div class="feature-content">
+                <h4>3. ネットワークルールとアプリケーションルール</h4>
+                <ul>
+                    <li><code class="inline">networkRuleCollections</code>: TCP / UDP / ICMP / ANY、ポート、IP アドレス、IP グループ、サービスタグ、FQDN (FQDN 使用時は <code class="inline">dnsProxy: Enabled</code> が必要)</li>
+                    <li><code class="inline">applicationRuleCollections</code>: HTTP / HTTPS / MSSQL、ポート、FQDN、FQDN タグ、URL、Web カテゴリ。<code class="inline">tlsInspection: Enabled</code> による TLS 検査にも対応 (Premium SKU + 証明書構成が必要)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛡️</div>
+            <div class="feature-content">
+                <h4>4. ポリシー全体の高度な設定</h4>
+                <ul>
+                    <li>IDPS: <code class="inline">Disabled</code> / <code class="inline">AlertOnly</code> / <code class="inline">AlertAndDeny</code>、シグネチャ単位のオーバーライド、プライベート IP 範囲指定</li>
+                    <li>脅威インテリジェンス: モード指定と CIDR / FQDN の許可リスト</li>
+                    <li>DNS: DNS プロキシの有効化とカスタムネームサーバー</li>
+                    <li>SNAT: <code class="inline">Always</code> / <code class="inline">Never</code> / <code class="inline">Exclude</code> (除外範囲の指定・自動学習)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">⚙️</div>
+            <div class="feature-content">
+                <h4>5. ベースポリシーの自動構成</h4>
+                <p>コントローラーがベースポリシーを作成する場合、AKS に必要な outbound ルール (<code class="inline">AzureKubernetesService</code> サービスタグ / FQDN タグ、<code class="inline">*.afc.azure.com</code> への HTTPS) が自動で許可される。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Tech Specs ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔬</span>技術仕様</h2>
+        <table class="spec-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象</td><td>AKS クラスター上の Pod の egress (送信) トラフィックのみ、IPv4 のみ</td></tr>
+            <tr><td>必須ネットワーク構成</td><td>Azure CNI (Pod IP を VNet から割り当て)。<strong>Azure CNI Overlay は非サポート</strong></td></tr>
+            <tr><td>API バージョン</td><td><code>firewall.networking.azure.io/v1alpha1</code> (GA までに変更の可能性あり)</td></tr>
+            <tr><td>コントローラー配布</td><td>Helm チャート <code>oci://mcr.microsoft.com/firewall/charts/azurefirewall-controller</code> (プレビュー対応バージョン: <code>20261109.1</code>)</td></tr>
+            <tr><td>認証</td><td>AKS Workload Identity (OIDC) + ユーザー割り当てマネージド ID (Network Contributor ロールが必要)</td></tr>
+            <tr><td>既定の SKU</td><td>コントローラー管理のファイアウォール / ポリシーは Premium SKU。既存の Standard SKU も利用可能 (ただし IDPS / TLS 検査 / URL フィルタリングは不可)</td></tr>
+            <tr><td>ルーティング</td><td>AKS サブネットの UDR で 0.0.0.0/0 をファイアウォールのプライベート IP に向ける</td></tr>
+            <tr><td>SNAT 制御</td><td>初回のポリシーアタッチ時に <code>kube-system/azure-ip-masq-agent-config</code> を作成し Pod SNAT を無効化</td></tr>
+            <tr><td>構成上限 (プレビュー)</td><td>1 AKS クラスターにつき 1 つの <code>SecurityPolicyAttachment</code>・1 つの Azure Firewall。1 ファイアウォールにつき 1 クラスター</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🛠️</span>設定方法</h2>
+
+        <div class="card">
+            <h3 style="color: var(--azure-dark-blue); font-size: 17px; margin-bottom: 10px;">📋 前提条件</h3>
+            <ol class="step-list">
+                <li>サポート対象プレビューリージョンでの Azure Firewall for Containers へのアクセス</li>
+                <li>自己管理 VNet 内の Azure CNI 構成の AKS クラスター (Azure CNI Overlay は不可)</li>
+                <li>コントローラーのインストールとファイアウォール準備の間のクラスター outbound 接続経路</li>
+                <li>Pod トラフィックが Pod IP をソースとしてファイアウォールに到達すること (カスタム <code class="inline">ip-masq-agent</code> 構成がある場合は要確認)</li>
+                <li>既存ファイアウォール / 独自ベースポリシー利用時は、AKS 必須 outbound ルールと <code class="inline">*.afc.azure.com</code> への HTTPS (443) の許可</li>
+                <li>ユーザー割り当てマネージド ID の作成とロール割り当ての権限、Azure CLI / kubectl / Helm</li>
+            </ol>
+        </div>
+
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">bash</span><span class="code-desc">Azure CLI / Helm / kubectl — 主要ステップ</span></div>
+            <pre><code class="language-bash"># 1. Workload Identity 用のマネージド ID とフェデレーション資格情報を作成
+az identity create --resource-group "$RESOURCE_GROUP" --name "$IDENTITY_RESOURCE_NAME"
+az role assignment create --assignee-object-id "$IDENTITY_PRINCIPAL_ID" \
+  --assignee-principal-type ServicePrincipal \
+  --role 'Network Contributor' --scope "$RESOURCE_GROUP_ID"
+az identity federated-credential create \
+  --resource-group "$RESOURCE_GROUP" --identity-name "$IDENTITY_RESOURCE_NAME" \
+  --name "$IDENTITY_RESOURCE_NAME" --issuer "$AKS_OIDC_ISSUER" \
+  --subject "system:serviceaccount:${HELM_NAMESPACE}:azurefirewall-controller-sa" \
+  --audience api://AzureADTokenExchange
+
+# 2. Azure Firewall Controller を Helm でインストール
+helm install azfw-controller \
+  oci://mcr.microsoft.com/firewall/charts/azurefirewall-controller \
+  --namespace "$HELM_NAMESPACE" --version "$CONTROLLER_VERSION" \
+  --set "azfwController.podIdentity.clientID=$IDENTITY_CLIENT_ID" \
+  --create-namespace
+
+# 3. AzureFirewall カスタムリソースでファイアウォールを作成 (10〜15 分程度)
+kubectl apply -f firewall.yaml
+
+# 4. AKS サブネットの UDR をファイアウォールに向ける (ポリシーアタッチ前に必須)
+az network route-table route create \
+  --resource-group "$RESOURCE_GROUP" --route-table-name "$FW_ROUTE_TABLE_NAME" \
+  --name to-firewall --address-prefix 0.0.0.0/0 \
+  --next-hop-type VirtualAppliance --next-hop-ip-address "$FW_PRIVATE_IP"
+
+# 5. SecurityPolicy と SecurityPolicyAttachment を適用
+kubectl apply -f security-policy.yaml
+kubectl apply -f attachment.yaml</code></pre>
+        </div>
+
+        <p style="font-size: 14px; margin: 12px 0 4px;"><code class="inline">SecurityPolicy</code> の例 (ラベル <code class="inline">role: developer</code> の Pod に特定 FQDN への HTTPS のみ許可):</p>
+        <div class="code-block">
+            <div class="code-header"><span class="code-lang">yaml</span><span class="code-desc">security-policy.yaml</span></div>
+            <pre><code class="language-yaml">apiVersion: firewall.networking.azure.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: example-securitypolicy-rules
+  namespace: default
+spec:
+  applicationRuleCollections:
+    - name: test-application-rules
+      refs:
+        - podSelector:
+            matchLabels:
+              role: developer
+      action: Allow
+      egress:
+        - name: allow-test-destinations
+          toPortProtocol:
+            - protocolType: HTTPS
+              port: 443
+          to:
+            - fqdn:
+                - "*.microsoft.com"
+                - "*.google.com"</code></pre>
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠️ 重要:</strong> ポリシーのアタッチで Pod SNAT が無効化されるため、ファイアウォールへの UDR を<strong>先に</strong>構成しないと、アタッチ後に Pod の outbound 接続が失われる可能性がある。ARM テンプレートで AKS クラスターとファイアウォールを一括作成するクイックスタートも提供されている。
+        </div>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💎</span>メリット</h2>
+        <div class="merit-grid">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>コンテナー環境のネットワークセキュリティを Azure Firewall に集約し、VM・VNet と<strong>一貫したセキュリティ運用・監査</strong>が可能になる</li>
+                    <li>アプリケーションチームが Kubernetes マニフェストの一部としてセキュリティポリシーを管理でき、<strong>GitOps などの既存デプロイフローに統合</strong>できる</li>
+                </ul>
+            </div>
+            <div class="merit-card">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>Pod ラベル / namespace 単位の egress 制御により、同一クラスター内でワークロードごとに異なるルールを適用できる (従来のクラスター単位 UDR 構成では不可能だった粒度)</li>
+                    <li>IDPS、脅威インテリジェンス、TLS 検査、Web カテゴリフィルタリングなど <strong>Azure Firewall Premium の機能</strong>をコンテナートラフィックに適用できる</li>
+                    <li>新規 Pod へのルール適用が数秒で完了する fast-path により、スケールアウト時もポリシー適用の遅延が小さい</li>
+                    <li>Azure が拒否したポリシーバージョンに対しては最後の正常バージョンを保持するフェイルセーフ動作</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Constraints ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🚧</span>デメリット・制約事項</h2>
+        <div class="card">
+            <ul class="constraint-list">
+                <li>パブリックプレビューであり、プレビューの追加利用規約が適用される。CRD は <code class="inline">v1alpha1</code> で GA までに変更される可能性がある</li>
+                <li>1 クラスターにつき 1 アタッチメント・1 ファイアウォールのみ。1 ファイアウォールは 1 クラスター専用</li>
+                <li>Pod の egress のみ検査対象 (ingress は対象外)。IPv4 のみ対応</li>
+                <li>Azure CNI Overlay は非サポート。Pod IP を VNet から割り当てる Azure CNI 構成が必須</li>
+                <li>ホストネットワークの Pod はノード IP を使用するため個別に選択できない</li>
+                <li>既存ファイアウォールは Firewall Policy 利用が必須 (クラシックルールは非サポート)。Standard SKU では IDPS / TLS 検査 / URL フィルタリングが使えない</li>
+                <li>コントローラー管理の子ポリシーを Azure Portal から直接変更してはならない (Kubernetes が信頼できる唯一の情報源)</li>
+                <li>ルートテーブルやクラスター outbound type の変更はクラスター接続を中断させる可能性があるため、隔離された評価環境での検証とロールバック計画が推奨される</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="card" style="font-size: 14px;">
+            <p>Azure Firewall 料金ページには、現時点で Azure Firewall for Containers (プレビュー) 固有の料金記載は確認できなかった。なお、コントローラー管理のファイアウォール / ポリシーは<strong>既定で Premium SKU</strong> としてデプロイされる点に留意する。Azure Firewall 自体は「デプロイごとの固定時間料金 + データ処理量 (GB) ごとの従量課金」の体系である。</p>
+            <p style="margin-top: 10px;">詳細: <a href="https://azure.microsoft.com/pricing/details/azure-firewall/" target="_blank" rel="noopener">Azure Firewall の価格</a></p>
+        </div>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン (プレビュー)</h2>
+        <p style="font-size: 14px; margin-bottom: 12px;">Azure パブリッククラウドの以下のリージョンで利用可能 (プレビューサブスクリプションで有効化されたリージョンを使用する):</p>
+        <div class="region-grid">
+            <div class="region-chip"><span class="region-name">Central US EUAP</span><code>centraluseuap</code></div>
+            <div class="region-chip"><span class="region-name">East US 2 EUAP</span><code>eastus2euap</code></div>
+            <div class="region-chip"><span class="region-name">West Central US</span><code>westcentralus</code></div>
+            <div class="region-chip"><span class="region-name">East Asia</span><code>eastasia</code></div>
+            <div class="region-chip"><span class="region-name">UK South</span><code>uksouth</code></div>
+            <div class="region-chip"><span class="region-name">Central US</span><code>centralus</code></div>
+        </div>
+    </section>
+
+    <!-- ===== Related Services ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🚢 Azure Kubernetes Service (AKS)</h4>
+                <p>保護対象のコンテナー実行基盤。Azure CNI、Workload Identity (OIDC)、outbound type の構成が本機能の前提となる。</p>
+            </div>
+            <div class="related-card">
+                <h4>📋 Azure Firewall Policy</h4>
+                <p>コントローラーが CRD を変換して作成・管理する子ポリシーの実体。既存のベースポリシーとの階層構成も可能。</p>
+            </div>
+            <div class="related-card">
+                <h4>🛡️ Azure Firewall Premium</h4>
+                <p>IDPS、TLS 検査、URL フィルタリングなど本機能で利用できる高度な保護機能を提供する SKU。</p>
+            </div>
+            <div class="related-card">
+                <h4>🪪 Microsoft Entra Workload ID</h4>
+                <p>コントローラーが Azure リソースを操作するための認証基盤 (フェデレーション資格情報 + ユーザー割り当てマネージド ID)。</p>
+            </div>
+            <div class="related-card">
+                <h4>📊 Azure Firewall ログ (Azure Monitor)</h4>
+                <p>許可 / 拒否されたトラフィックの確認・相関分析に使用する。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section class="section">
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <h3>Solutions Architect の視点</h3>
+            <p>Azure Firewall for Containers は、従来「クラスター単位の UDR + ノード IP への SNAT」という粗い粒度でしか実現できなかった AKS の egress 制御を、<strong>Pod ラベル / namespace 単位の Kubernetes ネイティブなポリシー管理</strong>へと進化させるアップデートである。Azure Firewall Premium の IDPS・TLS 検査・脅威インテリジェンスをコンテナートラフィックに適用でき、セキュリティ要件の厳しい環境での AKS 採用を後押しする。</p>
+            <p style="margin-top: 10px;">一方で、Azure CNI Overlay 非対応、1 クラスター 1 ファイアウォールの制約、egress のみ・IPv4 のみといったプレビュー制限があるため、まず<strong>隔離された評価環境で検証</strong>し、既存の UDR ベース egress 構成からの移行パス (ルーティング変更とポリシーアタッチの順序、ロールバック計画) を設計することを推奨する。</p>
+            <div class="tag-list">
+                <span class="tag">Networking</span>
+                <span class="tag">Security</span>
+                <span class="tag">Compute</span>
+                <span class="tag">Containers</span>
+                <span class="tag">Azure Firewall</span>
+                <span class="tag">Azure Kubernetes Service (AKS)</span>
+                <span class="tag">Features</span>
+                <span class="tag">Microsoft Ignite</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer class="footer">
+        <h4>📚 出典・参考リンク</h4>
+        <ul>
+            <li>🔗 <a href="https://azure.microsoft.com/updates?id=581963" target="_blank" rel="noopener">公式アップデート情報 (Azure Updates)</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/firewall/deploy-firewall-for-containers" target="_blank" rel="noopener">Deploy Azure Firewall for Containers (preview) - Microsoft Learn</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/aks/egress-outboundtype" target="_blank" rel="noopener">Customize cluster egress with outbound types - Microsoft Learn</a></li>
+            <li>🔗 <a href="https://learn.microsoft.com/en-us/azure/aks/outbound-rules-control-egress" target="_blank" rel="noopener">AKS の必須 outbound ルール - Microsoft Learn</a></li>
+            <li>🔗 <a href="https://azure.microsoft.com/pricing/details/azure-firewall/" target="_blank" rel="noopener">Azure Firewall の価格</a></li>
+        </ul>
+        <p class="meta">本インフォグラフィックは Azure News Summary レポート (2026-11-20) を基に生成されました。ステータス: In preview — 内容は GA までに変更される可能性があります。</p>
+    </footer>
+
+</div>
+<script>hljs.highlightAll();</script>
+</body>
+</html>
