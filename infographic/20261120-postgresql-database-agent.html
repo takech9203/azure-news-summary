@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Azure Database for PostgreSQL: Database Agent (パブリックプレビュー)</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+            primaryColor: '#0078D4',
+            primaryTextColor: '#323130',
+            primaryBorderColor: '#0078D4',
+            lineColor: '#0078D4',
+            secondaryColor: '#F3F2F1',
+            tertiaryColor: '#FAFAFA',
+            background: '#FFFFFF',
+            mainBkg: '#E6F2FF',
+            nodeBorder: '#0078D4',
+            clusterBkg: '#E6F2FF',
+            clusterBorder: '#0078D4',
+            edgeLabelBackground: '#FFFFFF',
+            textColor: '#323130'
+        }
+    });
+</script>
+<style>
+:root {
+    /* Azure Brand Colors */
+    --azure-blue: #0078D4;
+    --azure-dark-blue: #003D69;
+    --azure-light-blue: #50E6FF;
+
+    /* Microsoft Fluent Colors */
+    --ms-blue-900: #004578;
+    --ms-blue-800: #005A9E;
+    --ms-blue-700: #106EBE;
+    --ms-blue-600: #0078D4;
+    --ms-blue-500: #2B88D8;
+    --ms-blue-400: #71AFE5;
+    --ms-blue-300: #C7E0F4;
+    --ms-blue-200: #DEECF9;
+    --ms-blue-100: #EFF6FC;
+
+    /* Status Colors */
+    --ms-green: #107C10;
+    --ms-yellow: #FFB900;
+    --ms-orange: #FF8C00;
+    --ms-red: #D83B01;
+    --ms-purple: #8764B8;
+
+    /* Text Colors */
+    --ms-text-primary: #323130;
+    --ms-text-secondary: #605E5C;
+    --ms-text-disabled: #A19F9D;
+
+    /* Surface Colors */
+    --ms-surface: #FFFFFF;
+    --ms-surface-secondary: #FAF9F8;
+    --ms-surface-tertiary: #F3F2F1;
+    --ms-border: #EDEBE9;
+
+    /* Database category color */
+    --db-yellow: #FFB900;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Noto Sans JP', 'Segoe UI', 'Meiryo', sans-serif;
+    color: var(--ms-text-primary);
+    background: var(--ms-surface-secondary);
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+}
+
+/* ===== Header ===== */
+.hero {
+    background: linear-gradient(135deg, var(--azure-dark-blue) 0%, var(--azure-blue) 70%, var(--ms-blue-500) 100%);
+    color: #FFFFFF;
+    border-radius: 16px;
+    padding: 36px 32px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+}
+.hero::after {
+    content: "🐘";
+    position: absolute;
+    right: 24px;
+    bottom: -14px;
+    font-size: 110px;
+    opacity: 0.18;
+}
+.hero .badges { margin-bottom: 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hero h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.35;
+    margin-bottom: 10px;
+}
+.hero .subtitle { font-size: 16px; opacity: 0.95; }
+.hero .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 18px;
+    font-size: 14px;
+}
+.hero .meta span {
+    background: rgba(255, 255, 255, 0.15);
+    padding: 6px 14px;
+    border-radius: 16px;
+}
+
+.service-badge {
+    background: var(--db-yellow);
+    color: var(--ms-text-primary);
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #FFFFFF;
+}
+.badge-preview {
+    background: var(--ms-yellow);
+    color: var(--ms-text-primary);
+    font-weight: 700;
+}
+
+/* ===== Sections ===== */
+section { margin-bottom: 32px; }
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--azure-dark-blue);
+    border-bottom: 3px solid var(--azure-blue);
+    padding-bottom: 8px;
+    margin-bottom: 18px;
+}
+.section-title .icon {
+    font-size: 24px;
+}
+
+.card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.highlight-box {
+    background: var(--ms-blue-100);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px 20px;
+    border-radius: 0 8px 8px 0;
+    margin: 16px 0;
+}
+
+.highlight-box strong { color: var(--azure-dark-blue); }
+
+/* ===== Before / After ===== */
+.before-after {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin: 20px 0;
+}
+.before {
+    background: #FFEBEE;
+    border: 2px solid var(--ms-red);
+    border-radius: 8px;
+    padding: 16px;
+}
+.after {
+    background: #E8F5E9;
+    border: 2px solid var(--ms-green);
+    border-radius: 8px;
+    padding: 16px;
+}
+.before h4 { color: var(--ms-red); margin-bottom: 10px; }
+.after h4 { color: var(--ms-green); margin-bottom: 10px; }
+.before ul, .after ul { padding-left: 20px; font-size: 14px; }
+.before li, .after li { margin-bottom: 8px; }
+
+/* ===== Stats ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+}
+.stat-card {
+    background: linear-gradient(135deg, var(--azure-blue), var(--ms-blue-700));
+    color: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+.stat-value { font-size: 32px; font-weight: bold; }
+.stat-label { font-size: 13px; opacity: 0.9; }
+
+/* ===== Mermaid ===== */
+.mermaid-container {
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+    border: 2px solid rgba(0, 120, 212, 0.3);
+    overflow-x: auto;
+}
+.mermaid {
+    display: flex;
+    justify-content: center;
+}
+.diagram-note {
+    font-size: 14px;
+    color: var(--ms-text-secondary);
+    margin-top: 4px;
+}
+
+/* ===== Feature cards ===== */
+.feature-card {
+    display: flex;
+    gap: 16px;
+    background: var(--ms-surface);
+    border-left: 4px solid var(--azure-blue);
+    padding: 16px;
+    margin: 12px 0;
+    border-radius: 0 8px 8px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.feature-icon {
+    font-size: 24px;
+    min-width: 40px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--ms-blue-100);
+    border-radius: 8px;
+}
+.feature-content h4 { color: var(--azure-dark-blue); margin-bottom: 6px; }
+.feature-content ul { padding-left: 18px; font-size: 14px; }
+.feature-content li { margin-bottom: 5px; }
+
+/* ===== Tables ===== */
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--ms-surface);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    font-size: 14px;
+    margin: 16px 0;
+}
+.info-table th {
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    text-align: left;
+    padding: 10px 14px;
+    font-weight: 700;
+}
+.info-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--ms-border);
+    vertical-align: top;
+}
+.info-table tr:last-child td { border-bottom: none; }
+.info-table tr:nth-child(even) td { background: var(--ms-blue-100); }
+.info-table td:first-child { font-weight: 700; color: var(--azure-dark-blue); white-space: normal; }
+
+code.inline {
+    font-family: 'Cascadia Code', 'Consolas', monospace;
+    background: var(--ms-surface-tertiary);
+    border: 1px solid var(--ms-border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.9em;
+    color: var(--azure-dark-blue);
+}
+
+/* Code block rule (always exclude mermaid) */
+pre:not(.mermaid) {
+    background: #1E1E1E;
+    margin: 0;
+    padding: 16px;
+    overflow-x: auto;
+    color: #E8E8E8;
+    border-radius: 8px;
+}
+
+/* ===== Steps ===== */
+.steps { counter-reset: step; list-style: none; margin: 16px 0; }
+.steps li {
+    position: relative;
+    padding: 12px 16px 12px 58px;
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.steps li::before {
+    counter-increment: step;
+    content: counter(step);
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: var(--azure-blue);
+    color: #FFFFFF;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+/* ===== Two column ===== */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+.merit-card {
+    background: var(--ms-surface);
+    border-radius: 8px;
+    border-top: 4px solid var(--ms-green);
+    padding: 18px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+.merit-card.tech { border-top-color: var(--azure-blue); }
+.merit-card h4 { margin-bottom: 10px; color: var(--azure-dark-blue); }
+.merit-card ul { padding-left: 20px; font-size: 14px; }
+.merit-card li { margin-bottom: 8px; }
+
+/* ===== Caution ===== */
+.caution-box {
+    background: #FFF8E1;
+    border: 2px solid var(--ms-orange);
+    border-radius: 8px;
+    padding: 18px 20px;
+}
+.caution-box ul { padding-left: 20px; font-size: 14px; }
+.caution-box li { margin-bottom: 8px; }
+
+/* ===== Use cases ===== */
+.usecase-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 16px 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+.usecase-header {
+    background: linear-gradient(90deg, var(--azure-blue), var(--ms-blue-500));
+    color: #FFFFFF;
+    padding: 12px 20px;
+    font-weight: 700;
+    font-size: 16px;
+}
+.usecase-body { padding: 18px 20px; font-size: 14px; }
+.usecase-body p { margin-bottom: 10px; }
+.usecase-body .label {
+    display: inline-block;
+    background: var(--ms-blue-200);
+    color: var(--azure-dark-blue);
+    font-weight: 700;
+    font-size: 12px;
+    border-radius: 12px;
+    padding: 2px 10px;
+    margin-right: 6px;
+}
+.usecase-effect {
+    background: #E8F5E9;
+    border-left: 4px solid var(--ms-green);
+    padding: 10px 14px;
+    border-radius: 0 8px 8px 0;
+}
+
+/* ===== Regions ===== */
+.region-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin: 16px 0;
+}
+.region-card {
+    background: var(--ms-surface);
+    border: 2px solid var(--ms-blue-300);
+    border-radius: 10px;
+    padding: 16px;
+    text-align: center;
+}
+.region-card .flag { font-size: 28px; }
+.region-card h4 { color: var(--azure-dark-blue); margin: 6px 0 4px; }
+.region-card p { font-size: 13px; color: var(--ms-text-secondary); }
+
+/* ===== Pricing ===== */
+.pricing-box {
+    background: var(--ms-surface);
+    border: 2px solid var(--ms-green);
+    border-radius: 12px;
+    padding: 20px;
+}
+.pricing-box .free {
+    font-size: 24px;
+    font-weight: 900;
+    color: var(--ms-green);
+    margin-bottom: 8px;
+}
+.pricing-box ul { padding-left: 20px; font-size: 14px; }
+.pricing-box li { margin-bottom: 6px; }
+
+/* ===== Related / Links ===== */
+.related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+}
+.related-card {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-left: 4px solid var(--ms-purple);
+    border-radius: 0 8px 8px 0;
+    padding: 14px 16px;
+    font-size: 14px;
+}
+.related-card h4 { color: var(--azure-dark-blue); margin-bottom: 6px; font-size: 15px; }
+
+.link-list { list-style: none; }
+.link-list li {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+.link-list a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+.link-list a:hover { text-decoration: underline; }
+
+/* ===== Summary ===== */
+.summary-box {
+    background: linear-gradient(135deg, var(--ms-blue-100), var(--ms-blue-200));
+    border: 2px solid var(--azure-blue);
+    border-radius: 12px;
+    padding: 24px;
+    font-size: 15px;
+}
+.summary-box p { margin-bottom: 12px; }
+.summary-box p:last-child { margin-bottom: 0; }
+
+/* ===== Tags ===== */
+.tag-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.tag {
+    background: var(--ms-surface);
+    border: 1px solid var(--ms-blue-300);
+    color: var(--azure-dark-blue);
+    border-radius: 14px;
+    padding: 3px 12px;
+    font-size: 12px;
+}
+
+/* ===== Footer ===== */
+footer {
+    border-top: 2px solid var(--ms-border);
+    margin-top: 40px;
+    padding: 20px 0 10px;
+    font-size: 13px;
+    color: var(--ms-text-secondary);
+}
+footer a { color: var(--azure-blue); text-decoration: none; word-break: break-all; }
+footer a:hover { text-decoration: underline; }
+footer ul { list-style: none; margin-top: 6px; }
+footer li { margin-bottom: 4px; }
+
+/* ===== Responsive ===== */
+@media (max-width: 700px) {
+    .before-after, .two-col { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 23px; }
+    .hero::after { font-size: 70px; }
+    .info-table { display: block; overflow-x: auto; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+    <!-- ===== Title ===== -->
+    <header class="hero">
+        <div class="badges">
+            <span class="service-badge">Azure Database for PostgreSQL (フレキシブルサーバー)</span>
+            <span class="badge badge-preview">In Preview</span>
+        </div>
+        <h1>Database Agent for Azure Database for PostgreSQL<br>— AI 支援のデータベース運用 (パブリックプレビュー)</h1>
+        <p class="subtitle">健全性・パフォーマンスの問題を「検出・理解・対応」。Microsoft Ignite 2026 で発表</p>
+        <div class="meta">
+            <span>📅 リリース日: 2026-11-19</span>
+            <span>🧩 機能: Database Agent for Azure Database for PostgreSQL</span>
+            <span>🚦 ステータス: In preview</span>
+        </div>
+    </header>
+
+    <!-- ===== Overview ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">📌</span>概要</h2>
+        <div class="card">
+            <p>Microsoft Ignite 2026 に合わせて、<strong>Database Agent for Azure Database for PostgreSQL</strong> がパブリックプレビューとして発表されました。Database Agent は、Azure Database for PostgreSQL フレキシブルサーバーにおけるデータベースの健全性・パフォーマンスの問題を、より迅速に「検出・理解・対応」できるようにする <strong>AI 支援の運用機能</strong>です。</p>
+            <br>
+            <p>Database Agent はデータベースの健全性をプロアクティブに監視して問題を特定し、<strong>メトリクス・構成・ワークロードシグナル・クエリプラン・ログを統合</strong>して根本原因を推定します。診断結果は根拠 (エビデンス) とともに平易な言葉で説明され、実行可能な修復ガイダンス (推奨 SQL、安全性の説明、ロールバック SQL を含む) が提示されます。ユーザーは証拠を確認したうえで、承認済みのワークフローを通じて手動で対応します。<strong>エージェントが状態を変更するアクションを自動実行することはありません</strong>。</p>
+        </div>
+        <div class="highlight-box">
+            <strong>提供形態:</strong> 現時点では <strong>Visual Studio Code (PostgreSQL 拡張機能) での限定プレビュー</strong>として提供されており、利用には参加申請フォーム (<a href="https://aka.ms/databaseagent-form">https://aka.ms/databaseagent-form</a>) による承認が必要です。Fabric Database Hub での提供は今後予定されています。
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value">7</div>
+                <div class="stat-label">自動検出する問題シナリオ</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">対応リージョン</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">PG 16+</div>
+                <div class="stat-label">対応 PostgreSQL バージョン</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">無償</div>
+                <div class="stat-label">限定プレビュー中の調査費用</div>
+            </div>
+        </div>
+
+        <div class="before-after">
+            <div class="before">
+                <h4>❌ Before (アップデート前の課題)</h4>
+                <ul>
+                    <li>健全性・パフォーマンス問題の調査では、問題ごとにメトリクス、ログ、クエリ統計などのテレメトリと診断データを<strong>手動で突き合わせる</strong>必要があった</li>
+                    <li>Database Hub における PostgreSQL フレキシブルサーバーの監視は既存の Azure Monitor メトリクスベースで、原因分析や対処方針の判断は<strong>担当者の経験と手作業の調査</strong>に依存していた</li>
+                    <li>Database Agent (2026-11-17 発表時点) は <strong>Azure SQL Database 向けのみ</strong>が Database Hub で利用可能で、PostgreSQL 向けはごく限定的な提供だった</li>
+                </ul>
+            </div>
+            <div class="after">
+                <h4>✅ After (アップデート後の改善)</h4>
+                <ul>
+                    <li>Database Agent が健全性を継続的に監視し、接続枯渇・デッドタプルの肥大化・高 CPU・ロック競合など <strong>7 種類の問題シナリオを自動検出</strong></li>
+                    <li>メトリクス・構成・ワークロードシグナル・クエリプラン・ログを <strong>LLM が統合分析</strong>し、根本原因の推定と根拠を平易な言葉で提示</li>
+                    <li><strong>推奨 SQL・「なぜ安全か」の説明・ロールバック SQL・期待される効果</strong>まで含む修復ガイダンスが VS Code のダッシュボード上で提供され、調査時間を削減して解決に集中できる</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Architecture ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">🏗️</span>アーキテクチャ図</h2>
+        <div class="mermaid-container">
+            <pre class="mermaid">
+flowchart LR
+    subgraph Server["☁️ Azure Database for PostgreSQL"]
+        PG[("🐘 フレキシブルサーバー<br/>PostgreSQL 16+")]
+        TEL["📊 メトリクス / 構成 / ワークロード<br/>クエリプラン / ログ"]
+    end
+    subgraph Agent["🤖 Database Agent (Preview)"]
+        DET["🔍 検出<br/>7 つの問題シナリオ"]
+        AI["🧠 LLM 診断・証拠収集<br/>(US / EU Data Zone)"]
+    end
+    subgraph VSC["💻 VS Code (PostgreSQL 拡張)"]
+        DASH["📋 Dashboard<br/>推奨 SQL / ロールバック SQL"]
+        COP["💬 GitHub Copilot Chat<br/>Ask Copilot"]
+    end
+    USER(["👤 DBA / アプリケーション所有者"])
+
+    PG --> TEL --> DET --> AI --> DASH
+    DASH --> COP
+    DASH -->|"証拠 + 修復ガイダンス"| USER
+    USER -->|"承認済みワークフローで手動適用"| PG
+            </pre>
+        </div>
+        <p class="diagram-note">Database Agent がフレキシブルサーバーのテレメトリを統合して問題を検出し、LLM が診断・修復ガイダンスを生成して VS Code のダッシュボードに提示します。変更の適用は必ず人間のレビューと承認済みワークフローを経由する手動対応です。</p>
+    </section>
+
+    <!-- ===== Key features ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">⚡</span>主要機能</h2>
+
+        <div class="feature-card">
+            <div class="feature-icon">🔍</div>
+            <div class="feature-content">
+                <h4>1. プロアクティブな健全性監視と問題検出</h4>
+                <ul>
+                    <li>保存されたエージェントポリシーに従って対象サーバーを継続的に評価し、サポート対象の問題シナリオを自動検出する</li>
+                    <li>有効化後、新しい Issue の生成まで約 15 分かかる場合がある</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🧠</div>
+            <div class="feature-content">
+                <h4>2. AI による根本原因分析 (すべての調査が AI 支援)</h4>
+                <ul>
+                    <li>メトリクス、構成、ワークロードシグナル、クエリプラン、ログを統合し、LLM が状態を診断する</li>
+                    <li>問題のサマリー、分析、推奨アクション、期待される効果はすべて LLM が生成し、根拠とともに平易な言葉で説明される</li>
+                    <li>AI モデルの処理は、米国リージョン (South Central US / West US 3) は <strong>US Data Zone</strong>、Sweden Central は <strong>EU Data Zone</strong> で実行される</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">🛠️</div>
+            <div class="feature-content">
+                <h4>3. 実行可能な修復ガイダンス</h4>
+                <ul>
+                    <li><strong>Recommended change</strong> (生成された SQL、エディターで開く / コピー)、<strong>Why this is safe</strong> (安全性の説明)、<strong>Rollback</strong> SQL、<strong>Expected outcome</strong> (期待される効果とロールバック計画) を提示</li>
+                    <li>エージェントは変更を自動実行しない。ユーザーが証拠を確認し、承認済みのデータベースワークフローを通じて手動で対応する</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">💻</div>
+            <div class="feature-content">
+                <h4>4. VS Code ダッシュボードでの Issue 管理と Copilot 連携</h4>
+                <ul>
+                    <li>サーバーの Dashboard 上で Investigation バナーから Issue の重大度・ステータス (DETECTED / DIAGNOSED)・検出時刻・分析を確認</li>
+                    <li>対応完了後は <strong>Mark manually applied</strong>、対応不要なら <strong>Dismiss issue</strong> でトラッキング。クローズ後に問題が再発した場合は新しい Issue が作成され、履歴は保持される</li>
+                    <li>「Ask Copilot about this section」で Issue の構造化された詳細を GitHub Copilot Chat に読み込み、追加の質問やライブメトリクス・セッション・実行プランの調査が可能</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Scenarios ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">🎯</span>サポートされる問題シナリオ (PostgreSQL)</h2>
+        <table class="info-table">
+            <tr><th>シナリオ</th><th>調査対象の状態</th></tr>
+            <tr><td>🔌 接続枯渇 (Connection exhaustion)</td><td>ロールの接続数上限、セッションの占有 (session hoarding)</td></tr>
+            <tr><td>🧹 デッドタプルの肥大化 (Dead tuple bloat)</td><td>デッドタプルの蓄積、HOT 更新の劣化、更新チャーンによるインデックス肥大化</td></tr>
+            <tr><td>🔥 高 CPU</td><td>インデックスタイプの不一致、古い統計情報、インデックスのないクエリ</td></tr>
+            <tr><td>⏸️ Idle in transaction</td><td>アイドルトランザクションセッションによるスナップショット保持</td></tr>
+            <tr><td>🔒 ロック競合 (Lock contention)</td><td>行ロック、テーブルロック</td></tr>
+            <tr><td>📉 クエリプランのリグレッション</td><td>Gather のボトルネック、結合タイプの誤選択、非可逆ビットマップ再チェック、サポートインデックスの削除</td></tr>
+            <tr><td>💾 ソートスピルとメモリ圧迫</td><td>全体集約・ハッシュ結合・大規模ソート・並列クエリによるスピル</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== Tech spec ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">📋</span>技術仕様</h2>
+        <table class="info-table">
+            <tr><th>項目</th><th>詳細</th></tr>
+            <tr><td>対象サービス</td><td>Azure Database for PostgreSQL フレキシブルサーバー (PostgreSQL 16 以降)</td></tr>
+            <tr><td>対応コンピューティング</td><td>Burstable、General Purpose、Memory Optimized の各ティアとデプロイ構成。Azure HorizonDB は今後対応予定</td></tr>
+            <tr><td>提供サーフェス</td><td>Visual Studio Code (PostgreSQL 拡張機能 1.32.0 以降)。Fabric Database Hub での提供は今後予定</td></tr>
+            <tr><td>利用申請</td><td>限定プレビューのため参加申請フォーム (<a href="https://aka.ms/databaseagent-form">https://aka.ms/databaseagent-form</a>) による承認が必要</td></tr>
+            <tr><td>対応リージョン</td><td>South Central US、West US 3、Sweden Central</td></tr>
+            <tr><td>AI の利用</td><td>PostgreSQL の調査はすべて LLM による AI 支援 (SQL 向けのコア調査が LLM 不使用である点と異なる)。AI 処理は US Data Zone / EU Data Zone で実行</td></tr>
+            <tr><td>認証・認可</td><td>既存の Microsoft Entra ID・Azure リソース権限・データベース権限をそのまま使用。追加のアクセス権付与や承認プロセスのバイパスはない</td></tr>
+            <tr><td>変更の適用</td><td>Issue から直接のデータベース変更は不可。すべて承認済みワークフローによる手動対応</td></tr>
+            <tr><td>調査のリトライ</td><td>リトライ可能なエラーは最大 3 回まで自動リトライ</td></tr>
+        </table>
+    </section>
+
+    <!-- ===== Setup ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">⚙️</span>設定方法</h2>
+
+        <div class="card">
+            <h3 style="color: var(--azure-dark-blue); margin-bottom: 10px;">📝 前提条件</h3>
+            <ol class="steps">
+                <li><a href="https://aka.ms/databaseagent-form">参加申請フォーム</a>から限定プレビューへのアクセスを申請し、承認を受けること</li>
+                <li>サポート対象リージョン (South Central US / West US 3 / Sweden Central) で PostgreSQL 16 以降のフレキシブルサーバーが稼働中 (停止していない) であること</li>
+                <li>Visual Studio Code (MCP エージェントツール利用には 1.102.0 以降を推奨) と <a href="https://learn.microsoft.com/azure/postgresql/development/vs-code-extension/postgresql-extension-overview">PostgreSQL 拡張機能</a> (1.32.0 以降) をインストールすること</li>
+                <li>Azure サーバーリソースへのアクセス権 (エージェント構成時はサーバーリソースへの Azure RBAC 書き込み権限) を持つ Microsoft Entra ID と、サーバーに接続するための PostgreSQL 資格情報・ネットワークアクセスがあること</li>
+                <li>(任意) 「Ask Copilot about this section」と Agent モードツールを使う場合は GitHub Copilot in VS Code をインストールすること</li>
+            </ol>
+        </div>
+
+        <div class="card">
+            <h3 style="color: var(--azure-dark-blue); margin-bottom: 10px;">🚀 利用手順 (Visual Studio Code)</h3>
+            <ol class="steps">
+                <li>VS Code のアクティビティバーで <strong>PostgreSQL</strong> アイコンを選択し、<strong>Connections</strong> を開く</li>
+                <li><strong>Servers</strong> で対象のフレキシブルサーバーに接続し、必要に応じて Azure アカウントでサインインする</li>
+                <li>接続済みサーバーノードを右クリックし、<strong>Database Agent</strong> でエージェントを構成、または <strong>Dashboard</strong> でアクティブな調査と Issue を確認する</li>
+                <li>ツールバーに「Azure Server Detected」や「Incomplete Azure Metadata」が表示された場合は <strong>Fetch Metadata</strong> を選択して Azure リソース ID の解決を完了する</li>
+                <li>Issue を展開して分析・推奨アクション・ロールバック SQL を確認し、<code class="inline">pg_stat_activity</code> や <code class="inline">pg_locks</code> などでライブの状態を検証したうえで、承認済みワークフローで SQL 変更やサーバーパラメーター変更 (<strong>Server Management</strong> → <strong>Server Parameters</strong>) を手動適用する</li>
+                <li>対応完了後に <strong>Mark manually applied</strong>、対応不要なら <strong>Dismiss issue</strong> を選択する</li>
+            </ol>
+        </div>
+    </section>
+
+    <!-- ===== Merits ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">💡</span>メリット</h2>
+        <div class="two-col">
+            <div class="merit-card">
+                <h4>💼 ビジネス面</h4>
+                <ul>
+                    <li>問題ごとのテレメトリ・診断データの手動突き合わせが不要になり、調査にかける時間を削減して解決に集中できる</li>
+                    <li>DBA が不足している組織でも、接続枯渇やロック競合といった PostgreSQL 特有の典型的な問題の検出と一次分析を自動化できる</li>
+                    <li>限定プレビュー期間中は調査に対する課金がなく、低リスクで評価を開始できる</li>
+                </ul>
+            </div>
+            <div class="merit-card tech">
+                <h4>🔧 技術面</h4>
+                <ul>
+                    <li>デッドタプル肥大化、idle in transaction、ソートスピルなど PostgreSQL 固有の問題シナリオに特化した診断が得られる</li>
+                    <li>推奨 SQL に「なぜ安全か」の説明とロールバック SQL が付属し、<code class="inline">CREATE INDEX CONCURRENTLY</code> の利用やロック影響の確認など、レビューに必要な材料が揃う</li>
+                    <li>VS Code 内で検出から調査・検証 (Query Plan Visualizer、Queries / Waits / Sessions タブ)・対応・記録まで完結する</li>
+                    <li>既存の Entra ID・Azure RBAC・データベース権限をそのまま使用し、追加のアクセス権付与がない</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Limitations ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">⚠️</span>デメリット・制約事項</h2>
+        <div class="caution-box">
+            <ul>
+                <li>限定プレビューのため、参加申請フォームによる承認が必要</li>
+                <li>対応リージョンは South Central US、West US 3、Sweden Central の 3 つに限定される</li>
+                <li>PostgreSQL 16 以降のフレキシブルサーバーのみ対応 (Azure HorizonDB は今後対応予定)</li>
+                <li>現時点では VS Code の PostgreSQL 拡張機能経由のみで、Fabric Database Hub からは利用できない (今後対応予定)</li>
+                <li>すべての調査が LLM によって生成されるため、診断・推奨 SQL・パラメーター変更は不完全または誤りの可能性があり、<strong>適用前にライブサーバーに対する検証が必須</strong></li>
+                <li>エージェントは変更を自動適用できない。すべてのシナリオで承認済みワークフローによる手動対応が必要</li>
+                <li>新しく有効化したサーバー・シナリオで Issue が生成されるまで約 15 分かかる場合がある</li>
+                <li>プレビュー中はサポートされる問題・構成・リージョンが変更される可能性がある</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Use cases ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">📚</span>ユースケース</h2>
+
+        <div class="usecase-card">
+            <div class="usecase-header">ユースケース 1: 接続枯渇・ロック競合の早期検出とガイド付き対応</div>
+            <div class="usecase-body">
+                <p><span class="label">シナリオ</span>アプリケーションのコネクションリークや長時間トランザクションにより、接続枯渇や idle in transaction、ロック競合が断続的に発生しているが、発生時の状況を後から再現・分析するのが難しい。</p>
+                <p><span class="label">実装例</span>対象サーバーで Database Agent を構成し、Dashboard の Investigation バナーから検出された Issue を確認。証拠 (セッション・ロックの状態) をレビューし、<code class="inline">pg_stat_activity</code> / <code class="inline">pg_locks</code> でライブ状態を確認したうえで、推奨された対応 (例: 問題セッションの <code class="inline">pg_terminate_backend()</code>) を承認済みワークフローで実施する。</p>
+                <div class="usecase-effect"><strong>効果:</strong> 発生時点の証拠が自動収集されるため、再現待ちや手動のログ突き合わせが不要になり、初動から対応までの時間を短縮できる。</div>
+            </div>
+        </div>
+
+        <div class="usecase-card">
+            <div class="usecase-header">ユースケース 2: デッドタプル肥大化・クエリ性能劣化のチューニング</div>
+            <div class="usecase-body">
+                <p><span class="label">シナリオ</span>更新頻度の高いテーブルでデッドタプルの蓄積やインデックス肥大化が進行し、クエリプランのリグレッションや高 CPU が発生しているが、原因の切り分けに時間がかかっている。</p>
+                <p><span class="label">実装例</span>Database Agent が検出した Issue の AI 分析 (古い統計情報、インデックスタイプの不一致、autovacuum 設定など) を確認し、推奨 SQL (例: <code class="inline">ANALYZE</code>、<code class="inline">CREATE INDEX CONCURRENTLY</code>) を Query Plan Visualizer の <code class="inline">EXPLAIN</code> 出力で検証してから適用。サーバーパラメーターの推奨 (例: <code class="inline">work_mem</code> や autovacuum 設定) は Server Management → Server Parameters から承認済みのメンテナンスウィンドウで変更する。</p>
+                <div class="usecase-effect"><strong>効果:</strong> 原因の切り分けと対処案の作成が自動化され、DBA は検証と適用判断に集中できる。ロールバック SQL が付属するため、変更の安全性も確保しやすい。</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Pricing ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">💰</span>料金</h2>
+        <div class="pricing-box">
+            <div class="free">限定プレビュー期間中は無償</div>
+            <ul>
+                <li>限定プレビュー期間中、PostgreSQL の Database Agent による調査は<strong>無償</strong></li>
+                <li>課金は一般提供 (GA) 前に開始され、開始前に登録顧客へ事前通知される</li>
+                <li>監視対象の Azure Database for PostgreSQL フレキシブルサーバー自体には通常の料金が適用される (<a href="https://azure.microsoft.com/pricing/details/postgresql/flexible-server/">料金ページ</a>)</li>
+            </ul>
+        </div>
+    </section>
+
+    <!-- ===== Regions ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">🌍</span>利用可能リージョン</h2>
+        <div class="region-grid">
+            <div class="region-card">
+                <div class="flag">🇺🇸</div>
+                <h4>South Central US</h4>
+                <p>AI 処理は US Data Zone</p>
+            </div>
+            <div class="region-card">
+                <div class="flag">🇺🇸</div>
+                <h4>West US 3</h4>
+                <p>AI 処理は US Data Zone</p>
+            </div>
+            <div class="region-card">
+                <div class="flag">🇸🇪</div>
+                <h4>Sweden Central</h4>
+                <p>AI 処理は EU Data Zone</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Related ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">🔗</span>関連サービス・機能</h2>
+        <div class="related-grid">
+            <div class="related-card">
+                <h4>🏢 Database Hub in Microsoft Fabric</h4>
+                <p>複数データベースエンジンを横断する統合運用体験 (2026-11-17 に GA)。PostgreSQL 向け Database Agent の Database Hub 対応は今後提供予定で、現在はベースラインのエステート・メトリクス監視のみ利用可能。</p>
+            </div>
+            <div class="related-card">
+                <h4>🗄️ Database Agent for SQL (contextual Copilot)</h4>
+                <p>Azure SQL Database 向けの Database Agent (パブリックプレビュー、Database Hub で提供)。SQL のコア調査は LLM 不使用だが、PostgreSQL はすべての調査が LLM による AI 支援という違いがある。</p>
+            </div>
+            <div class="related-card">
+                <h4>💻 PostgreSQL extension for Visual Studio Code</h4>
+                <p>PostgreSQL 向け Database Agent の現在の提供サーフェス。Dashboard、Query Plan Visualizer、Server Management などの機能と統合。</p>
+            </div>
+            <div class="related-card">
+                <h4>💬 GitHub Copilot</h4>
+                <p>「Ask Copilot about this section」で Issue の詳細を Copilot Chat に読み込み、対話的な深掘り調査が可能。</p>
+            </div>
+            <div class="related-card">
+                <h4>📈 Azure Monitor</h4>
+                <p>フレキシブルサーバーの既存のメトリクス監視。Database Agent はメトリクスに加えて構成・ワークロードシグナル・クエリプラン・ログを統合して診断する。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Summary ===== -->
+    <section>
+        <h2 class="section-title"><span class="icon">📝</span>まとめ</h2>
+        <div class="summary-box">
+            <p>Database Agent for Azure Database for PostgreSQL のプレビューにより、PostgreSQL フレキシブルサーバーでも<strong>「検出 → AI 診断 → 修復ガイダンス → 人間によるレビューと手動対応」</strong>というエージェント支援の運用ワークフローが利用可能になりました。接続枯渇、デッドタプル肥大化、ロック競合、クエリプランのリグレッションなど <strong>PostgreSQL 固有の 7 シナリオ</strong>に対応し、推奨 SQL・安全性の説明・ロールバック SQL までを VS Code 内で提供する点が特長です。</p>
+            <p>現時点では参加申請が必要な限定プレビューで、対応リージョンは 3 リージョン、PostgreSQL 16 以降・VS Code 経由のみという制約があります。対象リージョンで PostgreSQL 16 以降を運用しているチームは、プレビュー期間中は無償のため、<strong>非本番環境での評価から始めることを推奨</strong>します。すべての診断が LLM 生成であるため、推奨事項は必ずライブサーバーで検証し、既存の変更管理プロセスと組み合わせて適用してください。</p>
+            <div class="tag-list">
+                <span class="tag">Azure Database for PostgreSQL</span>
+                <span class="tag">Database Agent</span>
+                <span class="tag">AI</span>
+                <span class="tag">Monitoring</span>
+                <span class="tag">Performance</span>
+                <span class="tag">VS Code</span>
+                <span class="tag">GitHub Copilot</span>
+                <span class="tag">Database Hub</span>
+                <span class="tag">Preview</span>
+                <span class="tag">Microsoft Ignite</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== Footer ===== -->
+    <footer>
+        <strong>出典・参考リンク</strong>
+        <ul>
+            <li>📰 <a href="https://azure.microsoft.com/updates?id=579579">公式アップデート情報 (Azure Updates)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/fabric/database/hub/database-agents?pivots=postgresql">Microsoft Learn: Database Agents (Preview)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/fabric/database/hub/database-agents-vs-code">Microsoft Learn: Use Database Agents in Visual Studio Code (Preview)</a></li>
+            <li>📖 <a href="https://learn.microsoft.com/azure/postgresql/development/vs-code-extension/postgresql-extension-overview">Microsoft Learn: PostgreSQL extension for Visual Studio Code</a></li>
+            <li>📝 <a href="https://aka.ms/databaseagent-form">限定プレビュー参加申請フォーム</a></li>
+            <li>💰 <a href="https://azure.microsoft.com/pricing/details/postgresql/flexible-server/">料金ページ: Azure Database for PostgreSQL フレキシブルサーバー</a></li>
+        </ul>
+        <p style="margin-top: 12px;">本インフォグラフィックは Azure News Summary レポート (2026-11-19) を基に生成されました。リリース日: 2026-11-19 | ステータス: In preview</p>
+    </footer>
+
+</div>
+</body>
+</html>
